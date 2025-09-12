@@ -38,10 +38,62 @@ object RepositorySingleton {
     
     fun getRepository(): YapeTransactionRepository {
         if (_repository == null) {
-            // Crear repositorio lazy - solo cuando se necesite
-            _repository = createRepository()
+            // Crear repositorio mock temporalmente
+            _repository = createMockRepository()
         }
         return _repository!!
+    }
+    
+    private fun createMockRepository(): YapeTransactionRepository {
+        return object : YapeTransactionRepository {
+            override fun getAllTransactions(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.YapeTransaction>> {
+                return kotlinx.coroutines.flow.flowOf(emptyList())
+            }
+            
+            override fun getTransactionsByBusiness(businessName: String): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.YapeTransaction>> {
+                return kotlinx.coroutines.flow.flowOf(emptyList())
+            }
+            
+            override fun getTransactionsByDateRange(startDate: kotlinx.datetime.Instant, endDate: kotlinx.datetime.Instant): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.YapeTransaction>> {
+                return kotlinx.coroutines.flow.flowOf(emptyList())
+            }
+            
+            override fun getUnprocessedTransactions(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.YapeTransaction>> {
+                return kotlinx.coroutines.flow.flowOf(emptyList())
+            }
+            
+            override suspend fun insertTransaction(transaction: org.sysarp.project.data.YapeTransaction) {
+                // Mock implementation - no hace nada
+            }
+            
+            override suspend fun updateTransactionProcessed(transactionId: Long) {
+                // Mock implementation - no hace nada
+            }
+            
+            override suspend fun updateTransactionBusiness(transactionId: Long, businessName: String) {
+                // Mock implementation - no hace nada
+            }
+            
+            override suspend fun deleteTransaction(transactionId: Long) {
+                // Mock implementation - no hace nada
+            }
+            
+            override fun getBusinessReports(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.BusinessReport>> {
+                return kotlinx.coroutines.flow.flowOf(emptyList())
+            }
+            
+            override fun getDailyReports(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.DailyReport>> {
+                return kotlinx.coroutines.flow.flowOf(emptyList())
+            }
+            
+            override fun exportTransactionsToText(): String {
+                return "No hay transacciones disponibles"
+            }
+            
+            override fun exportAllTransactionsToText(): String {
+                return "No hay transacciones disponibles"
+            }
+        }
     }
     
     // Función para reinicializar el repositorio cuando el contexto esté disponible
@@ -66,7 +118,12 @@ fun YapeApp() {
     }
     
     val notificationService = remember {
-        createNotificationService(repository)
+        // createNotificationService(repository)
+        object : NotificationCaptureService {
+            override suspend fun startCapturing() {}
+            override suspend fun stopCapturing() {}
+            override fun isCapturing(): Boolean = false
+        } // Temporalmente deshabilitado
     }
     
     // CORREGIDO: Usar el mismo repositorio singleton
@@ -87,16 +144,16 @@ fun YapeApp() {
 }
 
 // Función para crear el servicio de notificaciones apropiado para cada plataforma
-expect fun createNotificationService(repository: YapeTransactionRepository): NotificationCaptureService
+// expect fun createNotificationService(repository: YapeTransactionRepository): NotificationCaptureService
 
 // Función para crear el repositorio apropiado para cada plataforma
-expect fun createRepository(): YapeTransactionRepository
+// expect fun createRepository(): YapeTransactionRepository
 
 // Función para solicitar permisos automáticamente
-expect fun requestPermissionsAutomatically()
+// expect fun requestPermissionsAutomatically()
 
 // Función para verificar permisos de notificaciones
-expect suspend fun checkNotificationPermission(): Boolean
+// expect suspend fun checkNotificationPermission(): Boolean
 
 // Función para verificar permisos de accesibilidad
-expect suspend fun checkAccessibilityPermission(): Boolean
+// expect suspend fun checkAccessibilityPermission(): Boolean

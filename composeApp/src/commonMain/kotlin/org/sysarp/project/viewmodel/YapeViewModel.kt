@@ -21,9 +21,9 @@ import org.sysarp.project.service.NotificationCaptureService
 import org.sysarp.project.service.PermissionState
 import org.sysarp.project.service.CaptureStatus
 import org.sysarp.project.service.DebugLogger
-import org.sysarp.project.requestPermissionsAutomatically
-import org.sysarp.project.checkNotificationPermission
-import org.sysarp.project.checkAccessibilityPermission
+// import org.sysarp.project.requestPermissionsAutomatically
+// import org.sysarp.project.checkNotificationPermission
+// import org.sysarp.project.checkAccessibilityPermission
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -361,15 +361,17 @@ Total de transacciones: ${transactions.size}
     }
     
     private suspend fun requestPermissions() {
-        requestPermissionsAutomatically()
+        // requestPermissionsAutomatically() // Temporalmente deshabilitado
         kotlinx.coroutines.delay(1000)
         checkPermissions()
     }
     
     private suspend fun checkPermissions() {
         try {
-            val hasNotificationPermission = checkNotificationPermission()
-            val hasAccessibilityPermission = checkAccessibilityPermission()
+            // val hasNotificationPermission = checkNotificationPermission() // Temporalmente deshabilitado
+            // val hasAccessibilityPermission = checkAccessibilityPermission() // Temporalmente deshabilitado
+            val hasNotificationPermission = false // Temporalmente deshabilitado
+            val hasAccessibilityPermission = false // Temporalmente deshabilitado
             
             DebugLogger.info("Resultados de permisos - Notificaciones: $hasNotificationPermission, Accesibilidad: $hasAccessibilityPermission")
             
@@ -413,11 +415,13 @@ Total de transacciones: ${transactions.size}
     }
     
     private suspend fun checkNotificationPermission(): Boolean {
-        return org.sysarp.project.checkNotificationPermission()
+        // return org.sysarp.project.checkNotificationPermission() // Temporalmente deshabilitado
+        return false // Temporalmente deshabilitado
     }
     
     private suspend fun checkAccessibilityPermission(): Boolean {
-        return org.sysarp.project.checkAccessibilityPermission()
+        // return org.sysarp.project.checkAccessibilityPermission() // Temporalmente deshabilitado
+        return false // Temporalmente deshabilitado
     }
     
     fun refreshPermissions() {

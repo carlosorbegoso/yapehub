@@ -33,7 +33,7 @@ object DebugLogger {
         }
         
         // También loggear al sistema (implementado en cada plataforma)
-        logToSystem(level, message)
+        // logToSystem(level, message) // Temporalmente deshabilitado
     }
     
     fun error(message: String) = log("ERROR", message)
@@ -91,4 +91,4 @@ object DebugLogger {
 }
 
 // Función expect para loggear al sistema (implementada en cada plataforma)
-expect fun logToSystem(level: String, message: String)
+// expect fun logToSystem(level: String, message: String)

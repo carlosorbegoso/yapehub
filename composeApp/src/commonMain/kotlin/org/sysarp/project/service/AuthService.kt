@@ -76,6 +76,21 @@ data class QRGenerationResponse(
     val affiliationUrl: String
 )
 
+@Serializable
+data class DeactivationRequest(
+    val sellerId: String,
+    val sellerName: String,
+    val reason: String,
+    val requestedAt: String,
+    val status: String = "PENDING" // PENDING, APPROVED, REJECTED
+)
+
+@Serializable
+data class DeactivationResponse(
+    val success: Boolean,
+    val message: String? = null
+)
+
 class AuthService {
     private val _authState = MutableStateFlow<AuthState>(AuthState.NotAuthenticated)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
@@ -369,5 +384,69 @@ class AuthService {
     fun getDeviceName(): String {
         // TODO: Implementar obtención del nombre del dispositivo
         return "Android Device"
+    }
+    
+    // Métodos para manejar solicitudes de baja
+    private val _deactivationRequests = MutableStateFlow<List<DeactivationRequest>>(emptyList())
+    val deactivationRequests: StateFlow<List<DeactivationRequest>> = _deactivationRequests.asStateFlow()
+    
+    suspend fun requestDeactivation(reason: String): DeactivationResponse {
+        val currentProfile = _userProfile.value
+        return if (currentProfile?.role == "SELLER" && currentProfile.isActive) {
+            val request = DeactivationRequest(
+                sellerId = currentProfile.adminId ?: "unknown",
+                sellerName = currentProfile.sellerName ?: "Unknown Seller",
+                reason = reason,
+                requestedAt = java.time.Instant.now().toString()
+            )
+            
+            val currentRequests = _deactivationRequests.value.toMutableList()
+            currentRequests.add(request)
+            _deactivationRequests.value = currentRequests
+            
+            DeactivationResponse(success = true, message = "Solicitud de baja enviada correctamente")
+        } else {
+            DeactivationResponse(success = false, message = "Solo los vendedores activos pueden solicitar baja")
+        }
+    }
+    
+    suspend fun approveDeactivation(sellerId: String): DeactivationResponse {
+        val currentRequests = _deactivationRequests.value.toMutableList()
+        val requestIndex = currentRequests.indexOfFirst { it.sellerId == sellerId && it.status == "PENDING" }
+        
+        return if (requestIndex != -1) {
+            val updatedRequest = currentRequests[requestIndex].copy(status = "APPROVED")
+            currentRequests[requestIndex] = updatedRequest
+            _deactivationRequests.value = currentRequests
+            
+            // Simular desactivación del vendedor
+            val currentProfile = _userProfile.value
+            if (currentProfile?.adminId == sellerId) {
+                _userProfile.value = currentProfile.copy(isActive = false)
+            }
+            
+            DeactivationResponse(success = true, message = "Baja aprobada correctamente")
+        } else {
+            DeactivationResponse(success = false, message = "Solicitud no encontrada")
+        }
+    }
+    
+    suspend fun rejectDeactivation(sellerId: String): DeactivationResponse {
+        val currentRequests = _deactivationRequests.value.toMutableList()
+        val requestIndex = currentRequests.indexOfFirst { it.sellerId == sellerId && it.status == "PENDING" }
+        
+        return if (requestIndex != -1) {
+            val updatedRequest = currentRequests[requestIndex].copy(status = "REJECTED")
+            currentRequests[requestIndex] = updatedRequest
+            _deactivationRequests.value = currentRequests
+            
+            DeactivationResponse(success = true, message = "Solicitud de baja rechazada")
+        } else {
+            DeactivationResponse(success = false, message = "Solicitud no encontrada")
+        }
+    }
+    
+    fun getPendingDeactivationRequests(): List<DeactivationRequest> {
+        return _deactivationRequests.value.filter { it.status == "PENDING" }
     }
 }

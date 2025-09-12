@@ -1,0 +1,912 @@
+package org.sysarp.project.ui.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.background
+import org.sysarp.project.service.AuthService
+import org.sysarp.project.service.QRService
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SellerManagementScreen(
+    authService: AuthService,
+    onNavigateBack: () -> Unit,
+    onNavigateToQR: (org.sysarp.project.service.QRCodeData) -> Unit
+) {
+    var showEditSellerDialog by remember { mutableStateOf(false) }
+    var showQRDialog by remember { mutableStateOf(false) }
+    var showAffiliationCodeDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var selectedSeller by remember { mutableStateOf<SellerData?>(null) }
+    var sellers by remember { mutableStateOf(getSellers()) }
+    
+    val qrService = remember { QRService() }
+    val activeQRCode by qrService.activeQRCode.collectAsState()
+    val userProfile by authService.userProfile.collectAsState()
+    
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { 
+                    Text(
+                        "Gestión de Vendedores",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Volver"
+                        )
+                    }
+                },
+                actions = {
+                    // Botón removido - los vendedores se asocian por QR
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        },
+        floatingActionButton = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                // Botón para generar código de afiliación
+                FloatingActionButton(
+                    onClick = { showAffiliationCodeDialog = true },
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Key,
+                        contentDescription = "Generar código de afiliación"
+                    )
+                }
+                
+                // Botón para generar QR
+                FloatingActionButton(
+                    onClick = { showQRDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.QrCode,
+                        contentDescription = "Generar QR"
+                    )
+                }
+            }
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header con estadísticas
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        val totalSellers = sellers.size
+                        val activeSellers = sellers.count { it.isActive }
+                        val inactiveSellers = totalSellers - activeSellers
+                        
+                        StatItem("Total", totalSellers.toString(), Icons.Filled.People)
+                        StatItem("Activos", activeSellers.toString(), Icons.Filled.CheckCircle)
+                        StatItem("Inactivos", inactiveSellers.toString(), Icons.Filled.PauseCircle)
+                    }
+                }
+            }
+            
+            // Lista de vendedores
+            items(sellers) { seller ->
+                SellerCard(
+                    seller = seller,
+                    onEdit = { 
+                        selectedSeller = seller
+                        showEditSellerDialog = true
+                    },
+                    onToggleStatus = { 
+                        sellers = sellers.map { 
+                            if (it.id == seller.id) it.copy(isActive = !it.isActive) else it 
+                        }
+                    },
+                    onDelete = { 
+                        selectedSeller = seller
+                        showDeleteConfirmDialog = true
+                    }
+                )
+            }
+            
+            // Espacio adicional
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
+            }
+        }
+    }
+    
+    // Diálogo para editar vendedor
+    if (showEditSellerDialog && selectedSeller != null) {
+        EditSellerDialog(
+            seller = selectedSeller!!,
+            onDismiss = { 
+                showEditSellerDialog = false
+                selectedSeller = null
+            },
+            onConfirm = { updatedSellerData ->
+                sellers = sellers.map { 
+                    if (it.id == updatedSellerData.id) updatedSellerData else it 
+                }
+                showEditSellerDialog = false
+                selectedSeller = null
+            }
+        )
+    }
+    
+    // Diálogo de confirmación para eliminar
+    if (showDeleteConfirmDialog && selectedSeller != null) {
+        AlertDialog(
+            onDismissRequest = { 
+                showDeleteConfirmDialog = false
+                selectedSeller = null
+            },
+            title = {
+                Text(
+                    "Eliminar Vendedor",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text("¿Estás seguro de que quieres eliminar a ${selectedSeller?.name}? Esta acción no se puede deshacer.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        sellers = sellers.filter { it.id != selectedSeller?.id }
+                        showDeleteConfirmDialog = false
+                        selectedSeller = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { 
+                        showDeleteConfirmDialog = false
+                        selectedSeller = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Text("Cancelar")
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
+    
+    // Diálogo para generar QR
+    if (showQRDialog) {
+        GenerateQRDialog(
+            qrService = qrService,
+            userProfile = userProfile,
+            activeQRCode = activeQRCode,
+            onDismiss = { showQRDialog = false },
+            onGenerate = { qrCode ->
+                onNavigateToQR(qrCode)
+                showQRDialog = false
+            }
+        )
+    }
+    
+    // Diálogo para generar código de afiliación
+    if (showAffiliationCodeDialog) {
+        GenerateAffiliationCodeDialog(
+            onDismiss = { showAffiliationCodeDialog = false },
+            onGenerate = { affiliationCode ->
+                // Aquí se podría guardar el código generado
+                showAffiliationCodeDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun StatItem(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(24.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+        )
+    }
+}
+
+@Composable
+fun SellerCard(
+    seller: SellerData,
+    onEdit: () -> Unit,
+    onToggleStatus: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            color = if (seller.isActive) 
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = null,
+                        tint = if (seller.isActive) 
+                            MaterialTheme.colorScheme.primary 
+                        else MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = seller.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Text(
+                        text = seller.branchName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = if (seller.isActive) "Activo" else "Inactivo",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (seller.isActive) 
+                            MaterialTheme.colorScheme.primary 
+                        else MaterialTheme.colorScheme.error
+                    )
+                }
+                
+                // Indicador de estado
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(
+                            color = if (seller.isOnline) 
+                                MaterialTheme.colorScheme.primary 
+                            else MaterialTheme.colorScheme.outline,
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        )
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Estadísticas del vendedor
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                StatChip("Pagos: ${seller.totalPayments}", Icons.Filled.Payment)
+                StatChip("S/ ${seller.totalAmount}", Icons.Filled.AttachMoney)
+                StatChip("Último: ${seller.lastPayment}", Icons.Filled.Schedule)
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Botones de acción
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onEdit,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Editar")
+                }
+                
+                // Botón de Pausar/Activar con mejor diseño
+                Button(
+                    onClick = onToggleStatus,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (seller.isActive) 
+                            MaterialTheme.colorScheme.secondaryContainer
+                        else 
+                            MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = if (seller.isActive) 
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        else 
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(
+                        imageVector = if (seller.isActive) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = if (seller.isActive) "Pausar vendedor" else "Activar vendedor",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (seller.isActive) "Pausar" else "Activar",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                
+                // Botón de Eliminar con diseño distintivo
+                OutlinedButton(
+                    onClick = onDelete,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Eliminar vendedor",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Eliminar",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StatChip(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(12.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun AddSellerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (SellerData) -> Unit
+) {
+    var sellerName by remember { mutableStateOf("") }
+    var branchCode by remember { mutableStateOf("") }
+    var branchName by remember { mutableStateOf("") }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Agregar Vendedor",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = sellerName,
+                    onValueChange = { sellerName = it },
+                    label = { Text("Nombre del vendedor") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = branchCode,
+                    onValueChange = { branchCode = it },
+                    label = { Text("Código de sucursal") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = branchName,
+                    onValueChange = { branchName = it },
+                    label = { Text("Nombre de sucursal") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (sellerName.isNotBlank() && branchCode.isNotBlank() && branchName.isNotBlank()) {
+                        onConfirm(
+                            SellerData(
+                                id = "seller_${System.currentTimeMillis()}",
+                                name = sellerName,
+                                branchCode = branchCode,
+                                branchName = branchName,
+                                isActive = true,
+                                isOnline = false,
+                                totalPayments = 0,
+                                totalAmount = "0.00",
+                                lastPayment = "Nunca"
+                            )
+                        )
+                    }
+                },
+                enabled = sellerName.isNotBlank() && branchCode.isNotBlank() && branchName.isNotBlank()
+            ) {
+                Text("Agregar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
+@Composable
+fun EditSellerDialog(
+    seller: SellerData,
+    onDismiss: () -> Unit,
+    onConfirm: (SellerData) -> Unit
+) {
+    var sellerName by remember { mutableStateOf(seller.name) }
+    var branchCode by remember { mutableStateOf(seller.branchCode) }
+    var branchName by remember { mutableStateOf(seller.branchName) }
+    var isActive by remember { mutableStateOf(seller.isActive) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Editar Vendedor",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = sellerName,
+                    onValueChange = { sellerName = it },
+                    label = { Text("Nombre del vendedor") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+                
+                OutlinedTextField(
+                    value = branchCode,
+                    onValueChange = { branchCode = it },
+                    label = { Text("Código de sucursal") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+                
+                OutlinedTextField(
+                    value = branchName,
+                    onValueChange = { branchName = it },
+                    label = { Text("Nombre de sucursal") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = isActive,
+                        onCheckedChange = { isActive = it }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Vendedor activo",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (sellerName.isNotBlank() && branchCode.isNotBlank() && branchName.isNotBlank()) {
+                        onConfirm(
+                            seller.copy(
+                                name = sellerName,
+                                branchCode = branchCode,
+                                branchName = branchName,
+                                isActive = isActive
+                            )
+                        )
+                    }
+                },
+                enabled = sellerName.isNotBlank() && branchCode.isNotBlank() && branchName.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Guardar Cambios")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+                Text("Cancelar")
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+@Composable
+fun GenerateQRDialog(
+    qrService: QRService,
+    userProfile: org.sysarp.project.service.UserProfile?,
+    activeQRCode: org.sysarp.project.service.QRCodeData?,
+    onDismiss: () -> Unit,
+    onGenerate: (org.sysarp.project.service.QRCodeData) -> Unit
+) {
+    val canGenerate = qrService.canGenerateNewQR()
+    val qrStatus = qrService.getQRCodeStatus()
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Generar Código QR",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.QrCode,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                
+                Text(
+                    text = "Genera un código QR para que los vendedores puedan afiliarse a tu sistema.",
+                    textAlign = TextAlign.Center
+                )
+                
+                // Debug info
+                if (userProfile == null) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "Debug: userProfile es null. Usando datos por defecto.",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+                
+                // Mostrar estado actual del QR
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (activeQRCode?.isExpired() == true) 
+                            MaterialTheme.colorScheme.errorContainer
+                        else MaterialTheme.colorScheme.secondaryContainer
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = qrStatus,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (activeQRCode?.isExpired() == true) 
+                            MaterialTheme.colorScheme.onErrorContainer
+                        else MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(12.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+                
+                Text(
+                    text = "El código expirará en 5 minutos.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (userProfile != null) {
+                        val qrCode = qrService.generateQRCode(
+                            businessId = userProfile.adminId ?: "default_business",
+                            businessName = userProfile.businessName ?: "Mi Negocio",
+                            branchCode = userProfile.branchCode ?: "SUC001",
+                            branchName = userProfile.branchName ?: "Sucursal Principal"
+                        )
+                        onGenerate(qrCode)
+                    }
+                },
+                enabled = canGenerate,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text(if (activeQRCode != null) "Generar Nuevo QR" else "Generar QR")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+                Text("Cancelar")
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+// Datos de ejemplo
+private fun getSellers(): List<SellerData> {
+    return listOf(
+        SellerData("seller_1", "María González", "SUC001", "Sucursal Norte", true, true, 45, "1,250.50", "hace 2 min"),
+        SellerData("seller_2", "Carlos López", "SUC002", "Sucursal Sur", true, true, 32, "890.25", "hace 5 min"),
+        SellerData("seller_3", "Ana Martínez", "SUC003", "Sucursal Centro", true, false, 28, "650.75", "hace 1 hora"),
+        SellerData("seller_4", "Luis Rodríguez", "SUC004", "Sucursal Este", false, false, 19, "420.00", "hace 2 horas")
+    )
+}
+
+@Composable
+fun GenerateAffiliationCodeDialog(
+    onDismiss: () -> Unit,
+    onGenerate: (String) -> Unit
+) {
+    var generatedCode by remember { mutableStateOf("") }
+    var showCode by remember { mutableStateOf(false) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Generar Código de Afiliación",
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Key,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "Genera un código único para que los vendedores se afilien a tu negocio.",
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                if (showCode && generatedCode.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Código generado:",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = generatedCode,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Comparte este código con tus vendedores",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (!showCode) {
+                        // Generar código único
+                        generatedCode = "AFF_${System.currentTimeMillis()}_${(1000..9999).random()}"
+                        showCode = true
+                    } else {
+                        onGenerate(generatedCode)
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Text(if (!showCode) "Generar Código" else "Confirmar")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+                Text("Cancelar")
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+data class SellerData(
+    val id: String,
+    val name: String,
+    val branchCode: String,
+    val branchName: String,
+    val isActive: Boolean,
+    val isOnline: Boolean,
+    val totalPayments: Int,
+    val totalAmount: String,
+    val lastPayment: String
+)
