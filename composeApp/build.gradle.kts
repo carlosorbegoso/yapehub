@@ -51,6 +51,7 @@ kotlin {
             // Material Icons - Usando la versión latest por defecto
             implementation(compose.materialIconsExtended)
             
+            
             // Database
             implementation(libs.sqlDelight.runtime)
             

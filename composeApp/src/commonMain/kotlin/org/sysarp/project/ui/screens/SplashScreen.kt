@@ -1,207 +1,396 @@
 package org.sysarp.project.ui.screens
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlin.math.sqrt
 
 @Composable
 fun SplashScreen(
     onSplashFinished: () -> Unit
 ) {
-    // Estados de animación
-    val infiniteTransition = rememberInfiniteTransition(label = "splash")
+    // Animaciones múltiples
+    val infiniteTransition = rememberInfiniteTransition(label = "splash_animations")
     
-    // Animación de escala del logo
-    val logoScale by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
+    // Escala pulsante del logo (más suave)
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.9f,
         targetValue = 1.1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = EaseInOut),
+            animation = tween(2000, easing = EaseInOutSine),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "logoScale"
+        label = "scale"
     )
     
-    // Animación de rotación del icono
-    val iconRotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "iconRotation"
-    )
-    
-    // Animación de opacidad del texto
-    val textAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
+    // Opacidad de los iconos secundarios (más elegante)
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = EaseInOut),
+            animation = tween(2500, easing = EaseInOutSine),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "textAlpha"
+        label = "alpha"
     )
     
-    // Animación de pulso para el fondo
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.1f,
-        targetValue = 0.3f,
+    // Animación de pulso para los iconos secundarios (más elegante)
+    val pulse by infiniteTransition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 1.2f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = EaseInOut),
+            animation = tween(2000, easing = EaseInOutSine),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "pulseAlpha"
+        label = "pulse"
     )
     
-    // Control de duración del splash
+    // Animación de entrada del texto
+    val textScale = remember { Animatable(0f) }
+    val textAlpha = remember { Animatable(0f) }
+    
+    // Efecto de carga que se ejecuta una vez
     LaunchedEffect(Unit) {
-        delay(3000) // 3 segundos de splash
+        // Animar entrada del texto
+        textScale.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(800, easing = EaseOutBack)
+        )
+        textAlpha.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(600, easing = EaseOutCubic)
+        )
+        
+        // Esperar 3 segundos total
+        delay(3000)
+        
+        // Navegar al login
         onSplashFinished()
     }
     
+    // Fondo con gradiente corporativo animado
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.linearGradient(
+                Brush.radialGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.secondary,
-                        MaterialTheme.colorScheme.tertiary
+                        Color(0xFF0D1B2A), // Azul oscuro profundo
+                        Color(0xFF1E88E5), // Azul corporativo
+                        Color(0xFF9C27B0), // Púrpura
+                        Color(0xFF673AB7)  // Púrpura oscuro
                     ),
-                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                    end = androidx.compose.ui.geometry.Offset(1000f, 1000f)
+                    radius = 1000f
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Efecto de pulso de fondo
-        Box(
-            modifier = Modifier
-                .size(400.dp)
-                .clip(CircleShape)
-                .background(
-                    Color.White.copy(alpha = pulseAlpha)
-                )
-        )
+        // Constelaciones de estrellas animadas
+        ConstellationsBackground()
         
+        // Contenido principal
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo principal con animación
-            Card(
+            // Logo principal con animaciones
+            Box(
                 modifier = Modifier
-                    .size(120.dp)
-                    .scale(logoScale),
-                shape = CircleShape,
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    .size(200.dp)
+                    .scale(scale),
+                contentAlignment = Alignment.Center
             ) {
+                // Icono central con animación de pulso
+                Icon(
+                    imageVector = Icons.Filled.Circle,
+                    contentDescription = "YapeHub Logo",
+                    tint = Color.White,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .scale(scale * 0.8f)
+                )
+                
+                // Letra Y central
+                Text(
+                    text = "Y",
+                    color = Color(0xFF1E88E5),
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .scale(scale * 0.8f)
+                )
+                
+                // Iconos secundarios con animaciones elegantes
+                // Top - Money con círculo
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .offset(y = (-70).dp)
+                        .alpha(alpha)
+                        .scale(pulse)
+                        .background(
+                            Color(0xFF4CAF50),
+                            CircleShape
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Icono con rotación - Hub/Network icon
                     Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "YapeHub Logo",
-                        modifier = Modifier
-                            .size(60.dp)
-                            .scale(1.2f),
-                        tint = MaterialTheme.colorScheme.primary
+                        imageVector = Icons.Filled.AttachMoney,
+                        contentDescription = "Money",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                // Right - Store con círculo
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .offset(x = 70.dp)
+                        .alpha(alpha)
+                        .scale(pulse)
+                        .background(
+                            Color(0xFFFF9800),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Store,
+                        contentDescription = "Store",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                // Bottom - Payment con círculo
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .offset(y = 70.dp)
+                        .alpha(alpha)
+                        .scale(pulse)
+                        .background(
+                            Color(0xFFF44336),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Payment,
+                        contentDescription = "Payment",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                // Left - People con círculo
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .offset(x = (-70).dp)
+                        .alpha(alpha)
+                        .scale(pulse)
+                        .background(
+                            Color(0xFF9C27B0),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.People,
+                        contentDescription = "People",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                // Líneas de conexión animadas
+                Canvas(
+                    modifier = Modifier.size(200.dp)
+                ) {
+                    val centerX = size.width / 2
+                    val centerY = size.height / 2
+                    val radius = 70f
+                    
+                    // Líneas de conexión con opacidad animada
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.3f * alpha),
+                        start = Offset(centerX, centerY),
+                        end = Offset(centerX, centerY - radius),
+                        strokeWidth = 2.dp.toPx()
+                    )
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.3f * alpha),
+                        start = Offset(centerX, centerY),
+                        end = Offset(centerX + radius, centerY),
+                        strokeWidth = 2.dp.toPx()
+                    )
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.3f * alpha),
+                        start = Offset(centerX, centerY),
+                        end = Offset(centerX, centerY + radius),
+                        strokeWidth = 2.dp.toPx()
+                    )
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.3f * alpha),
+                        start = Offset(centerX, centerY),
+                        end = Offset(centerX - radius, centerY),
+                        strokeWidth = 2.dp.toPx()
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Título principal
+            // Texto de la app con animación
             Text(
                 text = "YapeHub",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
                 color = Color.White,
-                fontSize = 32.sp,
-                textAlign = TextAlign.Center
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(top = 32.dp)
+                    .scale(textScale.value)
+                    .alpha(textAlpha.value)
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Subtítulo
+            // Texto descriptivo con animación
             Text(
-                text = "by SYSARP",
-                style = MaterialTheme.typography.titleMedium,
+                text = "Conectando vendedores y pagos",
                 color = Color.White.copy(alpha = 0.9f),
                 fontSize = 18.sp,
-                textAlign = TextAlign.Center
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .scale(textScale.value)
+                    .alpha(textAlpha.value)
             )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Descripción
-            Text(
-                text = "Gestión inteligente de pagos Yape",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = textAlpha),
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(modifier = Modifier.height(48.dp))
             
             // Indicador de carga
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            CircularProgressIndicator(
+                color = Color.White,
+                strokeWidth = 3.dp,
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(top = 24.dp)
+                    .alpha(textAlpha.value)
+            )
+        }
+    }
+}
+
+@Composable
+fun ConstellationsBackground() {
+    val infiniteTransition = rememberInfiniteTransition(label = "constellations")
+    
+    // Animación de parpadeo para las estrellas
+    val twinkle by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "twinkle"
+    )
+    
+    // Posiciones de las estrellas (constelaciones)
+    val starPositions = listOf(
+        Pair(0.1f, 0.2f), Pair(0.2f, 0.1f), Pair(0.3f, 0.3f),
+        Pair(0.4f, 0.1f), Pair(0.5f, 0.4f), Pair(0.6f, 0.2f),
+        Pair(0.7f, 0.1f), Pair(0.8f, 0.3f), Pair(0.9f, 0.2f),
+        Pair(0.15f, 0.4f), Pair(0.25f, 0.6f), Pair(0.35f, 0.5f),
+        Pair(0.45f, 0.7f), Pair(0.55f, 0.6f), Pair(0.65f, 0.8f),
+        Pair(0.75f, 0.5f), Pair(0.85f, 0.7f), Pair(0.95f, 0.6f),
+        Pair(0.1f, 0.8f), Pair(0.2f, 0.9f), Pair(0.3f, 0.85f),
+        Pair(0.4f, 0.9f), Pair(0.5f, 0.8f), Pair(0.6f, 0.9f),
+        Pair(0.7f, 0.85f), Pair(0.8f, 0.9f), Pair(0.9f, 0.8f)
+    )
+    
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Dibujar estrellas
+        starPositions.forEach { (x, y) ->
+            val randomDelay = (x * 1000).toInt()
+            val starTwinkle by infiniteTransition.animateFloat(
+                initialValue = 0.2f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1500 + randomDelay, easing = EaseInOutSine),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "star_$x"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .offset(
+                        x = (x * 400).dp - 2.dp,
+                        y = (y * 800).dp - 2.dp
+                    )
+                    .size(4.dp)
+                    .alpha(starTwinkle)
             ) {
-                repeat(3) { index ->
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Color.White.copy(
-                                    alpha = if (index == 0) 1f 
-                                    else if (index == 1) 0.7f 
-                                    else 0.4f
-                                )
-                            )
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = "Star",
+                    tint = Color.White,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+        
+        // Líneas de conexión entre estrellas (constelaciones)
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+            
+            // Dibujar líneas de conexión
+            for (i in 0 until starPositions.size - 1) {
+                val (x1, y1) = starPositions[i]
+                val (x2, y2) = starPositions[i + 1]
+                
+                // Solo conectar estrellas cercanas
+                val distance = sqrt(
+                    ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)).toDouble()
+                )
+                
+                if (distance < 0.3) {
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.3f * twinkle),
+                        start = Offset(
+                            x1 * canvasWidth,
+                            y1 * canvasHeight
+                        ),
+                        end = Offset(
+                            x2 * canvasWidth,
+                            y2 * canvasHeight
+                        ),
+                        strokeWidth = 1.dp.toPx()
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Texto de carga
-            Text(
-                text = "Cargando...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.8f),
-                fontSize = 14.sp
-            )
         }
     }
 }

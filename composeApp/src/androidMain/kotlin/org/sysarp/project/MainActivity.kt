@@ -35,17 +35,18 @@ class MainActivity : ComponentActivity() {
         // Inicializar el manager de lifecycle
         AppLifecycleManager.initialize(application)
         
-        // Solicitar permisos automáticamente al iniciar
-        lifecycleScope.launch {
-            android.util.Log.d("MainActivity", "Iniciando solicitud automática de permisos...")
-            kotlinx.coroutines.delay(2000) // Esperar más tiempo para que la UI se cargue completamente
-            requestAllPermissions(this@MainActivity)
-        }
-        
+        // Cargar Compose directamente (sin splash nativo)
         setContent {
             YapeHubTheme {
                 App()
             }
+        }
+        
+        // Solicitar permisos después de cargar la app
+        lifecycleScope.launch {
+            android.util.Log.d("MainActivity", "Iniciando solicitud automática de permisos...")
+            kotlinx.coroutines.delay(500)
+            requestAllPermissions(this@MainActivity)
         }
     }
     
@@ -55,7 +56,7 @@ class MainActivity : ComponentActivity() {
         
         // Verificar permisos cuando la app regresa del foreground
         lifecycleScope.launch {
-            kotlinx.coroutines.delay(500) // Pequeña pausa para que el contexto esté listo
+            kotlinx.coroutines.delay(200) // Reducido para respuesta más rápida
             requestAllPermissions(this@MainActivity)
         }
     }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Fondo espacial (igual al splash de Compose) -->
+    <path android:pathData="M0,0h108v108h-108z" android:fillColor="#0D1B2A" />
+    
+    <!-- Círculo central blanco (igual al splash) -->
+    <path android:pathData="M54,54m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" android:fillColor="#FFFFFF" />
+    
+    <!-- Letra Y central azul (igual al splash) -->
+    <path android:pathData="M44,44 L50,44 L54,52 L58,44 L64,44 L56,60 L56,68 L52,68 L52,60 Z" android:fillColor="#1E88E5" />
+    
+    <!-- Círculos de colores (igual al splash) -->
+    <!-- Top - Verde -->
+    <path android:pathData="M54,20m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" android:fillColor="#4CAF50" />
+    
+    <!-- Right - Naranja -->
+    <path android:pathData="M88,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" android:fillColor="#FF9800" />
+    
+    <!-- Bottom - Rojo -->
+    <path android:pathData="M54,88m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" android:fillColor="#F44336" />
+    
+    <!-- Left - Púrpura -->
+    <path android:pathData="M20,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" android:fillColor="#9C27B0" />
+    
+    <!-- Algunas estrellas representativas -->
+    <path android:pathData="M20,20m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" android:fillColor="#FFFFFF" android:fillAlpha="0.8" />
+    <path android:pathData="M88,20m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" android:fillColor="#FFFFFF" android:fillAlpha="0.8" />
+    <path android:pathData="M20,88m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" android:fillColor="#FFFFFF" android:fillAlpha="0.8" />
+    <path android:pathData="M88,88m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" android:fillColor="#FFFFFF" android:fillAlpha="0.8" />
+    <path android:pathData="M54,10m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" android:fillColor="#FFFFFF" android:fillAlpha="0.8" />
+    <path android:pathData="M54,98m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" android:fillColor="#FFFFFF" android:fillAlpha="0.8" />
+</vector>

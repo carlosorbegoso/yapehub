@@ -14,13 +14,9 @@ import org.sysarp.project.data.YapeTransaction
 import org.sysarp.project.data.TransactionType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import org.sysarp.project.ui.screens.HomeScreen
-import org.sysarp.project.ui.screens.PendingPaymentsScreen
-import org.sysarp.project.ui.screens.ProfileSelectionScreen
-import org.sysarp.project.ui.screens.ReportsScreen
-import org.sysarp.project.ui.screens.SettingsScreen
-import org.sysarp.project.ui.screens.SplashScreen
-import org.sysarp.project.ui.screens.UserManagementScreen
+import org.sysarp.project.navigation.NavigationManager
+import org.sysarp.project.navigation.AppContent
+import org.sysarp.project.navigation.rememberNavigationManager
 import org.sysarp.project.viewmodel.YapeViewModel
 
 @Composable
@@ -73,78 +69,15 @@ fun YapeApp() {
         YapeViewModel(repository, notificationService, userProfileRepository)
     }
     
-    val currentUser by viewModel.currentUser.collectAsState()
-    var currentScreen by remember { mutableStateOf("home") }
-    var showPendingPayments by remember { mutableStateOf(false) }
-    var showSplash by remember { mutableStateOf(true) }
+    // Sistema de navegación simple multiplataforma
+    val navigationManager = rememberNavigationManager()
     
-    // Mostrar splash screen al inicio
-    if (showSplash) {
-        SplashScreen(
-            onSplashFinished = { 
-                showSplash = false
-                // Asegurar que se muestre la pantalla de selección de perfil
-                currentScreen = "home"
-            }
-        )
-    } else if (currentUser == null) {
-        ProfileSelectionScreen(
-            userProfileRepository = userProfileRepository,
-            onProfileSelected = { user ->
-                viewModel.setCurrentUser(user)
-                currentScreen = "home"
-                // Generar pagos pendientes después de un delay para asegurar que las transacciones estén cargadas
-                viewModel.generatePendingPaymentsWithDelay()
-            }
-        )
-    } else {
-        when (currentScreen) {
-            "home" -> HomeScreen(
-                viewModel = viewModel,
-                onNavigateToReports = { currentScreen = "reports" },
-                onNavigateToSettings = { currentScreen = "settings" },
-                onNavigateToPendingPayments = { showPendingPayments = true },
-                onLogout = { 
-                    viewModel.logout()
-                    currentScreen = "home"
-                    // No necesitamos limpiar currentUser aquí, 
-                    // el ViewModel se encarga de eso
-                }
-            )
-            "reports" -> ReportsScreen(
-                viewModel = viewModel,
-                onNavigateBack = { currentScreen = "home" }
-            )
-            "settings" -> SettingsScreen(
-                viewModel = viewModel,
-                onNavigateBack = { currentScreen = "home" },
-                onNavigateToUserManagement = { currentScreen = "userManagement" }
-            )
-            "userManagement" -> UserManagementScreen(
-                userProfileRepository = userProfileRepository,
-                onNavigateBack = { currentScreen = "settings" }
-            )
-        }
-        
-        // Pantalla de pagos pendientes (overlay)
-        if (showPendingPayments) {
-            val pendingPayments by viewModel.pendingPayments.collectAsState()
-            PendingPaymentsScreen(
-                pendingPayments = viewModel.getPendingPaymentsForVendor(),
-                currentUser = currentUser,
-                canConfirmPayment = { payment ->
-                    viewModel.canVendorConfirmPayment(payment)
-                },
-                onConfirmPayment = { payment ->
-                    viewModel.confirmPayment(payment)
-                },
-                onRejectPayment = { payment ->
-                    viewModel.rejectPayment(payment)
-                },
-                onNavigateBack = { showPendingPayments = false }
-            )
-        }
-    }
+    // Contenido de la aplicación
+    AppContent(
+        navigationManager = navigationManager,
+        viewModel = viewModel,
+        userProfileRepository = userProfileRepository
+    )
 }
 
 // Función para crear el servicio de notificaciones apropiado para cada plataforma

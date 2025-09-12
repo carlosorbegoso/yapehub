@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Fondo circular azul corporativo -->
+    <path android:pathData="M54,54m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" android:fillColor="#1E88E5" />
+    
+    <!-- Círculo central Y (Hub/Admin) - Rosa -->
+    <path android:pathData="M54,54m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" android:fillColor="#FF4081" android:strokeColor="#FFFFFF" android:strokeWidth="2" />
+    
+    <!-- Letra Y central blanca -->
+    <path android:pathData="M44,44 L50,44 L54,52 L58,44 L64,44 L56,60 L56,68 L52,68 L52,60 Z" android:fillColor="#FFFFFF" />
+    
+    <!-- Vendedor 1 - Top (Verde) -->
+    <path android:pathData="M54,20m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" android:fillColor="#4CAF50" android:strokeColor="#FFFFFF" android:strokeWidth="1.5" />
+    <path android:pathData="M50,24 L58,24 M54,20 L54,28" android:strokeColor="#FFFFFF" android:strokeWidth="1" android:strokeLineCap="round" />
+    
+    <!-- Vendedor 2 - Right (Naranja) -->
+    <path android:pathData="M88,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" android:fillColor="#FF9800" android:strokeColor="#FFFFFF" android:strokeWidth="1.5" />
+    <path android:pathData="M84,58 L92,58 M88,54 L88,62" android:strokeColor="#FFFFFF" android:strokeWidth="1" android:strokeLineCap="round" />
+    
+    <!-- Vendedor 3 - Bottom (Rojo) -->
+    <path android:pathData="M54,88m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" android:fillColor="#F44336" android:strokeColor="#FFFFFF" android:strokeWidth="1.5" />
+    <path android:pathData="M50,92 L58,92 M54,88 L54,96" android:strokeColor="#FFFFFF" android:strokeWidth="1" android:strokeLineCap="round" />
+    
+    <!-- Vendedor 4 - Left (Púrpura) -->
+    <path android:pathData="M20,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" android:fillColor="#9C27B0" android:strokeColor="#FFFFFF" android:strokeWidth="1.5" />
+    <path android:pathData="M16,58 L24,58 M20,54 L20,62" android:strokeColor="#FFFFFF" android:strokeWidth="1" android:strokeLineCap="round" />
+    
+    <!-- Líneas de conexión -->
+    <path android:pathData="M54,28 L54,46" android:strokeColor="#FFFFFF" android:strokeWidth="2" android:strokeAlpha="0.7" />
+    <path android:pathData="M80,54 L62,54" android:strokeColor="#FFFFFF" android:strokeWidth="2" android:strokeAlpha="0.7" />
+    <path android:pathData="M54,80 L54,62" android:strokeColor="#FFFFFF" android:strokeWidth="2" android:strokeAlpha="0.7" />
+    <path android:pathData="M28,54 L46,54" android:strokeColor="#FFFFFF" android:strokeWidth="2" android:strokeAlpha="0.7" />
+</vector>
