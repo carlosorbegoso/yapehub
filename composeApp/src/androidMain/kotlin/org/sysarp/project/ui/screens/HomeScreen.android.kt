@@ -1,6 +1,5 @@
 package org.sysarp.project.ui.screens
 
-import android.content.Context
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -27,24 +26,6 @@ actual fun exportDatabase(databaseText: String, fileName: String) {
     if (context != null) {
         CoroutineScope(Dispatchers.Main).launch {
             LogExportService.shareLogsAsFile(context, databaseText, fileName)
-        }
-    }
-}
-
-/**
- * Implementación específica de Android para recuperar transacciones perdidas
- */
-actual fun recoverMissingTransactions() {
-    val context = ContextProvider.getContext()
-    if (context != null) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val repository = org.sysarp.project.repository.YapeTransactionRepositoryImpl(context)
-                repository.cleanupAndRecoverTransactions()
-                org.sysarp.project.service.DebugLogger.info("✅ Limpieza y recuperación completada exitosamente")
-            } catch (e: Exception) {
-                org.sysarp.project.service.DebugLogger.error("❌ Error en limpieza y recuperación: ${e.message}")
-            }
         }
     }
 }

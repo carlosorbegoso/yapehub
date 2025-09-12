@@ -4,7 +4,6 @@ import org.sysarp.project.repository.YapeTransactionRepository
 import org.sysarp.project.repository.YapeTransactionRepositoryImpl
 import org.sysarp.project.service.NotificationCaptureService
 import org.sysarp.project.service.AndroidNotificationCaptureServiceImpl
-import org.sysarp.project.service.YapeCaptureManager
 import org.sysarp.project.service.PermissionChecker
 import org.sysarp.project.service.TimberLogger
 import android.content.Context
@@ -29,10 +28,6 @@ actual fun createRepository(): YapeTransactionRepository {
     }
 }
 
-// Función para obtener el manager de captura
-fun createYapeCaptureManager(context: Context): YapeCaptureManager {
-    return YapeCaptureManager(context)
-}
 
 actual fun requestPermissionsAutomatically() {
     try {

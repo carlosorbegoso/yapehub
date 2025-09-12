@@ -13,28 +13,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.sysarp.project.repository.YapeTransactionRepository
 import org.sysarp.project.repository.YapeTransactionRepositoryImpl
-import org.sysarp.project.data.YapeNotification
 import org.sysarp.project.service.DebugLogger
 import org.sysarp.project.service.TimberLogger
 import org.sysarp.project.RepositorySingleton
 import kotlinx.datetime.Clock
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 
 class AndroidNotificationCaptureService : NotificationListenerService() {
     
     private lateinit var transactionRepository: YapeTransactionRepository
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     
-    // ELIMINADO: Lista en memoria para notificaciones - SOLO SQLite
-
     override fun onCreate() {
         super.onCreate()
-        // Usar el repositorio singleton que tiene contexto
         transactionRepository = RepositorySingleton.getRepository()
-        DebugLogger.info("🔧 Servicio de notificaciones inicializado con repositorio")
-        DebugLogger.info("🔍 Repositorio tiene contexto: ${(transactionRepository as? YapeTransactionRepositoryImpl)?.let { true } ?: false}")
-        DebugLogger.info("✅ [STORAGE] SOLO SQLite - Sin listas en memoria")
+        DebugLogger.info("🔧 Servicio de notificaciones inicializado")
     }
     
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -56,43 +48,15 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 val notificationText = extractNotificationText(sbn)
                 TimberLogger.notification("📱 Notificación de Yape detectada: $notificationText")
                 
-                val yapeNotification = YapeNotification(
-                    packageName = sbn.packageName,
-                    notificationTitle = sbn.notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString(),
-                    notificationText = notificationText ?: "",
-                    notificationBigText = sbn.notification.extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString(),
-                    notificationSubText = sbn.notification.extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString(),
-                    notificationInfoText = sbn.notification.extras.getCharSequence(Notification.EXTRA_INFO_TEXT)?.toString(),
-                    notificationSummaryText = sbn.notification.extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString(),
-                    notificationTickerText = sbn.notification.extras.getCharSequence("android.tickerText")?.toString(),
-                    notificationExtras = serializeExtras(sbn.notification.extras),
-                    notificationId = sbn.id,
-                    notificationTag = sbn.tag,
-                    notificationKey = sbn.key,
-                    notificationTimestamp = sbn.postTime,
-                    isClearable = sbn.isClearable,
-                    isOngoing = sbn.isOngoing,
-                    userHandle = sbn.user.toString(),
-                    createdAt = Clock.System.now(),
-                    isProcessed = false,
-                    processingError = null
-                )
-                
-                // ELIMINADO: Almacenamiento en lista temporal
-
-                processYapeNotification(sbn, yapeNotification)
+                processYapeNotification(sbn, notificationText)
             }
         } catch (e: Exception) {
             DebugLogger.error("Error procesando notificación: ${e.message}")
         }
     }
     
-    /**
-     * Procesa una notificación de Yape específica
-     */
-    private suspend fun processYapeNotification(sbn: StatusBarNotification, yapeNotification: YapeNotification) {
+    private suspend fun processYapeNotification(sbn: StatusBarNotification, notificationText: String?) {
         try {
-            val notificationText = extractNotificationText(sbn)
             DebugLogger.info("🔍 Procesando notificación de Yape: $notificationText")
             
             if (notificationText != null && YapeNotificationParser.isYapeNotification(notificationText)) {
@@ -118,33 +82,12 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         }
     }
     
-    /**
-     * Serializa los extras de la notificación a JSON
-     */
-    private fun serializeExtras(extras: android.os.Bundle): String? {
-        return try {
-            val extrasMap = mutableMapOf<String, String>()
-            for (key in extras.keySet()) {
-                val value = extras.get(key)
-                extrasMap[key] = value?.toString() ?: "null"
-            }
-            Json.encodeToString(extrasMap)
-        } catch (e: Exception) {
-            DebugLogger.warn("⚠️ Error serializando extras: ${e.message}")
-            null
-        }
-    }
-    
-    
-    /**
-     * Verifica si el package name corresponde a Yape
-     */
     private fun isYapePackage(packageName: String): Boolean {
         val yapePackages = listOf(
-            "com.bcp.innovacxion.yapeapp", // Package principal de Yape
-            "com.bcp.yape", // Posible variación
-            "pe.com.bcp.yape", // Otra posible variación
-            "com.bcp.innovacxion.yape" // Otra posible variación
+            "com.bcp.innovacxion.yapeapp",
+            "com.bcp.yape",
+            "pe.com.bcp.yape",
+            "com.bcp.innovacxion.yape"
         )
         
         val isYape = yapePackages.contains(packageName)
@@ -193,21 +136,5 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             context.startActivity(intent)
         }
-    }
-    
-    /**
-     * Verifica si un texto es duplicado o está contenido en los textos ya agregados
-     */
-    private fun isDuplicateText(newText: String, existingTexts: List<String>): Boolean {
-        // Verificar si el texto es exactamente igual a alguno existente
-        if (existingTexts.contains(newText)) return true
-        
-        // Verificar si el texto está contenido en alguno existente
-        if (existingTexts.any { it.contains(newText) }) return true
-        
-        // Verificar si algún texto existente está contenido en el nuevo texto
-        if (existingTexts.any { newText.contains(it) }) return true
-        
-        return false
     }
 }

@@ -55,7 +55,7 @@ object RepositorySingleton {
 
 @Composable
 fun YapeApp() {
-    // Usar el singleton del repositorio
+    // CORREGIDO: Asegurar que TODOS usen la misma instancia del repositorio
     val repository = remember {
         RepositorySingleton.getRepository()
     }
@@ -68,6 +68,7 @@ fun YapeApp() {
         createNotificationService(repository)
     }
     
+    // CORREGIDO: Usar el mismo repositorio singleton
     val viewModel = remember {
         YapeViewModel(repository, notificationService, userProfileRepository)
     }

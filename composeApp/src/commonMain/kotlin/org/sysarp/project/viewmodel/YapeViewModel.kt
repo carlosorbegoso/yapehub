@@ -57,7 +57,7 @@ class YapeViewModel(
     private var isObservingRepository = false
     
     init {
-        // ViewModel inicializado - sin referencias específicas de plataforma
+        // ViewModel inicializado
     }
     
     fun setCurrentUser(user: UserProfile) {
@@ -70,12 +70,8 @@ class YapeViewModel(
                 DebugLogger.info("🔍 ViewModel iniciando observación del repositorio...")
                 repository.getAllTransactions().collect { allTransactions ->
                     DebugLogger.info("🔄 ViewModel recibió ${allTransactions.size} transacciones del repositorio")
-                    DebugLogger.info("🔍 Detalles de transacciones recibidas:")
-                    allTransactions.forEachIndexed { index, transaction ->
-                        DebugLogger.info("  [$index] ${transaction.senderName} - ${transaction.amount} PEN - ${transaction.transactionId}")
-                    }
                     _transactions.value = allTransactions
-                    DebugLogger.info("📊 ViewModel actualizado - Transacciones en _transactions: ${_transactions.value.size}")
+                    DebugLogger.info("📊 ViewModel actualizado - Transacciones: ${_transactions.value.size}")
                     updateBusinessReports(allTransactions)
                     updateDailyReports(allTransactions)
                 }
@@ -103,27 +99,7 @@ class YapeViewModel(
         }
     }
     
-    private fun filterTransactionsByUser(transactions: List<YapeTransaction>, user: UserProfile): List<YapeTransaction> {
-        // Solo procesar transacciones RECIBIDAS (Yape solo notifica cuando recibes dinero)
-        val receivedTransactions = transactions.filter { it.transactionType == TransactionType.RECEIVED }
-        
-        return when (user.role) {
-            UserRole.ADMIN -> receivedTransactions // Admin ve todas las transacciones recibidas
-            UserRole.VENDOR -> {
-                // Vendedor solo ve transacciones que ÉL confirmó (no todas las de sus tiendas)
-                receivedTransactions.filter { transaction ->
-                    // Solo mostrar transacciones confirmadas por este vendedor
-                    _paymentConfirmations.value.any { confirmation ->
-                        confirmation.transactionId == transaction.transactionId && 
-                        confirmation.confirmedBy == user.id
-                    }
-                }
-            }
-        }
-    }
-    
     private fun updateBusinessReports(transactions: List<YapeTransaction>) {
-        // Solo procesar transacciones recibidas y procesadas
         val reports = transactions
             .filter { it.isProcessed }
             .groupBy { it.businessName ?: "Sin categorizar" }
@@ -138,7 +114,6 @@ class YapeViewModel(
     }
     
     private fun updateDailyReports(transactions: List<YapeTransaction>) {
-        // Solo procesar transacciones recibidas y procesadas
         val reports = transactions
             .filter { it.isProcessed }
             .groupBy { 
@@ -203,9 +178,8 @@ class YapeViewModel(
     
     fun exportDatabaseToText(): String {
         return try {
-            // Usar el repositorio para obtener datos directamente de SQLite
             val transactions = _transactions.value
-            DebugLogger.info("📤 Exportando base de datos - Transacciones únicas en ViewModel: ${transactions.size}")
+            DebugLogger.info("📤 Exportando base de datos - Transacciones: ${transactions.size}")
             val timestamp = kotlinx.datetime.Clock.System.now()
             val dateFormatter = kotlinx.datetime.TimeZone.currentSystemDefault()
             
@@ -214,16 +188,13 @@ class YapeViewModel(
 YAPE CHAMO - EXPORTACIÓN DE BASE DE DATOS
 ========================================
 Exportado: ${timestamp.toLocalDateTime(dateFormatter)}
-Total de transacciones únicas mostradas: ${transactions.size}
-Fuente: SQLite Local (solo transacciones únicas mostradas)
-Nota: Se guardan TODAS las transacciones en la base de datos
-      (incluyendo duplicados), pero se muestran solo las únicas
+Total de transacciones: ${transactions.size}
 ========================================
 
 """
             
             val transactionsText = if (transactions.isEmpty()) {
-                "No hay transacciones únicas en la base de datos SQLite."
+                "No hay transacciones en la base de datos SQLite."
             } else {
                 transactions.mapIndexed { index, transaction ->
                     """
@@ -231,15 +202,8 @@ Nota: Se guardan TODAS las transacciones en la base de datos
     Transaction ID: ${transaction.transactionId}
     Monto: ${transaction.amount} ${transaction.currency}
     Remitente: ${transaction.senderName}
-    Teléfono: ${transaction.senderPhone ?: "N/A"}
-    Mensaje: ${transaction.message ?: "N/A"}
-    Tipo: ${transaction.transactionType}
-    Negocio: ${transaction.businessName ?: "Sin categorizar"}
     Código de seguridad: ${transaction.securityCode ?: "N/A"}
     Creado: ${transaction.createdAt.toLocalDateTime(dateFormatter)}
-    Procesado: ${if (transaction.isProcessed) "Sí" else "No"}
-    Procesado en: ${transaction.processedAt?.toLocalDateTime(dateFormatter) ?: "N/A"}
-    Notificación original: ${transaction.rawNotification ?: "N/A"}
     ----------------------------------------
 """.trimIndent()
                 }.joinToString("\n")
@@ -251,6 +215,16 @@ Nota: Se guardan TODAS las transacciones en la base de datos
         }
     }
     
+    fun exportCompleteDatabaseToText(): String {
+        return try {
+            val completeDatabaseText = repository.exportAllTransactionsToText()
+            DebugLogger.info("📤 Exportando base de datos COMPLETA")
+            completeDatabaseText
+        } catch (e: Exception) {
+            "Error: No se pudo exportar la base de datos completa - ${e.message}"
+        }
+    }
+
     fun getDatabaseExportFileName(): String {
         val timestamp = kotlinx.datetime.Clock.System.now()
         val dateFormatter = kotlinx.datetime.TimeZone.currentSystemDefault()
@@ -270,7 +244,6 @@ Nota: Se guardan TODAS las transacciones en la base de datos
         _pendingPayments.value = emptyList()
         _paymentConfirmations.value = emptyList()
         isObservingRepository = false
-        // userProfileRepository.setCurrentUser(null) // No se puede pasar null
     }
     
     // Métodos para manejar pagos pendientes
@@ -367,12 +340,10 @@ Nota: Se guardan TODAS las transacciones en la base de datos
         val currentUser = _currentUser.value ?: return emptyList()
         
         return when (currentUser.role) {
-            UserRole.ADMIN -> _pendingPayments.value // Admin ve todos
+            UserRole.ADMIN -> _pendingPayments.value
             UserRole.VENDOR -> {
-                // Vendedor ve TODOS los pagos pendientes (sin info de clientes)
-                // pero solo puede confirmar los de sus tiendas asignadas
                 _pendingPayments.value.filter { payment ->
-                    !payment.isConfirmed // Solo pagos no confirmados
+                    !payment.isConfirmed
                 }
             }
         }
@@ -382,26 +353,21 @@ Nota: Se guardan TODAS las transacciones en la base de datos
         val currentUser = _currentUser.value ?: return false
         
         return when (currentUser.role) {
-            UserRole.ADMIN -> true // Admin puede confirmar cualquier pago
+            UserRole.ADMIN -> true
             UserRole.VENDOR -> {
-                // Vendedor solo puede confirmar pagos de sus tiendas asignadas
                 payment.businessName in currentUser.assignedStores
             }
         }
     }
     
     private suspend fun requestPermissions() {
-        // Solicitar permisos automáticamente
         requestPermissionsAutomatically()
-        
-        // Verificar permisos después de un breve delay
         kotlinx.coroutines.delay(1000)
         checkPermissions()
     }
     
     private suspend fun checkPermissions() {
         try {
-            // Verificar si los permisos están habilitados
             val hasNotificationPermission = checkNotificationPermission()
             val hasAccessibilityPermission = checkAccessibilityPermission()
             
@@ -417,37 +383,32 @@ Nota: Se guardan TODAS las transacciones en la base de datos
                         captureMessage = "🎯 Capturando notificaciones de Yape",
                         isCapturing = true
                     )
-                    android.util.Log.d("YapeViewModel", "UI updated - permissionState: GRANTED, isCapturing: true")
                 }
                 hasNotificationPermission || hasAccessibilityPermission -> {
                     val missingPermission = if (!hasNotificationPermission) "notificaciones" else "accesibilidad"
                     _uiState.value = _uiState.value.copy(
                         permissionState = PermissionState.NEEDS_SETUP,
-                        permissionMessage = "⚠️ Falta permiso de $missingPermission - Configuración necesaria",
+                        permissionMessage = "⚠️ Falta permiso de $missingPermission",
                         captureStatus = CaptureStatus.ERROR,
                         captureMessage = "🔧 Configuración incompleta"
                     )
-                    android.util.Log.d("YapeViewModel", "Partial permissions - Status updated to NEEDS_SETUP")
                 }
                 else -> {
                     _uiState.value = _uiState.value.copy(
                         permissionState = PermissionState.DENIED,
-                        permissionMessage = "❌ Ningún permiso habilitado - Configuración requerida",
+                        permissionMessage = "❌ Ningún permiso habilitado",
                         captureStatus = CaptureStatus.ERROR,
                         captureMessage = "🚫 Sin permisos para capturar"
                     )
-                    android.util.Log.d("YapeViewModel", "No permissions - Status updated to DENIED")
                 }
             }
         } catch (e: Exception) {
-            // En caso de error, mostrar estado de configuración necesaria
             _uiState.value = _uiState.value.copy(
                 permissionState = PermissionState.NEEDS_SETUP,
-                permissionMessage = "⚠️ Error verificando permisos - Configuración necesaria",
+                permissionMessage = "⚠️ Error verificando permisos",
                 captureStatus = CaptureStatus.ERROR,
                 captureMessage = "🔧 Error en verificación"
             )
-            android.util.Log.e("YapeViewModel", "Error checking permissions", e)
         }
     }
     
@@ -462,17 +423,15 @@ Nota: Se guardan TODAS las transacciones en la base de datos
     fun refreshPermissions() {
         viewModelScope.launch {
             DebugLogger.info("Manual permission refresh requested")
-            // Forzar actualización inmediata
             _uiState.value = _uiState.value.copy(
                 permissionState = PermissionState.UNKNOWN,
                 permissionMessage = "🔄 Verificando permisos...",
                 captureStatus = CaptureStatus.UNKNOWN,
                 captureMessage = "Verificando estado..."
             )
-            kotlinx.coroutines.delay(500) // Delay más largo para asegurar verificación
+            kotlinx.coroutines.delay(500)
             checkPermissions()
             
-            // Verificación adicional después de un delay
             kotlinx.coroutines.delay(1000)
             DebugLogger.info("Second verification after delay")
             checkPermissions()
@@ -480,18 +439,13 @@ Nota: Se guardan TODAS las transacciones en la base de datos
     }
     
     fun onAppResumed() {
-        // Verificar permisos automáticamente cuando la app regresa del foreground
         viewModelScope.launch {
             DebugLogger.info("App resumed - checking permissions automatically")
-            kotlinx.coroutines.delay(500) // Pequeño delay para asegurar que la configuración se haya aplicado
+            kotlinx.coroutines.delay(500)
             checkPermissions()
         }
     }
     
-    
-    /**
-     * Función para generar un registro de prueba en SQLite
-     */
     fun insertTestTransaction() {
         viewModelScope.launch {
             val testTransaction = YapeTransaction(
@@ -515,7 +469,6 @@ Nota: Se guardan TODAS las transacciones en la base de datos
             repository.insertTransaction(testTransaction)
             DebugLogger.info("✅ [TEST] Transacción de prueba insertada")
 
-            // Verificar que se guardó correctamente
             kotlinx.coroutines.delay(1000)
             val currentTransactions = _transactions.value
             val testFound = currentTransactions.any {
@@ -530,31 +483,24 @@ Nota: Se guardan TODAS las transacciones en la base de datos
         }
     }
 
-    /**
-     * Verifica la integridad completa del sistema de guardado
-     */
     fun verifyDatabaseIntegrity() {
         viewModelScope.launch {
             DebugLogger.info("🔍 [VERIFY] Iniciando verificación integral de base de datos...")
 
             try {
-                // 1. Contar transacciones en ViewModel
                 val viewModelCount = _transactions.value.size
                 DebugLogger.info("📊 [VERIFY] Transacciones en ViewModel: $viewModelCount")
 
-                // 2. Verificar flujo de datos del repositorio
                 val repositoryTransactions = repository.getAllTransactions().first()
                 val repositoryCount = repositoryTransactions.size
                 DebugLogger.info("📊 [VERIFY] Transacciones desde repositorio: $repositoryCount")
 
-                // 3. Verificar que los datos coinciden
                 if (viewModelCount == repositoryCount) {
                     DebugLogger.info("✅ [VERIFY] Coherencia entre ViewModel y Repositorio")
                 } else {
                     DebugLogger.error("❌ [VERIFY] INCONSISTENCIA: ViewModel=$viewModelCount, Repositorio=$repositoryCount")
                 }
 
-                // 4. Verificar estructura de datos
                 repositoryTransactions.forEach { transaction ->
                     if (transaction.transactionId.isEmpty()) {
                         DebugLogger.error("❌ [VERIFY] Transacción con ID vacío: ${transaction.id}")

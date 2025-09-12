@@ -28,4 +28,9 @@ interface YapeTransactionRepository {
     fun getBusinessReports(): Flow<List<BusinessReport>>
     
     fun getDailyReports(): Flow<List<DailyReport>>
+
+    // Funciones de exportación
+    fun exportTransactionsToText(): String
+
+    fun exportAllTransactionsToText(): String
 }

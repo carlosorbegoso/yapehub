@@ -10,8 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import org.sysarp.project.service.AndroidNotificationCaptureService
-import org.sysarp.project.service.YapeAccessibilityService
 import org.sysarp.project.service.TimberLogger
+import org.sysarp.project.service.PermissionChecker
 import org.sysarp.project.ui.theme.YapeHubTheme
 import org.sysarp.project.ContextProvider
 import org.sysarp.project.AppLifecycleManager
@@ -35,6 +35,13 @@ class MainActivity : ComponentActivity() {
         // Inicializar el manager de lifecycle
         AppLifecycleManager.initialize(application)
         
+        // Solicitar permisos automáticamente al iniciar
+        lifecycleScope.launch {
+            android.util.Log.d("MainActivity", "Iniciando solicitud automática de permisos...")
+            kotlinx.coroutines.delay(2000) // Esperar más tiempo para que la UI se cargue completamente
+            requestAllPermissions(this@MainActivity)
+        }
+        
         setContent {
             YapeHubTheme {
                 App()
@@ -45,24 +52,43 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         android.util.Log.d("MainActivity", "App resumed - triggering permission check")
-        // Notificar que la app regresó del foreground
-        // Esto se manejará en el ViewModel
+        
+        // Verificar permisos cuando la app regresa del foreground
+        lifecycleScope.launch {
+            kotlinx.coroutines.delay(500) // Pequeña pausa para que el contexto esté listo
+            requestAllPermissions(this@MainActivity)
+        }
     }
     
     companion object {
         fun requestAllPermissions(context: android.content.Context) {
-            // Solicitar permisos de notificaciones
-            if (!AndroidNotificationCaptureService.isNotificationServiceEnabled(context)) {
-                val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                context.startActivity(intent)
+            android.util.Log.d("MainActivity", "=== VERIFICANDO PERMISOS ===")
+            
+            val hasNotificationPermission = PermissionChecker.isNotificationServiceEnabled(context)
+            val hasAccessibilityPermission = PermissionChecker.isAccessibilityServiceEnabled(context)
+            
+            android.util.Log.d("MainActivity", "Estado actual - Notificaciones: $hasNotificationPermission, Accesibilidad: $hasAccessibilityPermission")
+            
+            // Solo abrir configuración si faltan permisos
+            if (!hasNotificationPermission) {
+                android.util.Log.d("MainActivity", "❌ Falta permiso de notificaciones - Abriendo configuración...")
+                PermissionChecker.requestNotificationPermission(context)
+            } else {
+                android.util.Log.d("MainActivity", "✅ Permiso de notificaciones ya habilitado")
             }
             
-            // Solicitar permisos de accesibilidad
-            if (!YapeAccessibilityService.isAccessibilityServiceEnabled(context)) {
-                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                context.startActivity(intent)
+            if (!hasAccessibilityPermission) {
+                android.util.Log.d("MainActivity", "❌ Falta permiso de accesibilidad - Abriendo configuración...")
+                // Esperar un poco para no abrir ambas configuraciones al mismo tiempo
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    PermissionChecker.requestAccessibilityPermission(context)
+                }, 1500)
+            } else {
+                android.util.Log.d("MainActivity", "✅ Permiso de accesibilidad ya habilitado")
+            }
+            
+            if (hasNotificationPermission && hasAccessibilityPermission) {
+                android.util.Log.d("MainActivity", "🎉 Todos los permisos están habilitados - No se necesita configuración")
             }
         }
     }

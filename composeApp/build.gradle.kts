@@ -48,6 +48,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             
+            // Material Icons
+            implementation(compose.materialIconsExtended)
+            
             // Database
             implementation(libs.sqlDelight.runtime)
             
