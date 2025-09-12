@@ -15,6 +15,9 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -140,10 +143,11 @@ fun HomeScreen(
                                         .clip(CircleShape)
                                         .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
                                 ) {
-                                    Text(
-                                        text = "↗️",
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        fontSize = 24.sp
+                                    Icon(
+                                        imageVector = Icons.Filled.Logout,
+                                        contentDescription = "Cerrar sesión",
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
@@ -524,13 +528,13 @@ fun HomeScreen(
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Add,
+                                    imageVector = Icons.Filled.Science,
                                     contentDescription = null,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "🧪 Generar Transacción de Prueba",
+                                    text = "Generar Transacción de Prueba",
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.Medium
                                 )

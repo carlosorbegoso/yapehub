@@ -2,7 +2,6 @@ package org.sysarp.project.service
 
 import org.sysarp.project.data.TransactionType
 import org.sysarp.project.data.YapeTransaction
-import org.sysarp.project.service.DebugLogger
 import kotlinx.datetime.Clock
 
 /**
@@ -10,10 +9,7 @@ import kotlinx.datetime.Clock
  */
 object YapeNotificationParser {
     
-    /**
-     * Parsea una notificación de Yape y extrae la información de la transacción
-     * Enfoque simplificado: solo extrae código, monto y usa el resto como descripción
-     */
+
     fun parseYapeNotification(
         notificationText: String,
         businessName: String? = null
@@ -132,14 +128,5 @@ object YapeNotificationParser {
         }
         return isYape
     }
-    
-    /**
-     * Limpia el texto de notificación removiendo duplicados y espacios extra
-     * Versión simplificada - solo remueve espacios extra
-     */
-    private fun cleanNotificationText(text: String): String {
-        return text
-            .replace(Regex("\\s+"), " ") // Remover espacios múltiples
-            .trim() // Remover espacios al inicio y final
-    }
+
 }
