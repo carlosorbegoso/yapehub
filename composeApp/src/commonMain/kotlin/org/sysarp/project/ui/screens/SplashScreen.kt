@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlin.math.sqrt
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun SplashScreen(
@@ -87,25 +89,25 @@ fun SplashScreen(
         onSplashFinished()
     }
     
-    // Fondo con gradiente corporativo animado
+        // Fondo profesional con gradiente corporativo
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.radialGradient(
+                    Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFF0D1B2A), // Azul oscuro profundo
-                        Color(0xFF1E88E5), // Azul corporativo
-                        Color(0xFF9C27B0), // Púrpura
-                        Color(0xFF673AB7)  // Púrpura oscuro
-                    ),
-                    radius = 1000f
+                            Color(0xFF0A0E27), // Azul marino profundo
+                            Color(0xFF1A237E), // Azul corporativo oscuro
+                            Color(0xFF283593), // Azul medio
+                            Color(0xFF3949AB)  // Azul claro
+                        ),
+                        radius = 1200f
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Constelaciones de estrellas animadas
-        ConstellationsBackground()
+            // Fondo profesional con patrones geométricos
+            ProfessionalBackground()
         
         // Contenido principal
         Column(
@@ -205,7 +207,7 @@ fun SplashScreen(
                 
                 // Left - People con círculo
                 Box(
-                    modifier = Modifier
+                        modifier = Modifier
                         .size(40.dp)
                         .offset(x = (-70).dp)
                         .alpha(alpha)
@@ -298,99 +300,151 @@ fun SplashScreen(
 }
 
 @Composable
-fun ConstellationsBackground() {
-    val infiniteTransition = rememberInfiniteTransition(label = "constellations")
+fun ProfessionalBackground() {
+    val infiniteTransition = rememberInfiniteTransition(label = "professional_bg")
     
-    // Animación de parpadeo para las estrellas
-    val twinkle by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 1f,
+    // Animación de pulso para los elementos del fondo
+    val pulse by infiniteTransition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 1.2f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = EaseInOutSine),
+            animation = tween(3000, easing = EaseInOutSine),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "twinkle"
+        label = "pulse"
     )
     
-    // Posiciones de las estrellas (constelaciones)
-    val starPositions = listOf(
-        Pair(0.1f, 0.2f), Pair(0.2f, 0.1f), Pair(0.3f, 0.3f),
-        Pair(0.4f, 0.1f), Pair(0.5f, 0.4f), Pair(0.6f, 0.2f),
-        Pair(0.7f, 0.1f), Pair(0.8f, 0.3f), Pair(0.9f, 0.2f),
-        Pair(0.15f, 0.4f), Pair(0.25f, 0.6f), Pair(0.35f, 0.5f),
-        Pair(0.45f, 0.7f), Pair(0.55f, 0.6f), Pair(0.65f, 0.8f),
-        Pair(0.75f, 0.5f), Pair(0.85f, 0.7f), Pair(0.95f, 0.6f),
-        Pair(0.1f, 0.8f), Pair(0.2f, 0.9f), Pair(0.3f, 0.85f),
-        Pair(0.4f, 0.9f), Pair(0.5f, 0.8f), Pair(0.6f, 0.9f),
-        Pair(0.7f, 0.85f), Pair(0.8f, 0.9f), Pair(0.9f, 0.8f)
+    // Animación de rotación lenta para elementos decorativos
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(20000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
     )
     
-    Box(
+    Canvas(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Dibujar estrellas
-        starPositions.forEach { (x, y) ->
-            val randomDelay = (x * 1000).toInt()
-            val starTwinkle by infiniteTransition.animateFloat(
-                initialValue = 0.2f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(1500 + randomDelay, easing = EaseInOutSine),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "star_$x"
+        val canvasWidth = size.width
+        val canvasHeight = size.height
+        
+        // Círculos decorativos profesionales
+        val circles = listOf(
+            // Círculo grande superior izquierda
+            CircleData(
+                center = Offset(canvasWidth * 0.2f, canvasHeight * 0.2f),
+                radius = 80f * pulse,
+                color = Color.White.copy(alpha = 0.05f)
+            ),
+            // Círculo mediano inferior derecha
+            CircleData(
+                center = Offset(canvasWidth * 0.8f, canvasHeight * 0.8f),
+                radius = 60f * pulse,
+                color = Color.White.copy(alpha = 0.08f)
+            ),
+            // Círculo pequeño centro derecha
+            CircleData(
+                center = Offset(canvasWidth * 0.85f, canvasHeight * 0.3f),
+                radius = 40f * pulse,
+                color = Color.White.copy(alpha = 0.06f)
+            ),
+            // Círculo pequeño inferior izquierda
+            CircleData(
+                center = Offset(canvasWidth * 0.15f, canvasHeight * 0.85f),
+                radius = 35f * pulse,
+                color = Color.White.copy(alpha = 0.07f)
             )
-            
-            Box(
-                modifier = Modifier
-                    .offset(
-                        x = (x * 400).dp - 2.dp,
-                        y = (y * 800).dp - 2.dp
-                    )
-                    .size(4.dp)
-                    .alpha(starTwinkle)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = "Star",
-                    tint = Color.White,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+        )
+        
+        // Dibujar círculos decorativos
+        circles.forEach { circle ->
+            drawCircle(
+                color = circle.color,
+                radius = circle.radius,
+                center = circle.center
+            )
         }
         
-        // Líneas de conexión entre estrellas (constelaciones)
-        Canvas(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            val canvasWidth = size.width
-            val canvasHeight = size.height
-            
-            // Dibujar líneas de conexión
-            for (i in 0 until starPositions.size - 1) {
-                val (x1, y1) = starPositions[i]
-                val (x2, y2) = starPositions[i + 1]
-                
-                // Solo conectar estrellas cercanas
-                val distance = sqrt(
-                    ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)).toDouble()
-                )
-                
-                if (distance < 0.3) {
-                    drawLine(
-                        color = Color.White.copy(alpha = 0.3f * twinkle),
-                        start = Offset(
-                            x1 * canvasWidth,
-                            y1 * canvasHeight
-                        ),
-                        end = Offset(
-                            x2 * canvasWidth,
-                            y2 * canvasHeight
-                        ),
-                        strokeWidth = 1.dp.toPx()
-                    )
-                }
-            }
+        // Líneas geométricas profesionales
+        val lineColor = Color.White.copy(alpha = 0.1f)
+        
+        // Líneas horizontales
+        for (i in 1..4) {
+            val y = canvasHeight * (i * 0.2f)
+            drawLine(
+                color = lineColor,
+                start = Offset(0f, y),
+                end = Offset(canvasWidth, y),
+                strokeWidth = 1.dp.toPx()
+            )
         }
+        
+        // Líneas verticales
+        for (i in 1..4) {
+            val x = canvasWidth * (i * 0.2f)
+            drawLine(
+                color = lineColor,
+                start = Offset(x, 0f),
+                end = Offset(x, canvasHeight),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+        
+        // Patrón de puntos profesionales
+        val dotColor = Color.White.copy(alpha = 0.15f)
+        val dotSpacing = 60f
+        
+        var x = dotSpacing
+        while (x <= canvasWidth) {
+            var y = dotSpacing
+            while (y <= canvasHeight) {
+                drawCircle(
+                    color = dotColor,
+                    radius = 2f,
+                    center = Offset(x, y)
+                )
+                y += dotSpacing
+            }
+            x += dotSpacing
+        }
+        
+        // Elemento decorativo central rotatorio
+        val centerX = canvasWidth / 2
+        val centerY = canvasHeight / 2
+        
+        // Dibujar hexágono decorativo
+        val hexRadius = 100f * pulse
+        val hexPoints = (0..5).map { i ->
+            val angle = (i * 60f + rotation) * (Math.PI / 180f)
+            Offset(
+                centerX + hexRadius * cos(angle).toFloat(),
+                centerY + hexRadius * sin(angle).toFloat()
+            )
+        }
+        
+        // Dibujar hexágono
+        drawPath(
+            path = androidx.compose.ui.graphics.Path().apply {
+                moveTo(hexPoints[0].x, hexPoints[0].y)
+                hexPoints.drop(1).forEach { point ->
+                    lineTo(point.x, point.y)
+                }
+                close()
+            },
+            color = Color.White.copy(alpha = 0.08f),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                width = 2.dp.toPx()
+            )
+        )
     }
 }
+
+// Clase de datos para los círculos decorativos
+data class CircleData(
+    val center: Offset,
+    val radius: Float,
+    val color: Color
+)

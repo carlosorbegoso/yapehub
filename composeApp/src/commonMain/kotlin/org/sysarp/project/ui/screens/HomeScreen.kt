@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
@@ -144,7 +146,7 @@ fun HomeScreen(
                                         .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Filled.Logout,
+                                        imageVector = Icons.AutoMirrored.Filled.Logout,
                                         contentDescription = "Cerrar sesión",
                                         tint = MaterialTheme.colorScheme.onPrimary,
                                         modifier = Modifier.size(24.dp)
@@ -398,7 +400,7 @@ fun HomeScreen(
                                 )
                             }
                             Icon(
-                                imageVector = Icons.Default.ArrowForward,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = "Ir a confirmar pagos",
                                 tint = MaterialTheme.colorScheme.onTertiaryContainer
                             )
