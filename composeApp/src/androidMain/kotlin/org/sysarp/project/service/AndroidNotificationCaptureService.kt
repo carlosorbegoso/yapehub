@@ -26,15 +26,15 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     private lateinit var transactionRepository: YapeTransactionRepository
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     
-    // Lista en memoria para notificaciones de Yape
-    private val yapeNotifications = mutableListOf<YapeNotification>()
-    
+    // ELIMINADO: Lista en memoria para notificaciones - SOLO SQLite
+
     override fun onCreate() {
         super.onCreate()
         // Usar el repositorio singleton que tiene contexto
         transactionRepository = RepositorySingleton.getRepository()
         DebugLogger.info("🔧 Servicio de notificaciones inicializado con repositorio")
         DebugLogger.info("🔍 Repositorio tiene contexto: ${(transactionRepository as? YapeTransactionRepositoryImpl)?.let { true } ?: false}")
+        DebugLogger.info("✅ [STORAGE] SOLO SQLite - Sin listas en memoria")
     }
     
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -78,7 +78,8 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                     processingError = null
                 )
                 
-                yapeNotifications.add(yapeNotification)
+                // ELIMINADO: Almacenamiento en lista temporal
+
                 processYapeNotification(sbn, yapeNotification)
             }
         } catch (e: Exception) {

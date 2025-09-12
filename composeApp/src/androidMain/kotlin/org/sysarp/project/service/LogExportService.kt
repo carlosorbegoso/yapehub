@@ -116,11 +116,11 @@ object LogExportService {
             DebugLogger.error("❌ Error compartiendo logs como archivo: ${e.message}")
         }
     }
-    
+
     /**
-     * Comparte los logs como archivo con nombre personalizado
+     * Comparte contenido como archivo con nombre personalizado
      */
-    suspend fun shareLogsAsFile(context: Context, logsText: String, fileName: String) = withContext(Dispatchers.IO) {
+    suspend fun shareLogsAsFile(context: Context, content: String, fileName: String) = withContext(Dispatchers.IO) {
         try {
             DebugLogger.info("📤 Iniciando compartir archivo personalizado: $fileName")
             
@@ -131,21 +131,22 @@ object LogExportService {
                 DebugLogger.info("📁 Directorio de logs creado: ${logsDir.absolutePath}")
             }
             
-            val logFile = File(logsDir, fileName)
-            
+            // Crear archivo con nombre personalizado
+            val customFile = File(logsDir, fileName)
+
             // Escribir contenido al archivo
-            FileWriter(logFile).use { writer ->
-                writer.write(logsText)
+            FileWriter(customFile).use { writer ->
+                writer.write(content)
             }
             
-            DebugLogger.info("✅ Archivo creado exitosamente: ${logFile.absolutePath}")
-            DebugLogger.info("📊 Tamaño del archivo: ${logFile.length()} bytes")
-            
+            DebugLogger.info("✅ Archivo creado exitosamente: ${customFile.absolutePath}")
+            DebugLogger.info("📊 Tamaño del archivo: ${customFile.length()} bytes")
+
             // Crear URI para compartir usando FileProvider
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
-                logFile
+                customFile
             )
             
             val intent = Intent(Intent.ACTION_SEND).apply {
@@ -155,7 +156,7 @@ object LogExportService {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             
-            val chooser = Intent.createChooser(intent, "Compartir base de datos de YapeHub")
+            val chooser = Intent.createChooser(intent, "Compartir archivo de YapeHub")
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooser)
             
@@ -165,5 +166,4 @@ object LogExportService {
             DebugLogger.error("❌ Error compartiendo archivo personalizado: ${e.message}")
         }
     }
-    
 }

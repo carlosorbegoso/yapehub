@@ -30,7 +30,8 @@ fun DebugLogPanel(
     isVisible: Boolean = false,
     onToggle: () -> Unit = {},
     onExportLogs: (String) -> Unit = {},
-    onExportDatabase: (String, String) -> Unit = { _, _ -> }
+    onExportDatabase: (String, String) -> Unit = { _, _ -> },
+    onRecoverTransactions: () -> Unit = {}
 ) {
     val logs = DebugLogger.getLogs()
     val logStats = DebugLogger.getLogStats()
@@ -153,6 +154,19 @@ fun DebugLogPanel(
                         }
                         
                         // Botón de limpiar
+                        // Botón de recuperar transacciones
+                        IconButton(
+                            onClick = onRecoverTransactions,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "🔄 Recuperar transacciones",
+                                tint = Color.Green,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
                         IconButton(
                             onClick = { DebugLogger.clearLogs() },
                             modifier = Modifier.size(32.dp)

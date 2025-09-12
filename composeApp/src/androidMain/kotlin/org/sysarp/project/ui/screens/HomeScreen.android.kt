@@ -30,3 +30,21 @@ actual fun exportDatabase(databaseText: String, fileName: String) {
         }
     }
 }
+
+/**
+ * Implementación específica de Android para recuperar transacciones perdidas
+ */
+actual fun recoverMissingTransactions() {
+    val context = ContextProvider.getContext()
+    if (context != null) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val repository = org.sysarp.project.repository.YapeTransactionRepositoryImpl(context)
+                repository.cleanupAndRecoverTransactions()
+                org.sysarp.project.service.DebugLogger.info("✅ Limpieza y recuperación completada exitosamente")
+            } catch (e: Exception) {
+                org.sysarp.project.service.DebugLogger.error("❌ Error en limpieza y recuperación: ${e.message}")
+            }
+        }
+    }
+}

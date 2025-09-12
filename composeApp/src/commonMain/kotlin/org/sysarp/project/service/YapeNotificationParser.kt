@@ -73,8 +73,8 @@ object YapeNotificationParser {
             }
             
             val transaction = YapeTransaction(
-                id = Clock.System.now().toEpochMilliseconds(),
-                transactionId = "YAPE_${Clock.System.now().toEpochMilliseconds()}_${(1000..9999).random()}",
+                id = 0, // Dejar que SQLite auto-genere el ID
+                transactionId = "TEMP_ID", // El repositorio generará el ID único
                 amount = amount,
                 currency = "PEN",
                 senderName = senderName,

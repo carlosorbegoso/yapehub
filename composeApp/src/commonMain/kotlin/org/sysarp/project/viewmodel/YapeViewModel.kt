@@ -57,7 +57,7 @@ class YapeViewModel(
     private var isObservingRepository = false
     
     init {
-        // ViewModel inicializado
+        // ViewModel inicializado - sin referencias específicas de plataforma
     }
     
     fun setCurrentUser(user: UserProfile) {
@@ -67,9 +67,15 @@ class YapeViewModel(
         if (!isObservingRepository) {
             isObservingRepository = true
             viewModelScope.launch {
+                DebugLogger.info("🔍 ViewModel iniciando observación del repositorio...")
                 repository.getAllTransactions().collect { allTransactions ->
                     DebugLogger.info("🔄 ViewModel recibió ${allTransactions.size} transacciones del repositorio")
+                    DebugLogger.info("🔍 Detalles de transacciones recibidas:")
+                    allTransactions.forEachIndexed { index, transaction ->
+                        DebugLogger.info("  [$index] ${transaction.senderName} - ${transaction.amount} PEN - ${transaction.transactionId}")
+                    }
                     _transactions.value = allTransactions
+                    DebugLogger.info("📊 ViewModel actualizado - Transacciones en _transactions: ${_transactions.value.size}")
                     updateBusinessReports(allTransactions)
                     updateDailyReports(allTransactions)
                 }
@@ -197,9 +203,9 @@ class YapeViewModel(
     
     fun exportDatabaseToText(): String {
         return try {
-            // Crear un texto de exportación básico con las transacciones actuales
+            // Usar el repositorio para obtener datos directamente de SQLite
             val transactions = _transactions.value
-            DebugLogger.info("📤 Exportando base de datos - Transacciones en ViewModel: ${transactions.size}")
+            DebugLogger.info("📤 Exportando base de datos - Transacciones únicas en ViewModel: ${transactions.size}")
             val timestamp = kotlinx.datetime.Clock.System.now()
             val dateFormatter = kotlinx.datetime.TimeZone.currentSystemDefault()
             
@@ -208,13 +214,16 @@ class YapeViewModel(
 YAPE CHAMO - EXPORTACIÓN DE BASE DE DATOS
 ========================================
 Exportado: ${timestamp.toLocalDateTime(dateFormatter)}
-Total de transacciones: ${transactions.size}
+Total de transacciones únicas mostradas: ${transactions.size}
+Fuente: SQLite Local (solo transacciones únicas mostradas)
+Nota: Se guardan TODAS las transacciones en la base de datos
+      (incluyendo duplicados), pero se muestran solo las únicas
 ========================================
 
 """
             
             val transactionsText = if (transactions.isEmpty()) {
-                "No hay transacciones en la base de datos."
+                "No hay transacciones únicas en la base de datos SQLite."
             } else {
                 transactions.mapIndexed { index, transaction ->
                     """
@@ -238,7 +247,7 @@ Total de transacciones: ${transactions.size}
             
             header + transactionsText
         } catch (e: Exception) {
-            "Error: No se pudo exportar la base de datos - ${e.message}"
+            "Error: No se pudo exportar la base de datos SQLite - ${e.message}"
         }
     }
     
@@ -314,7 +323,7 @@ Total de transacciones: ${transactions.size}
             
             // Crear confirmación
             val confirmation = PaymentConfirmation(
-                id = System.currentTimeMillis(),
+                id = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                 transactionId = pendingPayment.transactionId,
                 amount = pendingPayment.amount,
                 currency = pendingPayment.currency,
@@ -452,7 +461,7 @@ Total de transacciones: ${transactions.size}
     
     fun refreshPermissions() {
         viewModelScope.launch {
-            android.util.Log.d("YapeViewModel", "Manual permission refresh requested")
+            DebugLogger.info("Manual permission refresh requested")
             // Forzar actualización inmediata
             _uiState.value = _uiState.value.copy(
                 permissionState = PermissionState.UNKNOWN,
@@ -465,7 +474,7 @@ Total de transacciones: ${transactions.size}
             
             // Verificación adicional después de un delay
             kotlinx.coroutines.delay(1000)
-            android.util.Log.d("YapeViewModel", "Second verification after delay")
+            DebugLogger.info("Second verification after delay")
             checkPermissions()
         }
     }
@@ -473,22 +482,96 @@ Total de transacciones: ${transactions.size}
     fun onAppResumed() {
         // Verificar permisos automáticamente cuando la app regresa del foreground
         viewModelScope.launch {
-            android.util.Log.d("YapeViewModel", "App resumed - checking permissions automatically")
+            DebugLogger.info("App resumed - checking permissions automatically")
             kotlinx.coroutines.delay(500) // Pequeño delay para asegurar que la configuración se haya aplicado
             checkPermissions()
         }
     }
     
     
-    init {
-        // Escuchar eventos de lifecycle para verificar permisos automáticamente
-        try {
-            // Solo en Android
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                // Esto se implementará en la plataforma específica
+    /**
+     * Función para generar un registro de prueba en SQLite
+     */
+    fun insertTestTransaction() {
+        viewModelScope.launch {
+            val testTransaction = YapeTransaction(
+                id = 0L,
+                transactionId = "",
+                amount = 25.5,
+                currency = "PEN",
+                senderName = "Usuario de Prueba",
+                senderPhone = "+51999999999",
+                message = "Pago de prueba para verificar funcionamiento",
+                transactionType = TransactionType.RECEIVED,
+                businessName = "Negocio de Prueba",
+                createdAt = kotlinx.datetime.Clock.System.now(),
+                processedAt = null,
+                isProcessed = false,
+                rawNotification = "Confirmación de Pago Usuario de Prueba te envió un pago por S/ 25.5. El cód. de seguridad es: 123",
+                securityCode = "123"
+            )
+
+            DebugLogger.info("🧪 [TEST] Insertando transacción de prueba...")
+            repository.insertTransaction(testTransaction)
+            DebugLogger.info("✅ [TEST] Transacción de prueba insertada")
+
+            // Verificar que se guardó correctamente
+            kotlinx.coroutines.delay(1000)
+            val currentTransactions = _transactions.value
+            val testFound = currentTransactions.any {
+                it.senderName == "Usuario de Prueba" && it.amount == 25.5
             }
-        } catch (e: Exception) {
-            // Ignorar errores en iOS
+
+            if (testFound) {
+                DebugLogger.info("✅ [TEST] Verificación exitosa: transacción encontrada en lista")
+            } else {
+                DebugLogger.error("❌ [TEST] ERROR: transacción no encontrada en lista después de insertar")
+            }
+        }
+    }
+
+    /**
+     * Verifica la integridad completa del sistema de guardado
+     */
+    fun verifyDatabaseIntegrity() {
+        viewModelScope.launch {
+            DebugLogger.info("🔍 [VERIFY] Iniciando verificación integral de base de datos...")
+
+            try {
+                // 1. Contar transacciones en ViewModel
+                val viewModelCount = _transactions.value.size
+                DebugLogger.info("📊 [VERIFY] Transacciones en ViewModel: $viewModelCount")
+
+                // 2. Verificar flujo de datos del repositorio
+                val repositoryTransactions = repository.getAllTransactions().first()
+                val repositoryCount = repositoryTransactions.size
+                DebugLogger.info("📊 [VERIFY] Transacciones desde repositorio: $repositoryCount")
+
+                // 3. Verificar que los datos coinciden
+                if (viewModelCount == repositoryCount) {
+                    DebugLogger.info("✅ [VERIFY] Coherencia entre ViewModel y Repositorio")
+                } else {
+                    DebugLogger.error("❌ [VERIFY] INCONSISTENCIA: ViewModel=$viewModelCount, Repositorio=$repositoryCount")
+                }
+
+                // 4. Verificar estructura de datos
+                repositoryTransactions.forEach { transaction ->
+                    if (transaction.transactionId.isEmpty()) {
+                        DebugLogger.error("❌ [VERIFY] Transacción con ID vacío: ${transaction.id}")
+                    }
+                    if (transaction.senderName.isNullOrEmpty()) {
+                        DebugLogger.warn("⚠️ [VERIFY] Transacción sin nombre de remitente: ${transaction.id}")
+                    }
+                    if (transaction.amount <= 0) {
+                        DebugLogger.error("❌ [VERIFY] Transacción con monto inválido: ${transaction.id} - ${transaction.amount}")
+                    }
+                }
+
+                DebugLogger.info("✅ [VERIFY] Verificación integral completada")
+
+            } catch (e: Exception) {
+                DebugLogger.error("❌ [VERIFY] Error durante verificación: ${e.message}")
+            }
         }
     }
 }

@@ -36,7 +36,6 @@ kotlin {
             // Core Libraries
             implementation(libs.timber)
             implementation(libs.accompanist.permissions)
-            implementation(libs.androidx.work.runtime)
         }
         
         commonMain.dependencies {

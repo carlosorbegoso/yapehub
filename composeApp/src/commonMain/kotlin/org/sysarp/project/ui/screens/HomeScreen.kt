@@ -137,11 +137,10 @@ fun HomeScreen(
                                         .clip(CircleShape)
                                         .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ExitToApp,
-                                        contentDescription = "Cerrar sesión",
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(24.dp)
+                                    Text(
+                                        text = "↗️",
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        fontSize = 24.sp
                                     )
                                 }
                             }
@@ -317,14 +316,12 @@ fun HomeScreen(
                         TransactionStatsCard(
                             title = "Total Recibido",
                             amount = totalReceived,
-                            icon = Icons.Default.Star,
                             modifier = Modifier.weight(1f)
                         )
                         
                         TransactionStatsCard(
                             title = "Hoy",
                             amount = todayTotal,
-                            icon = Icons.Default.DateRange,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -432,10 +429,11 @@ fun HomeScreen(
                             )
                         ) {
                             Text("Ver todas")
-                            Icon(
-                                imageVector = Icons.Default.ArrowForward,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                            Text(
+                                text = "→",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(start = 4.dp)
                             )
                         }
                     }
@@ -454,9 +452,15 @@ fun HomeScreen(
             ) {
                 TransactionCard(
                     transaction = transaction,
-                    onMarkAsProcessed = { _ -> /* TODO: Implementar */ },
-                    onAssignBusiness = { _, _ -> /* TODO: Implementar */ },
-                    onDelete = { _ -> /* TODO: Implementar */ },
+                    onMarkAsProcessed = { transactionId ->
+                        viewModel.markTransactionAsProcessed(transactionId)
+                    },
+                    onAssignBusiness = { transactionId, businessName ->
+                        viewModel.assignTransactionToBusiness(transactionId, businessName)
+                    },
+                    onDelete = { transactionId ->
+                        viewModel.deleteTransaction(transactionId)
+                    },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
             }
@@ -499,9 +503,62 @@ fun HomeScreen(
                             Text(
                                 text = "Las transacciones de Yape aparecerán aquí cuando lleguen",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Botón para generar transacción de prueba
+                            Button(
+                                onClick = {
+                                    viewModel.insertTestTransaction()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "🧪 Generar Transacción de Prueba",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            // Botón para verificar integridad de base de datos
+                            Button(
+                                onClick = {
+                                    // Ejecutar verificación de integridad
+                                    viewModel.verifyDatabaseIntegrity()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiary
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "🔍 Verificar Integridad BD",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
                         }
                     }
                 }
@@ -527,13 +584,18 @@ fun HomeScreen(
                 val databaseText = viewModel.exportDatabaseToText()
                 exportDatabase(databaseText, fileName)
             },
+            onRecoverTransactions = {
+                // Ejecutar limpieza y recuperación de transacciones
+                recoverMissingTransactions()
+            },
             modifier = Modifier.align(Alignment.BottomEnd)
         )
     }
 }
 
-// Función expect para exportar logs (implementada en cada plataforma)
+// Funciones específicas de plataforma
 expect fun exportLogs(logsText: String)
 
-// Función expect para exportar base de datos (implementada en cada plataforma)
 expect fun exportDatabase(databaseText: String, fileName: String)
+
+expect fun recoverMissingTransactions()

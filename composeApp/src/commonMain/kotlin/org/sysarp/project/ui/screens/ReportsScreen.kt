@@ -8,23 +8,29 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.sysarp.project.data.BusinessReport
 import org.sysarp.project.data.DailyReport
 import org.sysarp.project.viewmodel.YapeViewModel
-import java.text.DecimalFormat
+
+// Función helper para formatear montos sin DecimalFormat
+private fun formatAmount(amount: Double): String {
+    // Convertir a string con 2 decimales
+    val wholePart = amount.toInt()
+    val decimalPart = ((amount - wholePart) * 100).toInt()
+    val baseString = "$wholePart.${decimalPart.toString().padStart(2, '0')}"
+
+    // Agregar separadores de miles
+    return baseString.replace(Regex("(\\d)(?=(\\d{3})+(?!\\d))"), "$1,")
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +60,11 @@ fun ReportsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Text(
+                            text = "←",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -100,7 +110,7 @@ fun ReportsScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "S/ ${DecimalFormat("#,##0.00").format(totalAmount)}",
+                                text = "S/ ${formatAmount(totalAmount)}",
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -234,11 +244,11 @@ fun BusinessReportsTab(businessReports: List<BusinessReport>) {
                             .padding(40.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = null,
+                        Text(
+                            text = "ℹ️",
+                            style = MaterialTheme.typography.displaySmall,
                             modifier = Modifier.size(80.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
@@ -284,11 +294,11 @@ fun DailyReportsTab(dailyReports: List<DailyReport>) {
                             .padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
-                            Icons.Default.DateRange,
-                            contentDescription = null,
+                        Text(
+                            text = "📅",
+                            style = MaterialTheme.typography.displaySmall,
                             modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
@@ -347,18 +357,14 @@ fun ExportTab(transactions: List<org.sysarp.project.data.YapeTransaction>) {
                         onClick = { /* TODO: Implementar exportación CSV */ },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.Info, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("CSV")
+                        Text("📄 CSV")
                     }
                     
                     Button(
                         onClick = { /* TODO: Implementar exportación PDF */ },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.Info, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("PDF")
+                        Text("📑 PDF")
                     }
                 }
             }
@@ -399,7 +405,7 @@ fun ExportTab(transactions: List<org.sysarp.project.data.YapeTransaction>) {
                 ) {
                     Text("Monto total:")
                     Text(
-                        text = "S/ ${DecimalFormat("#,##0.00").format(totalAmount)}",
+                        text = "S/ ${formatAmount(totalAmount)}",
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -445,11 +451,9 @@ fun BusinessReportCard(report: BusinessReport) {
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
+                    Text(
+                        text = "💼",
+                        style = MaterialTheme.typography.titleLarge
                     )
                 }
                 
@@ -474,7 +478,7 @@ fun BusinessReportCard(report: BusinessReport) {
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = "S/ ${DecimalFormat("#,##0.00").format(animatedAmount)}",
+                    text = "S/ ${formatAmount(animatedAmount.toDouble())}",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -520,7 +524,7 @@ fun DailyReportCard(report: DailyReport) {
             }
             
             Text(
-                text = "S/ ${DecimalFormat("#,##0.00").format(report.totalAmount)}",
+                text = "S/ ${formatAmount(report.totalAmount)}",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
