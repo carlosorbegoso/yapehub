@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YapeHub</string>
+    <string name="accessibility_service_description">YapeHub utiliza el servicio de accesibilidad para capturar notificaciones de Yape y procesar pagos automáticamente.</string>
+</resources>
