@@ -1,333 +1,203 @@
 package org.sysarp.project.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.sysarp.project.data.Store
-import org.sysarp.project.data.UserProfile
-import org.sysarp.project.data.UserRole
-import org.sysarp.project.repository.UserProfileRepository
+import org.sysarp.project.service.AuthService
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileSelectionScreen(
-    userProfileRepository: UserProfileRepository,
-    onProfileSelected: (UserProfile) -> Unit
+    authService: AuthService,
+    onAdminSelected: () -> Unit,
+    onSellerSelected: () -> Unit
 ) {
-    val users by userProfileRepository.getAllUsers().collectAsState(initial = emptyList())
-    val stores by userProfileRepository.getAllStores().collectAsState(initial = emptyList())
+    var selectedType by remember { mutableStateOf<UserType?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
     
-    var selectedUser by remember { mutableStateOf<UserProfile?>(null) }
-    var showStores by remember { mutableStateOf(false) }
-    
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        "Seleccionar Perfil",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Header
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Text(
-                            text = "YapeHub",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        
-                        Text(
-                            text = "Selecciona tu perfil para acceder",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                            textAlign = TextAlign.Center
-                        )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Logo y título
+        Icon(
+            imageVector = Icons.Filled.Circle,
+            contentDescription = "YapeHub Logo",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(80.dp)
+        )
+        
+        Text(
+            text = "Y",
+            color = MaterialTheme.colorScheme.onPrimary,
+            fontSize = 48.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.offset(y = (-40).dp)
+        )
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        Text(
+            text = "Bienvenido a YapeHub",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = "Selecciona tu tipo de usuario",
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(48.dp))
+        
+        // Opciones de usuario
+        UserTypeCard(
+            type = UserType.ADMIN,
+            title = "Administrador",
+            subtitle = "Gestiona tu negocio y vendedores",
+            icon = Icons.Filled.Business,
+            isSelected = selectedType == UserType.ADMIN,
+            onClick = { selectedType = UserType.ADMIN }
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        UserTypeCard(
+            type = UserType.SELLER,
+            title = "Vendedor",
+            subtitle = "Recibe y confirma pagos",
+            icon = Icons.Filled.Person,
+            isSelected = selectedType == UserType.SELLER,
+            onClick = { selectedType = UserType.SELLER }
+        )
+        
+        Spacer(modifier = Modifier.height(48.dp))
+        
+        // Botón de continuar
+        Button(
+            onClick = {
+                if (selectedType != null) {
+                    isLoading = true
+                    when (selectedType) {
+                        UserType.ADMIN -> onAdminSelected()
+                        UserType.SELLER -> onSellerSelected()
+                        null -> {}
                     }
                 }
-            }
-            
-            // Lista de usuarios
-            items(users) { user ->
-                UserProfileCard(
-                    user = user,
-                    isSelected = selectedUser?.id == user.id,
-                    onClick = { 
-                        selectedUser = user
-                        if (user.role == UserRole.ADMIN) {
-                            onProfileSelected(user)
-                        } else {
-                            showStores = true
-                        }
-                    }
+            },
+            enabled = selectedType != null && !isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = "Continuar",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
-            
-            // Espacio adicional
-            item {
-                Spacer(modifier = Modifier.height(40.dp))
-            }
         }
-    }
-    
-    // Diálogo para seleccionar tienda (para vendedores)
-    if (showStores && selectedUser != null) {
-        StoreSelectionDialog(
-            user = selectedUser!!,
-            stores = stores,
-            userProfileRepository = userProfileRepository,
-            onStoreSelected = { store ->
-                onProfileSelected(selectedUser!!)
-                showStores = false
-            },
-            onDismiss = { showStores = false }
-        )
     }
 }
 
 @Composable
-fun UserProfileCard(
-    user: UserProfile,
+fun UserTypeCard(
+    type: UserType,
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) 
-                MaterialTheme.colorScheme.primaryContainer 
-            else 
-                MaterialTheme.colorScheme.surface
+                MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 2.dp
-        ),
-        onClick = onClick
+        border = if (isSelected) 
+            CardDefaults.outlinedCardBorder().copy(
+                brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary)
+            ) 
+        else CardDefaults.outlinedCardBorder().copy(
+            brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.outline)
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                if (user.role == UserRole.ADMIN) 
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                else 
-                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-                                if (user.role == UserRole.ADMIN) 
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                else 
-                                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
-                            )
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (user.role == UserRole.ADMIN) Icons.Default.Settings else Icons.Default.Person,
-                    contentDescription = null,
-                    tint = if (user.role == UserRole.ADMIN) 
-                        MaterialTheme.colorScheme.primary 
-                    else 
-                        MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                tint = if (isSelected) 
+                    MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
             
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(20.dp))
             
-            // Información del usuario
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = user.name,
-                    style = MaterialTheme.typography.titleMedium,
+                    text = title,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isSelected) 
-                        MaterialTheme.colorScheme.onPrimaryContainer 
-                    else 
-                        MaterialTheme.colorScheme.onSurface
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else MaterialTheme.colorScheme.onSurface
                 )
                 
                 Text(
-                    text = user.email,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = subtitle,
+                    fontSize = 14.sp,
                     color = if (isSelected) 
-                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                    else 
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = if (user.role == UserRole.ADMIN) "Administrador" else "Vendedor",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (user.role == UserRole.ADMIN) 
-                        Color(0xFF4CAF50) 
-                    else 
-                        Color(0xFF2196F3),
-                    fontWeight = FontWeight.Medium
+                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             
-            // Icono de selección
             if (isSelected) {
                 Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            } else {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = "Seleccionado",
+                    modifier = Modifier.size(28.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }
     }
 }
 
-@Composable
-fun StoreSelectionDialog(
-    user: UserProfile,
-    stores: List<Store>,
-    userProfileRepository: UserProfileRepository,
-    onStoreSelected: (Store) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val userStores by userProfileRepository.getStoresForUser(user.id).collectAsState(initial = emptyList())
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                "Seleccionar Tienda",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column {
-                Text(
-                    "Hola ${user.name}, selecciona la tienda donde trabajas:",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                userStores.forEach { store ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        onClick = { onStoreSelected(store) },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = store.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        },
-        shape = RoundedCornerShape(20.dp)
-    )
+enum class UserType {
+    ADMIN, SELLER
 }

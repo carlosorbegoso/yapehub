@@ -18,6 +18,7 @@ import org.sysarp.project.navigation.NavigationManager
 import org.sysarp.project.navigation.AppContent
 import org.sysarp.project.navigation.rememberNavigationManager
 import org.sysarp.project.viewmodel.YapeViewModel
+import org.sysarp.project.service.AuthService
 
 @Composable
 fun App() {
@@ -60,6 +61,10 @@ fun YapeApp() {
         UserProfileRepository()
     }
     
+    val authService = remember {
+        AuthService()
+    }
+    
     val notificationService = remember {
         createNotificationService(repository)
     }
@@ -76,7 +81,8 @@ fun YapeApp() {
     AppContent(
         navigationManager = navigationManager,
         viewModel = viewModel,
-        userProfileRepository = userProfileRepository
+        userProfileRepository = userProfileRepository,
+        authService = authService
     )
 }
 

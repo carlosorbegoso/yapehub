@@ -7,12 +7,14 @@ import kotlinx.coroutines.flow.asStateFlow
 
 sealed class Screen {
     object Splash : Screen()
+    object ProfileSelection : Screen()
+    object AdminRegistration : Screen()
+    object SellerAffiliation : Screen()
     object Main : Screen()
     object Reports : Screen()
     object Settings : Screen()
     object PendingPayments : Screen()
     object UserManagement : Screen()
-    object ProfileSelection : Screen()
 }
 
 class NavigationManager {
@@ -43,6 +45,18 @@ class NavigationManager {
     }
     
     fun onSplashFinished() {
+        _currentScreen.value = Screen.ProfileSelection
+    }
+    
+    fun navigateToAdminRegistration() {
+        _currentScreen.value = Screen.AdminRegistration
+    }
+    
+    fun navigateToSellerAffiliation() {
+        _currentScreen.value = Screen.SellerAffiliation
+    }
+    
+    fun navigateBackToProfileSelection() {
         _currentScreen.value = Screen.ProfileSelection
     }
     
