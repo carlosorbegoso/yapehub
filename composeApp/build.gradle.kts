@@ -36,6 +36,9 @@ kotlin {
             // Core Libraries
             implementation(libs.timber)
             implementation(libs.accompanist.permissions)
+            
+            // Ktor Android
+            implementation("io.ktor:ktor-client-android:2.3.7")
         }
         
         commonMain.dependencies {
@@ -59,6 +62,15 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
+            
+            // Ktor Client
+            implementation("io.ktor:ktor-client-core:2.3.7")
+            implementation("io.ktor:ktor-client-json:2.3.7")
+            implementation("io.ktor:ktor-client-serialization:2.3.7")
+            implementation("io.ktor:ktor-client-logging:2.3.7")
+            implementation("io.ktor:ktor-client-auth:2.3.7")
+            implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
         }
         iosMain.dependencies {
             implementation(libs.sqlDelight.driver.ios)

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -30,6 +31,14 @@ fun AdminDashboardScreen(
     onNavigateToDeactivationRequests: () -> Unit,
     onLogout: () -> Unit
 ) {
+    // Verificar sesión al entrar a la pantalla
+    LaunchedEffect(Unit) {
+        authService.updateActivity()
+        if (!authService.isSessionValid()) {
+            println("⏰ [DASHBOARD] Sesión expirada, cerrando sesión...")
+            onLogout()
+        }
+    }
     val userProfile by authService.userProfile.collectAsState()
     
     Scaffold(

@@ -2,6 +2,7 @@ package org.sysarp.project.navigation
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import org.sysarp.project.ui.screens.HomeScreen
 import org.sysarp.project.ui.screens.ReportsScreen
 import org.sysarp.project.ui.screens.SettingsScreen
@@ -49,7 +50,10 @@ fun AppContent(
             SettingsScreen(
                 authService = authService,
                 onNavigateBack = navigationManager::navigateBack,
-                onLogout = { navigationManager.navigateToProfileSelection() }
+                onLogout = { 
+                    // Llamar al logout real del AuthService
+                    // La navegación se manejará automáticamente por el AuthState
+                }
             )
         }
         is Screen.PendingPayments -> {

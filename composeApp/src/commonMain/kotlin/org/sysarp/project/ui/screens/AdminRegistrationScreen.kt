@@ -1,8 +1,7 @@
 package org.sysarp.project.ui.screens
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -11,9 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -21,8 +17,11 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import org.sysarp.project.service.AuthService
+import org.sysarp.project.utils.SuccessHandler
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminRegistrationScreen(
     authService: AuthService,
@@ -30,20 +29,44 @@ fun AdminRegistrationScreen(
     onBackPressed: () -> Unit
 ) {
     var businessName by remember { mutableStateOf("") }
-    var ownerName by remember { mutableStateOf("") }
-    var phoneNumber by remember { mutableStateOf("") }
-    var activationCode by remember { mutableStateOf("") }
+    var businessType by remember { mutableStateOf("RESTAURANT") }
+    var ruc by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
+    var contactName by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var successMessage by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+    // Estados de validación por campo
+    var businessTypeError by remember { mutableStateOf("") }
+    var emailError by remember { mutableStateOf("") }
+    var rucError by remember { mutableStateOf("") }
+    var passwordError by remember { mutableStateOf("") }
+    
+    // Mostrar mensaje de éxito
+    SuccessHandler.ShowSuccessMessage(
+        message = successMessage,
+        snackbarHostState = snackbarHostState
+    )
+    
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+        item {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -70,9 +93,9 @@ fun AdminRegistrationScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
+        }
+        
+        item {
             // Logo
             Icon(
                 imageVector = Icons.Filled.Business,
@@ -80,9 +103,9 @@ fun AdminRegistrationScreen(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(64.dp)
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
+        }
+        
+        item {
             Text(
                 text = "Configura tu negocio",
                 fontSize = 18.sp,
@@ -90,9 +113,9 @@ fun AdminRegistrationScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
+        }
+        
+        item {
             // Formulario
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -122,26 +145,145 @@ fun AdminRegistrationScreen(
                         }
                     )
                     
-                    // Nombre del propietario
+                    // Tipo de negocio - Dropdown
+                    var expanded by remember { mutableStateOf(false) }
+                    val businessTypes = listOf(
+                        "RESTAURANT" to "Restaurante",
+                        "RETAIL" to "Retail/Tienda",
+                        "SERVICES" to "Servicios",
+                        "OTHER" to "Otro"
+                    )
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = businessTypes.find { it.first == businessType }?.second ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Tipo de negocio") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Category,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            isError = businessTypeError.isNotEmpty(),
+                            supportingText = if (businessTypeError.isNotEmpty()) {
+                                { Text(businessTypeError, color = MaterialTheme.colorScheme.error) }
+                            } else null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+                        
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            businessTypes.forEach { (value, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        businessType = value
+                                        businessTypeError = ""
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    // RUC
                     OutlinedTextField(
-                        value = ownerName,
-                        onValueChange = { ownerName = it },
-                        label = { Text("Nombre del propietario") },
+                        value = ruc,
+                        onValueChange = { 
+                            ruc = it
+                            rucError = ""
+                        },
+                        label = { Text("RUC") },
                         modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = rucError.isNotEmpty(),
+                        supportingText = if (rucError.isNotEmpty()) {
+                            { Text(rucError, color = MaterialTheme.colorScheme.error) }
+                        } else null,
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Filled.Person,
+                                imageVector = Icons.Filled.Badge,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     )
                     
-                    // Número de teléfono
+                    // Email
                     OutlinedTextField(
-                        value = phoneNumber,
-                        onValueChange = { phoneNumber = it },
-                        label = { Text("Número de teléfono") },
+                        value = email,
+                        onValueChange = { 
+                            email = it
+                            emailError = ""
+                        },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        isError = emailError.isNotEmpty(),
+                        supportingText = if (emailError.isNotEmpty()) {
+                            { Text(emailError, color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Email,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+                    
+                    // Contraseña
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { 
+                            password = it
+                            passwordError = ""
+                        },
+                        label = { Text("Contraseña") },
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        isError = passwordError.isNotEmpty(),
+                        supportingText = if (passwordError.isNotEmpty()) {
+                            { Text(passwordError, color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Lock,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { showPassword = !showPassword }) {
+                                Icon(
+                                    imageVector = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    )
+                    
+                    // Teléfono
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it },
+                        label = { Text("Teléfono") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         leadingIcon = {
@@ -153,75 +295,114 @@ fun AdminRegistrationScreen(
                         }
                     )
                     
-                    // Código de activación (opcional)
+                    // Dirección
                     OutlinedTextField(
-                        value = activationCode,
-                        onValueChange = { activationCode = it },
-                        label = { Text("Código de activación (opcional)") },
+                        value = address,
+                        onValueChange = { address = it },
+                        label = { Text("Dirección") },
                         modifier = Modifier.fillMaxWidth(),
-                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Filled.Key,
+                                imageVector = Icons.Filled.LocationOn,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = { showPassword = !showPassword }) {
-                                Icon(
-                                    imageVector = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                                    contentDescription = if (showPassword) "Ocultar" else "Mostrar",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
                         }
                     )
                     
-                    // Mensaje de error
+                    // Nombre de contacto
+                    OutlinedTextField(
+                        value = contactName,
+                        onValueChange = { contactName = it },
+                        label = { Text("Nombre de contacto") },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+                    
+                    // Mensaje de error general
                     if (errorMessage.isNotEmpty()) {
                         Card(
+                            modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer
-                            ),
-                            shape = RoundedCornerShape(8.dp)
+                            )
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Error,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = errorMessage,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    fontSize = 14.sp
-                                )
-                            }
+                            Text(
+                                text = errorMessage,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
                     
                     // Botón de registro
                     Button(
                         onClick = {
-                            if (validateForm(businessName, ownerName, phoneNumber)) {
+                            // Validar formulario y obtener mensaje específico de error
+                            val validationResult = validateFormWithMessage(businessName, businessType, ruc, email, password, phone, address, contactName)
+                            
+                            if (validationResult.isValid) {
                                 isLoading = true
                                 errorMessage = ""
                                 
-                                // Simular registro
-                                // TODO: Implementar registro real con AuthService
-                                onRegistrationSuccess()
+                                // Registrar administrador usando la API real
+                                coroutineScope.launch {
+                                    authService.registerAdmin(
+                                        businessName = businessName.trim(),
+                                        businessType = businessType, // Ya está en mayúsculas
+                                        ruc = ruc.trim(),
+                                        email = email.trim(),
+                                        password = password,
+                                        phone = phone.trim(),
+                                        address = address.trim(),
+                                        contactName = contactName.trim()
+                                    ).fold(
+                                        onSuccess = { response ->
+                                            isLoading = false
+                                            if (response.success) {
+                                                successMessage = SuccessHandler.Messages.ADMIN_REGISTERED
+                                                onRegistrationSuccess()
+                                            } else {
+                                                errorMessage = response.message
+                                            }
+                                        },
+                                        onFailure = { error ->
+                                            isLoading = false
+                                            val errorMsg = error.message ?: "Error desconocido"
+                                            
+                                            // Manejar errores específicos por campo
+                                            when {
+                                                errorMsg.contains("Business type must be one of") -> {
+                                                    businessTypeError = "Tipo de negocio debe ser: RESTAURANT, RETAIL, SERVICES, OTHER"
+                                                }
+                                                errorMsg.contains("Invalid email format") -> {
+                                                    emailError = "Formato de email inválido"
+                                                }
+                                                errorMsg.contains("Email already exists") -> {
+                                                    emailError = "Este email ya está registrado"
+                                                }
+                                                errorMsg.contains("RUC") -> {
+                                                    rucError = "RUC inválido"
+                                                }
+                                                errorMsg.contains("Password") -> {
+                                                    passwordError = "Contraseña no cumple los requisitos"
+                                                }
+                                                else -> {
+                                                    errorMessage = errorMsg
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
                             } else {
-                                errorMessage = "Por favor completa todos los campos obligatorios"
+                                errorMessage = validationResult.errorMessage
                             }
                         },
                         enabled = !isLoading,
@@ -246,9 +427,9 @@ fun AdminRegistrationScreen(
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
+        }
+        
+        item {
             // Información adicional
             Text(
                 text = "Al registrarte como administrador, podrás gestionar vendedores y recibir notificaciones de pagos Yape.",
@@ -257,14 +438,44 @@ fun AdminRegistrationScreen(
                 textAlign = TextAlign.Center
             )
         }
+        }
+    }
 }
 
-private fun validateForm(
+data class ValidationResult(
+    val isValid: Boolean,
+    val errorMessage: String
+)
+
+private fun validateFormWithMessage(
     businessName: String,
-    ownerName: String,
-    phoneNumber: String
-): Boolean {
-    return businessName.isNotBlank() && 
-           ownerName.isNotBlank() && 
-           phoneNumber.isNotBlank()
+    businessType: String,
+    ruc: String,
+    email: String,
+    password: String,
+    phone: String,
+    address: String,
+    contactName: String
+): ValidationResult {
+    val validBusinessTypes = listOf("RESTAURANT", "RETAIL", "SERVICES", "OTHER")
+    
+    // Validación sin logs de debug
+    
+    // Validaciones específicas con mensajes
+    when {
+        businessName.isBlank() -> return ValidationResult(false, "El nombre del negocio es obligatorio")
+        businessType.isBlank() -> return ValidationResult(false, "Debes seleccionar un tipo de negocio")
+        businessType !in validBusinessTypes -> return ValidationResult(false, "Tipo de negocio inválido. Debe ser: RESTAURANT, RETAIL, SERVICES, OTHER")
+        ruc.isBlank() -> return ValidationResult(false, "El RUC es obligatorio")
+        ruc.length < 8 -> return ValidationResult(false, "El RUC debe tener al menos 8 caracteres")
+        email.isBlank() -> return ValidationResult(false, "El email es obligatorio")
+        !email.contains("@") -> return ValidationResult(false, "El formato del email no es válido")
+        password.isBlank() -> return ValidationResult(false, "La contraseña es obligatoria")
+        password.length < 8 -> return ValidationResult(false, "La contraseña debe tener al menos 8 caracteres")
+        phone.isBlank() -> return ValidationResult(false, "El teléfono es obligatorio")
+        address.isBlank() -> return ValidationResult(false, "La dirección es obligatoria")
+        contactName.isBlank() -> return ValidationResult(false, "El nombre de contacto es obligatorio")
+    }
+    
+    return ValidationResult(true, "")
 }

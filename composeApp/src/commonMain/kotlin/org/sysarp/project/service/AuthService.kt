@@ -6,9 +6,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-// import org.sysarp.project.ContextProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.sysarp.project.data.*
 
 @Serializable
 data class AuthRequest(
@@ -98,10 +98,14 @@ class AuthService {
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
     
-    private val json = Json { ignoreUnknownKeys = true }
+    // Almacenamiento de tokens y sesión
+    private var _accessToken: String? = null
+    private var _refreshToken: String? = null
+    private var _sessionExpiryTime: Long? = null // Timestamp de expiración
+    private var _lastActivityTime: Long? = null // Última actividad del usuario
     
-    // TODO: Configurar URL base del backend
-    private val baseUrl = "https://your-backend-url.com/api"
+    private val json = Json { ignoreUnknownKeys = true }
+    private val httpService = HttpService()
     
     sealed class AuthState {
         object NotAuthenticated : AuthState()
@@ -111,66 +115,153 @@ class AuthService {
     }
     
     suspend fun registerAdmin(
-        deviceId: String,
-        deviceFingerprint: String,
-        deviceName: String,
         businessName: String,
-        ownerName: String,
-        phoneNumber: String,
-        activationCode: String? = null
-    ): Result<AuthResponse> = withContext(Dispatchers.IO) {
+        businessType: String,
+        ruc: String,
+        email: String,
+        password: String,
+        phone: String,
+        address: String,
+        contactName: String
+    ): Result<AdminRegistrationResponse> = withContext(Dispatchers.IO) {
         try {
+            println("🚀 [AUTH] Iniciando registro de administrador")
+            println("📋 [AUTH] Datos recibidos:")
+            println("   - businessName: '$businessName'")
+            println("   - businessType: '$businessType'")
+            println("   - ruc: '$ruc'")
+            println("   - email: '$email'")
+            println("   - phone: '$phone'")
+            println("   - address: '$address'")
+            println("   - contactName: '$contactName'")
+            
             _authState.value = AuthState.Loading
             
-            val request = AuthRequest(
-                deviceId = deviceId,
-                deviceFingerprint = deviceFingerprint,
-                deviceName = deviceName,
+            val request = AdminRegistrationRequest(
                 businessName = businessName,
-                ownerName = ownerName,
-                phoneNumber = phoneNumber,
-                activationCode = activationCode
+                businessType = businessType,
+                ruc = ruc,
+                email = email,
+                password = password,
+                phone = phone,
+                address = address,
+                contactName = contactName
             )
             
-            // TODO: Implementar llamada HTTP real al backend
-            // val response = httpClient.post("$baseUrl/auth/register-admin") { ... }
+            val response = httpService.registerAdmin(request)
             
-            // Simulación temporal
-            val mockResponse = AuthResponse(
-                success = true,
-                adminId = deviceId,
-                accessToken = "mock_access_token_${System.currentTimeMillis()}",
-                refreshToken = "mock_refresh_token_${System.currentTimeMillis()}",
-                message = "Admin registrado exitosamente"
+            response.fold(
+                onSuccess = { apiResponse ->
+                    if (apiResponse.success && apiResponse.data != null) {
+                        val data = apiResponse.data
+                        val user = data.user
+                        
+                        // Crear perfil de usuario
+                        val profile = UserProfile(
+                            deviceId = user.id.toString(),
+                            role = user.role,
+                            adminId = user.id.toString(),
+                            businessName = user.businessName,
+                            permissions = listOf(
+                                "RECEIVE_YAPE_NOTIFICATIONS",
+                                "SEND_PAYMENT_ALERTS",
+                                "MANAGE_SELLERS",
+                                "VIEW_ANALYTICS"
+                            ),
+                            subscriptionPlan = "PROFESSIONAL",
+                            subscriptionStatus = "ACTIVE"
+                        )
+                        
+                        // Guardar tokens con tiempo de expiración
+                        saveTokens(data.accessToken, data.refreshToken, data.expiresIn)
+                        
+                        _userProfile.value = profile
+                        _authState.value = AuthState.Authenticated(profile)
+                        
+                        Result.success(apiResponse)
+                    } else {
+                        _authState.value = AuthState.Error(apiResponse.message)
+                        Result.failure(Exception(apiResponse.message))
+                    }
+                },
+                onFailure = { error ->
+                    _authState.value = AuthState.Error("Error al registrar admin: ${error.message}")
+                    Result.failure(error)
+                }
             )
-            
-            if (mockResponse.success) {
-                val profile = UserProfile(
-                    deviceId = deviceId,
-                    role = "ADMIN",
-                    adminId = deviceId,
-                    businessName = businessName,
-                    permissions = listOf(
-                        "RECEIVE_YAPE_NOTIFICATIONS",
-                        "SEND_PAYMENT_ALERTS",
-                        "MANAGE_SELLERS",
-                        "VIEW_ANALYTICS"
-                    ),
-                    subscriptionPlan = "PROFESSIONAL",
-                    subscriptionStatus = "ACTIVE"
-                )
-                
-                _userProfile.value = profile
-                _authState.value = AuthState.Authenticated(profile)
-                
-                // Guardar tokens localmente
-                saveTokens(mockResponse.accessToken!!, mockResponse.refreshToken!!)
-            }
-            
-            Result.success(mockResponse)
             
         } catch (e: Exception) {
             _authState.value = AuthState.Error("Error al registrar admin: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun login(
+        email: String,
+        password: String,
+        deviceFingerprint: String,
+        role: String
+    ): Result<LoginResponse> = withContext(Dispatchers.IO) {
+        try {
+            println("🚀 [AUTH] Iniciando login")
+            println("📋 [AUTH] Datos recibidos:")
+            println("   - email: '$email'")
+            println("   - role: '$role'")
+            println("   - deviceFingerprint: '$deviceFingerprint'")
+            
+            _authState.value = AuthState.Loading
+            
+            val request = LoginRequest(
+                email = email,
+                password = password,
+                deviceFingerprint = deviceFingerprint,
+                role = role
+            )
+            
+            val response = httpService.login(request)
+            
+            response.fold(
+                onSuccess = { apiResponse ->
+                    if (apiResponse.success && apiResponse.data != null) {
+                        val data = apiResponse.data
+                        val user = data.user
+                        
+                        // Crear perfil de usuario
+                        val profile = UserProfile(
+                            deviceId = user.id.toString(),
+                            role = user.role,
+                            adminId = user.id.toString(),
+                            businessName = user.businessName,
+                            permissions = listOf(
+                                "RECEIVE_YAPE_NOTIFICATIONS",
+                                "SEND_PAYMENT_ALERTS",
+                                "MANAGE_SELLERS",
+                                "VIEW_ANALYTICS"
+                            ),
+                            subscriptionPlan = "PROFESSIONAL",
+                            subscriptionStatus = "ACTIVE"
+                        )
+                        
+                        // Guardar tokens con tiempo de expiración
+                        saveTokens(data.accessToken, data.refreshToken, data.expiresIn)
+                        
+                        _userProfile.value = profile
+                        _authState.value = AuthState.Authenticated(profile)
+                        
+                        Result.success(apiResponse)
+                    } else {
+                        _authState.value = AuthState.Error(apiResponse.message)
+                        Result.failure(Exception(apiResponse.message))
+                    }
+                },
+                onFailure = { error ->
+                    _authState.value = AuthState.Error("Error al hacer login: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+            
+        } catch (e: Exception) {
+            _authState.value = AuthState.Error("Error al hacer login: ${e.message}")
             Result.failure(e)
         }
     }
@@ -274,22 +365,58 @@ class AuthService {
         }
     }
     
-    suspend fun logout(): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun logout(): Result<LogoutResponse> = withContext(Dispatchers.IO) {
         try {
+            println("🚀 [AUTH] Iniciando logout")
+            
             val accessToken = getAccessToken()
-            if (accessToken != null) {
-                // TODO: Implementar llamada HTTP real al backend
-                // httpClient.post("$baseUrl/auth/logout") { ... }
+            if (accessToken == null) {
+                println("❌ [AUTH] No hay access token disponible")
+                clearTokens()
+                _userProfile.value = null
+                _authState.value = AuthState.NotAuthenticated
+                return@withContext Result.failure(Exception("No hay token de acceso"))
             }
             
-            // Limpiar tokens locales
+            println("📋 [AUTH] AccessToken para logout: ${accessToken.take(20)}...")
+            
+            _authState.value = AuthState.Loading
+            
+            val response = httpService.logout(accessToken)
+            
+            response.fold(
+                onSuccess = { apiResponse ->
+                    if (apiResponse.success) {
+                        // Limpiar tokens locales
+                        clearTokens()
+                        _userProfile.value = null
+                        _authState.value = AuthState.NotAuthenticated
+                        
+                        println("✅ [AUTH] Logout exitoso")
+                        Result.success(apiResponse)
+                    } else {
+                        _authState.value = AuthState.Error(apiResponse.message)
+                        Result.failure(Exception(apiResponse.message))
+                    }
+                },
+                onFailure = { error ->
+                    // Aún así limpiar tokens locales en caso de error de red
+                    clearTokens()
+                    _userProfile.value = null
+                    _authState.value = AuthState.NotAuthenticated
+                    
+                    println("❌ [AUTH] Error en logout: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+            
+        } catch (e: Exception) {
+            // Aún así limpiar tokens locales en caso de error
             clearTokens()
             _userProfile.value = null
             _authState.value = AuthState.NotAuthenticated
             
-            Result.success(Unit)
-            
-        } catch (e: Exception) {
+            println("💥 [AUTH] Excepción en logout: ${e.message}")
             Result.failure(e)
         }
     }
@@ -344,30 +471,127 @@ class AuthService {
     }
     
     // Funciones de utilidad para manejo de tokens
-    private fun saveTokens(accessToken: String, refreshToken: String) {
-        // TODO: Implementar almacenamiento seguro de tokens
-        // Usar Android Keystore o iOS Keychain
-        android.util.Log.d("AuthService", "Guardando tokens: $accessToken")
+    private fun saveTokens(accessToken: String, refreshToken: String, expiresInSeconds: Int = 3600) {
+        _accessToken = accessToken
+        _refreshToken = refreshToken
+        
+        // Calcular tiempo de expiración (24 horas máximo, o expiresIn si es menor)
+        val maxSessionDuration = 24 * 60 * 60 * 1000L // 24 horas en millisegundos
+        val tokenExpiryDuration = expiresInSeconds * 1000L // expiresIn en millisegundos
+        val sessionDuration = minOf(maxSessionDuration, tokenExpiryDuration)
+        
+        _sessionExpiryTime = System.currentTimeMillis() + sessionDuration
+        _lastActivityTime = System.currentTimeMillis()
+        
+        println("🔐 [AUTH] Tokens guardados:")
+        println("   - AccessToken: ${accessToken.take(20)}...")
+        println("   - RefreshToken: ${refreshToken.take(20)}...")
+        println("   - Expira en: ${sessionDuration / (60 * 60 * 1000)} horas")
+        println("   - Timestamp expiración: $_sessionExpiryTime")
     }
     
     private fun saveAccessToken(accessToken: String) {
-        // TODO: Implementar almacenamiento seguro
-        android.util.Log.d("AuthService", "Guardando access token: $accessToken")
+        _accessToken = accessToken
+        println("🔐 [AUTH] Access token guardado: ${accessToken.take(20)}...")
     }
     
     private fun getAccessToken(): String? {
-        // TODO: Implementar recuperación de token
-        return "mock_access_token"
+        return _accessToken
     }
     
     private fun getRefreshToken(): String? {
-        // TODO: Implementar recuperación de refresh token
-        return "mock_refresh_token"
+        return _refreshToken
     }
     
     private fun clearTokens() {
-        // TODO: Implementar limpieza de tokens
-        android.util.Log.d("AuthService", "Limpiando tokens")
+        _accessToken = null
+        _refreshToken = null
+        _sessionExpiryTime = null
+        _lastActivityTime = null
+        println("🔐 [AUTH] Tokens y sesión limpiados")
+    }
+    
+    // Funciones de verificación de sesión
+    fun isSessionValid(): Boolean {
+        val currentTime = System.currentTimeMillis()
+        val expiryTime = _sessionExpiryTime
+        
+        if (expiryTime == null) {
+            println("⏰ [AUTH] No hay sesión activa")
+            return false
+        }
+        
+        val isValid = currentTime < expiryTime
+        val remainingTime = expiryTime - currentTime
+        
+        if (isValid) {
+            println("⏰ [AUTH] Sesión válida - Tiempo restante: ${remainingTime / (60 * 1000)} minutos")
+            _lastActivityTime = currentTime // Actualizar última actividad
+        } else {
+            println("⏰ [AUTH] Sesión expirada - Tiempo excedido: ${-remainingTime / (60 * 1000)} minutos")
+        }
+        
+        return isValid
+    }
+    
+    fun updateActivity() {
+        _lastActivityTime = System.currentTimeMillis()
+        println("⏰ [AUTH] Actividad actualizada: $_lastActivityTime")
+    }
+    
+    suspend fun refreshSessionIfNeeded(): Boolean {
+        if (!isSessionValid()) {
+            println("🔄 [AUTH] Sesión expirada, intentando renovar...")
+            return refreshTokens()
+        }
+        return true
+    }
+    
+    private suspend fun refreshTokens(): Boolean {
+        val refreshToken = getRefreshToken()
+        if (refreshToken == null) {
+            println("❌ [AUTH] No hay refresh token disponible")
+            clearTokens()
+            _authState.value = AuthState.NotAuthenticated
+            return false
+        }
+        
+        try {
+            println("🔄 [AUTH] Renovando tokens...")
+            val response = httpService.refreshToken(refreshToken)
+            
+            response.fold(
+                onSuccess = { apiResponse ->
+                    if (apiResponse.success && apiResponse.data != null) {
+                        val data = apiResponse.data
+                        
+                        // Guardar nuevos tokens
+                        saveTokens(data.accessToken, data.refreshToken, data.expiresIn)
+                        
+                        println("✅ [AUTH] Tokens renovados exitosamente")
+                        return@fold true
+                    } else {
+                        println("❌ [AUTH] Error al renovar tokens: ${apiResponse.message}")
+                        clearTokens()
+                        _authState.value = AuthState.NotAuthenticated
+                        return@fold false
+                    }
+                },
+                onFailure = { error ->
+                    println("❌ [AUTH] Error al renovar tokens: ${error.message}")
+                    clearTokens()
+                    _authState.value = AuthState.NotAuthenticated
+                    return@fold false
+                }
+            )
+            
+            return response.isSuccess
+        } catch (e: Exception) {
+            println("💥 [AUTH] Excepción al renovar tokens: ${e.message}")
+            clearTokens()
+            _authState.value = AuthState.NotAuthenticated
+            return false
+        }
     }
     
     fun generateDeviceFingerprint(): String {

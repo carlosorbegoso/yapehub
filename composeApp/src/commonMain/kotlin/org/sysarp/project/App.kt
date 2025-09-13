@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import org.sysarp.project.ui.theme.YapeHubTheme
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.repository.UserProfileRepository
@@ -115,6 +116,18 @@ fun YapeApp() {
     
     val authService = remember {
         AuthService()
+    }
+    
+    // Verificar sesión al iniciar la app
+    LaunchedEffect(Unit) {
+        println("🚀 [APP] Verificando sesión al iniciar...")
+        if (authService.isSessionValid()) {
+            println("✅ [APP] Sesión válida encontrada")
+            // La sesión es válida, el usuario permanece autenticado
+        } else {
+            println("❌ [APP] Sesión expirada o no encontrada")
+            // La sesión expiró, el usuario debe hacer login nuevamente
+        }
     }
     
     val notificationService = remember {

@@ -14,6 +14,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import org.sysarp.project.service.AuthService
+import org.sysarp.project.utils.SuccessHandler
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,13 +30,23 @@ fun SettingsScreen(
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showNotificationsDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var successMessage by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showStorageDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     
+    // Mostrar mensaje de éxito
+    SuccessHandler.ShowSuccessMessage(
+        message = successMessage,
+        snackbarHostState = snackbarHostState
+    )
+    
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { 
@@ -279,7 +291,20 @@ fun SettingsScreen(
                 Button(
                     onClick = {
                         showLogoutDialog = false
-                        onLogout()
+                        coroutineScope.launch {
+                            authService.logout().fold(
+                                onSuccess = { response ->
+                                    if (response.success) {
+                                        successMessage = SuccessHandler.Messages.LOGOUT_SUCCESS
+                                        // La navegación se manejará automáticamente por el AuthState
+                                    }
+                                },
+                                onFailure = { error ->
+                                    // En caso de error, aún así navegar
+                                    onLogout()
+                                }
+                            )
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error

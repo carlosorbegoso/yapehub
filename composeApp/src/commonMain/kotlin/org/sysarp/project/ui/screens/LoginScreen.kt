@@ -20,6 +20,7 @@ import androidx.compose.foundation.background
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.AuthService
+import org.sysarp.project.utils.SuccessHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,14 +30,23 @@ fun LoginScreen(
     onBackPressed: () -> Unit,
     onForgotPassword: () -> Unit
 ) {
-    var phoneNumber by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var successMessage by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Mostrar mensaje de éxito
+    SuccessHandler.ShowSuccessMessage(
+        message = successMessage,
+        snackbarHostState = snackbarHostState
+    )
     
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { 
@@ -121,19 +131,19 @@ fun LoginScreen(
                     modifier = Modifier.padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Número de teléfono
+                    // Email
                     OutlinedTextField(
-                        value = phoneNumber,
-                        onValueChange = { phoneNumber = it },
-                        label = { Text("Número de teléfono") },
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Filled.Phone,
+                                imageVector = Icons.Filled.Email,
                                 contentDescription = null
                             )
                         },
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Phone
+                            keyboardType = KeyboardType.Email
                         ),
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -189,30 +199,38 @@ fun LoginScreen(
                     // Botón de iniciar sesión
                     Button(
                         onClick = {
-                            if (phoneNumber.isNotBlank() && password.isNotBlank()) {
+                            if (email.isNotBlank() && password.isNotBlank()) {
                                 isLoading = true
                                 errorMessage = ""
                                 
-                                // Simular login con determinación de rol
-                                // En una app real aquí iría la llamada al API
-                                // Por ahora simulamos diferentes roles basados en el teléfono
-                                val simulatedRole = when {
-                                    phoneNumber.contains("999") -> "ADMIN" // Teléfonos que terminan en 999 son admin
-                                    phoneNumber.contains("888") -> "SELLER" // Teléfonos que terminan en 888 son seller
-                                    else -> "ADMIN" // Por defecto admin
-                                }
-                                
-                                // Simular delay de red y luego llamar al callback con el rol
-                                // En una app real aquí se actualizaría el userProfile con el rol
+                                // Login real usando la API
                                 coroutineScope.launch {
-                                    delay(1500)
-                                    onLoginSuccess(simulatedRole)
+                                    authService.login(
+                                        email = email,
+                                        password = password,
+                                        deviceFingerprint = "H", // Fingerprint fijo por ahora
+                                        role = "ADMIN" // Rol fijo por ahora
+                                    ).fold(
+                                        onSuccess = { response ->
+                                            isLoading = false
+                                            if (response.success) {
+                                                successMessage = SuccessHandler.Messages.LOGIN_SUCCESS
+                                                onLoginSuccess(response.data?.user?.role ?: "ADMIN")
+                                            } else {
+                                                errorMessage = response.message
+                                            }
+                                        },
+                                        onFailure = { error ->
+                                            isLoading = false
+                                            errorMessage = error.message ?: "Error desconocido"
+                                        }
+                                    )
                                 }
                             } else {
                                 errorMessage = "Por favor completa todos los campos"
                             }
                         },
-                        enabled = !isLoading && phoneNumber.isNotBlank() && password.isNotBlank(),
+                        enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
