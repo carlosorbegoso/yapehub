@@ -307,6 +307,387 @@ class HttpService {
         }
     }
     
+    // Generar código de afiliación
+    suspend fun generateAffiliationCode(
+        adminId: Int,
+        branchId: Int,
+        expirationHours: Int,
+        maxUses: Int,
+        notes: String? = null,
+        accessToken: String
+    ): Result<GenerateAffiliationCodeResponse> = withContext(Dispatchers.IO) {
+        try {
+            println("🌐 [HTTP] Iniciando generación de código de afiliación")
+            println("📤 [HTTP] AdminId: $adminId, BranchId: $branchId")
+            println("📤 [HTTP] ExpirationHours: $expirationHours, MaxUses: $maxUses")
+            println("📤 [HTTP] AccessToken: ${accessToken.take(20)}...")
+            
+            val url = "$baseUrl/generate-affiliation-code-protected?" +
+                    "adminId=$adminId&" +
+                    "branchId=$branchId&" +
+                    "expirationHours=$expirationHours&" +
+                    "maxUses=$maxUses" +
+                    if (notes != null) "&notes=$notes" else ""
+            
+            val response = httpClient.post(url) {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                setBody("{}") // Body vacío como en el curl
+            }
+            
+            println("📥 [HTTP] Respuesta de generación recibida - Status: ${response.status}")
+            println("📥 [HTTP] Headers: ${response.headers}")
+            
+            when (response.status) {
+                HttpStatusCode.OK -> {
+                    println("✅ [HTTP] Código generado exitosamente - Status: ${response.status}")
+                    val result = response.body<GenerateAffiliationCodeResponse>()
+                    println("📋 [HTTP] Respuesta del servidor: ${result}")
+                    Result.success(result)
+                }
+                HttpStatusCode.Unauthorized -> {
+                    println("❌ [HTTP] Error de autenticación - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+                HttpStatusCode.BadRequest -> {
+                    println("❌ [HTTP] Error de validación - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+                else -> {
+                    println("❌ [HTTP] Error inesperado - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+            }
+        } catch (e: Exception) {
+            println("💥 [HTTP] Excepción en generación de código: ${e.javaClass.simpleName}")
+            println("💥 [HTTP] Mensaje de error: ${e.message}")
+            println("💥 [HTTP] Stack trace: ${e.stackTrace.take(5).joinToString("\n")}")
+            
+            val errorMessage = when {
+                e.message?.contains("EPREM") == true -> "Error de conectividad: No se puede conectar al servidor. Verifica la IP y que el servidor esté corriendo."
+                e.message?.contains("Connection refused") == true -> "Conexión rechazada: El servidor no está corriendo o no es accesible."
+                e.message?.contains("timeout") == true -> "Timeout: El servidor tardó demasiado en responder."
+                e.message?.contains("Network is unreachable") == true -> "Red inalcanzable: Verifica tu conexión a internet."
+                e.message?.contains("Socket") == true -> "Error de socket: Problema de conectividad de red."
+                e.message?.contains("UnknownHostException") == true -> "Host desconocido: No se puede resolver la dirección del servidor."
+                else -> "Error de red: ${e.message}"
+            }
+            
+            println("📝 [HTTP] Mensaje de error amigable: $errorMessage")
+            Result.failure(Exception(errorMessage))
+        }
+    }
+    
+    // Registrar vendedor con código de afiliación
+    suspend fun registerSeller(
+        affiliationCode: String,
+        sellerName: String,
+        phone: String
+    ): Result<SellerRegistrationResponse> = withContext(Dispatchers.IO) {
+        try {
+            println("🌐 [HTTP] Iniciando registro de vendedor")
+            println("📤 [HTTP] AffiliationCode: $affiliationCode")
+            println("📤 [HTTP] SellerName: $sellerName")
+            println("📤 [HTTP] Phone: $phone")
+            
+            val request = SellerRegistrationRequest(
+                affiliationCode = affiliationCode,
+                sellerName = sellerName,
+                phone = phone
+            )
+            
+            val response = httpClient.post("$baseUrl/seller/register") {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+            
+            println("📥 [HTTP] Respuesta de registro recibida - Status: ${response.status}")
+            println("📥 [HTTP] Headers: ${response.headers}")
+            
+            when (response.status) {
+                HttpStatusCode.OK -> {
+                    println("✅ [HTTP] Vendedor registrado exitosamente - Status: ${response.status}")
+                    val result = response.body<SellerRegistrationResponse>()
+                    println("📋 [HTTP] Respuesta del servidor: ${result}")
+                    Result.success(result)
+                }
+                HttpStatusCode.BadRequest -> {
+                    println("❌ [HTTP] Error de validación - Status: ${response.status}")
+                    try {
+                        val error = response.body<ApiError>()
+                        println("📋 [HTTP] Error estructurado del servidor: ${error}")
+                        val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                        Result.failure(Exception(friendlyMessage))
+                    } catch (e: Exception) {
+                        // Si no se puede deserializar como ApiError, intentar como respuesta simple
+                        try {
+                            val simpleError = response.body<Map<String, Any>>()
+                            val message = simpleError["message"] as? String ?: "Error de validación"
+                            println("📋 [HTTP] Error simple del servidor: ${simpleError}")
+                            val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(message)
+                            Result.failure(Exception(friendlyMessage))
+                        } catch (e2: Exception) {
+                            println("📋 [HTTP] No se pudo deserializar error: ${e2.message}")
+                            Result.failure(Exception("Error de validación"))
+                        }
+                    }
+                }
+                HttpStatusCode.Conflict -> {
+                    println("❌ [HTTP] Error de conflicto - Status: ${response.status}")
+                    try {
+                        val error = response.body<ApiError>()
+                        println("📋 [HTTP] Error del servidor: ${error}")
+                        val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                        Result.failure(Exception(friendlyMessage))
+                    } catch (e: Exception) {
+                        try {
+                            val simpleError = response.body<Map<String, Any>>()
+                            val message = simpleError["message"] as? String ?: "Error de conflicto"
+                            println("📋 [HTTP] Error simple del servidor: ${simpleError}")
+                            Result.failure(Exception(message))
+                        } catch (e2: Exception) {
+                            println("📋 [HTTP] No se pudo deserializar error: ${e2.message}")
+                            Result.failure(Exception("Error de conflicto"))
+                        }
+                    }
+                }
+                else -> {
+                    println("❌ [HTTP] Error inesperado - Status: ${response.status}")
+                    try {
+                        val error = response.body<ApiError>()
+                        println("📋 [HTTP] Error del servidor: ${error}")
+                        val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                        Result.failure(Exception(friendlyMessage))
+                    } catch (e: Exception) {
+                        try {
+                            val simpleError = response.body<Map<String, Any>>()
+                            val message = simpleError["message"] as? String ?: "Error inesperado"
+                            println("📋 [HTTP] Error simple del servidor: ${simpleError}")
+                            Result.failure(Exception(message))
+                        } catch (e2: Exception) {
+                            println("📋 [HTTP] No se pudo deserializar error: ${e2.message}")
+                            Result.failure(Exception("Error inesperado"))
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            println("💥 [HTTP] Excepción en registro de vendedor: ${e.javaClass.simpleName}")
+            println("💥 [HTTP] Mensaje de error: ${e.message}")
+            println("💥 [HTTP] Stack trace: ${e.stackTrace.take(5).joinToString("\n")}")
+            
+            val errorMessage = when {
+                e.message?.contains("EPREM") == true -> "Error de conectividad: No se puede conectar al servidor. Verifica la IP y que el servidor esté corriendo."
+                e.message?.contains("Connection refused") == true -> "Conexión rechazada: El servidor no está corriendo o no es accesible."
+                e.message?.contains("timeout") == true -> "Timeout: El servidor tardó demasiado en responder."
+                e.message?.contains("Network is unreachable") == true -> "Red inalcanzable: Verifica tu conexión a internet."
+                e.message?.contains("Socket") == true -> "Error de socket: Problema de conectividad de red."
+                e.message?.contains("UnknownHostException") == true -> "Host desconocido: No se puede resolver la dirección del servidor."
+                else -> "Error de red: ${e.message}"
+            }
+            
+            println("📝 [HTTP] Mensaje de error amigable: $errorMessage")
+            Result.failure(Exception(errorMessage))
+        }
+    }
+    
+    // Login de vendedor por teléfono
+    suspend fun sellerLoginByPhone(phone: String): Result<SellerLoginByPhoneResponse> = withContext(Dispatchers.IO) {
+        try {
+            println("🌐 [HTTP] Iniciando login de vendedor por teléfono")
+            println("📤 [HTTP] Phone: $phone")
+            
+            // Generar identificador único del teléfono
+            val phoneFingerprint = generatePhoneFingerprint(phone)
+            println("📤 [HTTP] Phone Fingerprint: $phoneFingerprint")
+            
+            val response = httpClient.post("$baseUrl/auth/seller/login-by-phone?phone=$phone") {
+                contentType(ContentType.Application.Json)
+                header("X-Phone-Fingerprint", phoneFingerprint)
+                setBody("{}") // Body vacío como en el curl
+            }
+            
+            println("📥 [HTTP] Respuesta de login recibida - Status: ${response.status}")
+            println("📥 [HTTP] Headers: ${response.headers}")
+            
+            when (response.status) {
+                HttpStatusCode.OK -> {
+                    println("✅ [HTTP] Login de vendedor exitoso - Status: ${response.status}")
+                    val result = response.body<SellerLoginByPhoneResponse>()
+                    println("📋 [HTTP] Respuesta del servidor: ${result}")
+                    Result.success(result)
+                }
+                HttpStatusCode.Unauthorized -> {
+                    println("❌ [HTTP] Error de autenticación - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+                HttpStatusCode.BadRequest -> {
+                    println("❌ [HTTP] Error de validación - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+                else -> {
+                    println("❌ [HTTP] Error inesperado - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+            }
+        } catch (e: Exception) {
+            println("💥 [HTTP] Excepción en login de vendedor: ${e.javaClass.simpleName}")
+            println("💥 [HTTP] Mensaje de error: ${e.message}")
+            println("💥 [HTTP] Stack trace: ${e.stackTrace.take(5).joinToString("\n")}")
+            
+            val errorMessage = when {
+                e.message?.contains("EPREM") == true -> "Error de conectividad: No se puede conectar al servidor. Verifica la IP y que el servidor esté corriendo."
+                e.message?.contains("Connection refused") == true -> "Conexión rechazada: El servidor no está corriendo o no es accesible."
+                e.message?.contains("timeout") == true -> "Timeout: El servidor tardó demasiado en responder."
+                e.message?.contains("Network is unreachable") == true -> "Red inalcanzable: Verifica tu conexión a internet."
+                e.message?.contains("Socket") == true -> "Error de socket: Problema de conectividad de red."
+                e.message?.contains("UnknownHostException") == true -> "Host desconocido: No se puede resolver la dirección del servidor."
+                else -> "Error de red: ${e.message}"
+            }
+            
+            println("📝 [HTTP] Mensaje de error amigable: $errorMessage")
+            Result.failure(Exception(errorMessage))
+        }
+    }
+    
+    // Validar código de afiliación
+    suspend fun validateAffiliationCode(affiliationCode: String): Result<ValidateAffiliationCodeResponse> = withContext(Dispatchers.IO) {
+        try {
+            println("🌐 [HTTP] Iniciando validación de código de afiliación")
+            println("📤 [HTTP] AffiliationCode: $affiliationCode")
+            
+            val request = ValidateAffiliationCodeRequest(affiliationCode = affiliationCode)
+            
+            val response = httpClient.post("$baseUrl/auth/validate-affiliation-code") {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+            
+            println("📥 [HTTP] Respuesta de validación recibida - Status: ${response.status}")
+            println("📥 [HTTP] Headers: ${response.headers}")
+            
+            when (response.status) {
+                HttpStatusCode.OK -> {
+                    println("✅ [HTTP] Código validado exitosamente - Status: ${response.status}")
+                    val result = response.body<ValidateAffiliationCodeResponse>()
+                    println("📋 [HTTP] Respuesta del servidor: ${result}")
+                    Result.success(result)
+                }
+                HttpStatusCode.BadRequest -> {
+                    println("❌ [HTTP] Error de validación - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+                else -> {
+                    println("❌ [HTTP] Error inesperado - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+            }
+        } catch (e: Exception) {
+            println("💥 [HTTP] Excepción en validación de código: ${e.javaClass.simpleName}")
+            println("💥 [HTTP] Mensaje de error: ${e.message}")
+            println("💥 [HTTP] Stack trace: ${e.stackTrace.take(5).joinToString("\n")}")
+            
+            val errorMessage = when {
+                e.message?.contains("EPREM") == true -> "Error de conectividad: No se puede conectar al servidor. Verifica la IP y que el servidor esté corriendo."
+                e.message?.contains("Connection refused") == true -> "Conexión rechazada: El servidor no está corriendo o no es accesible."
+                e.message?.contains("timeout") == true -> "Timeout: El servidor tardó demasiado en responder."
+                e.message?.contains("Network is unreachable") == true -> "Red inalcanzable: Verifica tu conexión a internet."
+                e.message?.contains("Socket") == true -> "Error de socket: Problema de conectividad de red."
+                e.message?.contains("UnknownHostException") == true -> "Host desconocido: No se puede resolver la dirección del servidor."
+                else -> "Error de red: ${e.message}"
+            }
+            
+            println("📝 [HTTP] Mensaje de error amigable: $errorMessage")
+            Result.failure(Exception(errorMessage))
+        }
+    }
+    
+    // Obtener vendedores del administrador
+    suspend fun getAdminSellers(adminId: Int): Result<GetSellersResponse> = withContext(Dispatchers.IO) {
+        try {
+            println("🌐 [HTTP] Iniciando obtención de vendedores del administrador")
+            println("📤 [HTTP] AdminId: $adminId")
+            
+            val response = httpClient.get("$baseUrl/admin/sellers/my-sellers?adminId=$adminId") {
+                contentType(ContentType.Application.Json)
+            }
+            
+            println("📥 [HTTP] Respuesta de vendedores recibida - Status: ${response.status}")
+            println("📥 [HTTP] Headers: ${response.headers}")
+            
+            when (response.status) {
+                HttpStatusCode.OK -> {
+                    println("✅ [HTTP] Vendedores obtenidos exitosamente - Status: ${response.status}")
+                    val result = response.body<GetSellersResponse>()
+                    println("📋 [HTTP] Respuesta del servidor: ${result}")
+                    Result.success(result)
+                }
+                HttpStatusCode.Unauthorized -> {
+                    println("❌ [HTTP] Error de autenticación - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+                HttpStatusCode.BadRequest -> {
+                    println("❌ [HTTP] Error de validación - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+                else -> {
+                    println("❌ [HTTP] Error inesperado - Status: ${response.status}")
+                    val error = response.body<ApiError>()
+                    println("📋 [HTTP] Error del servidor: ${error}")
+                    val friendlyMessage = ErrorHandler.getFriendlyErrorMessage(error)
+                    Result.failure(Exception(friendlyMessage))
+                }
+            }
+        } catch (e: Exception) {
+            println("💥 [HTTP] Excepción en obtención de vendedores: ${e.javaClass.simpleName}")
+            println("💥 [HTTP] Mensaje de error: ${e.message}")
+            println("💥 [HTTP] Stack trace: ${e.stackTrace.take(5).joinToString("\n")}")
+            
+            val errorMessage = when {
+                e.message?.contains("EPREM") == true -> "Error de conectividad: No se puede conectar al servidor. Verifica la IP y que el servidor esté corriendo."
+                e.message?.contains("Connection refused") == true -> "Conexión rechazada: El servidor no está corriendo o no es accesible."
+                e.message?.contains("timeout") == true -> "Timeout: El servidor tardó demasiado en responder."
+                e.message?.contains("Network is unreachable") == true -> "Red inalcanzable: Verifica tu conexión a internet."
+                e.message?.contains("Socket") == true -> "Error de socket: Problema de conectividad de red."
+                e.message?.contains("UnknownHostException") == true -> "Host desconocido: No se puede resolver la dirección del servidor."
+                else -> "Error de red: ${e.message}"
+            }
+            
+            println("📝 [HTTP] Mensaje de error amigable: $errorMessage")
+            Result.failure(Exception(errorMessage))
+        }
+    }
+    
     // Obtener transacciones
     suspend fun getTransactions(
         page: Int = 1,
@@ -441,29 +822,6 @@ class HttpService {
         }
     }
     
-    // Afiliar vendedor
-    suspend fun affiliateSeller(request: SellerAffiliationRequest): Result<SellerAffiliationResponse> = withContext(Dispatchers.IO) {
-        try {
-            val response = httpClient.post("$baseUrl/admin/sellers/affiliate") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }
-            
-            when (response.status) {
-                HttpStatusCode.OK, HttpStatusCode.Created -> {
-                    val result = response.body<SellerAffiliationResponse>()
-                    Result.success(result)
-                }
-                else -> {
-                    val error = response.body<ApiError>()
-                    Result.failure(Exception(error.message))
-                }
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
     // Generar código QR
     suspend fun generateQR(request: QRGenerationRequest): Result<QRGenerationResponse> = withContext(Dispatchers.IO) {
         try {
@@ -510,29 +868,6 @@ class HttpService {
         }
     }
     
-    // Validar código de afiliación
-    suspend fun validateAffiliationCode(affiliationCode: String): Result<Boolean> = withContext(Dispatchers.IO) {
-        try {
-            val response = httpClient.post("$baseUrl/auth/validate-affiliation-code") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("affiliationCode" to affiliationCode))
-            }
-            
-            when (response.status) {
-                HttpStatusCode.OK -> {
-                    val result = response.body<Map<String, Any>>()
-                    val isValid = result["isValid"] as? Boolean ?: false
-                    Result.success(isValid)
-                }
-                else -> {
-                    Result.failure(Exception("Código de afiliación inválido"))
-                }
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
     // Enviar notificación
     suspend fun sendNotification(request: NotificationRequest): Result<NotificationResponse> = withContext(Dispatchers.IO) {
         try {
@@ -558,6 +893,16 @@ class HttpService {
     
     fun close() {
         httpClient.close()
+    }
+    
+    // Generar identificador único del teléfono
+    private fun generatePhoneFingerprint(phone: String): String {
+        // Combinar el teléfono con información del dispositivo y timestamp
+        val deviceInfo = "android_device_${System.currentTimeMillis()}"
+        val combined = "${phone}_${deviceInfo}_${System.currentTimeMillis()}"
+        
+        // Generar hash simple (en producción usar algoritmo más robusto)
+        return "phone_fp_${combined.hashCode().toString().replace("-", "")}"
     }
 }
 

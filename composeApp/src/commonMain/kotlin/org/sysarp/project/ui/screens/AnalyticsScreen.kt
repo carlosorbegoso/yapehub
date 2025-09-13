@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import org.sysarp.project.service.AuthService
 import org.sysarp.project.viewmodel.YapeViewModel
 import org.sysarp.project.data.YapeTransaction
+import org.sysarp.project.data.UserRole
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -207,7 +208,7 @@ fun AnalyticsScreen(
             }
             
             // Top vendedores (solo para admin)
-            if (userProfile?.role == "admin") {
+            if (userProfile?.role == UserRole.ADMIN) {
                 item {
                     Text(
                         text = "Top Vendedores",

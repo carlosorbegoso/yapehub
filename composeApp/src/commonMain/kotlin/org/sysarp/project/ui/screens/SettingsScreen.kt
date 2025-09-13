@@ -15,7 +15,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import org.sysarp.project.service.AuthService
 import org.sysarp.project.utils.SuccessHandler
+import org.sysarp.project.data.UserRole
 import kotlinx.coroutines.launch
+import org.sysarp.project.data.UserProfile
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,7 +96,7 @@ fun SettingsScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = if (userProfile?.role == "admin") Icons.Filled.Business else Icons.Filled.Person,
+                            imageVector = if (userProfile?.role == UserRole.ADMIN) Icons.Filled.Business else Icons.Filled.Person,
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -111,7 +113,7 @@ fun SettingsScreen(
                         )
                         
                         Text(
-                            text = if (userProfile?.role == "ADMIN") "Administrador" else "Vendedor",
+                            text = if (userProfile?.role == UserRole.ADMIN) "Administrador" else "Vendedor",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                             textAlign = TextAlign.Center
@@ -152,7 +154,7 @@ fun SettingsScreen(
                     )
                     
                     // Solo mostrar cambio de contraseña para administradores
-                    if (userProfile?.role == "ADMIN") {
+                    if (userProfile?.role == UserRole.ADMIN) {
                         SettingsItem(
                             title = "Cambiar Contraseña",
                             subtitle = "Actualizar contraseña de acceso",
@@ -469,9 +471,9 @@ fun SettingsItem(
 
 @Composable
 fun EditProfileDialog(
-    userProfile: org.sysarp.project.service.UserProfile?,
+    userProfile: UserProfile?,
     onDismiss: () -> Unit,
-    onSave: (org.sysarp.project.service.UserProfile) -> Unit
+    onSave: (UserProfile) -> Unit
 ) {
     var businessName by remember { mutableStateOf(userProfile?.businessName ?: "") }
     var sellerName by remember { mutableStateOf(userProfile?.sellerName ?: "") }
@@ -489,7 +491,7 @@ fun EditProfileDialog(
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (userProfile?.role == "ADMIN") {
+                if (userProfile?.role == UserRole.ADMIN) {
                     OutlinedTextField(
                         value = businessName,
                         onValueChange = { businessName = it },
@@ -525,7 +527,7 @@ fun EditProfileDialog(
                 )
                 
                 // Solo mostrar para vendedores afiliados
-                if (userProfile?.role == "SELLER") {
+                if (userProfile?.role == UserRole.VENDOR) {
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -546,8 +548,8 @@ fun EditProfileDialog(
             Button(
                 onClick = {
                     val updatedProfile = userProfile?.copy(
-                        businessName = if (userProfile.role == "ADMIN") businessName else userProfile.businessName,
-                        sellerName = if (userProfile.role == "SELLER") sellerName else userProfile.sellerName,
+                        businessName = if (userProfile.role == UserRole.ADMIN) businessName else userProfile.businessName,
+                        sellerName = if (userProfile.role == UserRole.VENDOR) sellerName else userProfile.sellerName,
                         branchName = branchName
                     )
                     if (updatedProfile != null) {

@@ -9,7 +9,20 @@ data class UserProfile(
     val email: String,
     val role: UserRole,
     val assignedStores: List<String> = emptyList(), // Para vendedores, lista de tiendas asignadas
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    // Campos adicionales para compatibilidad con AuthService
+    val businessId: Int? = null,
+    val businessName: String? = null,
+    val isVerified: Boolean = false,
+    val deviceId: String = "",
+    val adminId: String? = null,
+    val sellerId: String? = null,
+    val sellerName: String? = null,
+    val branchCode: String? = null,
+    val branchName: String? = null,
+    val permissions: List<String> = emptyList(),
+    val subscriptionPlan: String? = null,
+    val subscriptionStatus: String? = null
 )
 
 @Serializable

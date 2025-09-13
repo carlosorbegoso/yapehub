@@ -1,90 +1,86 @@
 package org.sysarp.project.utils
 
 import org.sysarp.project.data.ApiError
-import org.sysarp.project.data.ValidationError
 
 object ErrorHandler {
     
-    /**
-     * Extrae un mensaje de error amigable del ApiError
-     */
-    fun getFriendlyErrorMessage(apiError: ApiError): String {
-        return when (apiError.code) {
-            "VALIDATION_ERROR" -> {
-                val validationErrors = apiError.details?.validationErrors
-                if (validationErrors != null && validationErrors.isNotEmpty()) {
-                    // Tomar el primer error de validación
-                    val firstError = validationErrors.values.first()
-                    firstError.message
-                } else {
-                    apiError.message
+    fun getFriendlyErrorMessage(error: ApiError): String {
+        return when (error.code) {
+            "INVALID_FIELD" -> {
+                val details = error.details
+                val validationErrors = details?.validationErrors
+                when {
+                    validationErrors?.containsKey("affiliationCode") == true -> {
+                        val affiliationError = validationErrors["affiliationCode"]
+                        when (affiliationError?.message) {
+                            "Código de afiliación agotado" -> "❌ Este código de afiliación ya fue usado o expiró. Solicita uno nuevo a tu administrador."
+                            "Código de afiliación inválido" -> "❌ El código de afiliación no es válido. Verifica que lo hayas ingresado correctamente."
+                            else -> "❌ Error con el código de afiliación: ${affiliationError?.message ?: error.message}"
+                        }
+                    }
+                    validationErrors?.containsKey("phone") == true -> {
+                        val phoneError = validationErrors["phone"]
+                        when (phoneError?.message) {
+                            "El número de teléfono ya está registrado" -> "📱 Este número de teléfono ya está registrado. ¿Quieres hacer login?"
+                            else -> "❌ Error con el teléfono: ${phoneError?.message ?: error.message}"
+                        }
+                    }
+                    validationErrors?.containsKey("sellerName") == true -> {
+                        val nameError = validationErrors["sellerName"]
+                        "❌ Error con el nombre: ${nameError?.message ?: error.message}"
+                    }
+                    validationErrors?.containsKey("credentials") == true -> {
+                        val credentialsError = validationErrors["credentials"]
+                        when (credentialsError?.message) {
+                            "Invalid email or password" -> "🔐 Email o contraseña incorrectos. Verifica tus credenciales."
+                            else -> "❌ Error de credenciales: ${credentialsError?.message ?: error.message}"
+                        }
+                    }
+                    // Manejar el nuevo formato de detalles directos
+                    details?.field == "credentials" -> {
+                        when (details.reason) {
+                            "Invalid email or password" -> "🔐 Email o contraseña incorrectos. Verifica tus credenciales."
+                            else -> "❌ Error de credenciales: ${details.reason ?: error.message}"
+                        }
+                    }
+                    else -> "❌ Error de validación: ${error.message}"
                 }
             }
-            "EMAIL_ALREADY_EXISTS" -> "Este email ya está registrado. Por favor usa otro email."
-            "INVALID_CREDENTIALS" -> "Email o contraseña incorrectos."
-            "ACCOUNT_DISABLED" -> "Tu cuenta está desactivada. Contacta al soporte."
-            "TOKEN_EXPIRED" -> "Tu sesión ha expirado. Por favor inicia sesión nuevamente."
-            "INSUFFICIENT_PERMISSIONS" -> "No tienes permisos para realizar esta acción."
-            "BUSINESS_NOT_FOUND" -> "No se encontró el negocio especificado."
-            "SELLER_NOT_FOUND" -> "No se encontró el vendedor especificado."
-            "TRANSACTION_NOT_FOUND" -> "No se encontró la transacción especificada."
-            "QR_CODE_EXPIRED" -> "El código QR ha expirado. Genera uno nuevo."
-            "AFFILIATION_CODE_INVALID" -> "El código de afiliación no es válido o ha expirado."
-            "RATE_LIMIT_EXCEEDED" -> "Has realizado demasiadas solicitudes. Espera un momento antes de intentar de nuevo."
-            "SERVER_ERROR" -> "Error interno del servidor. Por favor intenta más tarde."
-            else -> apiError.message
+            "VALIDATION_ERROR" -> "❌ Error de validación: ${error.message}"
+            "UNAUTHORIZED" -> "🔒 No tienes permisos para realizar esta acción"
+            "FORBIDDEN" -> "🚫 Acceso denegado"
+            "NOT_FOUND" -> "❓ Recurso no encontrado"
+            "CONFLICT" -> "⚠️ Conflicto: ${error.message}"
+            "INTERNAL_ERROR" -> "💥 Error interno del servidor. Intenta nuevamente."
+            else -> "❌ Error: ${error.message}"
         }
     }
     
-    /**
-     * Extrae todos los errores de validación como una lista de mensajes
-     */
-    fun getAllValidationErrors(apiError: ApiError): List<String> {
-        val validationErrors = apiError.details?.validationErrors
-        return if (validationErrors != null) {
-            validationErrors.values.map { it.message }
-        } else {
-            listOf(apiError.message)
-        }
-    }
-    
-    /**
-     * Obtiene errores específicos por campo
-     */
-    fun getFieldErrors(apiError: ApiError): Map<String, String> {
-        val validationErrors = apiError.details?.validationErrors
-        return if (validationErrors != null) {
-            validationErrors.mapValues { (_, error) -> error.message }
-        } else {
-            emptyMap()
-        }
-    }
-    
-    /**
-     * Verifica si el error es de validación
-     */
-    fun isValidationError(apiError: ApiError): Boolean {
-        return apiError.code == "VALIDATION_ERROR"
-    }
-    
-    /**
-     * Obtiene el nombre del campo del error de validación
-     */
-    fun getFieldNameFromValidationError(fieldPath: String): String {
+    fun getFriendlyErrorMessage(errorMessage: String): String {
         return when {
-            fieldPath.contains("businessName") -> "Nombre del negocio"
-            fieldPath.contains("businessType") -> "Tipo de negocio"
-            fieldPath.contains("ruc") -> "RUC"
-            fieldPath.contains("email") -> "Email"
-            fieldPath.contains("password") -> "Contraseña"
-            fieldPath.contains("phone") -> "Teléfono"
-            fieldPath.contains("address") -> "Dirección"
-            fieldPath.contains("contactName") -> "Nombre de contacto"
-            fieldPath.contains("sellerName") -> "Nombre del vendedor"
-            fieldPath.contains("branchCode") -> "Código de sucursal"
-            fieldPath.contains("branchName") -> "Nombre de sucursal"
-            fieldPath.contains("qrCode") -> "Código QR"
-            else -> fieldPath.substringAfterLast(".")
+            errorMessage.contains("Código de afiliación agotado") -> 
+                "❌ Este código de afiliación ya fue usado o expiró. Solicita uno nuevo a tu administrador."
+            errorMessage.contains("ya está registrado") -> 
+                "📱 Este número de teléfono ya está registrado. ¿Quieres hacer login?"
+            errorMessage.contains("Invalid affiliationCode") -> 
+                "❌ El código de afiliación no es válido. Verifica que lo hayas ingresado correctamente."
+            errorMessage.contains("Invalid credentials") -> 
+                "🔐 Email o contraseña incorrectos. Verifica tus credenciales."
+            errorMessage.contains("Invalid email or password") -> 
+                "🔐 Email o contraseña incorrectos. Verifica tus credenciales."
+            errorMessage.contains("EPREM") -> 
+                "🌐 Error de conectividad: No se puede conectar al servidor. Verifica la IP y que el servidor esté corriendo."
+            errorMessage.contains("Connection refused") -> 
+                "🔌 Conexión rechazada: El servidor no está corriendo o no es accesible."
+            errorMessage.contains("timeout") -> 
+                "⏱️ Timeout: El servidor tardó demasiado en responder."
+            errorMessage.contains("Network is unreachable") -> 
+                "📡 Red inalcanzable: Verifica tu conexión a internet."
+            errorMessage.contains("Socket") -> 
+                "🔌 Error de socket: Problema de conectividad de red."
+            errorMessage.contains("UnknownHostException") -> 
+                "🌐 Host desconocido: No se puede resolver la dirección del servidor."
+            else -> "❌ Error: $errorMessage"
         }
     }
 }

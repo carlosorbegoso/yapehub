@@ -158,7 +158,7 @@ fun PaymentsScreen(
                     items(filteredTransactions) { transaction ->
                         TransactionCard(
                             transaction = transaction,
-                            userRole = userProfile?.role,
+                            userRole = userProfile?.role?.name,
                             onConfirm = { 
                                 // TODO: Implementar confirmación
                             },

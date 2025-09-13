@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import org.sysarp.project.service.AuthService
 import org.sysarp.project.service.QRService
+import kotlinx.coroutines.launch
+import org.sysarp.project.data.UserProfile
+import org.sysarp.project.service.QRCodeData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -236,9 +239,10 @@ fun SellerManagementScreen(
     // Diálogo para generar código de afiliación
     if (showAffiliationCodeDialog) {
         GenerateAffiliationCodeDialog(
+            authService = authService,
             onDismiss = { showAffiliationCodeDialog = false },
             onGenerate = { affiliationCode ->
-                // Aquí se podría guardar el código generado
+                // Código generado exitosamente
                 showAffiliationCodeDialog = false
             }
         )
@@ -667,8 +671,8 @@ fun EditSellerDialog(
 @Composable
 fun GenerateQRDialog(
     qrService: QRService,
-    userProfile: org.sysarp.project.service.UserProfile?,
-    activeQRCode: org.sysarp.project.service.QRCodeData?,
+    userProfile: UserProfile?,
+    activeQRCode: QRCodeData?,
     onDismiss: () -> Unit,
     onGenerate: (org.sysarp.project.service.QRCodeData) -> Unit
 ) {
@@ -793,11 +797,21 @@ private fun getSellers(): List<SellerData> {
 
 @Composable
 fun GenerateAffiliationCodeDialog(
+    authService: AuthService,
     onDismiss: () -> Unit,
     onGenerate: (String) -> Unit
 ) {
     var generatedCode by remember { mutableStateOf("") }
     var showCode by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var successMessage by remember { mutableStateOf("") }
+    var branchId by remember { mutableStateOf("605") }
+    var expirationHours by remember { mutableStateOf("2") }
+    var maxUses by remember { mutableStateOf("1") }
+    var notes by remember { mutableStateOf("") }
+    
+    val coroutineScope = rememberCoroutineScope()
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -829,6 +843,68 @@ fun GenerateAffiliationCodeDialog(
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
+                
+                // Campos de entrada
+                OutlinedTextField(
+                    value = branchId,
+                    onValueChange = { branchId = it },
+                    label = { Text("ID de Sucursal") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                OutlinedTextField(
+                    value = expirationHours,
+                    onValueChange = { expirationHours = it },
+                    label = { Text("Horas de Expiración") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                OutlinedTextField(
+                    value = maxUses,
+                    onValueChange = { maxUses = it },
+                    label = { Text("Usos Máximos") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notas (opcional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Mensajes de error y éxito
+                if (errorMessage.isNotEmpty()) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                
+                if (successMessage.isNotEmpty()) {
+                    Text(
+                        text = successMessage,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 
                 if (showCode && generatedCode.isNotEmpty()) {
                     Card(
@@ -870,18 +946,61 @@ fun GenerateAffiliationCodeDialog(
             Button(
                 onClick = {
                     if (!showCode) {
-                        // Generar código único
-                        generatedCode = "AFF_${System.currentTimeMillis()}_${(1000..9999).random()}"
-                        showCode = true
+                        // Generar código usando la API real
+                        coroutineScope.launch {
+                            isLoading = true
+                            errorMessage = ""
+                            successMessage = ""
+                            
+                            try {
+                                val result = authService.generateAffiliationCode(
+                                    branchId = branchId.toIntOrNull() ?: 605,
+                                    expirationHours = expirationHours.toIntOrNull() ?: 2,
+                                    maxUses = maxUses.toIntOrNull() ?: 1,
+                                    notes = notes.ifEmpty { null }
+                                )
+                                
+                                result.fold(
+                                    onSuccess = { response ->
+                                        if (response.success && response.data != null) {
+                                            generatedCode = response.data.affiliationCode
+                                            showCode = true
+                                            successMessage = "✅ Código generado exitosamente"
+                                            errorMessage = ""
+                                        } else {
+                                            errorMessage = "❌ Error: ${response.message}"
+                                            successMessage = ""
+                                        }
+                                    },
+                                    onFailure = { error ->
+                                        errorMessage = "❌ Error: ${error.message}"
+                                        successMessage = ""
+                                    }
+                                )
+                            } catch (e: Exception) {
+                                errorMessage = "❌ Error: ${e.message}"
+                                successMessage = ""
+                            } finally {
+                                isLoading = false
+                            }
+                        }
                     } else {
                         onGenerate(generatedCode)
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondary
-                )
+                ),
+                enabled = !isLoading
             ) {
-                Text(if (!showCode) "Generar Código" else "Confirmar")
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = MaterialTheme.colorScheme.onSecondary
+                    )
+                } else {
+                    Text(if (!showCode) "Generar Código" else "Confirmar")
+                }
             }
         },
         dismissButton = {
