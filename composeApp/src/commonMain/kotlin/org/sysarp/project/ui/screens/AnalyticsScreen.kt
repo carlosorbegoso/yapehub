@@ -1,5 +1,6 @@
 package org.sysarp.project.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -14,11 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.background
-import org.sysarp.project.service.AuthService
-import org.sysarp.project.viewmodel.YapeViewModel
-import org.sysarp.project.data.YapeTransaction
 import org.sysarp.project.data.UserRole
+import org.sysarp.project.data.YapeTransaction
+import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.viewmodel.YapeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

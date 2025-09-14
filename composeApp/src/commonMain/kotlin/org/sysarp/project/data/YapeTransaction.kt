@@ -1,8 +1,8 @@
 package org.sysarp.project.data
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Contextual
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class YapeTransaction(

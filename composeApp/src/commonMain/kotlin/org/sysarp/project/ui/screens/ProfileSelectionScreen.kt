@@ -1,35 +1,54 @@
 package org.sysarp.project.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.background
-import org.sysarp.project.service.AuthService
+import org.sysarp.project.service.auth.AuthService
 
 @Composable
 fun ProfileSelectionScreen(
     authService: AuthService,
     onAdminSelected: () -> Unit,
-    onSellerSelected: () -> Unit,
-    onLoginSelected: () -> Unit
+    onSellerSelected: () -> Unit
 ) {
     var selectedType by remember { mutableStateOf<UserType?>(null) }
     var isLoading by remember { mutableStateOf(false) }
-    var showAdminOptions by remember { mutableStateOf(false) }
     
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -75,7 +94,7 @@ fun ProfileSelectionScreen(
         UserTypeCard(
             type = UserType.ADMIN,
             title = "Administrador",
-            subtitle = "Inicia sesión para gestionar tu negocio",
+            subtitle = "Gestiona tu negocio y vendedores",
             icon = Icons.Filled.Business,
             isSelected = selectedType == UserType.ADMIN,
             onClick = { selectedType = UserType.ADMIN }
@@ -86,7 +105,7 @@ fun ProfileSelectionScreen(
         UserTypeCard(
             type = UserType.SELLER,
             title = "Vendedor",
-            subtitle = "Afíliate con el código QR del administrador",
+            subtitle = "Recibe y confirma pagos",
             icon = Icons.Filled.Person,
             isSelected = selectedType == UserType.SELLER,
             onClick = { selectedType = UserType.SELLER }
@@ -100,8 +119,8 @@ fun ProfileSelectionScreen(
                 if (selectedType != null) {
                     isLoading = true
                     when (selectedType) {
-                        UserType.ADMIN -> showAdminOptions = true // Mostrar opciones de admin
-                        UserType.SELLER -> onSellerSelected() // Vendedor va al proceso de afiliación
+                        UserType.ADMIN -> onAdminSelected()
+                        UserType.SELLER -> onSellerSelected()
                         null -> {}
                     }
                 }
@@ -119,140 +138,10 @@ fun ProfileSelectionScreen(
                 )
             } else {
                 Text(
-                    text = when (selectedType) {
-                        UserType.ADMIN -> "Continuar"
-                        UserType.SELLER -> "Afiliarse"
-                        null -> "Continuar"
-                    },
+                    text = "Continuar",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-        }
-        
-        // Opciones de administrador
-        if (showAdminOptions) {
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(
-                text = "¿Qué deseas hacer?",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Botón de iniciar sesión
-            Button(
-                onClick = onLoginSelected,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Login,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Iniciar Sesión",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Botón de registro
-            OutlinedButton(
-                onClick = onAdminSelected,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.PersonAdd,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Registrarse como Administrador",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Botón para volver
-            TextButton(
-                onClick = { showAdminOptions = false },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Volver a selección",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        
-        // Solo mostrar separador y botón de login si no se están mostrando las opciones de admin
-        if (!showAdminOptions) {
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Separador
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                androidx.compose.material3.Divider(
-                    modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                )
-                
-                Text(
-                    text = "o",
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
-                
-                androidx.compose.material3.Divider(
-                    modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Botón de iniciar sesión
-            OutlinedButton(
-                onClick = onLoginSelected,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Login,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Ya tengo cuenta de Administrador",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
                 )
             }
         }

@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import org.sysarp.project.data.BusinessReport
 import org.sysarp.project.data.DailyReport
-import org.sysarp.project.data.TransactionType
 import org.sysarp.project.data.YapeTransaction
 
 interface YapeTransactionRepository {

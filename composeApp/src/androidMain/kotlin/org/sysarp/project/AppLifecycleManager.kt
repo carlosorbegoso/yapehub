@@ -1,7 +1,6 @@
 package org.sysarp.project
 
 import android.app.Application
-import android.os.Bundle
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.flow.MutableSharedFlow

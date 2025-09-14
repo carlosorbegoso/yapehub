@@ -1,6 +1,7 @@
 package org.sysarp.project.data
 
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
 
 /**
  * Representa una notificación de Yape capturada antes de ser procesada
@@ -36,4 +37,30 @@ data class NotificationStats(
     val totalCount: Long,
     val yapeCount: Long,
     val processedCount: Long
+)
+
+@Serializable
+data class YapeNotificationResponse(
+    val success: Boolean,
+    val message: String,
+    val data: YapeNotificationData? = null
+)
+
+@Serializable
+data class YapeNotificationData(
+    val id: Long,
+    val transactionId: String,
+    val amount: Double,
+    val currency: String,
+    val sellerId: Int,
+    val sender: String,
+    val status: String,
+    val timestamp: Long
+)
+
+@Serializable
+data class YapeNotificationApiResponse(
+    val success: Boolean,
+    val message: String,
+    val data: YapeNotificationData? = null
 )

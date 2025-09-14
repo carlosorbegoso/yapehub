@@ -34,7 +34,8 @@ data class LoginUserData(
     val role: String,
     val businessId: Int?,
     val businessName: String?,
-    val isVerified: Boolean
+    val isVerified: Boolean,
+    val sellerId: Int? = null  // ← Agregar el sellerId del login response
 )
 
 // Modelos para refresh token

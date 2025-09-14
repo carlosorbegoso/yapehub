@@ -5,21 +5,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.launch
-import org.sysarp.project.ui.theme.YapeHubTheme
-import org.sysarp.project.data.UserProfile
-import org.sysarp.project.repository.UserProfileRepository
-import org.sysarp.project.repository.YapeTransactionRepository
-import org.sysarp.project.service.NotificationCaptureService
-import org.sysarp.project.data.YapeTransaction
-import org.sysarp.project.data.TransactionType
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
-import org.sysarp.project.navigation.NavigationManager
 import org.sysarp.project.navigation.AppContent
 import org.sysarp.project.navigation.rememberNavigationManager
+import org.sysarp.project.repository.UserProfileRepository
+import org.sysarp.project.repository.YapeTransactionRepository
+import org.sysarp.project.service.SimpleNotificationService
+import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.SellerService
+import org.sysarp.project.ui.theme.YapeHubTheme
 import org.sysarp.project.viewmodel.YapeViewModel
-import org.sysarp.project.service.AuthService
 
 @Composable
 fun App() {
@@ -114,29 +108,26 @@ fun YapeApp() {
         UserProfileRepository()
     }
     
+
+
+    val notificationService = remember {
+        object : SimpleNotificationService {
+            override fun startCapture() {
+                println("🚀 Iniciando captura de notificaciones de Yape")
+            }
+            override fun stopCapture() {
+                println("🛑 Deteniendo captura de notificaciones de Yape")
+            }
+            override fun isCapturing(): Boolean = false
+        }
+    }
+    
     val authService = remember {
         AuthService()
     }
     
-    // Verificar sesión al iniciar la app
-    LaunchedEffect(Unit) {
-        println("🚀 [APP] Verificando sesión al iniciar...")
-        if (authService.isSessionValid()) {
-            println("✅ [APP] Sesión válida encontrada")
-            // La sesión es válida, el usuario permanece autenticado
-        } else {
-            println("❌ [APP] Sesión expirada o no encontrada")
-            // La sesión expiró, el usuario debe hacer login nuevamente
-        }
-    }
-    
-    val notificationService = remember {
-        // createNotificationService(repository)
-        object : NotificationCaptureService {
-            override suspend fun startCapturing() {}
-            override suspend fun stopCapturing() {}
-            override fun isCapturing(): Boolean = false
-        } // Temporalmente deshabilitado
+    val sellerService = remember {
+        SellerService()
     }
     
     // CORREGIDO: Usar el mismo repositorio singleton
@@ -150,23 +141,9 @@ fun YapeApp() {
     // Contenido de la aplicación
     AppContent(
         navigationManager = navigationManager,
+        authService = authService,
+        sellerService = sellerService,
         viewModel = viewModel,
-        userProfileRepository = userProfileRepository,
-        authService = authService
+        userProfileRepository = userProfileRepository
     )
 }
-
-// Función para crear el servicio de notificaciones apropiado para cada plataforma
-// expect fun createNotificationService(repository: YapeTransactionRepository): NotificationCaptureService
-
-// Función para crear el repositorio apropiado para cada plataforma
-// expect fun createRepository(): YapeTransactionRepository
-
-// Función para solicitar permisos automáticamente
-// expect fun requestPermissionsAutomatically()
-
-// Función para verificar permisos de notificaciones
-// expect suspend fun checkNotificationPermission(): Boolean
-
-// Función para verificar permisos de accesibilidad
-// expect suspend fun checkAccessibilityPermission(): Boolean

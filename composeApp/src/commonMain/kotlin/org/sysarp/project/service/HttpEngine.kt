@@ -1,6 +1,6 @@
 package org.sysarp.project.service
 
-import io.ktor.client.engine.*
+import io.ktor.client.engine.HttpClientEngine
 
 internal expect fun getHttpClientEngine(): HttpClientEngine
 

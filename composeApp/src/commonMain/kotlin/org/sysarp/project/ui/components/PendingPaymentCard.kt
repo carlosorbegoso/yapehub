@@ -18,13 +18,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import org.sysarp.project.data.PendingPayment
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.sysarp.project.data.PendingPayment
 
 @Composable
 fun PendingPaymentCard(
@@ -216,7 +213,8 @@ fun PendingPaymentCard(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = payment.createdAt.toLocalDateTime(TimeZone.currentSystemDefault())
+                                    text = payment.createdAt
+                                        .toLocalDateTime(TimeZone.currentSystemDefault())
                                         .toString().substring(0, 16),
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,

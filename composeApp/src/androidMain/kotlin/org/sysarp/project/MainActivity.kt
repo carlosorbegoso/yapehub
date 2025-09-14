@@ -1,23 +1,14 @@
 package org.sysarp.project
 
-import android.content.Intent
-import android.os.Bundle
-import android.provider.Settings
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 // import org.sysarp.project.service.AndroidNotificationCaptureService
 // import org.sysarp.project.service.TimberLogger
 // import org.sysarp.project.service.PermissionChecker
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import org.sysarp.project.ui.theme.YapeHubTheme
-import org.sysarp.project.ContextProvider
-import org.sysarp.project.AppLifecycleManager
-import org.sysarp.project.RepositorySingleton
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

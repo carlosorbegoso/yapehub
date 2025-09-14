@@ -1,4 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -39,6 +38,7 @@ kotlin {
             
             // Ktor Android
             implementation(libs.ktor.client.android)
+            implementation(libs.ktor.client.websockets)
         }
         
         commonMain.dependencies {
@@ -70,6 +70,7 @@ kotlin {
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.auth)
             implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.websockets)
             implementation(libs.ktor.serialization.kotlinx.json)
         }
         iosMain.dependencies {

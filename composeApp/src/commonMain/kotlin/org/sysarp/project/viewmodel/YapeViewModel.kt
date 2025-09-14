@@ -1,35 +1,33 @@
 package org.sysarp.project.viewmodel
 
+// import org.sysarp.project.requestPermissionsAutomatically
+// import org.sysarp.project.checkNotificationPermission
+// import org.sysarp.project.checkAccessibilityPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.data.BusinessReport
 import org.sysarp.project.data.DailyReport
+import org.sysarp.project.data.PendingPayment
 import org.sysarp.project.data.TransactionType
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.data.UserRole
 import org.sysarp.project.data.YapeTransaction
-import org.sysarp.project.data.PendingPayment
-import org.sysarp.project.data.PaymentConfirmation
 import org.sysarp.project.repository.UserProfileRepository
 import org.sysarp.project.repository.YapeTransactionRepository
-import org.sysarp.project.service.NotificationCaptureService
-import org.sysarp.project.service.PermissionState
 import org.sysarp.project.service.CaptureStatus
 import org.sysarp.project.service.DebugLogger
-// import org.sysarp.project.requestPermissionsAutomatically
-// import org.sysarp.project.checkNotificationPermission
-// import org.sysarp.project.checkAccessibilityPermission
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import org.sysarp.project.service.PermissionState
+import org.sysarp.project.service.SimpleNotificationService
 
 class YapeViewModel(
     private val repository: YapeTransactionRepository,
-    private val notificationService: NotificationCaptureService,
+    private val notificationService: SimpleNotificationService,
     private val userProfileRepository: UserProfileRepository
 ) : ViewModel() {
     
@@ -51,8 +49,8 @@ class YapeViewModel(
     private val _pendingPayments = MutableStateFlow<List<PendingPayment>>(emptyList())
     val pendingPayments: StateFlow<List<PendingPayment>> = _pendingPayments.asStateFlow()
     
-    private val _paymentConfirmations = MutableStateFlow<List<PaymentConfirmation>>(emptyList())
-    val paymentConfirmations: StateFlow<List<PaymentConfirmation>> = _paymentConfirmations.asStateFlow()
+    private val _paymentConfirmations = MutableStateFlow<List<PendingPayment>>(emptyList())
+    val paymentConfirmations: StateFlow<List<PendingPayment>> = _paymentConfirmations.asStateFlow()
     
     private var isObservingRepository = false
     
@@ -81,13 +79,13 @@ class YapeViewModel(
         if (user.role == UserRole.ADMIN) {
             viewModelScope.launch {
                 requestPermissions()
-                notificationService.startCapturing()
+                notificationService.startCapture()
                 kotlinx.coroutines.delay(3000)
                 checkPermissions()
             }
         } else {
             viewModelScope.launch {
-                notificationService.stopCapturing()
+                notificationService.stopCapture()
                 _uiState.value = _uiState.value.copy(
                     isCapturing = false,
                     permissionState = PermissionState.UNKNOWN,
@@ -136,14 +134,14 @@ class YapeViewModel(
     
     fun startNotificationCapture() {
         viewModelScope.launch {
-            notificationService.startCapturing()
+            notificationService.startCapture()
             _uiState.value = _uiState.value.copy(isCapturing = true)
         }
     }
     
     fun stopNotificationCapture() {
         viewModelScope.launch {
-            notificationService.stopCapturing()
+            notificationService.stopCapture()
             _uiState.value = _uiState.value.copy(isCapturing = false)
         }
     }
@@ -295,15 +293,17 @@ Total de transacciones: ${transactions.size}
             }
             
             // Crear confirmación
-            val confirmation = PaymentConfirmation(
+            val confirmation = PendingPayment(
                 id = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                 transactionId = pendingPayment.transactionId,
                 amount = pendingPayment.amount,
                 currency = pendingPayment.currency,
+                createdAt = kotlinx.datetime.Clock.System.now(),
+                businessName = currentUser.assignedStores.firstOrNull() ?: "Sin tienda",
+                message = "Pago confirmado por ${currentUser.name}",
+                isConfirmed = true,
                 confirmedBy = currentUser.id,
-                confirmedAt = kotlinx.datetime.Clock.System.now(),
-                vendorStore = currentUser.assignedStores.firstOrNull() ?: "Sin tienda",
-                isConfirmed = true
+                securityCode = pendingPayment.securityCode
             )
             
             // Actualizar listas

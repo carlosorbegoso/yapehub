@@ -28,3 +28,29 @@ data class PendingPayment(
     val confirmedBy: String? = null,
     val securityCode: String? = null // Código de seguridad de Yape
 )
+
+@Serializable
+data class ClaimPaymentData(
+    val paymentId: Int,
+    val sellerId: Int,
+    val adminId: Int,
+    val claimedAt: Long? = null
+)
+
+@Serializable
+data class YapePaymentResponse(
+    val success: Boolean,
+    val message: String,
+    val data: YapePaymentData? = null
+)
+
+@Serializable
+data class YapePaymentData(
+    val paymentId: Int,
+    val transactionId: String,
+    val amount: Double,
+    val currency: String,
+    val sellerId: Int,
+    val status: String,
+    val timestamp: Long
+)

@@ -89,3 +89,13 @@ data class GenerateAffiliationCodeResponse(
     val data: AffiliationCodeData? = null, // AffiliationCodeData will be in AffiliationModels.kt
     val error: Boolean = false
 )
+
+@Serializable
+data class DeactivationRequest(
+    val id: Int,
+    val sellerId: Int,
+    val reason: String,
+    val status: String,
+    val requestedAt: String,
+    val processedAt: String? = null
+)

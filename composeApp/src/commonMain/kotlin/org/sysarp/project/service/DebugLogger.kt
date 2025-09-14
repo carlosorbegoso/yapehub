@@ -3,7 +3,6 @@ package org.sysarp.project.service
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.format
 
 object DebugLogger {
     private val _logs = mutableListOf<LogEntry>()

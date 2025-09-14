@@ -1,28 +1,31 @@
 package org.sysarp.project.navigation
 
-import androidx.compose.runtime.*
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.launch
-import org.sysarp.project.ui.screens.HomeScreen
-import org.sysarp.project.ui.screens.ReportsScreen
-import org.sysarp.project.ui.screens.SettingsScreen
-import org.sysarp.project.ui.screens.PaymentsScreen
-import org.sysarp.project.ui.screens.UserManagementScreen
-import org.sysarp.project.ui.screens.ProfileSelectionScreen
-import org.sysarp.project.ui.screens.AdminRegistrationScreen
-import org.sysarp.project.ui.screens.SellerAffiliationScreen
+import org.sysarp.project.repository.UserProfileRepository
+import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.SellerService
+
 import org.sysarp.project.ui.screens.AdminDashboardScreen
+import org.sysarp.project.ui.screens.AdminRegistrationScreen
+import org.sysarp.project.ui.screens.AnalyticsScreen
+import org.sysarp.project.ui.screens.DeactivationRequestScreen
+import org.sysarp.project.ui.screens.ForgotPasswordScreen
+import org.sysarp.project.ui.screens.LoginScreen
+import org.sysarp.project.ui.screens.PaymentsScreen
+import org.sysarp.project.ui.screens.ProfileSelectionScreen
+import org.sysarp.project.ui.screens.QRDisplayScreen
+import org.sysarp.project.ui.screens.ReportsScreen
+import org.sysarp.project.ui.screens.SellerAffiliationScreen
 import org.sysarp.project.ui.screens.SellerDashboardScreen
 import org.sysarp.project.ui.screens.SellerManagementScreen
-import org.sysarp.project.ui.screens.AnalyticsScreen
+import org.sysarp.project.ui.screens.SettingsScreen
 import org.sysarp.project.ui.screens.SplashScreen
-import org.sysarp.project.ui.screens.QRDisplayScreen
-import org.sysarp.project.ui.screens.LoginScreen
-import org.sysarp.project.ui.screens.ForgotPasswordScreen
-import org.sysarp.project.ui.screens.DeactivationRequestScreen
+import org.sysarp.project.ui.screens.UserManagementScreen
 import org.sysarp.project.viewmodel.YapeViewModel
-import org.sysarp.project.repository.UserProfileRepository
-import org.sysarp.project.service.AuthService
 
 @Composable
 fun AppContent(
@@ -30,6 +33,7 @@ fun AppContent(
     viewModel: YapeViewModel,
     userProfileRepository: UserProfileRepository,
     authService: AuthService,
+    sellerService: SellerService,
     modifier: Modifier = Modifier
 ) {
     val currentScreen by navigationManager.currentScreen.collectAsState()
@@ -48,12 +52,9 @@ fun AppContent(
         }
         is Screen.Settings -> {
             SettingsScreen(
-                authService = authService,
+                viewModel = viewModel,
                 onNavigateBack = navigationManager::navigateBack,
-                onLogout = { 
-                    // Llamar al logout real del AuthService
-                    // La navegación se manejará automáticamente por el AuthState
-                }
+                onNavigateToUserManagement = { navigationManager.navigateTo(Screen.UserManagement) }
             )
         }
         is Screen.PendingPayments -> {
@@ -73,8 +74,7 @@ fun AppContent(
             ProfileSelectionScreen(
                 authService = authService,
                 onAdminSelected = { navigationManager.navigateToAdminRegistration() },
-                onSellerSelected = { navigationManager.navigateToSellerAffiliation() },
-                onLoginSelected = { navigationManager.navigateToLogin() }
+                onSellerSelected = { navigationManager.navigateToSellerAffiliation() }
             )
         }
         is Screen.Login -> {
@@ -119,6 +119,7 @@ fun AppContent(
         is Screen.AdminDashboard -> {
             AdminDashboardScreen(
                 authService = authService,
+                sellerService = sellerService,
                 onNavigateToSellerManagement = { navigationManager.navigateTo(Screen.SellerManagement) },
                 onNavigateToAnalytics = { navigationManager.navigateTo(Screen.Analytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.PendingPayments) },
@@ -140,6 +141,7 @@ fun AppContent(
         is Screen.SellerManagement -> {
             SellerManagementScreen(
                 authService = authService,
+                sellerService = sellerService,
                 onNavigateBack = { navigationManager.navigateBack() },
                 onNavigateToQR = { qrCode -> navigationManager.navigateToQRDisplay(qrCode) }
             )
@@ -163,6 +165,7 @@ fun AppContent(
         is Screen.DeactivationRequest -> {
             DeactivationRequestScreen(
                 authService = authService,
+                sellerService = sellerService,
                 onNavigateBack = { navigationManager.navigateBack() }
             )
         }

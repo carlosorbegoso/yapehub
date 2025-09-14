@@ -164,17 +164,18 @@ data class SellerLoginData(
 
 @Serializable
 data class SellerUserData(
-    val id: Int,
-    val name: String,
-    val phone: String,
+    val id: Int? = null,
+    val name: String? = null,
+    val phone: String? = null,
     val email: String? = null,
-    val role: String,
+    val role: String? = null,
     val branchId: Int? = null,
     val branchName: String? = null,
-    val adminId: Int,
+    val adminId: Int? = null,
     val adminName: String? = null,
-    val isActive: Boolean,
-    val isVerified: Boolean = false
+    val isActive: Boolean? = null,
+    val isVerified: Boolean = false,
+    val sellerId: Int? = null  // ← Agregar el sellerId del login response
 )
 
 // Modelos para validación de códigos de afiliación
@@ -199,3 +200,6 @@ data class ValidateAffiliationCodeData(
     val branchName: String?,
     val adminId: Int?
 )
+
+// Alias para compatibilidad
+typealias SellerData = Seller
