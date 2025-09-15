@@ -22,6 +22,7 @@ sealed class Screen {
     object Reports : Screen()
     object Settings : Screen()
     object PendingPayments : Screen()
+    object SellerPayments : Screen()
     object UserManagement : Screen()
     object DeactivationRequest : Screen()
     data class QRDisplay(val qrCode: org.sysarp.project.service.QRCodeData) : Screen()
@@ -108,6 +109,10 @@ class NavigationManager {
     
     fun navigateToDeactivationRequest() {
         _currentScreen.value = Screen.DeactivationRequest
+    }
+    
+    fun navigateToSellerPayments() {
+        _currentScreen.value = Screen.SellerPayments
     }
     
 }

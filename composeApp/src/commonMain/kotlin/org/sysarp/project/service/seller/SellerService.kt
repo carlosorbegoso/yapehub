@@ -51,9 +51,9 @@ class SellerService {
     suspend fun getMySellers(adminId: Int, page: Int = 1, limit: Int = 30, token: String): Result<org.sysarp.project.data.SellersResponse> {
         return try {
             Logger.auth("SELLER_SERVICE", "Obteniendo vendedores del admin: $adminId, página: $page")
-            
+
             val result = sellerApiClient.getMySellers(adminId, page, limit, token)
-            
+
             result.fold(
                 onSuccess = { response ->
                     Logger.auth("SELLER_SERVICE", "Vendedores obtenidos: ${response.data?.sellers?.size ?: 0} vendedores")
@@ -69,6 +69,63 @@ class SellerService {
             Result.failure(e)
         }
     }
+
+    suspend fun updateSeller(
+        sellerId: Int,
+        adminId: Int,
+        name: String? = null,
+        phone: String? = null,
+        isActive: Boolean? = null,
+        token: String
+    ): Result<org.sysarp.project.data.MySeller> {
+        return try {
+            Logger.auth("SELLER_SERVICE", "Actualizando vendedor: $sellerId")
+
+            val result = sellerApiClient.updateSeller(sellerId, adminId, name, phone, isActive, token)
+
+            result.fold(
+                onSuccess = { updatedSeller ->
+                    Logger.auth("SELLER_SERVICE", "Vendedor actualizado exitosamente: ${updatedSeller.name}")
+                    Result.success(updatedSeller)
+                },
+                onFailure = { error ->
+                    Logger.auth("SELLER_SERVICE", "Error actualizando vendedor: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("SELLER_SERVICE", "Error actualizando vendedor: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteSeller(
+        sellerId: Int,
+        adminId: Int,
+        action: String = "pause", // "pause" o "delete"
+        token: String
+    ): Result<Boolean> {
+        return try {
+            Logger.auth("SELLER_SERVICE", "Eliminando/pausando vendedor: $sellerId con acción: $action")
+
+            val result = sellerApiClient.deleteSeller(sellerId, adminId, action, token)
+
+            result.fold(
+                onSuccess = { success ->
+                    Logger.auth("SELLER_SERVICE", "Vendedor $action exitosamente: $sellerId")
+                    Result.success(success)
+                },
+                onFailure = { error ->
+                    Logger.auth("SELLER_SERVICE", "Error $action vendedor: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("SELLER_SERVICE", "Error $action vendedor: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
 
     /**
      * Login de vendedor por teléfono

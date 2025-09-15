@@ -1,47 +1,61 @@
-package org.sysarp.project.service
+package org.sysarp.project.service.payment
 
-import org.sysarp.project.data.ClaimPaymentData
-import org.sysarp.project.data.PendingPayment
+import org.sysarp.project.service.http.PaymentApiClient
+import org.sysarp.project.utils.Logger
 
-/**
- * Servicio especializado para manejar pagos
- */
-class PaymentService {
+class PaymentService(
+    private val paymentApiClient: PaymentApiClient
+) {
     
-    /**
-     * Obtener pagos pendientes
-     */
-    suspend fun getPendingPayments(): Result<List<PendingPayment>> {
+    suspend fun getPendingPayments(
+        sellerId: Int, 
+        page: Int = 0, 
+        limit: Int = 20, 
+        token: String
+    ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
         return try {
-            // TODO: Implementar llamada a API real
-            val payments = emptyList<PendingPayment>()
-            Result.success(payments)
+            Logger.auth("PAYMENT_SERVICE", "Obteniendo pagos pendientes del vendedor: $sellerId, página: $page")
+
+            val result = paymentApiClient.getPendingPayments(sellerId, page, limit, token)
+
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("PAYMENT_SERVICE", "Pagos pendientes obtenidos: ${response.data.payments.size} pagos en página ${response.data.pagination.currentPage}")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("PAYMENT_SERVICE", "Error obteniendo pagos pendientes: ${error.message}")
+                    Result.failure(error)
+                }
+            )
         } catch (e: Exception) {
+            Logger.auth("PAYMENT_SERVICE", "Error obteniendo pagos pendientes: ${e.message}")
             Result.failure(e)
         }
     }
-    
-    /**
-     * Obtener pagos pendientes de un vendedor específico
-     */
-    suspend fun getSellerPendingPayments(sellerId: Int): Result<List<PendingPayment>> {
-        return getPendingPayments()
-    }
-    
-    /**
-     * Confirmar pago
-     */
-    suspend fun confirmPayment(paymentId: Int): Result<ClaimPaymentData> {
+
+    suspend fun claimPayment(
+        sellerId: Int,
+        paymentId: Int,
+        token: String
+    ): Result<org.sysarp.project.data.ClaimPaymentResponse> {
         return try {
-            // TODO: Implementar lógica de confirmación
-            val claimData = ClaimPaymentData(
-                paymentId = paymentId,
-                sellerId = 0,
-                adminId = 0,
-                claimedAt = null
+            Logger.auth("PAYMENT_SERVICE", "Confirmando pago: $paymentId para vendedor: $sellerId")
+
+            val result = paymentApiClient.claimPayment(sellerId, paymentId, token)
+
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("PAYMENT_SERVICE", "Pago confirmado exitosamente: $paymentId")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("PAYMENT_SERVICE", "Error confirmando pago: ${error.message}")
+                    Result.failure(error)
+                }
             )
-            Result.success(claimData)
         } catch (e: Exception) {
+            Logger.auth("PAYMENT_SERVICE", "Error confirmando pago: ${e.message}")
             Result.failure(e)
         }
     }

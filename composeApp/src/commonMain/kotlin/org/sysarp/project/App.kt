@@ -12,6 +12,9 @@ import org.sysarp.project.repository.YapeTransactionRepository
 import org.sysarp.project.service.SimpleNotificationService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
+import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.service.http.PaymentApiClient
+import io.ktor.client.HttpClient
 import org.sysarp.project.ui.theme.YapeHubTheme
 import org.sysarp.project.viewmodel.YapeViewModel
 
@@ -130,6 +133,12 @@ fun YapeApp() {
         SellerService()
     }
     
+    val paymentService = remember {
+        val httpClient = HttpClient()
+        val paymentApiClient = PaymentApiClient(httpClient)
+        PaymentService(paymentApiClient)
+    }
+    
     // CORREGIDO: Usar el mismo repositorio singleton
     val viewModel = remember {
         YapeViewModel(repository, notificationService, userProfileRepository)
@@ -143,6 +152,7 @@ fun YapeApp() {
         navigationManager = navigationManager,
         authService = authService,
         sellerService = sellerService,
+        paymentService = paymentService,
         viewModel = viewModel,
         userProfileRepository = userProfileRepository
     )

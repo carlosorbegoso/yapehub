@@ -118,14 +118,14 @@ class SellerApiClient : BaseApiClient() {
     suspend fun getMySellers(adminId: Int, page: Int = 1, limit: Int = 30, token: String): Result<org.sysarp.project.data.SellersResponse> {
         return try {
             logInfo("SELLER_API", "Obteniendo vendedores del admin: $adminId, página: $page")
-            
+
             val response = client.get("$baseUrl/api/admin/sellers/my-sellers") {
                 parameter("adminId", adminId)
                 parameter("page", page)
                 parameter("limit", limit)
                 header("Authorization", "Bearer $token")
             }
-            
+
             if (response.status.isSuccess()) {
                 val sellersResponse = response.body<org.sysarp.project.data.SellersResponse>()
                 logInfo("SELLER_API", "Vendedores obtenidos exitosamente: ${sellersResponse.data?.sellers?.size ?: 0} vendedores")
@@ -138,7 +138,7 @@ class SellerApiClient : BaseApiClient() {
                 } catch (e: Exception) {
                     "Error desconocido: ${e.message}"
                 }
-                
+
                 val finalErrorMessage = "Error obteniendo vendedores: ${response.status} - $errorMessage"
                 logError("SELLER_API", finalErrorMessage)
                 Result.failure(Exception(finalErrorMessage))
@@ -148,6 +148,88 @@ class SellerApiClient : BaseApiClient() {
             Result.failure(e)
         }
     }
+
+    suspend fun updateSeller(
+        sellerId: Int,
+        adminId: Int,
+        name: String? = null,
+        phone: String? = null,
+        isActive: Boolean? = null,
+        token: String
+    ): Result<org.sysarp.project.data.MySeller> {
+        return try {
+            logInfo("SELLER_API", "Actualizando vendedor: $sellerId")
+
+            val response = client.put("$baseUrl/api/admin/sellers/$sellerId") {
+                parameter("adminId", adminId)
+                name?.let { parameter("name", it) }
+                phone?.let { parameter("phone", it) }
+                isActive?.let { parameter("isActive", it.toString()) }
+                header("Authorization", "Bearer $token")
+                header("accept", "application/json")
+            }
+
+            if (response.status.isSuccess()) {
+                val updatedSeller = response.body<org.sysarp.project.data.MySeller>()
+                logInfo("SELLER_API", "Vendedor actualizado exitosamente: ${updatedSeller.name}")
+                Result.success(updatedSeller)
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("SELLER_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+
+                val finalErrorMessage = "Error actualizando vendedor: ${response.status} - $errorMessage"
+                logError("SELLER_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("SELLER_API", "Error actualizando vendedor: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteSeller(
+        sellerId: Int,
+        adminId: Int,
+        action: String = "pause", // "pause" o "delete"
+        token: String
+    ): Result<Boolean> {
+        return try {
+            logInfo("SELLER_API", "Eliminando/pausando vendedor: $sellerId con acción: $action")
+
+            val response = client.delete("$baseUrl/api/admin/sellers/$sellerId") {
+                parameter("action", action)
+                parameter("adminId", adminId)
+                header("Authorization", "Bearer $token")
+                header("accept", "application/json")
+            }
+
+            if (response.status.isSuccess()) {
+                logInfo("SELLER_API", "Vendedor $action exitosamente: $sellerId")
+                Result.success(true)
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("SELLER_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+
+                val finalErrorMessage = "Error $action vendedor: ${response.status} - $errorMessage"
+                logError("SELLER_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("SELLER_API", "Error $action vendedor: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
 
     /**
      * Login de vendedor por teléfono

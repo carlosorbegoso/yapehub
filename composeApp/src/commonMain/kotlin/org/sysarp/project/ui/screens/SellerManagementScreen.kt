@@ -21,6 +21,8 @@ import org.sysarp.project.service.QRCodeData
 import org.sysarp.project.service.QRService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
+import org.sysarp.project.ui.components.EditSellerDialog
+import org.sysarp.project.ui.components.DeleteSellerDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +36,7 @@ fun SellerManagementScreen(
     var showQRDialog by remember { mutableStateOf(false) }
     var showAffiliationCodeDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showPendingPaymentsDialog by remember { mutableStateOf(false) }
     var selectedSeller by remember { mutableStateOf<org.sysarp.project.data.MySeller?>(null) }
     
     // Estados para la API real
@@ -407,12 +410,34 @@ fun SellerManagementScreen(
                         showEditSellerDialog = true
                     },
                     onToggleStatus = { 
-                        // TODO: Implementar cambio de estado via API
-                        loadSellers(currentPage) // Recargar para reflejar cambios
+                        // Toggle status directamente
+                        coroutineScope.launch {
+                            val profile = userProfile
+                            if (profile?.adminId != null && accessToken != null) {
+                                sellerService.updateSeller(
+                                    sellerId = seller.sellerId,
+                                    adminId = profile.adminId!!.toInt(),
+                                    isActive = !seller.isActive,
+                                    token = accessToken!!
+                                ).fold(
+                                    onSuccess = { updatedSeller ->
+                                        // Actualizar la lista local
+                                        sellers = sellers.map { if (it.sellerId == updatedSeller.sellerId) updatedSeller else it }
+                                    },
+                                    onFailure = { error ->
+                                        errorMessage = "Error actualizando estado: ${error.message}"
+                                    }
+                                )
+                            }
+                        }
                     },
                     onDelete = { 
                         selectedSeller = seller
                         showDeleteConfirmDialog = true
+                    },
+                    onViewPayments = {
+                        selectedSeller = seller
+                        showPendingPaymentsDialog = true
                     }
                 )
             }
@@ -482,71 +507,57 @@ fun SellerManagementScreen(
     
     // Diálogo para editar vendedor
     if (showEditSellerDialog && selectedSeller != null) {
-        // TODO: Implementar diálogo de edición con el nuevo modelo SellerInfo
-        AlertDialog(
-            onDismissRequest = { 
+        EditSellerDialog(
+            seller = selectedSeller!!,
+            onDismiss = { 
                 showEditSellerDialog = false
                 selectedSeller = null
             },
-            title = { Text("Editar Vendedor") },
-            text = { Text("Funcionalidad de edición en desarrollo") },
-            confirmButton = {
-                Button(onClick = { 
-                    showEditSellerDialog = false
-                    selectedSeller = null
-                }) {
-                    Text("OK")
-                }
-            }
+            onSave = { updatedSeller ->
+                showEditSellerDialog = false
+                selectedSeller = null
+                // Actualizar la lista local
+                sellers = sellers.map { if (it.sellerId == updatedSeller.sellerId) updatedSeller else it }
+            },
+            sellerService = sellerService,
+            authService = authService
         )
     }
     
-    // Diálogo de confirmación para eliminar
+    // Diálogo de confirmación para eliminar/pausar
     if (showDeleteConfirmDialog && selectedSeller != null) {
-        AlertDialog(
-            onDismissRequest = { 
+        DeleteSellerDialog(
+            seller = selectedSeller!!,
+            onDismiss = { 
                 showDeleteConfirmDialog = false
                 selectedSeller = null
             },
-            title = {
-                Text(
-                    "Eliminar Vendedor",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text("¿Estás seguro de que quieres eliminar a ${selectedSeller?.name}? Esta acción no se puede deshacer.")
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // TODO: Implementar eliminación via API
-                        loadSellers(currentPage) // Recargar lista
-                        showDeleteConfirmDialog = false
-                        selectedSeller = null
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Eliminar")
+            onConfirm = { action ->
+                showDeleteConfirmDialog = false
+                selectedSeller = null
+                // Ejecutar acción
+                coroutineScope.launch {
+                    val profile = userProfile
+                    if (profile?.adminId != null && accessToken != null) {
+                        sellerService.deleteSeller(
+                            sellerId = selectedSeller!!.sellerId,
+                            adminId = profile.adminId!!.toInt(),
+                            action = action,
+                            token = accessToken!!
+                        ).fold(
+                            onSuccess = { 
+                                // Recargar lista para reflejar cambios
+                                loadSellers(currentPage)
+                            },
+                            onFailure = { error ->
+                                errorMessage = "Error ${if (action == "pause") "pausando" else "eliminando"} vendedor: ${error.message}"
+                            }
+                        )
+                    }
                 }
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { 
-                        showDeleteConfirmDialog = false
-                        selectedSeller = null
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    )
-                ) {
-                    Text("Cancelar")
-                }
-            },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = MaterialTheme.colorScheme.surface
+            sellerService = sellerService,
+            authService = authService
         )
     }
     
@@ -615,7 +626,8 @@ fun SellerCard(
     seller: org.sysarp.project.data.MySeller,
     onEdit: () -> Unit,
     onToggleStatus: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onViewPayments: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -721,73 +733,105 @@ fun SellerCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Botones de acción
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onEdit,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Editar")
-                }
-                
-                // Botón de Pausar/Activar con mejor diseño
-                Button(
-                    onClick = onToggleStatus,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (seller.isActive) 
-                            MaterialTheme.colorScheme.secondaryContainer
-                        else 
-                            MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = if (seller.isActive) 
-                            MaterialTheme.colorScheme.onSecondaryContainer
-                        else 
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(
-                        imageVector = if (seller.isActive) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        contentDescription = if (seller.isActive) "Pausar vendedor" else "Activar vendedor",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (seller.isActive) "Pausar" else "Activar",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                
-                // Botón de Eliminar con diseño distintivo
-                OutlinedButton(
-                    onClick = onDelete,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Eliminar vendedor",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Eliminar",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
+                    // Botones de acción
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Primera fila: Editar y Pagos
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = onEdit,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Editar")
+                            }
+
+                            Button(
+                                onClick = onViewPayments,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Payment,
+                                    contentDescription = "Ver pagos pendientes",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Pagos",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+
+                        // Segunda fila: Activar/Pausar y Eliminar
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Botón de Pausar/Activar con mejor diseño
+                            Button(
+                                onClick = onToggleStatus,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (seller.isActive)
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = if (seller.isActive)
+                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (seller.isActive) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                                    contentDescription = if (seller.isActive) "Pausar vendedor" else "Activar vendedor",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (seller.isActive) "Pausar" else "Activar",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+
+                            // Botón de Eliminar con diseño distintivo
+                            OutlinedButton(
+                                onClick = onDelete,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = "Eliminar vendedor",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Eliminar",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
         }
     }
 }

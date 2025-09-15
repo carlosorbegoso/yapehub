@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import org.sysarp.project.repository.UserProfileRepository
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
+import org.sysarp.project.service.payment.PaymentService
 
 import org.sysarp.project.ui.screens.AdminDashboardScreen
 import org.sysarp.project.ui.screens.AdminRegistrationScreen
@@ -23,6 +24,7 @@ import org.sysarp.project.ui.screens.SellerAffiliationScreen
 import org.sysarp.project.ui.screens.SellerDashboardScreen
 import org.sysarp.project.ui.screens.SellerLoginScreen
 import org.sysarp.project.ui.screens.SellerManagementScreen
+import org.sysarp.project.ui.screens.SellerPaymentsScreen
 import org.sysarp.project.ui.screens.SellerRegistrationScreen
 import org.sysarp.project.ui.screens.SettingsScreen
 import org.sysarp.project.ui.screens.SplashScreen
@@ -36,6 +38,7 @@ fun AppContent(
     userProfileRepository: UserProfileRepository,
     authService: AuthService,
     sellerService: SellerService,
+    paymentService: PaymentService,
     modifier: Modifier = Modifier
 ) {
     val currentScreen by navigationManager.currentScreen.collectAsState()
@@ -63,6 +66,13 @@ fun AppContent(
             PaymentsScreen(
                 authService = authService,
                 viewModel = viewModel,
+                onNavigateBack = navigationManager::navigateBack
+            )
+        }
+        is Screen.SellerPayments -> {
+            SellerPaymentsScreen(
+                authService = authService,
+                paymentService = paymentService,
                 onNavigateBack = navigationManager::navigateBack
             )
         }
@@ -150,7 +160,7 @@ fun AppContent(
             SellerDashboardScreen(
                 authService = authService,
                 onNavigateToHistory = { navigationManager.navigateTo(Screen.Analytics) },
-                onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.PendingPayments) },
+                onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.SellerPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
                 onNavigateToDeactivationRequest = { navigationManager.navigateToDeactivationRequest() },
                 onLogout = { navigationManager.navigateToProfileSelection() }
