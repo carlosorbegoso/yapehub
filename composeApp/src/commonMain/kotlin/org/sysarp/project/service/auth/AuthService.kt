@@ -5,12 +5,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.sysarp.project.data.*
 import org.sysarp.project.data.AuthState
+import org.sysarp.project.service.http.ApiClient
+import org.sysarp.project.service.http.AuthApiClient
+import org.sysarp.project.utils.Logger
+import org.sysarp.project.utils.UserProfileFactory
 
 /**
  * Servicio de autenticación simplificado
  * Solo maneja autenticación básica
  */
 class AuthService {
+    
+    private val apiClient = ApiClient()
     
     // Estados básicos
     private val _authState = MutableStateFlow(AuthState.LOADING)
@@ -37,21 +43,50 @@ class AuthService {
         password: String
     ): Result<LoginUserData> {
         return try {
-            // TODO: Implementar llamada a API real
-            val loginData = LoginUserData(
-                id = 1,
-                email = email,
-                role = "ADMIN",
-                businessId = null,
-                businessName = null,
-                isVerified = true,
-                sellerId = null
+            Logger.auth("AUTH_SERVICE", "Iniciando login de admin: $email")
+            
+            val apiResponse = apiClient.adminLogin(email, password)
+            
+            apiResponse.fold(
+                onSuccess = { response ->
+                    if (response.success && response.data != null) {
+                        val userData = response.data.user
+                        val loginData = LoginUserData(
+                            id = userData.id,
+                            email = userData.email,
+                            role = userData.role,
+                            businessId = userData.businessId,
+                            businessName = userData.businessName,
+                            isVerified = userData.isVerified,
+                            sellerId = null
+                        )
+                        
+                        _userProfile.value = UserProfileFactory.createAdminProfile(
+                            id = loginData.id,
+                            email = loginData.email,
+                            businessId = loginData.businessId,
+                            businessName = loginData.businessName,
+                            isVerified = loginData.isVerified
+                        )
+                        _accessToken.value = response.data.accessToken
+                        _authState.value = AuthState.AUTHENTICATED
+                        
+                        Logger.auth("AUTH_SERVICE", "Login exitoso para admin: $email")
+                        Result.success(loginData)
+                    } else {
+                        Logger.auth("AUTH_SERVICE", "Error en login de admin: ${response.message}")
+                        _authState.value = AuthState.UNAUTHENTICATED
+                        Result.failure(Exception(response.message))
+                    }
+                },
+                onFailure = { error ->
+                    Logger.auth("AUTH_SERVICE", "Error en login de admin: ${error.message}")
+                    _authState.value = AuthState.UNAUTHENTICATED
+                    Result.failure(error)
+                }
             )
-            _accessToken.value = "fake_token_${System.currentTimeMillis()}"
-            _userProfile.value = null // TODO: Crear UserProfile desde LoginUserData
-            _authState.value = AuthState.AUTHENTICATED
-            Result.success(loginData)
         } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción en login de admin: ${e.message}")
             _authState.value = AuthState.UNAUTHENTICATED
             Result.failure(e)
         }
@@ -65,21 +100,53 @@ class AuthService {
         password: String
     ): Result<LoginUserData> {
         return try {
-            // TODO: Implementar llamada a API real
-            val sellerData = LoginUserData(
-                id = 2,
-                email = "seller@test.com",
-                role = "SELLER",
-                businessId = 1,
-                businessName = "Business Test",
-                isVerified = true,
-                sellerId = 1
+            Logger.auth("AUTH_SERVICE", "Iniciando login de vendedor por teléfono: $phone")
+            
+            val apiResponse = apiClient.sellerLoginByPhone(phone)
+            
+            apiResponse.fold(
+                onSuccess = { response ->
+                    if (response.success && response.data != null) {
+                        val userData = response.data.user
+                        val loginData = LoginUserData(
+                            id = userData.id ?: 0,
+                            email = userData.email ?: "",
+                            role = userData.role ?: "VENDOR",
+                            businessId = userData.branchId ?: 0,
+                            businessName = userData.branchName ?: "",
+                            isVerified = userData.isVerified,
+                            sellerId = userData.sellerId
+                        )
+                        
+                        _userProfile.value = UserProfileFactory.createSellerProfile(
+                            id = loginData.id,
+                            name = loginData.email,
+                            email = loginData.email,
+                            role = loginData.role,
+                            branchId = loginData.businessId,
+                            branchName = loginData.businessName,
+                            isVerified = loginData.isVerified,
+                            sellerId = loginData.sellerId
+                        )
+                        _accessToken.value = response.data.accessToken
+                        _authState.value = AuthState.AUTHENTICATED
+                        
+                        Logger.auth("AUTH_SERVICE", "Login exitoso para vendedor: $phone")
+                        Result.success(loginData)
+                    } else {
+                        Logger.auth("AUTH_SERVICE", "Error en login de vendedor: ${response.message}")
+                        _authState.value = AuthState.UNAUTHENTICATED
+                        Result.failure(Exception(response.message))
+                    }
+                },
+                onFailure = { error ->
+                    Logger.auth("AUTH_SERVICE", "Error en login de vendedor: ${error.message}")
+                    _authState.value = AuthState.UNAUTHENTICATED
+                    Result.failure(error)
+                }
             )
-            _accessToken.value = "fake_seller_token_${System.currentTimeMillis()}"
-            _userProfile.value = null // TODO: Crear UserProfile desde LoginUserData
-            _authState.value = AuthState.AUTHENTICATED
-            Result.success(sellerData)
         } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción en login de vendedor: ${e.message}")
             _authState.value = AuthState.UNAUTHENTICATED
             Result.failure(e)
         }
@@ -100,6 +167,78 @@ class AuthService {
      */
     fun updateActivity() {
         // TODO: Implementar cuando sea necesario
+    }
+    
+    /**
+     * Registro de administrador
+     */
+    suspend fun registerAdmin(
+        businessName: String,
+        businessType: String,
+        ruc: String,
+        email: String,
+        password: String,
+        phone: String,
+        address: String,
+        contactName: String
+    ): Result<LoginUserData> {
+        return try {
+            Logger.auth("AUTH_SERVICE", "Iniciando registro de admin: $email")
+            
+            val apiResponse = apiClient.adminRegister(
+                businessName = businessName,
+                businessType = businessType,
+                ruc = ruc,
+                email = email,
+                password = password,
+                phone = phone,
+                address = address,
+                contactName = contactName
+            )
+            
+            apiResponse.fold(
+                onSuccess = { response ->
+                    if (response.success && response.data != null) {
+                        val userData = response.data.user
+                        val loginData = LoginUserData(
+                            id = userData.id,
+                            email = userData.email,
+                            role = userData.role,
+                            businessId = userData.businessId,
+                            businessName = userData.businessName,
+                            isVerified = userData.isVerified,
+                            sellerId = null
+                        )
+                        
+                        _userProfile.value = UserProfileFactory.createAdminProfile(
+                            id = loginData.id,
+                            email = loginData.email,
+                            businessId = loginData.businessId,
+                            businessName = loginData.businessName,
+                            isVerified = loginData.isVerified
+                        )
+                        _accessToken.value = response.data.accessToken
+                        _authState.value = AuthState.AUTHENTICATED
+                        
+                        Logger.auth("AUTH_SERVICE", "Registro exitoso para admin: $email")
+                        Result.success(loginData)
+                    } else {
+                        Logger.auth("AUTH_SERVICE", "Error en registro de admin: ${response.message}")
+                        _authState.value = AuthState.UNAUTHENTICATED
+                        Result.failure(Exception(response.message))
+                    }
+                },
+                onFailure = { error ->
+                    Logger.auth("AUTH_SERVICE", "Error en registro de admin: ${error.message}")
+                    _authState.value = AuthState.UNAUTHENTICATED
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción en registro de admin: ${e.message}")
+            _authState.value = AuthState.UNAUTHENTICATED
+            Result.failure(e)
+        }
     }
     
     // Métodos de compatibilidad para las pantallas existentes

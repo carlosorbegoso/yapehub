@@ -33,12 +33,57 @@ fun SellerManagementScreen(
     var showQRDialog by remember { mutableStateOf(false) }
     var showAffiliationCodeDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var selectedSeller by remember { mutableStateOf<SellerData?>(null) }
-    var sellers by remember { mutableStateOf(getSellers()) }
+    var selectedSeller by remember { mutableStateOf<org.sysarp.project.data.SellerInfo?>(null) }
+    
+    // Estados para la API real
+    var sellers by remember { mutableStateOf<List<org.sysarp.project.data.SellerInfo>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var currentPage by remember { mutableStateOf(1) }
+    var totalPages by remember { mutableStateOf(1) }
+    var totalItems by remember { mutableStateOf(0) }
     
     val qrService = remember { QRService() }
     val activeQRCode by qrService.activeQRCode.collectAsState()
     val userProfile by authService.userProfile.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Cargar vendedores al iniciar
+    LaunchedEffect(userProfile) {
+        val profile = userProfile
+        if (profile != null && profile.adminId != null) {
+            loadSellers()
+        }
+    }
+    
+    fun loadSellers(page: Int = 1) {
+        val profile = userProfile
+        if (profile?.adminId == null || profile.accessToken == null) return
+        
+        coroutineScope.launch {
+            isLoading = true
+            errorMessage = ""
+            
+            sellerService.getMySellers(
+                adminId = profile.adminId!!.toInt(),
+                page = page,
+                limit = 30,
+                token = profile.accessToken!!
+            ).fold(
+                onSuccess = { response ->
+                    sellers = response.data.sellers
+                    currentPage = response.data.pagination.currentPage
+                    totalPages = response.data.pagination.totalPages
+                    totalItems = response.data.pagination.totalItems
+                    isLoading = false
+                },
+                onFailure = { error ->
+                    errorMessage = error.message ?: "Error cargando vendedores"
+                    isLoading = false
+                }
+            )
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -119,13 +164,48 @@ fun SellerManagementScreen(
                             .padding(24.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        val totalSellers = sellers.size
+                        val totalSellers = totalItems
                         val activeSellers = sellers.count { it.isActive }
-                        val inactiveSellers = totalSellers - activeSellers
+                        val inactiveSellers = sellers.count { !it.isActive }
                         
                         StatItem("Total", totalSellers.toString(), Icons.Filled.People)
                         StatItem("Activos", activeSellers.toString(), Icons.Filled.CheckCircle)
                         StatItem("Inactivos", inactiveSellers.toString(), Icons.Filled.PauseCircle)
+                    }
+                }
+            }
+            
+            // Indicador de carga
+            if (isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+            
+            // Mensaje de error
+            if (errorMessage.isNotEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            text = errorMessage,
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
@@ -139,15 +219,69 @@ fun SellerManagementScreen(
                         showEditSellerDialog = true
                     },
                     onToggleStatus = { 
-                        sellers = sellers.map { 
-                            if (it.id == seller.id) it.copy(isActive = !it.isActive) else it 
-                        }
+                        // TODO: Implementar cambio de estado via API
+                        loadSellers(currentPage) // Recargar para reflejar cambios
                     },
                     onDelete = { 
                         selectedSeller = seller
                         showDeleteConfirmDialog = true
                     }
                 )
+            }
+            
+            // Controles de paginación
+            if (totalPages > 1) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Página $currentPage de $totalPages",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { loadSellers(currentPage - 1) },
+                                    enabled = currentPage > 1 && !isLoading,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ChevronLeft,
+                                        contentDescription = "Página anterior",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                
+                                Button(
+                                    onClick = { loadSellers(currentPage + 1) },
+                                    enabled = currentPage < totalPages && !isLoading,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ChevronRight,
+                                        contentDescription = "Página siguiente",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
             
             // Espacio adicional
@@ -194,7 +328,8 @@ fun SellerManagementScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        sellers = sellers.filter { it.id != selectedSeller?.id }
+                        // TODO: Implementar eliminación via API
+                        loadSellers(currentPage) // Recargar lista
                         showDeleteConfirmDialog = false
                         selectedSeller = null
                     },
@@ -285,7 +420,7 @@ fun StatItem(
 
 @Composable
 fun SellerCard(
-    seller: SellerData,
+    seller: org.sysarp.project.data.SellerInfo,
     onEdit: () -> Unit,
     onToggleStatus: () -> Unit,
     onDelete: () -> Unit
@@ -347,6 +482,18 @@ fun SellerCard(
                     )
                     
                     Text(
+                        text = seller.email,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = seller.phone,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
                         text = if (seller.isActive) "Activo" else "Inactivo",
                         style = MaterialTheme.typography.bodySmall,
                         color = if (seller.isActive) 
@@ -376,8 +523,8 @@ fun SellerCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 StatChip("Pagos: ${seller.totalPayments}", Icons.Filled.Payment)
-                StatChip("S/ ${seller.totalAmount}", Icons.Filled.AttachMoney)
-                StatChip("Último: ${seller.lastPayment}", Icons.Filled.Schedule)
+                StatChip("S/ ${String.format("%.2f", seller.totalAmount)}", Icons.Filled.AttachMoney)
+                StatChip("Último: ${seller.lastPayment ?: "Nunca"}", Icons.Filled.Schedule)
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -786,15 +933,6 @@ fun GenerateQRDialog(
     )
 }
 
-// Datos de ejemplo
-private fun getSellers(): List<SellerData> {
-    return listOf(
-        SellerData("seller_1", "María González", "SUC001", "Sucursal Norte", true, true, 45, "1,250.50", "hace 2 min"),
-        SellerData("seller_2", "Carlos López", "SUC002", "Sucursal Sur", true, true, 32, "890.25", "hace 5 min"),
-        SellerData("seller_3", "Ana Martínez", "SUC003", "Sucursal Centro", true, false, 28, "650.75", "hace 1 hora"),
-        SellerData("seller_4", "Luis Rodríguez", "SUC004", "Sucursal Este", false, false, 19, "420.00", "hace 2 horas")
-    )
-}
 
 @Composable
 fun GenerateAffiliationCodeDialog(
@@ -1000,14 +1138,3 @@ fun GenerateAffiliationCodeDialog(
     )
 }
 
-data class SellerData(
-    val id: String,
-    val name: String,
-    val branchCode: String,
-    val branchName: String,
-    val isActive: Boolean,
-    val isOnline: Boolean,
-    val totalPayments: Int,
-    val totalAmount: String,
-    val lastPayment: String
-)

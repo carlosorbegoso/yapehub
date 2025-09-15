@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,10 +41,14 @@ import org.sysarp.project.service.auth.AuthService
 @Composable
 fun ProfileSelectionScreen(
     authService: AuthService,
-    onAdminSelected: () -> Unit,
-    onSellerSelected: () -> Unit
+    onAdminLogin: () -> Unit,
+    onAdminRegistration: () -> Unit,
+    onSellerLogin: () -> Unit,
+    onSellerRegistration: () -> Unit
 ) {
     var selectedType by remember { mutableStateOf<UserType?>(null) }
+    var showAdminOptions by remember { mutableStateOf(false) }
+    var showSellerOptions by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     
     Column(
@@ -113,36 +118,199 @@ fun ProfileSelectionScreen(
         
         Spacer(modifier = Modifier.height(48.dp))
         
-        // Botón de continuar
-        Button(
-            onClick = {
-                if (selectedType != null) {
+        // Mostrar opciones de administrador si está seleccionado
+        if (showAdminOptions) {
+            Text(
+                text = "¿Qué deseas hacer?",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Botón de Iniciar Sesión
+            Button(
+                onClick = {
                     isLoading = true
-                    when (selectedType) {
-                        UserType.ADMIN -> onAdminSelected()
-                        UserType.SELLER -> onSellerSelected()
-                        null -> {}
-                    }
+                    onAdminLogin()
+                },
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text(
+                        text = "Iniciar Sesión",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
-            },
-            enabled = selectedType != null && !isLoading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Botón de Registrarse
+            Button(
+                onClick = {
+                    isLoading = true
+                    onAdminRegistration()
+                },
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
                 )
-            } else {
+            ) {
                 Text(
-                    text = "Continuar",
+                    text = "Registrarse",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.onSecondary
                 )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Botón de volver
+            Button(
+                onClick = {
+                    showAdminOptions = false
+                    selectedType = null
+                },
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Text(
+                    text = "Volver",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else if (showSellerOptions) {
+            Text(
+                text = "Acceso de Vendedor",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "Usa tu código de afiliación para acceder",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Botón único de Afiliarse/Acceder
+            Button(
+                onClick = {
+                    isLoading = true
+                    onSellerRegistration() // Usar la pantalla unificada
+                },
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text(
+                        text = "Acceder con Código",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Botón de volver
+            Button(
+                onClick = {
+                    showSellerOptions = false
+                    selectedType = null
+                },
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Text(
+                    text = "Volver",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            // Botón de continuar (comportamiento original)
+            Button(
+                onClick = {
+                    if (selectedType != null) {
+                        when (selectedType) {
+                            UserType.ADMIN -> showAdminOptions = true
+                            UserType.SELLER -> showSellerOptions = true
+                            null -> {}
+                        }
+                    }
+                },
+                enabled = selectedType != null && !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text(
+                        text = "Continuar",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     }

@@ -10,13 +10,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Store
@@ -26,15 +29,21 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,8 +54,11 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.utils.SuccessHandler
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminRegistrationScreen(
     authService: AuthService,
@@ -54,19 +66,29 @@ fun AdminRegistrationScreen(
     onBackPressed: () -> Unit
 ) {
     var businessName by remember { mutableStateOf("") }
-    var ownerName by remember { mutableStateOf("") }
-    var phoneNumber by remember { mutableStateOf("") }
-    var activationCode by remember { mutableStateOf("") }
+    var businessType by remember { mutableStateOf("") }
+    var ruc by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
+    var contactName by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var showBusinessTypeDropdown by remember { mutableStateOf(false) }
+    var successMessage by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    
+    val businessTypes = listOf("RESTAURANT", "RETAIL", "SERVICES", "OTHER")
     
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
             // Header
             Row(
@@ -95,7 +117,7 @@ fun AdminRegistrationScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             // Logo
             Icon(
@@ -105,7 +127,7 @@ fun AdminRegistrationScreen(
                 modifier = Modifier.size(64.dp)
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             Text(
                 text = "Configura tu negocio",
@@ -115,7 +137,7 @@ fun AdminRegistrationScreen(
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             // Formulario
             Card(
@@ -128,8 +150,8 @@ fun AdminRegistrationScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Nombre del negocio
                     OutlinedTextField(
@@ -146,47 +168,86 @@ fun AdminRegistrationScreen(
                         }
                     )
                     
-                    // Nombre del propietario
+                    // Tipo de negocio
+                    ExposedDropdownMenuBox(
+                        expanded = showBusinessTypeDropdown,
+                        onExpandedChange = { showBusinessTypeDropdown = !showBusinessTypeDropdown }
+                    ) {
+                        OutlinedTextField(
+                            value = businessType,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Tipo de negocio") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showBusinessTypeDropdown) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Business,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showBusinessTypeDropdown,
+                            onDismissRequest = { showBusinessTypeDropdown = false }
+                        ) {
+                            businessTypes.forEach { type ->
+                                DropdownMenuItem(
+                                    text = { Text(getBusinessTypeDisplayName(type)) },
+                                    onClick = {
+                                        businessType = type
+                                        showBusinessTypeDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    // RUC
                     OutlinedTextField(
-                        value = ownerName,
-                        onValueChange = { ownerName = it },
-                        label = { Text("Nombre del propietario") },
+                        value = ruc,
+                        onValueChange = { ruc = it },
+                        label = { Text("RUC") },
                         modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Filled.Person,
+                                imageVector = Icons.Filled.Business,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     )
                     
-                    // Número de teléfono
+                    // Email
                     OutlinedTextField(
-                        value = phoneNumber,
-                        onValueChange = { phoneNumber = it },
-                        label = { Text("Número de teléfono") },
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Filled.Phone,
+                                imageVector = Icons.Filled.Email,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     )
                     
-                    // Código de activación (opcional)
+                    // Contraseña
                     OutlinedTextField(
-                        value = activationCode,
-                        onValueChange = { activationCode = it },
-                        label = { Text("Código de activación (opcional)") },
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Contraseña") },
                         modifier = Modifier.fillMaxWidth(),
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Filled.Key,
+                                imageVector = Icons.Filled.Visibility,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
@@ -199,6 +260,52 @@ fun AdminRegistrationScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
+                        }
+                    )
+                    
+                    // Teléfono
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it },
+                        label = { Text("Teléfono") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Phone,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+                    
+                    // Dirección
+                    OutlinedTextField(
+                        value = address,
+                        onValueChange = { address = it },
+                        label = { Text("Dirección") },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Home,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+                    
+                    // Nombre de contacto
+                    OutlinedTextField(
+                        value = contactName,
+                        onValueChange = { contactName = it },
+                        label = { Text("Nombre de contacto") },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     )
                     
@@ -237,15 +344,62 @@ fun AdminRegistrationScreen(
                     // Botón de registro
                     Button(
                         onClick = {
-                            if (validateForm(businessName, ownerName, phoneNumber)) {
+                            if (validateForm(businessName, businessType, ruc, email, password, phone, address, contactName)) {
                                 isLoading = true
                                 errorMessage = ""
                                 
-                                // Simular registro
-                                // TODO: Implementar registro real con AuthService
-                                onRegistrationSuccess()
+                                coroutineScope.launch {
+                                    authService.registerAdmin(
+                                        businessName = businessName,
+                                        businessType = businessType,
+                                        ruc = ruc,
+                                        email = email,
+                                        password = password,
+                                        phone = phone,
+                                        address = address,
+                                        contactName = contactName
+                                    ).fold(
+                                        onSuccess = { loginData ->
+                                            isLoading = false
+                                            successMessage = SuccessHandler.Messages.ADMIN_REGISTERED
+                                            onRegistrationSuccess()
+                                        },
+                                        onFailure = { error ->
+                                            isLoading = false
+                                            val errorMsg = error.message ?: "Error desconocido"
+                                            errorMessage = when {
+                                                errorMsg.contains("422") -> {
+                                                    // Extraer el mensaje específico de validación si está disponible
+                                                    val specificError = errorMsg.substringAfter("422 - ").substringAfter("Error en registro de admin: ")
+                                                    if (specificError.isNotEmpty() && specificError != errorMsg) {
+                                                        specificError
+                                                    } else {
+                                                        "Error de validación: Verifica que todos los campos estén completos y sean válidos"
+                                                    }
+                                                }
+                                                errorMsg.contains("400") -> "Error en los datos enviados: Revisa la información ingresada"
+                                                errorMsg.contains("409") -> "El email ya está registrado. Intenta con otro email"
+                                                errorMsg.contains("500") -> "Error del servidor. Intenta más tarde"
+                                                errorMsg.contains("network", ignoreCase = true) -> "Error de conexión. Verifica tu internet"
+                                                else -> errorMsg
+                                            }
+                                        }
+                                    )
+                                }
                             } else {
-                                errorMessage = "Por favor completa todos los campos obligatorios"
+                                errorMessage = when {
+                                    businessName.isBlank() -> "El nombre del negocio es obligatorio"
+                                    businessType.isBlank() -> "Debes seleccionar un tipo de negocio"
+                                    ruc.isBlank() -> "El RUC es obligatorio"
+                                    email.isBlank() -> "El email es obligatorio"
+                                    !email.contains("@") -> "El email debe tener un formato válido"
+                                    password.isBlank() -> "La contraseña es obligatoria"
+                                    password.length < 6 -> "La contraseña debe tener al menos 6 caracteres"
+                                    phone.isBlank() -> "El teléfono es obligatorio"
+                                    address.isBlank() -> "La dirección es obligatoria"
+                                    contactName.isBlank() -> "El nombre de contacto es obligatorio"
+                                    else -> "Por favor completa todos los campos obligatorios"
+                                }
                             }
                         },
                         enabled = !isLoading,
@@ -271,7 +425,7 @@ fun AdminRegistrationScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             // Información adicional
             Text(
@@ -285,10 +439,30 @@ fun AdminRegistrationScreen(
 
 private fun validateForm(
     businessName: String,
-    ownerName: String,
-    phoneNumber: String
+    businessType: String,
+    ruc: String,
+    email: String,
+    password: String,
+    phone: String,
+    address: String,
+    contactName: String
 ): Boolean {
     return businessName.isNotBlank() && 
-           ownerName.isNotBlank() && 
-           phoneNumber.isNotBlank()
+           businessType.isNotBlank() &&
+           ruc.isNotBlank() &&
+           email.isNotBlank() && email.contains("@") &&
+           password.isNotBlank() && password.length >= 6 &&
+           phone.isNotBlank() &&
+           address.isNotBlank() &&
+           contactName.isNotBlank()
+}
+
+private fun getBusinessTypeDisplayName(type: String): String {
+    return when (type) {
+        "RESTAURANT" -> "Restaurante"
+        "RETAIL" -> "Venta al por menor"
+        "SERVICES" -> "Servicios"
+        "OTHER" -> "Otro"
+        else -> type
+    }
 }

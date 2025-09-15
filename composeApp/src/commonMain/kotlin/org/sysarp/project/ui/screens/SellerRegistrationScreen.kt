@@ -6,7 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,26 +18,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.SellerService
+import org.sysarp.project.utils.SuccessHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SellerAffiliationScreen(
+fun SellerRegistrationScreen(
     onBackClick: () -> Unit,
-    onAffiliationSuccess: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onRegistrationSuccess: () -> Unit
 ) {
     val sellerService = remember { SellerService() }
     val coroutineScope = rememberCoroutineScope()
     
-    // Estados del formulario
     var affiliationCode by remember { mutableStateOf("") }
     var sellerName by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
-    
-    // Estados del flujo - Formulario único
     
     Column(
         modifier = Modifier
@@ -80,7 +77,7 @@ fun SellerAffiliationScreen(
         
         // Subtitle
         Text(
-            text = "Completa tus datos para afiliarte",
+            text = "Afíliate como vendedor con tu código de afiliación",
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -99,20 +96,14 @@ fun SellerAffiliationScreen(
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Campo 1: Código de afiliación
+                // Código de afiliación
                 OutlinedTextField(
                     value = affiliationCode,
                     onValueChange = { affiliationCode = it },
                     label = { Text("Código de Afiliación") },
                     placeholder = { Text("Ej: AFF_1757836011112_E2F6") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.QrCode,
-                            contentDescription = "Código QR"
-                        )
-                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = !isLoading,
@@ -123,18 +114,12 @@ fun SellerAffiliationScreen(
                     )
                 )
                 
-                // Campo 2: Nombre del vendedor
+                // Nombre del vendedor
                 OutlinedTextField(
                     value = sellerName,
                     onValueChange = { sellerName = it },
                     label = { Text("Nombre del Vendedor") },
                     placeholder = { Text("Ej: Luis Vendedor") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Persona"
-                        )
-                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = !isLoading,
@@ -145,18 +130,12 @@ fun SellerAffiliationScreen(
                     )
                 )
                 
-                // Campo 3: Teléfono
+                // Teléfono
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
                     label = { Text("Teléfono") },
                     placeholder = { Text("Ej: 98765423") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Phone,
-                            contentDescription = "Teléfono"
-                        )
-                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -204,17 +183,15 @@ fun SellerAffiliationScreen(
                     }
                 }
                 
-                // Botón principal
+                // Affiliate button
                 Button(
                     onClick = {
-                        // Validar formulario completo
                         if (validateForm(affiliationCode, sellerName, phone)) {
                             isLoading = true
                             errorMessage = ""
                             successMessage = ""
                             
                             coroutineScope.launch {
-                                // Intentar afiliación
                                 sellerService.registerSeller(
                                     affiliationCode = affiliationCode.trim(),
                                     sellerName = sellerName.trim(),
@@ -223,39 +200,25 @@ fun SellerAffiliationScreen(
                                     onSuccess = { response ->
                                         isLoading = false
                                         successMessage = response.message
-                                        onAffiliationSuccess()
+                                        onRegistrationSuccess()
                                     },
                                     onFailure = { error ->
-                                        // Si falla la afiliación, intentar login
+                                        isLoading = false
                                         val errorMsg = error.message ?: "Error desconocido"
-                                        if (errorMsg.contains("409") || errorMsg.contains("ya está registrado")) {
-                                            // Ya está afiliado, intentar login
-                                            sellerService.loginSellerByPhone(phone.trim()).fold(
-                                                onSuccess = { loginResponse ->
-                                                    isLoading = false
-                                                    successMessage = loginResponse.message
-                                                    onLoginSuccess()
-                                                },
-                                                onFailure = { loginError ->
-                                                    isLoading = false
-                                                    errorMessage = "Ya estás afiliado pero no se pudo iniciar sesión. Contacta al administrador."
+                                        errorMessage = when {
+                                            errorMsg.contains("422") -> {
+                                                val specificError = errorMsg.substringAfter("422 - ").substringAfter("Error en registro de vendedor: ")
+                                                if (specificError.isNotEmpty() && specificError != errorMsg) {
+                                                    specificError
+                                                } else {
+                                                    "Error de validación: Verifica que todos los campos estén completos y sean válidos"
                                                 }
-                                            )
-                                        } else {
-                                            isLoading = false
-                                            errorMessage = when {
-                                                errorMsg.contains("422") -> {
-                                                    val specificError = errorMsg.substringAfter("422 - ").substringAfter("Error en registro de vendedor: ")
-                                                    if (specificError.isNotEmpty() && specificError != errorMsg) {
-                                                        specificError
-                                                    } else {
-                                                        "Error de validación: Verifica que todos los campos estén completos y sean válidos"
-                                                    }
-                                                }
-                                                errorMsg.contains("400") -> "Error en los datos enviados: Revisa la información ingresada"
-                                                errorMsg.contains("500") -> "Error del servidor. Intenta más tarde"
-                                                else -> errorMsg
                                             }
+                                            errorMsg.contains("400") -> "Error en los datos enviados: Revisa la información ingresada"
+                                            errorMsg.contains("409") -> "El código de afiliación ya fue usado o el teléfono ya está registrado"
+                                            errorMsg.contains("500") -> "Error del servidor. Intenta más tarde"
+                                            errorMsg.contains("network", ignoreCase = true) -> "Error de conexión. Verifica tu internet"
+                                            else -> errorMsg
                                         }
                                     }
                                 )
@@ -273,8 +236,7 @@ fun SellerAffiliationScreen(
                     enabled = !isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp)
+                        .height(56.dp)
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
@@ -283,13 +245,12 @@ fun SellerAffiliationScreen(
                         )
                     } else {
                         Text(
-                            text = "Afiliarse",
+                            text = "Registrar Vendedor",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
-                
             }
         }
         
@@ -297,7 +258,7 @@ fun SellerAffiliationScreen(
         
         // Info text
         Text(
-            text = "¿Ya estás afiliado?",
+            text = "¿Ya tienes una cuenta de vendedor?",
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -321,7 +282,7 @@ private fun validateForm(
     sellerName: String,
     phone: String
 ): Boolean {
-    return affiliationCode.isNotBlank() &&
-           sellerName.isNotBlank() && 
+    return affiliationCode.isNotBlank() && 
+           sellerName.isNotBlank() &&
            phone.isNotBlank() && phone.length >= 8
 }

@@ -32,10 +32,10 @@ data class LoginUserData(
     val id: Int,
     val email: String,
     val role: String,
-    val businessId: Int?,
-    val businessName: String?,
+    val businessId: Int,
+    val businessName: String,
     val isVerified: Boolean,
-    val sellerId: Int? = null  // ← Agregar el sellerId del login response
+    val sellerId: Int? = null
 )
 
 // Modelos para refresh token
@@ -81,43 +81,41 @@ data class LogoutResponse(
     val message: String
 )
 
-// Modelos adicionales para AuthService
+// Modelos para errores de validación
 @Serializable
-data class AuthRequest(
-    val deviceId: String,
-    val deviceFingerprint: String,
-    val deviceName: String,
-    val businessName: String? = null,
-    val ownerName: String? = null,
-    val phoneNumber: String? = null,
-    val activationCode: String? = null,
-    val adminId: String? = null,
-    val qrData: String? = null,
-    val qrSignature: String? = null,
-    val sellerName: String? = null,
-    val branchCode: String? = null,
-    val branchName: String? = null
+data class ValidationErrorResponse(
+    val message: String,
+    val code: String,
+    val details: ValidationDetails,
+    val timestamp: String
 )
 
 @Serializable
-data class AuthResponse(
-    val success: Boolean,
-    val adminId: String? = null,
-    val sellerId: String? = null,
-    val accessToken: String? = null,
-    val refreshToken: String? = null,
-    val publicKey: String? = null,
-    val privateKey: String? = null,
-    val message: String? = null
+data class ValidationDetails(
+    val validationErrors: Map<String, FieldValidationError>
 )
 
 @Serializable
-data class RefreshRequest(
-    val deviceFingerprint: String
+data class FieldValidationError(
+    val message: String,
+    val invalidValue: String
+)
+
+// Modelos para errores específicos de vendedor
+@Serializable
+data class SellerErrorResponse(
+    val message: String,
+    val code: String,
+    val details: SellerErrorDetails,
+    val timestamp: String
 )
 
 @Serializable
-data class RefreshResponse(
-    val accessToken: String,
-    val expiresIn: Int
+data class SellerErrorDetails(
+    val field: String,
+    val value: String,
+    val reason: String
 )
+
+
+

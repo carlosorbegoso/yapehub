@@ -12,6 +12,8 @@ sealed class Screen {
     object Login : Screen()
     object ForgotPassword : Screen()
     object AdminRegistration : Screen()
+    object SellerLogin : Screen()
+    object SellerRegistration : Screen()
     object SellerAffiliation : Screen()
     object AdminDashboard : Screen()
     object SellerDashboard : Screen()
@@ -58,6 +60,14 @@ class NavigationManager {
     
     fun navigateToAdminRegistration() {
         _currentScreen.value = Screen.AdminRegistration
+    }
+    
+    fun navigateToSellerLogin() {
+        _currentScreen.value = Screen.SellerLogin
+    }
+    
+    fun navigateToSellerRegistration() {
+        _currentScreen.value = Screen.SellerRegistration
     }
     
     fun navigateToSellerAffiliation() {
