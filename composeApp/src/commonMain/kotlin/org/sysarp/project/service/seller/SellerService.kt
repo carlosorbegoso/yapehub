@@ -56,7 +56,7 @@ class SellerService {
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("SELLER_SERVICE", "Vendedores obtenidos: ${response.data.sellers.size} vendedores")
+                    Logger.auth("SELLER_SERVICE", "Vendedores obtenidos: ${response.data?.sellers?.size ?: 0} vendedores")
                     Result.success(response)
                 },
                 onFailure = { error ->

@@ -29,7 +29,7 @@ data class MySeller(
     val email: String,
     val phone: String,
     val branchId: Int,
-    val branchName: String?,
+    val branchName: String,
     val isActive: Boolean,
     val isOnline: Boolean,
     val totalPayments: Int,
@@ -104,7 +104,7 @@ data class SellersResponse(
 
 @Serializable
 data class SellersData(
-    val sellers: List<Seller>,
+    val sellers: List<MySeller>,
     val pagination: PaginationData
 )
 

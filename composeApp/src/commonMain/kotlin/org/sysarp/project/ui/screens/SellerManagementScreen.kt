@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -33,55 +34,93 @@ fun SellerManagementScreen(
     var showQRDialog by remember { mutableStateOf(false) }
     var showAffiliationCodeDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var selectedSeller by remember { mutableStateOf<org.sysarp.project.data.SellerInfo?>(null) }
+    var selectedSeller by remember { mutableStateOf<org.sysarp.project.data.MySeller?>(null) }
     
     // Estados para la API real
-    var sellers by remember { mutableStateOf<List<org.sysarp.project.data.SellerInfo>>(emptyList()) }
+    var sellers by remember { mutableStateOf<List<org.sysarp.project.data.MySeller>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var currentPage by remember { mutableStateOf(1) }
     var totalPages by remember { mutableStateOf(1) }
     var totalItems by remember { mutableStateOf(0) }
     
+    // Estados para búsqueda y filtros
+    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    var showSearchBar by remember { mutableStateOf(false) }
+    var filterActive by remember { mutableStateOf<Boolean?>(null) } // null = todos, true = activos, false = inactivos
+    var sortBy by remember { mutableStateOf("name") } // name, payments, amount
+    
     val qrService = remember { QRService() }
     val activeQRCode by qrService.activeQRCode.collectAsState()
     val userProfile by authService.userProfile.collectAsState()
+    val accessToken by authService.accessToken.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     
-    // Cargar vendedores al iniciar
-    LaunchedEffect(userProfile) {
+    // Función para filtrar y ordenar vendedores
+    val filteredSellers = remember(sellers, searchQuery.text, filterActive, sortBy) {
+        var filtered = sellers
+        
+        // Filtrar por búsqueda
+        if (searchQuery.text.isNotBlank()) {
+            val query = searchQuery.text.lowercase()
+            filtered = filtered.filter { seller ->
+                seller.name.lowercase().contains(query) ||
+                seller.email.lowercase().contains(query) ||
+                seller.phone.contains(query)
+            }
+        }
+        
+        // Filtrar por estado activo/inactivo
+        filterActive?.let { active ->
+            filtered = filtered.filter { it.isActive == active }
+        }
+        
+        // Ordenar
+        filtered = when (sortBy) {
+            "payments" -> filtered.sortedByDescending { it.totalPayments }
+            "amount" -> filtered.sortedByDescending { it.totalAmount }
+            "name" -> filtered.sortedBy { it.name }
+            else -> filtered
+        }
+        
+        filtered
+    }
+    
+    // Función para cargar vendedores
+    val loadSellers: (Int) -> Unit = { page ->
         val profile = userProfile
-        if (profile != null && profile.adminId != null) {
-            loadSellers()
+        if (profile?.adminId != null && accessToken != null) {
+            coroutineScope.launch {
+                isLoading = true
+                errorMessage = ""
+                
+                sellerService.getMySellers(
+                    adminId = profile.adminId!!.toInt(),
+                    page = page,
+                    limit = 30,
+                    token = accessToken!!
+                ).fold(
+                    onSuccess = { response ->
+                        sellers = response.data?.sellers ?: emptyList()
+                        currentPage = response.data?.pagination?.currentPage ?: 1
+                        totalPages = response.data?.pagination?.totalPages ?: 1
+                        totalItems = response.data?.pagination?.totalItems ?: 0
+                        isLoading = false
+                    },
+                    onFailure = { error ->
+                        errorMessage = error.message ?: "Error cargando vendedores"
+                        isLoading = false
+                    }
+                )
+            }
         }
     }
     
-    fun loadSellers(page: Int = 1) {
+    // Cargar vendedores al iniciar
+    LaunchedEffect(userProfile, accessToken) {
         val profile = userProfile
-        if (profile?.adminId == null || profile.accessToken == null) return
-        
-        coroutineScope.launch {
-            isLoading = true
-            errorMessage = ""
-            
-            sellerService.getMySellers(
-                adminId = profile.adminId!!.toInt(),
-                page = page,
-                limit = 30,
-                token = profile.accessToken!!
-            ).fold(
-                onSuccess = { response ->
-                    sellers = response.data.sellers
-                    currentPage = response.data.pagination.currentPage
-                    totalPages = response.data.pagination.totalPages
-                    totalItems = response.data.pagination.totalItems
-                    isLoading = false
-                },
-                onFailure = { error ->
-                    errorMessage = error.message ?: "Error cargando vendedores"
-                    isLoading = false
-                }
-            )
+        if (profile != null && profile.adminId != null && accessToken != null) {
+            loadSellers(1)
         }
     }
     
@@ -104,7 +143,21 @@ fun SellerManagementScreen(
                     }
                 },
                 actions = {
-                    // Botón removido - los vendedores se asocian por QR
+                    // Botón de búsqueda
+                    IconButton(onClick = { showSearchBar = !showSearchBar }) {
+                        Icon(
+                            imageVector = if (showSearchBar) Icons.Filled.Close else Icons.Filled.Search,
+                            contentDescription = if (showSearchBar) "Cerrar búsqueda" else "Buscar"
+                        )
+                    }
+                    
+                    // Botón de filtros
+                    IconButton(onClick = { /* TODO: Mostrar menú de filtros */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.FilterList,
+                            contentDescription = "Filtros"
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -141,12 +194,104 @@ fun SellerManagementScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues)
         ) {
+            // Barra de búsqueda
+            if (showSearchBar) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("Buscar vendedores...") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = "Buscar"
+                            )
+                        },
+                        trailingIcon = {
+                            if (searchQuery.text.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = TextFieldValue("") }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Clear,
+                                        contentDescription = "Limpiar"
+                                    )
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+            }
+            
+            // Filtros rápidos
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Filtro: Todos
+                    FilterChip(
+                        onClick = { filterActive = null },
+                        label = { Text("Todos") },
+                        selected = filterActive == null,
+                        leadingIcon = if (filterActive == null) {
+                            { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null
+                    )
+                    
+                    // Filtro: Activos
+                    FilterChip(
+                        onClick = { filterActive = true },
+                        label = { Text("Activos") },
+                        selected = filterActive == true,
+                        leadingIcon = if (filterActive == true) {
+                            { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null
+                    )
+                    
+                    // Filtro: Inactivos
+                    FilterChip(
+                        onClick = { filterActive = false },
+                        label = { Text("Inactivos") },
+                        selected = filterActive == false,
+                        leadingIcon = if (filterActive == false) {
+                            { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null
+                    )
+                }
+            }
+            
+            // Lista de vendedores
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // Header con estadísticas
             item {
                 Card(
@@ -164,9 +309,9 @@ fun SellerManagementScreen(
                             .padding(24.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        val totalSellers = totalItems
-                        val activeSellers = sellers.count { it.isActive }
-                        val inactiveSellers = sellers.count { !it.isActive }
+                        val totalSellers = filteredSellers.size
+                        val activeSellers = filteredSellers.count { it.isActive }
+                        val inactiveSellers = filteredSellers.count { !it.isActive }
                         
                         StatItem("Total", totalSellers.toString(), Icons.Filled.People)
                         StatItem("Activos", activeSellers.toString(), Icons.Filled.CheckCircle)
@@ -210,8 +355,51 @@ fun SellerManagementScreen(
                 }
             }
             
-            // Lista de vendedores
-            items(sellers) { seller ->
+            // Mensaje cuando no hay resultados
+            if (filteredSellers.isEmpty() && !isLoading) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.SearchOff,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = if (searchQuery.text.isNotEmpty()) "No se encontraron vendedores" else "No hay vendedores",
+                                style = MaterialTheme.typography.titleMedium,
+                                textAlign = TextAlign.Center
+                            )
+                            if (searchQuery.text.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Intenta con otros términos de búsqueda",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Lista de vendedores filtrados
+            items(filteredSellers) { seller ->
                 SellerCard(
                     seller = seller,
                     onEdit = { 
@@ -288,23 +476,27 @@ fun SellerManagementScreen(
             item {
                 Spacer(modifier = Modifier.height(80.dp))
             }
+            }
         }
     }
     
     // Diálogo para editar vendedor
     if (showEditSellerDialog && selectedSeller != null) {
-        EditSellerDialog(
-            seller = selectedSeller!!,
-            onDismiss = { 
+        // TODO: Implementar diálogo de edición con el nuevo modelo SellerInfo
+        AlertDialog(
+            onDismissRequest = { 
                 showEditSellerDialog = false
                 selectedSeller = null
             },
-            onConfirm = { updatedSellerData ->
-                sellers = sellers.map { 
-                    if (it.id == updatedSellerData.id) updatedSellerData else it 
+            title = { Text("Editar Vendedor") },
+            text = { Text("Funcionalidad de edición en desarrollo") },
+            confirmButton = {
+                Button(onClick = { 
+                    showEditSellerDialog = false
+                    selectedSeller = null
+                }) {
+                    Text("OK")
                 }
-                showEditSellerDialog = false
-                selectedSeller = null
             }
         )
     }
@@ -420,7 +612,7 @@ fun StatItem(
 
 @Composable
 fun SellerCard(
-    seller: org.sysarp.project.data.SellerInfo,
+    seller: org.sysarp.project.data.MySeller,
     onEdit: () -> Unit,
     onToggleStatus: () -> Unit,
     onDelete: () -> Unit
@@ -631,190 +823,6 @@ fun StatChip(
     }
 }
 
-@Composable
-fun AddSellerDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (SellerData) -> Unit
-) {
-    var sellerName by remember { mutableStateOf("") }
-    var branchCode by remember { mutableStateOf("") }
-    var branchName by remember { mutableStateOf("") }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                "Agregar Vendedor",
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = sellerName,
-                    onValueChange = { sellerName = it },
-                    label = { Text("Nombre del vendedor") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                OutlinedTextField(
-                    value = branchCode,
-                    onValueChange = { branchCode = it },
-                    label = { Text("Código de sucursal") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                OutlinedTextField(
-                    value = branchName,
-                    onValueChange = { branchName = it },
-                    label = { Text("Nombre de sucursal") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (sellerName.isNotBlank() && branchCode.isNotBlank() && branchName.isNotBlank()) {
-                        onConfirm(
-                            SellerData(
-                                id = "seller_${System.currentTimeMillis()}",
-                                name = sellerName,
-                                branchCode = branchCode,
-                                branchName = branchName,
-                                isActive = true,
-                                isOnline = false,
-                                totalPayments = 0,
-                                totalAmount = "0.00",
-                                lastPayment = "Nunca"
-                            )
-                        )
-                    }
-                },
-                enabled = sellerName.isNotBlank() && branchCode.isNotBlank() && branchName.isNotBlank()
-            ) {
-                Text("Agregar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        },
-        shape = RoundedCornerShape(16.dp)
-    )
-}
-
-@Composable
-fun EditSellerDialog(
-    seller: SellerData,
-    onDismiss: () -> Unit,
-    onConfirm: (SellerData) -> Unit
-) {
-    var sellerName by remember { mutableStateOf(seller.name) }
-    var branchCode by remember { mutableStateOf(seller.branchCode) }
-    var branchName by remember { mutableStateOf(seller.branchName) }
-    var isActive by remember { mutableStateOf(seller.isActive) }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                "Editar Vendedor",
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = sellerName,
-                    onValueChange = { sellerName = it },
-                    label = { Text("Nombre del vendedor") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    )
-                )
-                
-                OutlinedTextField(
-                    value = branchCode,
-                    onValueChange = { branchCode = it },
-                    label = { Text("Código de sucursal") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    )
-                )
-                
-                OutlinedTextField(
-                    value = branchName,
-                    onValueChange = { branchName = it },
-                    label = { Text("Nombre de sucursal") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    )
-                )
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = isActive,
-                        onCheckedChange = { isActive = it }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Vendedor activo",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (sellerName.isNotBlank() && branchCode.isNotBlank() && branchName.isNotBlank()) {
-                        onConfirm(
-                            seller.copy(
-                                name = sellerName,
-                                branchCode = branchCode,
-                                branchName = branchName,
-                                isActive = isActive
-                            )
-                        )
-                    }
-                },
-                enabled = sellerName.isNotBlank() && branchCode.isNotBlank() && branchName.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text("Guardar Cambios")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                )
-            ) {
-                Text("Cancelar")
-            }
-        },
-        shape = RoundedCornerShape(16.dp),
-        containerColor = MaterialTheme.colorScheme.surface
-    )
-}
 
 @Composable
 fun GenerateQRDialog(

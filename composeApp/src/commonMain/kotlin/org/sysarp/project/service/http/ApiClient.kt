@@ -199,7 +199,7 @@ class ApiClient {
             
             if (response.status.isSuccess()) {
                 val sellersResponse = response.body<org.sysarp.project.data.SellersResponse>()
-                Logger.auth("API_CLIENT", "Vendedores obtenidos exitosamente: ${sellersResponse.data.sellers.size} vendedores")
+                Logger.auth("API_CLIENT", "Vendedores obtenidos exitosamente: ${sellersResponse.data?.sellers?.size ?: 0} vendedores")
                 Result.success(sellersResponse)
             } else {
                 val errorMessage = try {
