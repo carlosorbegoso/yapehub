@@ -52,9 +52,14 @@ data class ClaimPaymentResponse(
 @Serializable
 data class PaymentClaimData(
     val paymentId: Int,
-    val sellerId: Int,
+    val amount: Double,
+    val senderName: String,
+    val yapeCode: String,
     val status: String,
-    val claimedAt: String
+    val timestamp: String,
+    val message: String,
+    val confirmedBy: Int,
+    val confirmedAt: String
 )
 
 @Serializable
@@ -75,10 +80,15 @@ data class RejectPaymentResponse(
 @Serializable
 data class PaymentRejectData(
     val paymentId: Int,
-    val sellerId: Int,
+    val amount: Double,
+    val senderName: String,
+    val yapeCode: String,
     val status: String,
+    val timestamp: String,
+    val message: String,
+    val rejectedBy: Int,
     val rejectedAt: String,
-    val reason: String
+    val rejectionReason: String
 )
 
 // Modelos para gestión de pagos del administrador
@@ -163,4 +173,13 @@ data class PaymentResultData(
     val message: String,
     val sellerId: Int,
     val sellerName: String
+)
+
+// Modelos para manejo de errores del servidor
+@Serializable
+data class ServerErrorResponse(
+    val message: String,
+    val code: String,
+    val details: ErrorDetails,
+    val timestamp: String
 )

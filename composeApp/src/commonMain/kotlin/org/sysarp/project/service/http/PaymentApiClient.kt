@@ -94,7 +94,16 @@ class PaymentApiClient(
                 val errorMessage = try {
                     val errorBody = response.body<String>()
                     logError("PAYMENT_API", "Error body: $errorBody")
-                    errorBody
+                    
+                    // Intentar parsear el error del servidor
+                    try {
+                        val serverError = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.ServerErrorResponse>(errorBody)
+                        logError("PAYMENT_API", "Error parseado del servidor: ${serverError.message} - ${serverError.details.reason}")
+                        "${serverError.message} - ${serverError.details.reason}"
+                    } catch (parseError: Exception) {
+                        logError("PAYMENT_API", "Error parseando respuesta de error: ${parseError.message}")
+                        errorBody
+                    }
                 } catch (e: Exception) {
                     "Error desconocido: ${e.message}"
                 }
@@ -146,7 +155,16 @@ class PaymentApiClient(
                 val errorMessage = try {
                     val errorBody = response.body<String>()
                     logError("PAYMENT_API", "Error body: $errorBody")
-                    errorBody
+                    
+                    // Intentar parsear el error del servidor
+                    try {
+                        val serverError = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.ServerErrorResponse>(errorBody)
+                        logError("PAYMENT_API", "Error parseado del servidor: ${serverError.message} - ${serverError.details.reason}")
+                        "${serverError.message} - ${serverError.details.reason}"
+                    } catch (parseError: Exception) {
+                        logError("PAYMENT_API", "Error parseando respuesta de error: ${parseError.message}")
+                        errorBody
+                    }
                 } catch (e: Exception) {
                     "Error desconocido: ${e.message}"
                 }

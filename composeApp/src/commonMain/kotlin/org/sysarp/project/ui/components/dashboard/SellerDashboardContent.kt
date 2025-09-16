@@ -1,10 +1,38 @@
 package org.sysarp.project.ui.components.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +70,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.PaymentNotificationData
@@ -324,7 +354,85 @@ fun SellerDashboardContent(
     var showAllPayments by remember { mutableStateOf(false) }
     var isLoadingMore by remember { mutableStateOf(false) }
     
+    // Nuevas funcionalidades
+    var isRefreshing by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showFilters by remember { mutableStateOf(false) }
+    var selectedFilter by remember { mutableStateOf("Todos") }
+    var isSearchActive by remember { mutableStateOf(false) }
+    
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Función utilitaria para mejorar mensajes de error
+    fun getImprovedErrorMessage(error: String): String {
+        return when {
+            error.contains("ya fue procesado") -> "Este pago ya fue procesado anteriormente"
+            error.contains("Invalid paymentId") -> "El pago no es válido o ya fue procesado"
+            error.contains("INVALID_FIELD") -> "Error en los datos del pago"
+            error.contains("El pago ya fue procesado") -> "Este pago ya fue procesado anteriormente"
+            else -> "Error al procesar el pago: $error"
+        }
+    }
+    
+    // Función para refrescar datos
+    val refreshData = {
+        isRefreshing = true
+        val token = accessToken
+        val profile = userProfile
+        if (token != null && profile?.sellerId != null) {
+            coroutineScope.launch {
+                // Recargar pagos pendientes
+                paymentManager.loadPendingPayments(
+                    accessToken = token,
+                    sellerId = profile.sellerId.toLong(),
+                    onSuccess = { payments ->
+                        pendingPayments = payments
+                        isRefreshing = false
+                    },
+                    onError = { error ->
+                        showSuccessMessage = getImprovedErrorMessage(error)
+                        isRefreshing = false
+                    }
+                )
+                
+                // Recargar estadísticas
+                statsManager.loadSellerStats(
+                    accessToken = token,
+                    sellerId = profile.sellerId.toLong(),
+                    onSuccess = { count, amount ->
+                        confirmedPaymentsCount = count
+                        totalAmountCollected = amount
+                    },
+                    onError = { error ->
+                        showSuccessMessage = getImprovedErrorMessage(error)
+                    }
+                )
+            }
+        }
+    }
+    
+    // Filtrar pagos pendientes
+    val filteredPayments = remember(pendingPayments, searchQuery, selectedFilter) {
+        var filtered = pendingPayments
+        
+        // Filtrar por búsqueda
+        if (searchQuery.isNotEmpty()) {
+            filtered = filtered.filter { payment ->
+                payment.senderName.contains(searchQuery, ignoreCase = true) ||
+                payment.yapeCode.contains(searchQuery, ignoreCase = true) ||
+                payment.paymentId.toString().contains(searchQuery, ignoreCase = true)
+            }
+        }
+        
+        // Filtrar por tipo
+        when (selectedFilter) {
+            "Monto Alto" -> filtered = filtered.filter { it.amount > 50.0 }
+            "Monto Bajo" -> filtered = filtered.filter { it.amount <= 50.0 }
+            "Recientes" -> filtered = filtered.sortedByDescending { it.timestamp }.take(5)
+        }
+        
+        filtered
+    }
     
     // Cargar datos iniciales
     LaunchedEffect(accessToken, userProfile?.sellerId) {
@@ -460,12 +568,12 @@ fun SellerDashboardContent(
                                         paymentId = (currentNotification?.paymentId ?: 0),
                                         sellerId = profile.sellerId.toLong(),
                                         onSuccess = { message ->
-                                            showSuccessMessage = message
+                                            showSuccessMessage = "✅ Pago confirmado exitosamente - S/ ${String.format("%.2f", currentNotification?.amount ?: 0.0)}"
                                             pendingPayments = pendingPayments.filter { it.paymentId != (currentNotification?.paymentId ?: 0) }
                                             processingPayments = processingPayments - (currentNotification?.paymentId ?: 0)
                                         },
                                         onError = { error ->
-                                            showSuccessMessage = "Error: $error"
+                                            showSuccessMessage = getImprovedErrorMessage(error)
                                             processingPayments = processingPayments - (currentNotification?.paymentId ?: 0)
                                         }
                                     )
@@ -484,12 +592,12 @@ fun SellerDashboardContent(
                                         sellerId = profile.sellerId.toLong(),
                                         reason = "No es mío",
                                         onSuccess = { message ->
-                                            showSuccessMessage = message
+                                            showSuccessMessage = "❌ Pago rechazado exitosamente - S/ ${String.format("%.2f", currentNotification?.amount ?: 0.0)}"
                                             pendingPayments = pendingPayments.filter { it.paymentId != (currentNotification?.paymentId ?: 0) }
                                             processingPayments = processingPayments - (currentNotification?.paymentId ?: 0)
                                         },
                                         onError = { error ->
-                                            showSuccessMessage = "Error: $error"
+                                            showSuccessMessage = getImprovedErrorMessage(error)
                                             processingPayments = processingPayments - (currentNotification?.paymentId ?: 0)
                                         }
                                     )
@@ -503,7 +611,7 @@ fun SellerDashboardContent(
             // Perfil del vendedor con padding para evitar solapamiento
             item {
                 Box(
-                    modifier = Modifier.padding(top = 48.dp)
+                    modifier = Modifier.padding(top = 64.dp)
                 ) {
                     if (userProfile != null) {
                         SellerProfileCard(
@@ -558,7 +666,7 @@ fun SellerDashboardContent(
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Text(
+                Text(
                         text = "Resumen de Ventas",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
@@ -622,14 +730,14 @@ fun SellerDashboardContent(
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Row(
+                Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                         Column {
-                            Text(
-                                text = "Pagos Pendientes",
+                    Text(
+                        text = "Pagos Pendientes",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -642,29 +750,171 @@ fun SellerDashboardContent(
                             )
                         }
                         
-                        if (pendingPayments.isNotEmpty()) {
-                            androidx.compose.material3.Surface(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shadowElevation = 2.dp
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Botón de refresh
+                            androidx.compose.material3.IconButton(
+                                onClick = refreshData,
+                                modifier = Modifier.size(40.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                AnimatedVisibility(
+                                    visible = isRefreshing,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                                
+                                AnimatedVisibility(
+                                    visible = !isRefreshing,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Filled.CheckCircle,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.size(16.dp)
+                                        imageVector = Icons.Filled.Refresh,
+                                        contentDescription = "Actualizar",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
                                     )
+                                }
+                            }
+                            
+                            if (pendingPayments.isNotEmpty()) {
+                        androidx.compose.material3.Surface(
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    shadowElevation = 2.dp
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.CheckCircle,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                            Text(
+                                            text = "${filteredPayments.size}",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Barra de búsqueda y filtros
+            item {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Barra de búsqueda
+                    androidx.compose.material3.Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            androidx.compose.material3.TextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = {
                                     Text(
-                                        text = "${pendingPayments.size}",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        text = "Buscar por cliente, código Yape o ID...",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
+                                ),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
+                            )
+                            
+                            // Botón de filtros
+                            androidx.compose.material3.IconButton(
+                                onClick = { showFilters = !showFilters }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.FilterList,
+                                    contentDescription = "Filtros",
+                                    tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Filtros desplegables
+                    AnimatedVisibility(
+                        visible = showFilters,
+                        enter = slideInVertically() + fadeIn(),
+                        exit = slideOutVertically() + fadeOut()
+                    ) {
+                        androidx.compose.material3.Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = androidx.compose.material3.CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Filtrar por:",
+                                style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    listOf("Todos", "Monto Alto", "Monto Bajo", "Recientes").forEach { filter ->
+                                        androidx.compose.material3.FilterChip(
+                                            onClick = { selectedFilter = filter },
+                                            label = { Text(filter) },
+                                            selected = selectedFilter == filter,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -674,10 +924,10 @@ fun SellerDashboardContent(
             
             // Lista de pagos pendientes con paginación inteligente para móvil
             val displayedPayments = if (showAllPayments) {
-                pendingPayments
+                filteredPayments
             } else {
                 // Mostrar máximo 2 pagos en móvil para optimizar espacio
-                pendingPayments.take(2)
+                filteredPayments.take(2)
             }
             
             // Función para cargar más pagos si es necesario
@@ -707,45 +957,136 @@ fun SellerDashboardContent(
                 }
             }
             
-            // Estado vacío siguiendo el estilo admin
+            // Estado vacío mejorado con animaciones
             if (displayedPayments.isEmpty() && !isLoadingMore) {
                 item {
+                    val animatedScale by animateFloatAsState(
+                        targetValue = 1f,
+                        animationSpec = spring(
+                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                        ),
+                        label = "emptyStateScale"
+                    )
+                    
                     androidx.compose.material3.Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
+                            .padding(horizontal = 16.dp)
+                            .scale(animatedScale),
                         colors = androidx.compose.material3.CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(24.dp),
+                                .padding(32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
+                            // Icono animado
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = slideInVertically(
+                                    initialOffsetY = { -it },
+                                    animationSpec = spring(
+                                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                                    )
+                                ) + fadeIn(animationSpec = tween(800))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            shape = androidx.compose.foundation.shape.CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.CheckCircle,
                                 contentDescription = "Sin pagos pendientes",
-                                tint = MaterialTheme.colorScheme.tertiary,
-                                modifier = Modifier.size(48.dp)
-                            )
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                }
+                            }
                             
+                            // Texto principal animado
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = slideInVertically(
+                                    initialOffsetY = { it / 2 },
+                                    animationSpec = spring(
+                                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                                    )
+                                ) + fadeIn(animationSpec = tween(1000))
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                             Text(
-                                text = "¡Todo al día!",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            
+                                        text = if (searchQuery.isNotEmpty() || selectedFilter != "Todos") {
+                                            "No se encontraron resultados"
+                                        } else {
+                                            "¡Todo al día!"
+                                        },
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    
                             Text(
-                                text = "No tienes pagos pendientes en este momento",
+                                        text = if (searchQuery.isNotEmpty() || selectedFilter != "Todos") {
+                                            "Intenta ajustar los filtros o la búsqueda"
+                                        } else {
+                                            "No tienes pagos pendientes en este momento"
+                                        },
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
+                                }
+                            }
+                            
+                            // Botón de acción si hay filtros activos
+                            if (searchQuery.isNotEmpty() || selectedFilter != "Todos") {
+                                AnimatedVisibility(
+                                    visible = true,
+                                    enter = slideInVertically(
+                                        initialOffsetY = { it },
+                                        animationSpec = spring(
+                                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                                        )
+                                    ) + fadeIn(animationSpec = tween(1200))
+                                ) {
+                                    androidx.compose.material3.Button(
+                                        onClick = {
+                                            searchQuery = ""
+                                            selectedFilter = "Todos"
+                                            showFilters = false
+                                        },
+                                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Refresh,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Limpiar filtros")
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -755,19 +1096,40 @@ fun SellerDashboardContent(
                 items = displayedPayments,
                 key = { it.paymentId }
             ) { payment ->
+                val animatedScale by animateFloatAsState(
+                    targetValue = if (processingPayments.contains(payment.paymentId)) 0.95f else 1f,
+                    animationSpec = spring(
+                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                        stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+                    ),
+                    label = "paymentCardScale"
+                )
+                
+                val animatedAlpha by animateFloatAsState(
+                    targetValue = if (processingPayments.contains(payment.paymentId)) 0.7f else 1f,
+                    animationSpec = tween(200),
+                    label = "paymentCardAlpha"
+                )
+                
                 AnimatedVisibility(
                     visible = !processingPayments.contains(payment.paymentId),
                     enter = slideInVertically(
                         initialOffsetY = { -it / 2 },
-                        animationSpec = androidx.compose.animation.core.tween(300, easing = androidx.compose.animation.core.EaseOutCubic)
+                        animationSpec = spring(
+                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                        )
                     ) + fadeIn(
-                        animationSpec = androidx.compose.animation.core.tween(300)
+                        animationSpec = tween(400)
                     ),
                     exit = slideOutVertically(
                         targetOffsetY = { -it / 2 },
-                        animationSpec = androidx.compose.animation.core.tween(250, easing = androidx.compose.animation.core.EaseInCubic)
+                        animationSpec = spring(
+                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                            stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+                        )
                     ) + fadeOut(
-                        animationSpec = androidx.compose.animation.core.tween(250)
+                        animationSpec = tween(300)
                     )
                 ) {
                     SellerPaymentCard(
@@ -784,12 +1146,12 @@ fun SellerDashboardContent(
                                         paymentId = payment.paymentId,
                                         sellerId = profile.sellerId.toLong(),
                                         onSuccess = { message ->
-                                            showSuccessMessage = message
+                                            showSuccessMessage = "✅ Pago confirmado exitosamente - S/ ${String.format("%.2f", payment.amount)}"
                                             pendingPayments = pendingPayments.filter { it.paymentId != payment.paymentId }
                                             processingPayments = processingPayments - payment.paymentId
                                         },
                                         onError = { error ->
-                                            showSuccessMessage = "Error: $error"
+                                            showSuccessMessage = getImprovedErrorMessage(error)
                                             processingPayments = processingPayments - payment.paymentId
                                         }
                                     )
@@ -808,12 +1170,12 @@ fun SellerDashboardContent(
                                         sellerId = profile.sellerId.toLong(),
                                         reason = "No es mío",
                                         onSuccess = { message ->
-                                            showSuccessMessage = message
+                                            showSuccessMessage = "❌ Pago rechazado exitosamente - S/ ${String.format("%.2f", payment.amount)}"
                                             pendingPayments = pendingPayments.filter { it.paymentId != payment.paymentId }
                                             processingPayments = processingPayments - payment.paymentId
                                         },
                                         onError = { error ->
-                                            showSuccessMessage = "Error: $error"
+                                            showSuccessMessage = getImprovedErrorMessage(error)
                                             processingPayments = processingPayments - payment.paymentId
                                         }
                                     )
@@ -842,18 +1204,18 @@ fun SellerDashboardContent(
                                 .fillMaxWidth()
                                 .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.ExpandMore,
-                                contentDescription = null,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ExpandMore,
+                            contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(32.dp)
-                            )
+                        )
                             
                             Spacer(modifier = Modifier.width(16.dp))
                             
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
+                        Text(
                                     text = "Ver más pagos",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
@@ -862,7 +1224,7 @@ fun SellerDashboardContent(
                                 
                                 Text(
                                     text = "Mostrar ${pendingPayments.size - 2} pagos adicionales",
-                                    style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -896,19 +1258,19 @@ fun SellerDashboardContent(
                                 .fillMaxWidth()
                                 .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.ExpandLess,
-                                contentDescription = null,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ExpandLess,
+                            contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(32.dp)
-                            )
+                        )
                             
                             Spacer(modifier = Modifier.width(16.dp))
                             
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Ver menos",
+                        Text(
+                            text = "Ver menos",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -975,8 +1337,8 @@ fun SellerDashboardContent(
                             Spacer(modifier = Modifier.width(16.dp))
                             
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Cargar más pagos",
+                            Text(
+                                text = "Cargar más pagos",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -984,7 +1346,7 @@ fun SellerDashboardContent(
                                 
                                 Text(
                                     text = "Ver pagos adicionales",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
