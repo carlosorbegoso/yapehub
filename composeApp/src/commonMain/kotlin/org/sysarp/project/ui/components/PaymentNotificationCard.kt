@@ -17,12 +17,14 @@ import org.sysarp.project.data.PaymentResultData
 import org.sysarp.project.utils.extractShortYapeCode
 
 /**
- * Tarjeta de notificación de nuevo pago
+ * Tarjeta de notificación de nuevo pago con mejoras UX
  */
 @Composable
 fun PaymentNotificationCard(
     notification: PaymentNotificationData,
     onDismiss: () -> Unit,
+    onClaim: () -> Unit = {},
+    onReject: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -119,6 +121,46 @@ fun PaymentNotificationCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Botones de acción
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = onClaim,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Es Mío")
+                    }
+                    
+                    OutlinedButton(
+                        onClick = onReject,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Cancel,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("No Es Mío")
+                    }
+                }
             }
         }
     }

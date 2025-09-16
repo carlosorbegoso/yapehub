@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,9 +26,11 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -59,6 +62,7 @@ import org.sysarp.project.service.payment.PaymentService
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import org.sysarp.project.utils.extractShortYapeCode
+import org.sysarp.project.utils.Logger
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.service.websocket.WebSocketConnectionState
 import org.sysarp.project.service.notifications.PaymentNotificationService
@@ -92,6 +96,8 @@ fun SellerDashboardScreen(
     // Estados de notificaciones
     var currentNotification by remember { mutableStateOf<PaymentNotificationData?>(null) }
     var currentResultNotification by remember { mutableStateOf<PaymentResultData?>(null) }
+    var newPaymentsCount by remember { mutableStateOf(0) }
+    var showSuccessMessage by remember { mutableStateOf("") }
     
     var pendingPayments by remember { mutableStateOf<List<org.sysarp.project.data.SellerPendingPayment>>(emptyList()) }
     var confirmedPaymentsCount by remember { mutableStateOf(0) }
@@ -310,27 +316,63 @@ fun SellerDashboardScreen(
         }
     }
     
-    // Manejar notificaciones de nuevos pagos
+    // Manejar notificaciones de nuevos pagos con mejoras UX
     LaunchedEffect(Unit) {
         webSocketService.paymentNotifications.collect { notification ->
             coroutineScope.launch {
+                Logger.auth("SELLER_DASHBOARD", "🆕 Nueva notificación recibida: ${notification.paymentId}")
+                
+                // Procesar notificación con sonido y vibración
                 notificationService.processNewPayment(notification)
+                
+                // Mostrar notificación en UI
                 currentNotification = notification
-                // Recargar pagos pendientes
+                newPaymentsCount++
+                
+                // Actualizar TODA la información de la app
+                Logger.auth("SELLER_DASHBOARD", "🔄 Actualizando información completa...")
+                
+                // 1. Recargar pagos pendientes (el nuevo pago aparecerá primero)
                 loadPendingPayments()
+                
+                // 2. Actualizar estadísticas del vendedor
+                loadSellerStats()
+                
+                // 3. Mostrar mensaje de éxito
+                showSuccessMessage = "¡Nuevo pago recibido! S/ ${notification.amount}"
+                
+                Logger.auth("SELLER_DASHBOARD", "✅ Información actualizada completamente")
             }
         }
     }
     
-    // Manejar resultados de pagos
+    // Manejar resultados de pagos con mejoras UX
     LaunchedEffect(Unit) {
         webSocketService.paymentResults.collect { result ->
             coroutineScope.launch {
+                Logger.auth("SELLER_DASHBOARD", "📊 Resultado de pago recibido: ${result.paymentId} - ${result.status}")
+                
+                // Procesar resultado
                 notificationService.processPaymentResult(result)
                 currentResultNotification = result
-                // Recargar estadísticas y pagos
+                
+                // Actualizar TODA la información
+                Logger.auth("SELLER_DASHBOARD", "🔄 Actualizando información después de procesar pago...")
+                
+                // 1. Actualizar estadísticas (más importante después de procesar)
                 loadSellerStats()
+                
+                // 2. Recargar pagos pendientes (el pago procesado desaparecerá)
                 loadPendingPayments()
+                
+                // 3. Mostrar mensaje de resultado
+                showSuccessMessage = when (result.status) {
+                    "CONFIRMED" -> "✅ Pago confirmado exitosamente"
+                    "REJECTED_BY_SELLER" -> "❌ Pago rechazado"
+                    else -> "📊 Pago procesado: ${result.status}"
+                }
+                
+                Logger.auth("SELLER_DASHBOARD", "✅ Información actualizada después de procesar pago")
             }
         }
     }
@@ -346,6 +388,29 @@ fun SellerDashboardScreen(
                     )
                 },
                 actions = {
+                    // Indicador de nuevos pagos
+                    if (newPaymentsCount > 0) {
+                        Box {
+                            IconButton(onClick = { 
+                                newPaymentsCount = 0
+                                currentNotification = null
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Notifications,
+                                    contentDescription = "Notificaciones"
+                                )
+                            }
+                            Badge(
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Text(
+                                    text = newPaymentsCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                    
                     IconButton(onClick = onNavigateToHistory) {
                         Icon(
                             imageVector = Icons.Filled.History,
@@ -395,7 +460,19 @@ fun SellerDashboardScreen(
                 item {
                     PaymentNotificationCard(
                         notification = notification,
-                        onDismiss = { currentNotification = null }
+                        onDismiss = { currentNotification = null },
+                        onClaim = { 
+                            coroutineScope.launch {
+                                claimPayment(notification.paymentId)
+                                currentNotification = null
+                            }
+                        },
+                        onReject = { 
+                            coroutineScope.launch {
+                                rejectPayment(notification.paymentId)
+                                currentNotification = null
+                            }
+                        }
                     )
                 }
             }
