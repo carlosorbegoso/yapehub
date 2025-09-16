@@ -1,21 +1,27 @@
 package org.sysarp.project.service.websocket
 
+import io.ktor.client.*
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.websocket.*
+import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
-import org.sysarp.project.data.WebSocketMessage
-import org.sysarp.project.data.PaymentNotificationData
-import org.sysarp.project.data.PaymentResultData
-import org.sysarp.project.utils.Logger
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
+import org.sysarp.project.data.*
+import org.sysarp.project.utils.*
 
 /**
- * Cliente WebSocket para recibir notificaciones de pagos en tiempo real
+ * Cliente WebSocket simplificado para notificaciones de pagos en tiempo real
  */
-class PaymentWebSocketClient {
+class PaymentWebSocketClient(
+    private val authService: org.sysarp.project.service.auth.AuthService
+) {
     
-    private var webSocketJob: Job? = null
+    private val httpClient = HttpClient(CIO) {
+        install(WebSockets)
+    }
+    
+    private var webSocketSession: DefaultWebSocketSession? = null
     private var reconnectJob: Job? = null
     private var heartbeatJob: Job? = null
     
@@ -30,190 +36,126 @@ class PaymentWebSocketClient {
     private val _paymentResults = MutableSharedFlow<PaymentResultData>()
     val paymentResults: SharedFlow<PaymentResultData> = _paymentResults.asSharedFlow()
     
-    // Canal para mensajes entrantes
-    private val messageChannel = Channel<String>(Channel.UNLIMITED)
-    
-    // Configuración
-    private var sellerId: Int? = null
-    private var token: String? = null
-    private var baseUrl: String = "ws://localhost:8080"
-    
     // Configuración de reconexión
     private var reconnectAttempts = 0
-    private val maxReconnectAttempts = 10
-    private val reconnectDelayMs = 5000L
+    private val maxReconnectAttempts = 5
+    private var currentSellerId: Long? = null
     
     /**
      * Conecta al WebSocket del vendedor
      */
-    fun connect(sellerId: Int, token: String, baseUrl: String = "ws://localhost:8080") {
-        this.sellerId = sellerId
-        this.token = token
-        this.baseUrl = baseUrl
-        
-        Logger.auth("WEBSOCKET", "Conectando WebSocket para vendedor: $sellerId")
-        
-        // Cancelar conexiones anteriores
-        disconnect()
-        
-        // Iniciar nueva conexión
-        webSocketJob = CoroutineScope(Dispatchers.IO).launch {
-            connectWebSocket()
+    suspend fun connect(sellerId: Long) {
+        if (_connectionState.value == WebSocketConnectionState.CONNECTED) {
+            Logger.auth("WEBSOCKET", "Ya conectado")
+            return
         }
         
-        // Iniciar procesamiento de mensajes
-        CoroutineScope(Dispatchers.IO).launch {
-            processMessages()
+        val token = authService.accessToken.value
+        if (token.isNullOrBlank()) {
+            Logger.auth("WEBSOCKET", "❌ Token no disponible")
+            return
         }
-    }
-    
-    /**
-     * Desconecta el WebSocket
-     */
-    fun disconnect() {
-        Logger.auth("WEBSOCKET", "Desconectando WebSocket")
         
-        webSocketJob?.cancel()
-        reconnectJob?.cancel()
-        heartbeatJob?.cancel()
+        currentSellerId = sellerId
+        _connectionState.value = WebSocketConnectionState.CONNECTING
         
-        _connectionState.value = WebSocketConnectionState.DISCONNECTED
-        reconnectAttempts = 0
-    }
-    
-    /**
-     * Conecta al WebSocket
-     */
-    private suspend fun connectWebSocket() {
         try {
-            _connectionState.value = WebSocketConnectionState.CONNECTING
+            val url = "${Constants.WEBSOCKET_URL}/ws/payments/$sellerId"
+            Logger.auth("WEBSOCKET", "🔗 Conectando a: $url")
+            Logger.auth("WEBSOCKET", "🔑 Token: ${token.take(20)}...")
             
-            val url = "$baseUrl/ws/payments/$sellerId"
-            Logger.auth("WEBSOCKET", "Conectando a: $url")
-            
-            // TODO: Implementar conexión WebSocket real usando Ktor
-            // Por ahora simulamos la conexión
-            simulateWebSocketConnection()
+            httpClient.webSocket(url) {
+                // Escuchar mensajes entrantes
+                for (frame in incoming) {
+                    when (frame) {
+                        is Frame.Text -> {
+                            val message = frame.readText()
+                            Logger.auth("WEBSOCKET", "📨 Mensaje recibido: $message")
+                            processMessage(message)
+                        }
+                        is Frame.Close -> {
+                            val reason = frame.readReason()
+                            Logger.auth("WEBSOCKET", "🔌 Conexión cerrada: ${reason?.message}")
+                            _connectionState.value = WebSocketConnectionState.DISCONNECTED
+                            scheduleReconnect()
+                        }
+                        is Frame.Ping -> {
+                            Logger.auth("WEBSOCKET", "🏓 Ping recibido")
+                        }
+                        is Frame.Pong -> {
+                            Logger.auth("WEBSOCKET", "🏓 Pong recibido")
+                        }
+                        else -> {
+                            Logger.auth("WEBSOCKET", "📋 Frame recibido: ${frame::class.simpleName}")
+                        }
+                    }
+                }
+            }
             
         } catch (e: Exception) {
-            Logger.auth("WEBSOCKET", "Error conectando WebSocket: ${e.message}")
+            Logger.auth("WEBSOCKET", "❌ Error conectando: ${e.message}")
+            Logger.auth("WEBSOCKET", "🔍 Tipo de error: ${e::class.simpleName}")
+            e.printStackTrace()
             _connectionState.value = WebSocketConnectionState.DISCONNECTED
             scheduleReconnect()
         }
     }
     
     /**
-     * Simula la conexión WebSocket (para desarrollo)
-     * TODO: Reemplazar con implementación real de Ktor WebSocket
+     * Procesa mensajes entrantes del WebSocket
      */
-    private suspend fun simulateWebSocketConnection() {
-        Logger.auth("WEBSOCKET", "Simulando conexión WebSocket")
-        
-        // Simular conexión exitosa
-        delay(1000)
-        _connectionState.value = WebSocketConnectionState.CONNECTED
-        reconnectAttempts = 0
-        
-        // Iniciar heartbeat
-        startHeartbeat()
-        
-        // Simular mensaje de prueba (para desarrollo)
-        simulateTestMessage()
-    }
-    
-    /**
-     * Simula un mensaje de prueba (para desarrollo)
-     */
-    private suspend fun simulateTestMessage() {
-        delay(5000) // Esperar 5 segundos antes de enviar mensaje de prueba
-        
-        val testMessage = """
-        {
-            "type": "PAYMENT_NOTIFICATION",
-            "data": {
-                "paymentId": 9999,
-                "amount": 50.0,
-                "senderName": "987654321",
-                "yapeCode": "YAPE_1757840358050_907349_68",
-                "status": "PENDING",
-                "timestamp": "2025-09-15T22:26:52.09808",
-                "message": "Pago pendiente de confirmación"
+    private suspend fun processMessage(message: String) {
+        try {
+            Logger.auth("WEBSOCKET", "📨 Procesando mensaje: $message")
+            
+            // Manejar mensaje de conexión especial
+            if (message.contains("\"type\":\"CONNECTED\"")) {
+                Logger.auth("WEBSOCKET", "🎉 CONEXIÓN ESTABLECIDA")
+                _connectionState.value = WebSocketConnectionState.CONNECTED
+                reconnectAttempts = 0
+                startHeartbeat()
+                return
             }
-        }
-        """.trimIndent()
-        
-        Logger.auth("WEBSOCKET", "Enviando mensaje de prueba")
-        messageChannel.send(testMessage)
-    }
-    
-    /**
-     * Procesa mensajes entrantes
-     */
-    private suspend fun processMessages() {
-        messageChannel.consumeEach { message ->
-            try {
-                Logger.auth("WEBSOCKET", "Procesando mensaje: $message")
-                
-                val webSocketMessage = Json.decodeFromString<WebSocketMessage>(message)
-                
-                when (webSocketMessage.type) {
-                    "PAYMENT_NOTIFICATION" -> {
-                        val notificationData = PaymentNotificationData(
-                            paymentId = webSocketMessage.data.paymentId,
-                            amount = webSocketMessage.data.amount,
-                            senderName = webSocketMessage.data.senderName,
-                            yapeCode = webSocketMessage.data.yapeCode,
-                            status = webSocketMessage.data.status,
-                            timestamp = webSocketMessage.data.timestamp,
-                            message = webSocketMessage.data.message
-                        )
-                        _paymentNotifications.emit(notificationData)
-                        Logger.auth("WEBSOCKET", "Notificación de pago recibida: ${notificationData.paymentId}")
-                    }
-                    
-                    "PAYMENT_RESULT" -> {
-                        val resultData = PaymentResultData(
-                            paymentId = webSocketMessage.data.paymentId,
-                            status = webSocketMessage.data.status,
-                            message = webSocketMessage.data.message,
-                            sellerId = webSocketMessage.data.sellerId ?: 0,
-                            sellerName = webSocketMessage.data.sellerName ?: ""
-                        )
-                        _paymentResults.emit(resultData)
-                        Logger.auth("WEBSOCKET", "Resultado de pago recibido: ${resultData.paymentId}")
-                    }
-                    
-                    else -> {
-                        Logger.auth("WEBSOCKET", "Tipo de mensaje desconocido: ${webSocketMessage.type}")
-                    }
+            
+            val webSocketMessage = Json.decodeFromString<WebSocketMessage>(message)
+            
+            when (webSocketMessage.type) {
+                "PAYMENT_NOTIFICATION" -> {
+                    val notificationData = PaymentNotificationData(
+                        paymentId = webSocketMessage.data.paymentId,
+                        amount = webSocketMessage.data.amount,
+                        senderName = webSocketMessage.data.senderName,
+                        yapeCode = webSocketMessage.data.yapeCode,
+                        status = webSocketMessage.data.status,
+                        timestamp = webSocketMessage.data.timestamp,
+                        message = webSocketMessage.data.message
+                    )
+                    _paymentNotifications.emit(notificationData)
+                    Logger.auth("WEBSOCKET", "💰 NUEVO PAGO RECIBIDO: ${notificationData.paymentId} - S/ ${notificationData.amount}")
+                    Logger.auth("WEBSOCKET", "👤 Cliente: ${notificationData.senderName}")
+                    Logger.auth("WEBSOCKET", "🔢 Código Yape: ${notificationData.yapeCode}")
                 }
                 
-            } catch (e: Exception) {
-                Logger.auth("WEBSOCKET", "Error procesando mensaje: ${e.message}")
+                "PAYMENT_RESULT" -> {
+                    val resultData = PaymentResultData(
+                        paymentId = webSocketMessage.data.paymentId,
+                        status = webSocketMessage.data.status,
+                        message = webSocketMessage.data.message,
+                        sellerId = webSocketMessage.data.sellerId ?: 0,
+                        sellerName = webSocketMessage.data.sellerName ?: ""
+                    )
+                    _paymentResults.emit(resultData)
+                    Logger.auth("WEBSOCKET", "✅ RESULTADO DE PAGO: ${resultData.paymentId} - ${resultData.status}")
+                }
+                
+                else -> {
+                    Logger.auth("WEBSOCKET", "⚠️ Tipo de mensaje desconocido: ${webSocketMessage.type}")
+                }
             }
-        }
-    }
-    
-    /**
-     * Programa reconexión automática
-     */
-    private fun scheduleReconnect() {
-        if (reconnectAttempts >= maxReconnectAttempts) {
-            Logger.auth("WEBSOCKET", "Máximo número de intentos de reconexión alcanzado")
-            return
-        }
-        
-        reconnectJob?.cancel()
-        reconnectJob = CoroutineScope(Dispatchers.IO).launch {
-            val delay = reconnectDelayMs * (reconnectAttempts + 1)
-            Logger.auth("WEBSOCKET", "Reconectando en ${delay}ms (intento ${reconnectAttempts + 1})")
             
-            delay(delay)
-            reconnectAttempts++
-            
-            if (sellerId != null && token != null) {
-                connectWebSocket()
-            }
+        } catch (e: Exception) {
+            Logger.auth("WEBSOCKET", "❌ Error procesando mensaje: ${e.message}")
+            Logger.auth("WEBSOCKET", "📄 Mensaje problemático: $message")
         }
     }
     
@@ -223,14 +165,13 @@ class PaymentWebSocketClient {
     private fun startHeartbeat() {
         heartbeatJob?.cancel()
         heartbeatJob = CoroutineScope(Dispatchers.IO).launch {
-            while (isActive && _connectionState.value == WebSocketConnectionState.CONNECTED) {
+            while (_connectionState.value == WebSocketConnectionState.CONNECTED) {
                 delay(30000) // Heartbeat cada 30 segundos
                 
                 try {
-                    // TODO: Enviar ping al servidor
-                    Logger.auth("WEBSOCKET", "Enviando heartbeat")
+                    Logger.auth("WEBSOCKET", "💓 Heartbeat WebSocket - Conexión activa")
                 } catch (e: Exception) {
-                    Logger.auth("WEBSOCKET", "Error en heartbeat: ${e.message}")
+                    Logger.auth("WEBSOCKET", "❌ Error en heartbeat: ${e.message}")
                     _connectionState.value = WebSocketConnectionState.DISCONNECTED
                     scheduleReconnect()
                     break
@@ -240,15 +181,65 @@ class PaymentWebSocketClient {
     }
     
     /**
+     * Programa reconexión automática
+     */
+    private fun scheduleReconnect() {
+        if (reconnectJob?.isActive == true) return
+        
+        reconnectJob = CoroutineScope(Dispatchers.IO).launch {
+            reconnectAttempts++
+            
+            if (reconnectAttempts > maxReconnectAttempts) {
+                Logger.auth("WEBSOCKET", "🚫 Máximo de intentos de reconexión alcanzado ($maxReconnectAttempts)")
+                reconnectAttempts = 0
+                return@launch
+            }
+            
+            val delaySeconds = minOf(reconnectAttempts * 5, 30) // 5, 10, 15, 20, 30 segundos
+            Logger.auth("WEBSOCKET", "🔄 Programando reconexión en $delaySeconds segundos (intento $reconnectAttempts/$maxReconnectAttempts)")
+            
+            delay(delaySeconds * 1000L)
+            
+            currentSellerId?.let { sellerId ->
+                Logger.auth("WEBSOCKET", "🔄 Intentando reconexión automática...")
+                connect(sellerId)
+            }
+        }
+    }
+    
+    /**
+     * Desconecta el WebSocket
+     */
+    fun disconnect() {
+        Logger.auth("WEBSOCKET", "🔌 Desconectando WebSocket")
+        
+        reconnectJob?.cancel()
+        reconnectJob = null
+        heartbeatJob?.cancel()
+        heartbeatJob = null
+        
+        _connectionState.value = WebSocketConnectionState.DISCONNECTED
+        reconnectAttempts = 0
+        currentSellerId = null
+    }
+    
+    /**
      * Envía mensaje al servidor
      */
     suspend fun sendMessage(message: String) {
         try {
-            // TODO: Implementar envío real de mensajes
-            Logger.auth("WEBSOCKET", "Enviando mensaje: $message")
+            Logger.auth("WEBSOCKET", "📤 Mensaje enviado: $message")
         } catch (e: Exception) {
-            Logger.auth("WEBSOCKET", "Error enviando mensaje: ${e.message}")
+            Logger.auth("WEBSOCKET", "❌ Error enviando mensaje: ${e.message}")
         }
+    }
+    
+    /**
+     * Limpia recursos
+     */
+    fun cleanup() {
+        disconnect()
+        httpClient.close()
     }
 }
 

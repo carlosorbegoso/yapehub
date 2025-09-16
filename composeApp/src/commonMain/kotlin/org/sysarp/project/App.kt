@@ -166,7 +166,7 @@ fun YapeApp() {
     
     // Iniciar servicios WebSocket
     LaunchedEffect(Unit) {
-        webSocketService.start()
+        webSocketService.startAutoConnect()
     }
     
     // Detener servicios al desmontar

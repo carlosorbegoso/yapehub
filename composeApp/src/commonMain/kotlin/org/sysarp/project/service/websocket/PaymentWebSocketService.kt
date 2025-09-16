@@ -15,8 +15,8 @@ class PaymentWebSocketService(
     private val authService: AuthService
 ) {
     
-    private val webSocketClient = PaymentWebSocketClient()
-    private var serviceJob: Job? = null
+    private val webSocketClient = PaymentWebSocketClient(authService)
+    private var autoStartJob: Job? = null
     
     // Estados del servicio
     private val _isConnected = MutableStateFlow(false)
@@ -29,37 +29,25 @@ class PaymentWebSocketService(
     val paymentNotifications: SharedFlow<PaymentNotificationData> = webSocketClient.paymentNotifications
     val paymentResults: SharedFlow<PaymentResultData> = webSocketClient.paymentResults
     
-    // Estado del vendedor
-    private var currentSellerId: Int? = null
-    private var currentToken: String? = null
-    
     /**
-     * Inicia el servicio WebSocket
+     * Inicia el servicio WebSocket con auto-conexión
      */
-    fun start() {
-        Logger.auth("WEBSOCKET_SERVICE", "Iniciando servicio WebSocket")
+    fun startAutoConnect() {
+        Logger.auth("WEBSOCKET_SERVICE", "Iniciando auto-conexión WebSocket")
         
-        serviceJob = CoroutineScope(Dispatchers.IO).launch {
-            // Observar cambios en el perfil del usuario
-            authService.userProfile.collect { userProfile ->
-                if (userProfile?.sellerId != null) {
-                    currentSellerId = userProfile.sellerId!!.toInt()
-                    Logger.auth("WEBSOCKET_SERVICE", "Vendedor detectado: $currentSellerId")
-                    
-                    // Conectar si tenemos token
-                    authService.accessToken.collect { token ->
-                        if (token != null && currentSellerId != null) {
-                            currentToken = token
-                            connectToWebSocket()
-                        } else {
-                            disconnectFromWebSocket()
-                        }
-                    }
+        autoStartJob = CoroutineScope(Dispatchers.IO).launch {
+            // Observar cambios en el perfil de usuario y token
+            combine(authService.userProfile, authService.accessToken) { userProfile, token ->
+                Logger.auth("WEBSOCKET_SERVICE", "👤 UserProfile: ${userProfile?.sellerId}, Token: ${token?.take(20)}...")
+                
+                if (userProfile?.sellerId != null && !token.isNullOrBlank()) {
+                    Logger.auth("WEBSOCKET_SERVICE", "🔗 Usuario y token disponibles, conectando WebSocket para seller: ${userProfile.sellerId}")
+                    webSocketClient.connect(userProfile.sellerId.toLong())
                 } else {
-                    Logger.auth("WEBSOCKET_SERVICE", "No hay vendedor logueado")
-                    disconnectFromWebSocket()
+                    Logger.auth("WEBSOCKET_SERVICE", "❌ Usuario no autenticado, sin sellerId o sin token")
+                    webSocketClient.disconnect()
                 }
-            }
+            }.collect { }
         }
         
         // Observar estado de conexión
@@ -68,6 +56,17 @@ class PaymentWebSocketService(
                 _connectionState.value = state
                 _isConnected.value = state == WebSocketConnectionState.CONNECTED
                 Logger.auth("WEBSOCKET_SERVICE", "Estado de conexión: $state")
+                
+                // Reconexión automática si se desconecta
+                if (state == WebSocketConnectionState.DISCONNECTED) {
+                    val userProfile = authService.userProfile.value
+                    val token = authService.accessToken.value
+                    if (userProfile?.sellerId != null && !token.isNullOrBlank()) {
+                        delay(2000) // Esperar 2 segundos antes de reconectar
+                        Logger.auth("WEBSOCKET_SERVICE", "🔄 Intentando reconexión automática...")
+                        webSocketClient.connect(userProfile.sellerId.toLong())
+                    }
+                }
             }
         }
     }
@@ -78,44 +77,25 @@ class PaymentWebSocketService(
     fun stop() {
         Logger.auth("WEBSOCKET_SERVICE", "Deteniendo servicio WebSocket")
         
-        serviceJob?.cancel()
-        disconnectFromWebSocket()
-    }
-    
-    /**
-     * Conecta al WebSocket
-     */
-    private fun connectToWebSocket() {
-        if (currentSellerId != null && currentToken != null) {
-            Logger.auth("WEBSOCKET_SERVICE", "Conectando WebSocket para vendedor: $currentSellerId")
-            
-            webSocketClient.connect(
-                sellerId = currentSellerId!!,
-                token = currentToken!!,
-                baseUrl = Constants.WEBSOCKET_URL
-            )
-        }
-    }
-    
-    /**
-     * Desconecta del WebSocket
-     */
-    private fun disconnectFromWebSocket() {
-        Logger.auth("WEBSOCKET_SERVICE", "Desconectando WebSocket")
-        
+        autoStartJob?.cancel()
+        autoStartJob = null
         webSocketClient.disconnect()
-        currentSellerId = null
-        currentToken = null
     }
     
     /**
      * Reconecta manualmente
      */
-    fun reconnect() {
+    suspend fun reconnect() {
         Logger.auth("WEBSOCKET_SERVICE", "Reconexión manual solicitada")
         
-        if (currentSellerId != null && currentToken != null) {
-            connectToWebSocket()
+        val userProfile = authService.userProfile.value
+        val token = authService.accessToken.value
+        
+        if (userProfile?.sellerId != null && !token.isNullOrBlank()) {
+            Logger.auth("WEBSOCKET_SERVICE", "🔄 Reconectando WebSocket para seller: ${userProfile.sellerId}")
+            webSocketClient.connect(userProfile.sellerId.toLong())
+        } else {
+            Logger.auth("WEBSOCKET_SERVICE", "❌ No se puede reconectar: usuario no autenticado")
         }
     }
     
@@ -130,8 +110,9 @@ class PaymentWebSocketService(
      * Obtiene información de conexión
      */
     fun getConnectionInfo(): ConnectionInfo {
+        val userProfile = authService.userProfile.value
         return ConnectionInfo(
-            sellerId = currentSellerId,
+            sellerId = userProfile?.sellerId?.toInt(),
             isConnected = _isConnected.value,
             connectionState = _connectionState.value,
             websocketUrl = Constants.WEBSOCKET_URL

@@ -382,7 +382,11 @@ fun SellerDashboardScreen(
                 WebSocketStatusIndicator(
                     connectionState = connectionState,
                     sellerId = userProfile?.sellerId?.toInt(),
-                    onReconnectClick = { webSocketService.reconnect() }
+                    onReconnectClick = { 
+                        coroutineScope.launch {
+                            webSocketService.reconnect()
+                        }
+                    }
                 )
             }
             
