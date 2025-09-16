@@ -59,6 +59,7 @@ import org.sysarp.project.data.DeactivationRequest
 fun AdminDashboardScreen(
     authService: AuthService,
     sellerService: SellerService,
+    statsService: org.sysarp.project.service.stats.StatsService,
     onNavigateToSellerManagement: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,

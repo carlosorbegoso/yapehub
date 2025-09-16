@@ -1,5 +1,10 @@
 package org.sysarp.project.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +32,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,6 +64,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 fun SellerDashboardScreen(
     authService: AuthService,
     paymentService: PaymentService,
+    statsService: org.sysarp.project.service.stats.StatsService,
     onNavigateToHistory: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -72,24 +79,64 @@ fun SellerDashboardScreen(
     var confirmedPaymentsCount by remember { mutableStateOf(0) }
     var totalAmountCollected by remember { mutableStateOf(0.0) }
     var isLoadingStats by remember { mutableStateOf(false) }
+    var isLoadingMorePayments by remember { mutableStateOf(false) }
+    var currentPage by remember { mutableStateOf(0) }
+    var hasMorePayments by remember { mutableStateOf(true) }
+    var processingPayments by remember { mutableStateOf<Set<Int>>(emptySet()) }
     
-    // Función para cargar pagos pendientes
+    // Función para cargar pagos pendientes (primera carga)
     val loadPendingPayments = {
         if (accessToken != null && userProfile?.sellerId != null) {
             coroutineScope.launch {
+                currentPage = 0
+                hasMorePayments = true
                 paymentService.getPendingPayments(
                     sellerId = userProfile!!.sellerId!!.toInt(),
                     page = 0,
-                    limit = 10, // Solo los primeros 10 para el dashboard
+                    limit = 3, // Solo los primeros 3 para el dashboard (prueba)
                     token = accessToken!!
                 ).fold(
                     onSuccess = { response ->
-                        pendingPayments = response.data.payments.filter { it.status == "PENDING" }
-                        println("🔍 [SELLER_DASHBOARD] Pagos pendientes cargados: ${pendingPayments.size}")
+                        val allPayments = response.data.payments.filter { it.status == "PENDING" }
+                        // Limitar a 3 pagos en el cliente si el servidor no respeta el límite
+                        pendingPayments = allPayments.take(3)
+                        hasMorePayments = response.data.pagination.currentPage < response.data.pagination.totalPages - 1
+                        println("🔍 [SELLER_DASHBOARD] Pagos pendientes cargados: ${pendingPayments.size} (de ${allPayments.size} disponibles)")
                     },
                     onFailure = { error ->
                         println("🔍 [SELLER_DASHBOARD] Error cargando pagos pendientes: ${error.message}")
                         pendingPayments = emptyList()
+                    }
+                )
+            }
+        }
+    }
+    
+    // Función para cargar más pagos pendientes
+    val loadMorePendingPayments = {
+        if (accessToken != null && userProfile?.sellerId != null && hasMorePayments && !isLoadingMorePayments) {
+            coroutineScope.launch {
+                isLoadingMorePayments = true
+                val nextPage = currentPage + 1
+                paymentService.getPendingPayments(
+                    sellerId = userProfile!!.sellerId!!.toInt(),
+                    page = nextPage,
+                    limit = 3, // Solo 3 más para la prueba
+                    token = accessToken!!
+                ).fold(
+                    onSuccess = { response ->
+                        val allNewPayments = response.data.payments.filter { it.status == "PENDING" }
+                        // Limitar a 3 pagos más en el cliente si el servidor no respeta el límite
+                        val newPayments = allNewPayments.take(3)
+                        pendingPayments = pendingPayments + newPayments
+                        currentPage = nextPage
+                        hasMorePayments = response.data.pagination.currentPage < response.data.pagination.totalPages - 1
+                        isLoadingMorePayments = false
+                        println("🔍 [SELLER_DASHBOARD] Más pagos cargados: ${newPayments.size} (de ${allNewPayments.size} disponibles), total: ${pendingPayments.size}")
+                    },
+                    onFailure = { error ->
+                        println("🔍 [SELLER_DASHBOARD] Error cargando más pagos: ${error.message}")
+                        isLoadingMorePayments = false
                     }
                 )
             }
@@ -145,19 +192,51 @@ fun SellerDashboardScreen(
     val claimPayment: (Int) -> Unit = { paymentId ->
         if (userProfile?.sellerId != null && accessToken != null) {
             coroutineScope.launch {
+                println("🔍 [SELLER_DASHBOARD] Intentando confirmar pago $paymentId para sellerId: ${userProfile!!.sellerId!!.toInt()} con token: ${accessToken!!.take(20)}...")
+                println("🔍 [SELLER_DASHBOARD] UserProfile completo: $userProfile")
+                
+                // Marcar el pago como procesando
+                processingPayments = processingPayments + paymentId
+                
+                // Debug: Decodificar el token JWT para ver qué ID contiene
+                try {
+                    val tokenParts = accessToken!!.split(".")
+                    if (tokenParts.size >= 2) {
+                        val payload = tokenParts[1]
+                        // Agregar padding si es necesario
+                        val paddedPayload = payload + "=".repeat((4 - payload.length % 4) % 4)
+                        val decodedBytes = android.util.Base64.decode(paddedPayload, android.util.Base64.DEFAULT)
+                        val decodedPayload = String(decodedBytes)
+                        println("🔍 [SELLER_DASHBOARD] Token JWT payload: $decodedPayload")
+                    }
+                } catch (e: Exception) {
+                    println("🔍 [SELLER_DASHBOARD] Error decodificando token: ${e.message}")
+                }
                 paymentService.claimPayment(
-                    sellerId = userProfile!!.sellerId!!.toInt(),
+                    sellerId = userProfile!!.sellerId!!.toInt(), // Usar sellerId como debe ser
                     paymentId = paymentId,
                     token = accessToken!!
                 ).fold(
                     onSuccess = { response ->
-                        // Recargar estadísticas y pagos pendientes
+                        // Remover el pago de la lista inmediatamente
+                        pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+                        processingPayments = processingPayments - paymentId
+                        
+                        // Recargar estadísticas
                         loadSellerStats()
-                        loadPendingPayments()
                         println("🔍 [SELLER_DASHBOARD] Pago confirmado exitosamente: $paymentId")
                     },
                     onFailure = { error ->
-                        println("🔍 [SELLER_DASHBOARD] Error confirmando pago: ${error.message}")
+                        val errorMessage = error.message ?: ""
+                        processingPayments = processingPayments - paymentId
+                        
+                        if (errorMessage.contains("El pago ya fue procesado")) {
+                            // Si el pago ya fue procesado, simplemente lo removemos de la lista
+                            pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+                            println("🔍 [SELLER_DASHBOARD] Pago $paymentId ya fue procesado, removido de la lista")
+                        } else {
+                            println("🔍 [SELLER_DASHBOARD] Error confirmando pago: $errorMessage")
+                        }
                     }
                 )
             }
@@ -168,20 +247,37 @@ fun SellerDashboardScreen(
     val rejectPayment: (Int) -> Unit = { paymentId ->
         if (userProfile?.sellerId != null && accessToken != null) {
             coroutineScope.launch {
+                println("🔍 [SELLER_DASHBOARD] Intentando rechazar pago $paymentId para sellerId: ${userProfile!!.sellerId!!.toInt()} con token: ${accessToken!!.take(20)}...")
+                
+                // Marcar el pago como procesando
+                processingPayments = processingPayments + paymentId
+                
                 paymentService.rejectPayment(
-                    sellerId = userProfile!!.sellerId!!.toInt(),
+                    sellerId = userProfile!!.sellerId!!.toInt(), // Usar sellerId como debe ser
                     paymentId = paymentId,
                     reason = "No es mi pago", // Razón por defecto
                     token = accessToken!!
                 ).fold(
                     onSuccess = { response ->
-                        // Recargar estadísticas y pagos pendientes
+                        // Remover el pago de la lista inmediatamente
+                        pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+                        processingPayments = processingPayments - paymentId
+                        
+                        // Recargar estadísticas
                         loadSellerStats()
-                        loadPendingPayments()
                         println("🔍 [SELLER_DASHBOARD] Pago rechazado exitosamente: $paymentId")
                     },
                     onFailure = { error ->
-                        println("🔍 [SELLER_DASHBOARD] Error rechazando pago: ${error.message}")
+                        val errorMessage = error.message ?: ""
+                        processingPayments = processingPayments - paymentId
+                        
+                        if (errorMessage.contains("El pago ya fue procesado")) {
+                            // Si el pago ya fue procesado, simplemente lo removemos de la lista
+                            pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+                            println("🔍 [SELLER_DASHBOARD] Pago $paymentId ya fue procesado, removido de la lista")
+                        } else {
+                            println("🔍 [SELLER_DASHBOARD] Error rechazando pago: $errorMessage")
+                        }
                     }
                 )
             }
@@ -401,15 +497,77 @@ fun SellerDashboardScreen(
                 }
             } else {
                 items(pendingPayments) { payment ->
-                    PendingPaymentCard(
-                        payment = payment,
-                        onConfirm = { 
-                            claimPayment(payment.paymentId)
-                        },
-                        onReject = { 
-                            rejectPayment(payment.paymentId)
+                    val isProcessing = processingPayments.contains(payment.paymentId)
+                    
+                    if (isProcessing) {
+                        // Mostrar indicador de procesamiento
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Procesando pago...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
-                    )
+                    } else {
+                        // Mostrar la tarjeta normal del pago
+                        PendingPaymentCard(
+                            payment = payment,
+                            onConfirm = { 
+                                claimPayment(payment.paymentId)
+                            },
+                            onReject = { 
+                                rejectPayment(payment.paymentId)
+                            }
+                        )
+                    }
+                }
+            }
+            
+            // Botón "Cargar más" si hay más pagos disponibles
+            if (hasMorePayments && pendingPayments.isNotEmpty()) {
+                item {
+                    Button(
+                        onClick = loadMorePendingPayments,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        enabled = !isLoadingMorePayments,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
+                        if (isLoadingMorePayments) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Cargando...")
+                        } else {
+                            Text("Cargar más pagos")
+                        }
+                    }
                 }
             }
             

@@ -9,6 +9,7 @@ import org.sysarp.project.repository.UserProfileRepository
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.service.stats.StatsService
 
 import org.sysarp.project.ui.screens.AdminDashboardScreen
 import org.sysarp.project.ui.screens.AdminRegistrationScreen
@@ -39,6 +40,7 @@ fun AppContent(
     authService: AuthService,
     sellerService: SellerService,
     paymentService: PaymentService,
+    statsService: StatsService,
     modifier: Modifier = Modifier
 ) {
     val currentScreen by navigationManager.currentScreen.collectAsState()
@@ -151,6 +153,7 @@ fun AppContent(
             AdminDashboardScreen(
                 authService = authService,
                 sellerService = sellerService,
+                statsService = statsService,
                 onNavigateToSellerManagement = { navigationManager.navigateTo(Screen.SellerManagement) },
                 onNavigateToAnalytics = { navigationManager.navigateTo(Screen.Analytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.PendingPayments) },
@@ -163,6 +166,7 @@ fun AppContent(
             SellerDashboardScreen(
                 authService = authService,
                 paymentService = paymentService,
+                statsService = statsService,
                 onNavigateToHistory = { navigationManager.navigateTo(Screen.Analytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.SellerPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
