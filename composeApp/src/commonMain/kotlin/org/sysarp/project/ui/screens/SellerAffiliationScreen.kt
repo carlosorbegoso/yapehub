@@ -18,15 +18,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.SellerService
+import org.sysarp.project.ui.components.ValidationErrorDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SellerAffiliationScreen(
+    sellerService: SellerService,
     onBackClick: () -> Unit,
     onAffiliationSuccess: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
-    val sellerService = remember { SellerService() }
     val coroutineScope = rememberCoroutineScope()
     
     // Estados del formulario
@@ -171,21 +172,10 @@ fun SellerAffiliationScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // Error message
-                if (errorMessage.isNotEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Text(
-                            text = errorMessage,
-                            modifier = Modifier.padding(12.dp),
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
+                ValidationErrorDisplay(
+                    errorMessage = errorMessage,
+                    modifier = Modifier.fillMaxWidth()
+                )
                 
                 // Success message
                 if (successMessage.isNotEmpty()) {
@@ -242,20 +232,22 @@ fun SellerAffiliationScreen(
                                                 }
                                             )
                                         } else {
-                                            isLoading = false
-                                            errorMessage = when {
-                                                errorMsg.contains("422") -> {
-                                                    val specificError = errorMsg.substringAfter("422 - ").substringAfter("Error en registro de vendedor: ")
-                                                    if (specificError.isNotEmpty() && specificError != errorMsg) {
-                                                        specificError
-                                                    } else {
-                                                        "Error de validación: Verifica que todos los campos estén completos y sean válidos"
-                                                    }
+                                        isLoading = false
+                                        errorMessage = when {
+                                            errorMsg.contains("422") -> {
+                                                // Usar el parser de errores para mostrar mensajes amigables
+                                                val specificError = errorMsg.substringAfter("422 - ").substringAfter("Error en registro de vendedor: ")
+                                                if (specificError.isNotEmpty() && specificError != errorMsg) {
+                                                    specificError
+                                                } else {
+                                                    "Error de validación: Verifica que todos los campos estén completos y sean válidos"
                                                 }
-                                                errorMsg.contains("400") -> "Error en los datos enviados: Revisa la información ingresada"
-                                                errorMsg.contains("500") -> "Error del servidor. Intenta más tarde"
-                                                else -> errorMsg
                                             }
+                                            errorMsg.contains("400") -> "Error en los datos enviados: Revisa la información ingresada"
+                                            errorMsg.contains("500") -> "Error del servidor. Intenta más tarde"
+                                            errorMsg.contains("network", ignoreCase = true) -> "Error de conexión. Verifica tu internet"
+                                            else -> errorMsg
+                                        }
                                         }
                                     }
                                 )

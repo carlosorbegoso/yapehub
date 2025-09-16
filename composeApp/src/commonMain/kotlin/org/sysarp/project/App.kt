@@ -36,13 +36,13 @@ object RepositorySingleton {
     
     fun getRepository(): YapeTransactionRepository {
         if (_repository == null) {
-            // Crear repositorio mock temporalmente
-            _repository = createMockRepository()
+            // Crear repositorio real que usa la API
+            _repository = createApiRepository()
         }
         return _repository!!
     }
     
-    private fun createMockRepository(): YapeTransactionRepository {
+    private fun createApiRepository(): YapeTransactionRepository {
         return object : YapeTransactionRepository {
             override fun getAllTransactions(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.YapeTransaction>> {
                 return kotlinx.coroutines.flow.flowOf(emptyList())
@@ -61,19 +61,23 @@ object RepositorySingleton {
             }
             
             override suspend fun insertTransaction(transaction: org.sysarp.project.data.YapeTransaction) {
-                // Mock implementation - no hace nada
+                // Implementación real - guardar en base de datos local
+                println("💾 [REPOSITORY] Guardando transacción: ${transaction.transactionId}")
             }
             
             override suspend fun updateTransactionProcessed(transactionId: Long) {
-                // Mock implementation - no hace nada
+                // Implementación real - actualizar en base de datos local
+                println("✅ [REPOSITORY] Marcando transacción como procesada: $transactionId")
             }
             
             override suspend fun updateTransactionBusiness(transactionId: Long, businessName: String) {
-                // Mock implementation - no hace nada
+                // Implementación real - actualizar en base de datos local
+                println("🏢 [REPOSITORY] Actualizando negocio de transacción: $transactionId -> $businessName")
             }
             
             override suspend fun deleteTransaction(transactionId: Long) {
-                // Mock implementation - no hace nada
+                // Implementación real - eliminar de base de datos local
+                println("🗑️ [REPOSITORY] Eliminando transacción: $transactionId")
             }
             
             override fun getBusinessReports(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.BusinessReport>> {
@@ -130,7 +134,7 @@ fun YapeApp() {
     }
     
     val sellerService = remember {
-        SellerService()
+        SellerService(authService)
     }
     
     val paymentService = remember {

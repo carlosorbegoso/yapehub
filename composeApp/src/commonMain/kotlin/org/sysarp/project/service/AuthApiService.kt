@@ -13,6 +13,7 @@ import kotlinx.serialization.json.Json
 import org.sysarp.project.data.ApiResponse
 import org.sysarp.project.data.LoginUserData
 import org.sysarp.project.data.SellerUserData
+import org.sysarp.project.utils.Constants
 
 class AuthApiService {
     private val httpClient = HttpClient {
@@ -24,7 +25,7 @@ class AuthApiService {
         }
     }
     
-    private val baseUrl = "https://ks9ql0l7-8080.brs.devtunnels.ms/api"
+    private val baseUrl = "${Constants.BASE_URL}/api"
     
     suspend fun loginAdmin(email: String, password: String, deviceFingerprint: String): ApiResponse<LoginUserData> {
         return try {

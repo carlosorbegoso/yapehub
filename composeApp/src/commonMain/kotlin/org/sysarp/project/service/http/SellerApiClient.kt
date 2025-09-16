@@ -86,24 +86,36 @@ class SellerApiClient : BaseApiClient() {
                     logError("SELLER_API", "Error body: $errorBody")
                     
                     try {
-                        val sellerError = kotlinx.serialization.json.Json.decodeFromString<SellerErrorResponse>(errorBody)
-                        val fieldName = when (sellerError.details.field) {
-                            "affiliationCode" -> "Código de afiliación"
-                            "sellerName" -> "Nombre del vendedor"
-                            "phone" -> "Teléfono"
-                            else -> sellerError.details.field
+                        // Intentar parsear como ApiError primero
+                        val apiError = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.ApiError>(errorBody)
+                        
+                        // Si hay errores de validación específicos, mostrarlos
+                        val validationErrors = apiError.details?.validationErrors
+                        if (validationErrors != null && validationErrors.isNotEmpty()) {
+                            val friendlyErrors = validationErrors.map { (field, error) ->
+                                val fieldName = when {
+                                    field.contains("phone", ignoreCase = true) -> "Teléfono"
+                                    field.contains("email", ignoreCase = true) -> "Email"
+                                    field.contains("name", ignoreCase = true) -> "Nombre"
+                                    field.contains("affiliation", ignoreCase = true) -> "Código de afiliación"
+                                    else -> field
+                                }
+                                "$fieldName: ${getFriendlyMessage(error.message)}"
+                            }
+                            friendlyErrors.joinToString("; ")
+                        } else {
+                            apiError.message
                         }
-                        "$fieldName: ${sellerError.details.reason}"
                     } catch (e: Exception) {
+                        // Fallback al mensaje original si no se puede parsear
                         errorBody
                     }
                 } catch (e: Exception) {
                     "Error desconocido: ${e.message}"
                 }
                 
-                val finalErrorMessage = "Error en registro de vendedor: ${response.status} - $errorMessage"
-                logError("SELLER_API", finalErrorMessage)
-                Result.failure(Exception(finalErrorMessage))
+                logError("SELLER_API", "Error en registro de vendedor: ${response.status} - $errorMessage")
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
             logError("SELLER_API", "Error en registro de vendedor: ${e.message}")
@@ -362,6 +374,27 @@ class SellerApiClient : BaseApiClient() {
         } catch (e: Exception) {
             logError("SELLER_API", "Error eliminando/pausando vendedor: ${e.message}")
             Result.failure(e)
+        }
+    }
+    
+    /**
+     * Convierte mensajes técnicos a mensajes amigables
+     */
+    private fun getFriendlyMessage(message: String): String {
+        return when {
+            message.contains("Invalid phone number format", ignoreCase = true) -> 
+                "El formato del teléfono no es válido. Debe contener solo números"
+            message.contains("Invalid email format", ignoreCase = true) -> 
+                "El formato del email no es válido"
+            message.contains("Required field", ignoreCase = true) -> 
+                "Este campo es obligatorio"
+            message.contains("Too short", ignoreCase = true) -> 
+                "El texto es muy corto"
+            message.contains("Too long", ignoreCase = true) -> 
+                "El texto es muy largo"
+            message.contains("Invalid format", ignoreCase = true) -> 
+                "El formato no es válido"
+            else -> message
         }
     }
 }

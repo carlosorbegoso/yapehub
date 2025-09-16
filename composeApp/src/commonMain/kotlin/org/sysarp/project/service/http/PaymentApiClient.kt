@@ -19,7 +19,8 @@ class PaymentApiClient(
         return try {
             logInfo("PAYMENT_API", "Obteniendo pagos pendientes del vendedor: $sellerId, página: $page")
 
-            val response = httpClient.get("$baseUrl/api/payments/pending/$sellerId") {
+            val response = httpClient.get("$baseUrl/api/payments/pending") {
+                parameter("sellerId", sellerId)
                 parameter("page", page)
                 parameter("limit", limit)
                 header("Authorization", "Bearer $token")
@@ -88,6 +89,51 @@ class PaymentApiClient(
             }
         } catch (e: Exception) {
             logError("PAYMENT_API", "Error confirmando pago: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun rejectPayment(
+        sellerId: Int,
+        paymentId: Int,
+        reason: String,
+        token: String
+    ): Result<org.sysarp.project.data.RejectPaymentResponse> {
+        return try {
+            logInfo("PAYMENT_API", "Rechazando pago: $paymentId para vendedor: $sellerId")
+
+            val request = org.sysarp.project.data.RejectPaymentRequest(
+                sellerId = sellerId,
+                paymentId = paymentId,
+                reason = reason
+            )
+
+            val response = httpClient.post("$baseUrl/api/payments/reject") {
+                header("Authorization", "Bearer $token")
+                header("accept", "application/json")
+                header("Content-Type", "application/json")
+                setBody(request)
+            }
+
+            if (response.status.value in 200..299) {
+                val rejectResponse = response.body<org.sysarp.project.data.RejectPaymentResponse>()
+                logInfo("PAYMENT_API", "Pago rechazado exitosamente: $paymentId")
+                Result.success(rejectResponse)
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("PAYMENT_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+
+                val finalErrorMessage = "Error rechazando pago: ${response.status} - $errorMessage"
+                logError("PAYMENT_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("PAYMENT_API", "Error rechazando pago: ${e.message}")
             Result.failure(e)
         }
     }

@@ -170,6 +170,45 @@ class AuthService {
     }
     
     /**
+     * Actualizar perfil de usuario (para uso interno)
+     */
+    fun updateUserProfile(
+        id: Int,
+        name: String,
+        email: String,
+        role: String,
+        branchId: Int,
+        branchName: String,
+        isVerified: Boolean,
+        sellerId: Int?
+    ) {
+        _userProfile.value = UserProfileFactory.createSellerProfile(
+            id = id,
+            name = name,
+            email = email,
+            role = role,
+            branchId = branchId,
+            branchName = branchName,
+            isVerified = isVerified,
+            sellerId = sellerId
+        )
+    }
+    
+    /**
+     * Establecer token de acceso (para uso interno)
+     */
+    fun setAccessToken(token: String) {
+        _accessToken.value = token
+    }
+    
+    /**
+     * Establecer estado de autenticación (para uso interno)
+     */
+    fun setAuthState(state: AuthState) {
+        _authState.value = state
+    }
+    
+    /**
      * Registro de administrador
      */
     suspend fun registerAdmin(

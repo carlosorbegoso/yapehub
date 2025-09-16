@@ -8,13 +8,14 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import org.sysarp.project.utils.Logger
+import org.sysarp.project.utils.Constants
 
 /**
  * Cliente HTTP base con configuración común para todos los servicios
  */
 abstract class BaseApiClient {
     
-    protected val baseUrl = "https://ks9ql0l7-8080.brs.devtunnels.ms"
+    protected val baseUrl = Constants.BASE_URL
     
     protected val client = HttpClient {
         install(ContentNegotiation) {

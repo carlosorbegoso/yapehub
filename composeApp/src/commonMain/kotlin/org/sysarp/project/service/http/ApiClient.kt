@@ -12,12 +12,13 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import org.sysarp.project.data.*
 import org.sysarp.project.utils.Logger
+import org.sysarp.project.utils.Constants
 
 /**
  * Cliente HTTP para comunicarse con la API de YapeChamo
  */
 class ApiClient {
-    private val baseUrl = "https://ks9ql0l7-8080.brs.devtunnels.ms"
+    private val baseUrl = Constants.BASE_URL
     
     private val client = HttpClient {
         install(ContentNegotiation) {

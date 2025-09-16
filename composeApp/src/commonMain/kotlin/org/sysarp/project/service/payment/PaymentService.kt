@@ -59,4 +59,31 @@ class PaymentService(
             Result.failure(e)
         }
     }
+
+    suspend fun rejectPayment(
+        sellerId: Int,
+        paymentId: Int,
+        reason: String,
+        token: String
+    ): Result<org.sysarp.project.data.RejectPaymentResponse> {
+        return try {
+            Logger.auth("PAYMENT_SERVICE", "Rechazando pago: $paymentId para vendedor: $sellerId")
+
+            val result = paymentApiClient.rejectPayment(sellerId, paymentId, reason, token)
+
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("PAYMENT_SERVICE", "Pago rechazado exitosamente: $paymentId")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("PAYMENT_SERVICE", "Error rechazando pago: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("PAYMENT_SERVICE", "Error rechazando pago: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

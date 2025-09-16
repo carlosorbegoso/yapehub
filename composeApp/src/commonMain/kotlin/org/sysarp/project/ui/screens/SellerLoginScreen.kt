@@ -22,10 +22,10 @@ import org.sysarp.project.utils.SuccessHandler
 
 @Composable
 fun SellerLoginScreen(
+    sellerService: SellerService,
     onBackClick: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
-    val sellerService = remember { SellerService() }
     val coroutineScope = rememberCoroutineScope()
     
     var phone by remember { mutableStateOf("") }

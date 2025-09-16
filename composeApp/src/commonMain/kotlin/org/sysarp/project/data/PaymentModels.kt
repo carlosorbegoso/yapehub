@@ -56,3 +56,27 @@ data class PaymentClaimData(
     val status: String,
     val claimedAt: String
 )
+
+@Serializable
+data class RejectPaymentRequest(
+    val sellerId: Int,
+    val paymentId: Int,
+    val reason: String
+)
+
+@Serializable
+data class RejectPaymentResponse(
+    val success: Boolean,
+    val message: String,
+    val data: PaymentRejectData?,
+    val error: Boolean
+)
+
+@Serializable
+data class PaymentRejectData(
+    val paymentId: Int,
+    val sellerId: Int,
+    val status: String,
+    val rejectedAt: String,
+    val reason: String
+)

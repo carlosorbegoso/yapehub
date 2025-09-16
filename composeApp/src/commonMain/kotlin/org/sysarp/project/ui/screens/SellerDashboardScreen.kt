@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,11 +49,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.payment.PaymentService
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SellerDashboardScreen(
     authService: AuthService,
+    paymentService: PaymentService,
     onNavigateToHistory: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -60,7 +65,136 @@ fun SellerDashboardScreen(
     onLogout: () -> Unit
 ) {
     val userProfile by authService.userProfile.collectAsState()
-    var pendingPayments by remember { mutableStateOf(getPendingPayments()) }
+    val accessToken by authService.accessToken.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    
+    var pendingPayments by remember { mutableStateOf<List<org.sysarp.project.data.SellerPendingPayment>>(emptyList()) }
+    var confirmedPaymentsCount by remember { mutableStateOf(0) }
+    var totalAmountCollected by remember { mutableStateOf(0.0) }
+    var isLoadingStats by remember { mutableStateOf(false) }
+    
+    // Función para cargar pagos pendientes
+    val loadPendingPayments = {
+        if (accessToken != null && userProfile?.sellerId != null) {
+            coroutineScope.launch {
+                paymentService.getPendingPayments(
+                    sellerId = userProfile!!.sellerId!!.toInt(),
+                    page = 0,
+                    limit = 10, // Solo los primeros 10 para el dashboard
+                    token = accessToken!!
+                ).fold(
+                    onSuccess = { response ->
+                        pendingPayments = response.data.payments.filter { it.status == "PENDING" }
+                        println("🔍 [SELLER_DASHBOARD] Pagos pendientes cargados: ${pendingPayments.size}")
+                    },
+                    onFailure = { error ->
+                        println("🔍 [SELLER_DASHBOARD] Error cargando pagos pendientes: ${error.message}")
+                        pendingPayments = emptyList()
+                    }
+                )
+            }
+        }
+    }
+    
+    // Función para cargar estadísticas reales
+    val loadSellerStats = {
+        println("🔍 [SELLER_DASHBOARD] Intentando cargar estadísticas...")
+        println("🔍 [SELLER_DASHBOARD] accessToken: ${accessToken != null}")
+        println("🔍 [SELLER_DASHBOARD] userProfile: ${userProfile}")
+        println("🔍 [SELLER_DASHBOARD] sellerId: ${userProfile?.sellerId}")
+        
+        if (accessToken != null && userProfile?.sellerId != null) {
+            println("🔍 [SELLER_DASHBOARD] Iniciando carga de estadísticas para sellerId: ${userProfile!!.sellerId}")
+            coroutineScope.launch {
+                isLoadingStats = true
+                
+                // Por ahora, usamos los datos de pagos pendientes para calcular estadísticas
+                // En el futuro, se puede crear una API específica para estadísticas del vendedor
+                paymentService.getPendingPayments(
+                    sellerId = userProfile!!.sellerId!!.toInt(),
+                    page = 0,
+                    limit = 100, // Obtener más pagos para estadísticas
+                    token = accessToken!!
+                ).fold(
+                    onSuccess = { response ->
+                        println("🔍 [SELLER_DASHBOARD] Estadísticas cargadas exitosamente")
+                        // Calcular estadísticas basándose en los pagos
+                        val allPayments = response.data.payments
+                        confirmedPaymentsCount = allPayments.count { it.status == "CONFIRMED" }
+                        totalAmountCollected = allPayments
+                            .filter { it.status == "CONFIRMED" }
+                            .sumOf { it.amount }
+                        isLoadingStats = false
+                        println("🔍 [SELLER_DASHBOARD] Pagos confirmados: $confirmedPaymentsCount, Total: $totalAmountCollected")
+                    },
+                    onFailure = { error ->
+                        println("🔍 [SELLER_DASHBOARD] Error cargando estadísticas: ${error.message}")
+                        // En caso de error, mantener valores por defecto
+                        confirmedPaymentsCount = 0
+                        totalAmountCollected = 0.0
+                        isLoadingStats = false
+                    }
+                )
+            }
+        } else {
+            println("🔍 [SELLER_DASHBOARD] No se puede cargar estadísticas - datos faltantes")
+        }
+    }
+    
+    // Función para confirmar un pago
+    val claimPayment: (Int) -> Unit = { paymentId ->
+        if (userProfile?.sellerId != null && accessToken != null) {
+            coroutineScope.launch {
+                paymentService.claimPayment(
+                    sellerId = userProfile!!.sellerId!!.toInt(),
+                    paymentId = paymentId,
+                    token = accessToken!!
+                ).fold(
+                    onSuccess = { response ->
+                        // Recargar estadísticas y pagos pendientes
+                        loadSellerStats()
+                        loadPendingPayments()
+                        println("🔍 [SELLER_DASHBOARD] Pago confirmado exitosamente: $paymentId")
+                    },
+                    onFailure = { error ->
+                        println("🔍 [SELLER_DASHBOARD] Error confirmando pago: ${error.message}")
+                    }
+                )
+            }
+        }
+    }
+    
+    // Función para rechazar un pago
+    val rejectPayment: (Int) -> Unit = { paymentId ->
+        if (userProfile?.sellerId != null && accessToken != null) {
+            coroutineScope.launch {
+                paymentService.rejectPayment(
+                    sellerId = userProfile!!.sellerId!!.toInt(),
+                    paymentId = paymentId,
+                    reason = "No es mi pago", // Razón por defecto
+                    token = accessToken!!
+                ).fold(
+                    onSuccess = { response ->
+                        // Recargar estadísticas y pagos pendientes
+                        loadSellerStats()
+                        loadPendingPayments()
+                        println("🔍 [SELLER_DASHBOARD] Pago rechazado exitosamente: $paymentId")
+                    },
+                    onFailure = { error ->
+                        println("🔍 [SELLER_DASHBOARD] Error rechazando pago: ${error.message}")
+                    }
+                )
+            }
+        }
+    }
+    
+    // Cargar datos al iniciar
+    LaunchedEffect(accessToken, userProfile) {
+        if (accessToken != null && userProfile?.sellerId != null) {
+            loadSellerStats()
+            loadPendingPayments()
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -176,7 +310,7 @@ fun SellerDashboardScreen(
                 ) {
                     StatCard(
                         title = "Pagos Confirmados",
-                        value = "12",
+                        value = if (isLoadingStats) "..." else confirmedPaymentsCount.toString(),
                         icon = Icons.Filled.CheckCircle,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
@@ -184,7 +318,7 @@ fun SellerDashboardScreen(
                     
                     StatCard(
                         title = "Total Cobrado",
-                        value = "S/ 450",
+                        value = if (isLoadingStats) "..." else "S/ ${String.format("%.2f", totalAmountCollected)}",
                         icon = Icons.Filled.AttachMoney,
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.weight(1f)
@@ -270,10 +404,10 @@ fun SellerDashboardScreen(
                     PendingPaymentCard(
                         payment = payment,
                         onConfirm = { 
-                            pendingPayments = pendingPayments.filter { it.id != payment.id }
+                            claimPayment(payment.paymentId)
                         },
                         onReject = { 
-                            pendingPayments = pendingPayments.filter { it.id != payment.id }
+                            rejectPayment(payment.paymentId)
                         }
                     )
                 }
@@ -394,7 +528,7 @@ fun StatCard(
 
 @Composable
 fun PendingPaymentCard(
-    payment: PendingPayment,
+    payment: org.sysarp.project.data.SellerPendingPayment,
     onConfirm: () -> Unit,
     onReject: () -> Unit
 ) {
@@ -441,7 +575,7 @@ fun PendingPaymentCard(
                 }
                 
                 Text(
-                    text = payment.timeAgo,
+                    text = formatPaymentTimestamp(payment.timestamp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -471,7 +605,7 @@ fun PendingPaymentCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = payment.amount,
+                            text = "S/ ${String.format("%.2f", payment.amount)}",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -490,7 +624,7 @@ fun PendingPaymentCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = payment.sender,
+                            text = payment.senderName,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -508,7 +642,7 @@ fun PendingPaymentCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = payment.securityCode,
+                            text = payment.yapeCode,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -603,30 +737,3 @@ fun ActionButton(
     }
 }
 
-// Datos de ejemplo
-private fun getPendingPayments(): List<PendingPayment> {
-    return listOf(
-        PendingPayment(
-            id = "payment_1",
-            amount = "S/ 25.50",
-            sender = "Carlos Orbegoso L.",
-            securityCode = "990",
-            timeAgo = "hace 2 min"
-        ),
-        PendingPayment(
-            id = "payment_2",
-            amount = "S/ 15.00",
-            sender = "María González R.",
-            securityCode = "123",
-            timeAgo = "hace 5 min"
-        )
-    )
-}
-
-data class PendingPayment(
-    val id: String,
-    val amount: String,
-    val sender: String,
-    val securityCode: String,
-    val timeAgo: String
-)

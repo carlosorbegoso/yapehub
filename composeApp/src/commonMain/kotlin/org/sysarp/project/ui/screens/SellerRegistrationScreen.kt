@@ -18,15 +18,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.SellerService
+import org.sysarp.project.ui.components.ValidationErrorDisplay
 import org.sysarp.project.utils.SuccessHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SellerRegistrationScreen(
+    sellerService: SellerService,
     onBackClick: () -> Unit,
     onRegistrationSuccess: () -> Unit
 ) {
-    val sellerService = remember { SellerService() }
     val coroutineScope = rememberCoroutineScope()
     
     var affiliationCode by remember { mutableStateOf("") }
@@ -150,21 +151,10 @@ fun SellerRegistrationScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // Error message
-                if (errorMessage.isNotEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Text(
-                            text = errorMessage,
-                            modifier = Modifier.padding(12.dp),
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
+                ValidationErrorDisplay(
+                    errorMessage = errorMessage,
+                    modifier = Modifier.fillMaxWidth()
+                )
                 
                 // Success message
                 if (successMessage.isNotEmpty()) {

@@ -2,12 +2,13 @@ package org.sysarp.project.service
 
 import org.sysarp.project.data.*
 import org.sysarp.project.service.http.SellerApiClient
+import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.utils.Logger
 
 /**
  * Servicio especializado para manejar vendedores
  */
-class SellerService {
+class SellerService(private val authService: AuthService) {
     
     private val sellerApiClient = SellerApiClient()
     
@@ -139,6 +140,36 @@ class SellerService {
             result.fold(
                 onSuccess = { response ->
                     Logger.auth("SELLER_SERVICE", "Login de vendedor exitoso por teléfono: $phone")
+                    
+                    // Actualizar AuthService con los datos del usuario
+                    if (response.success && response.data != null) {
+                        val userData = response.data.user
+                        val loginData = LoginUserData(
+                            id = userData.id ?: 0,
+                            email = userData.email ?: "",
+                            role = userData.role ?: "SELLER",
+                            businessId = userData.branchId ?: 0,
+                            businessName = userData.branchName ?: "",
+                            isVerified = userData.isVerified,
+                            sellerId = userData.sellerId
+                        )
+                        
+                        authService.updateUserProfile(
+                            id = loginData.id,
+                            name = userData.name ?: userData.email ?: "",
+                            email = loginData.email,
+                            role = loginData.role,
+                            branchId = loginData.businessId,
+                            branchName = loginData.businessName,
+                            isVerified = loginData.isVerified,
+                            sellerId = loginData.sellerId
+                        )
+                        authService.setAccessToken(response.data.accessToken)
+                        authService.setAuthState(AuthState.AUTHENTICATED)
+                        
+                        Logger.auth("SELLER_SERVICE", "AuthService actualizado para vendedor: ${userData.sellerId}")
+                    }
+                    
                     Result.success(response)
                 },
                 onFailure = { error ->

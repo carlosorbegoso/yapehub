@@ -125,6 +125,7 @@ fun AppContent(
         }
         is Screen.SellerLogin -> {
             SellerAffiliationScreen(
+                sellerService = sellerService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
                 onAffiliationSuccess = { navigationManager.navigateToSellerDashboard() },
                 onLoginSuccess = { navigationManager.navigateToSellerDashboard() }
@@ -132,6 +133,7 @@ fun AppContent(
         }
         is Screen.SellerRegistration -> {
             SellerAffiliationScreen(
+                sellerService = sellerService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
                 onAffiliationSuccess = { navigationManager.navigateToSellerDashboard() },
                 onLoginSuccess = { navigationManager.navigateToSellerDashboard() }
@@ -139,6 +141,7 @@ fun AppContent(
         }
         is Screen.SellerAffiliation -> {
             SellerAffiliationScreen(
+                sellerService = sellerService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
                 onAffiliationSuccess = { navigationManager.navigateToSellerDashboard() },
                 onLoginSuccess = { navigationManager.navigateToSellerDashboard() }
@@ -159,6 +162,7 @@ fun AppContent(
         is Screen.SellerDashboard -> {
             SellerDashboardScreen(
                 authService = authService,
+                paymentService = paymentService,
                 onNavigateToHistory = { navigationManager.navigateTo(Screen.Analytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.SellerPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
