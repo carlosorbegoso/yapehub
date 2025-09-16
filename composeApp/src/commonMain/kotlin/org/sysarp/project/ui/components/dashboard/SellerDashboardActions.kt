@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Payment
@@ -49,158 +50,101 @@ fun SellerDashboardActions(
     onNavigateToDeactivationRequest: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    Column(
+        modifier = modifier.padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Acciones Principales",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 0.dp)
+        )
+                
+        // Botones de acción siguiendo el estilo ActionCard del admin
+        ActionCard(
+            title = "Ver Historial",
+            subtitle = "Revisar transacciones completadas",
+            icon = Icons.Filled.History,
+            onClick = onNavigateToHistory
+        )
+        
+        ActionCard(
+            title = "Gestionar Pagos",
+            subtitle = "Confirmar y rechazar pagos pendientes",
+            icon = Icons.Filled.Payment,
+            onClick = onNavigateToPendingPayments
+        )
+        
+        ActionCard(
+            title = "Configuración",
+            subtitle = "Ajustes del perfil y sistema",
+            icon = Icons.Filled.Settings,
+            onClick = onNavigateToSettings
+        )
+        
+        ActionCard(
+            title = "Solicitar Desactivación",
+            subtitle = "Dar de baja tu cuenta de vendedor",
+            icon = Icons.Filled.ExitToApp,
+            onClick = onNavigateToDeactivationRequest
+        )
+    }
+}
+
+/**
+ * Tarjeta de acción siguiendo el estilo del dashboard admin
+ */
+@Composable
+fun ActionCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp), // Menos padding vertical
-        shape = RoundedCornerShape(16.dp),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
-        )
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    color = Color(0xFFF8F9FA),
-                    shape = RoundedCornerShape(16.dp)
-                )
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp), // Reducido de 20dp a 16dp
-                verticalArrangement = Arrangement.spacedBy(12.dp) // Reducido de 16dp a 12dp
-            ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Acciones Rápidas",
+                    text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 
-                // Primera fila de botones
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ProfessionalActionButton(
-                        title = "Historial",
-                        subtitle = "Ver transacciones",
-                        icon = Icons.Filled.History,
-                        iconColor = Color(0xFF2196F3),
-                        backgroundColor = Color(0xFFE3F2FD),
-                        onClick = onNavigateToHistory,
-                        modifier = Modifier.weight(1f)
-                    )
-                    
-                    ProfessionalActionButton(
-                        title = "Pagos",
-                        subtitle = "Gestionar",
-                        icon = Icons.Filled.Payment,
-                        iconColor = Color(0xFF4CAF50),
-                        backgroundColor = Color(0xFFE8F5E8),
-                        onClick = onNavigateToPendingPayments,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                
-                // Segunda fila de botones
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ProfessionalActionButton(
-                        title = "Configuración",
-                        subtitle = "Ajustes",
-                        icon = Icons.Filled.Settings,
-                        iconColor = Color(0xFF9C27B0),
-                        backgroundColor = Color(0xFFF3E5F5),
-                        onClick = onNavigateToSettings,
-                        modifier = Modifier.weight(1f)
-                    )
-                    
-                    ProfessionalActionButton(
-                        title = "Desactivar",
-                        subtitle = "Solicitar",
-                        icon = Icons.Filled.ExitToApp,
-                        iconColor = Color(0xFFF44336),
-                        backgroundColor = Color(0xFFFFEBEE),
-                        onClick = onNavigateToDeactivationRequest,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Botón de acción profesional con diseño mejorado
- */
-@Composable
-private fun ProfessionalActionButton(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    iconColor: Color,
-    backgroundColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var isPressed by remember { mutableStateOf(false) }
-    
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else 1f,
-        animationSpec = tween(100),
-        label = "buttonScale"
-    )
-    
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(backgroundColor)
-            .clickable(
-                onClick = {
-                    isPressed = true
-                    onClick()
-                }
-            )
-            .padding(16.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(iconColor.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconColor,
-                    modifier = Modifier.size(20.dp)
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Icon(
+                imageVector = Icons.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
             )
         }
     }

@@ -89,7 +89,7 @@ fun PaymentNotificationCard(
                     InfoRow(
                         label = "Monto",
                         value = "S/ ${String.format("%.2f", notification.amount)}",
-                        icon = Icons.Filled.AttachMoney,
+                        icon = Icons.Filled.CheckCircle,
                         valueColor = MaterialTheme.colorScheme.primary
                     )
                     

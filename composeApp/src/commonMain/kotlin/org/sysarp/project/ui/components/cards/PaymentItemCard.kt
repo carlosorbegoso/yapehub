@@ -144,7 +144,7 @@ fun PaymentItemCard(
                     }
                     
                     Icon(
-                        imageVector = Icons.Filled.AttachMoney,
+                        imageVector = Icons.Filled.CheckCircle,
                         contentDescription = null,
                         tint = Color(0xFF4CAF50),
                         modifier = Modifier.size(32.dp)

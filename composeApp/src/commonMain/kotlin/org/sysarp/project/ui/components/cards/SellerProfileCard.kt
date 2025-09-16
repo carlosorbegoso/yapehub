@@ -57,44 +57,53 @@ fun SellerProfileCard(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
+                containerColor = MaterialTheme.colorScheme.surface
             ),
-            shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Row(
+                modifier = Modifier.padding(16.dp), // Reducido de 24dp a 16dp
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Avatar con animación
+                // Avatar con animación - más pequeño
                 AnimatedAvatar(
                     connectionState = connectionState,
-                    modifier = Modifier.size(80.dp)
+                    modifier = Modifier.size(56.dp) // Reducido de 80dp a 56dp
                 )
                 
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Nombre/Código del vendedor
-                AnimatedText(
-                    text = sellerName ?: "Vendedor #${sellerId ?: "N/A"}",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Sucursal
-                if (!branchName.isNullOrBlank()) {
+                // Información del vendedor en columna compacta
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp) // Más espacio para mejor legibilidad
+                ) {
+                    // Nombre del vendedor
                     AnimatedText(
-                        text = branchName,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        text = sellerName ?: "Vendedor",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Código del vendedor
+                    AnimatedText(
+                        text = "Código: #${sellerId ?: "N/A"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    // Sucursal
+                    if (!branchName.isNullOrBlank()) {
+                        AnimatedText(
+                            text = branchName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
                 
-                // Estado de conexión con animación
+                // Estado de conexión con animación - al lado derecho
                 ConnectionStatusIndicator(
                     connectionState = connectionState
                 )
@@ -113,10 +122,10 @@ private fun AnimatedAvatar(
 ) {
     val animatedColor by animateColorAsState(
         targetValue = when (connectionState) {
-            WebSocketConnectionState.CONNECTED -> MaterialTheme.colorScheme.primary
-            WebSocketConnectionState.CONNECTING -> MaterialTheme.colorScheme.secondary
-            WebSocketConnectionState.RECONNECTING -> MaterialTheme.colorScheme.tertiary
-            WebSocketConnectionState.DISCONNECTED -> MaterialTheme.colorScheme.error
+            WebSocketConnectionState.CONNECTED -> Color(0xFF4CAF50) // Verde profesional para "en línea"
+            WebSocketConnectionState.CONNECTING -> Color(0xFF2196F3) // Azul para conectando
+            WebSocketConnectionState.RECONNECTING -> Color(0xFF2196F3) // Azul para reconectando
+            WebSocketConnectionState.DISCONNECTED -> Color(0xFFE53935) // Rojo profesional para desconectado
         },
         animationSpec = tween(1000),
         label = "avatarColor"
@@ -189,10 +198,10 @@ private fun ConnectionStatusIndicator(
 ) {
     val animatedColor by animateColorAsState(
         targetValue = when (connectionState) {
-            WebSocketConnectionState.CONNECTED -> Color(0xFF4CAF50) // Verde
-            WebSocketConnectionState.CONNECTING -> Color(0xFFFF9800) // Naranja
-            WebSocketConnectionState.RECONNECTING -> Color(0xFF2196F3) // Azul
-            WebSocketConnectionState.DISCONNECTED -> Color(0xFFF44336) // Rojo
+            WebSocketConnectionState.CONNECTED -> Color(0xFF4CAF50) // Verde profesional para "en línea"
+            WebSocketConnectionState.CONNECTING -> Color(0xFF2196F3) // Azul para conectando
+            WebSocketConnectionState.RECONNECTING -> Color(0xFF2196F3) // Azul para reconectando
+            WebSocketConnectionState.DISCONNECTED -> Color(0xFFE53935) // Rojo profesional para desconectado
         },
         animationSpec = tween(500),
         label = "statusColor"

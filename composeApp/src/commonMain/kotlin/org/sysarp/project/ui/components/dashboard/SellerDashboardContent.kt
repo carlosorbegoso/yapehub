@@ -19,19 +19,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -52,16 +52,239 @@ import org.sysarp.project.service.notifications.PaymentNotificationService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.service.websocket.WebSocketConnectionState
 import org.sysarp.project.ui.components.PaymentNotificationCard
-import org.sysarp.project.ui.components.cards.PulsingStatsCard
 import org.sysarp.project.ui.components.cards.SellerProfileCard
 import org.sysarp.project.ui.components.cards.ProfessionalStatsCard
 import org.sysarp.project.ui.components.cards.PulsingProfessionalStatsCard
 import org.sysarp.project.ui.components.cards.PaymentItemCard
-import org.sysarp.project.utils.extractShortYapeCode
 import kotlinx.coroutines.launch
 
 /**
- * Contenido principal del dashboard del vendedor
+ * Tarjeta de estadística para el seller dashboard con estilo admin
+ */
+@Composable
+fun SellerStatCard(
+    title: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.material3.Card(
+        modifier = modifier,
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(32.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
+/**
+ * Tarjeta de pago pendiente para el seller dashboard con estilo admin
+ */
+@Composable
+fun SellerPaymentCard(
+    payment: org.sysarp.project.data.SellerPendingPayment,
+    onClaim: (Int) -> Unit,
+    onReject: (Int) -> Unit,
+    isProcessing: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.material3.Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Header con estado
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Schedule,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Pago #${payment.paymentId}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                androidx.compose.material3.Card(
+                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Pendiente",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Información del pago
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SellerInfoRow(
+                    label = "Monto",
+                    value = "S/ ${String.format("%.2f", payment.amount)}",
+                    icon = Icons.Filled.CheckCircle
+                )
+                
+                SellerInfoRow(
+                    label = "Cliente",
+                    value = payment.senderName,
+                    icon = Icons.Filled.Person
+                )
+                
+                SellerInfoRow(
+                    label = "Código Yape",
+                    value = org.sysarp.project.utils.extractShortYapeCode(payment.yapeCode),
+                    icon = Icons.Filled.CheckCircle
+                )
+                
+                SellerInfoRow(
+                    label = "Fecha",
+                    value = payment.timestamp,
+                    icon = Icons.Filled.Schedule
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Botones de acción
+            if (isProcessing) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    androidx.compose.material3.Button(
+                        onClick = { onClaim(payment.paymentId) },
+                        modifier = Modifier.weight(1f),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Confirmar")
+                    }
+                    
+                    androidx.compose.material3.Button(
+                        onClick = { onReject(payment.paymentId) },
+                        modifier = Modifier.weight(1f),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Rechazar")
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Fila de información para la tarjeta de pago
+ */
+@Composable
+private fun SellerInfoRow(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp)
+        )
+        
+        Spacer(modifier = Modifier.width(8.dp))
+        
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(80.dp)
+        )
+        
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+/**
+ * Contenido principal del dashboard del vendedor usando componentes reutilizables
  */
 @Composable
 fun SellerDashboardContent(
@@ -83,7 +306,6 @@ fun SellerDashboardContent(
     
     // Estados del WebSocket
     val connectionState by webSocketService.connectionState.collectAsState()
-    val isConnected by webSocketService.isConnected.collectAsState()
     
     // Estados de notificaciones
     var currentNotification by remember { mutableStateOf<PaymentNotificationData?>(null) }
@@ -96,7 +318,6 @@ fun SellerDashboardContent(
     var confirmedPaymentsCount by remember { mutableStateOf(0) }
     var totalAmountCollected by remember { mutableStateOf(0.0) }
     var isLoadingStats by remember { mutableStateOf(false) }
-    var isLoadingMorePayments by remember { mutableStateOf(false) }
     var currentPage by remember { mutableStateOf(0) }
     var hasMorePayments by remember { mutableStateOf(true) }
     var processingPayments by remember { mutableStateOf<Set<Int>>(emptySet()) }
@@ -216,9 +437,8 @@ fun SellerDashboardContent(
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(top = 8.dp), // Padding adicional para evitar superposición con TopAppBar
-            verticalArrangement = Arrangement.spacedBy(12.dp) // Reducido para móvil
+                .padding(paddingValues),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Notificación de nuevo pago
             currentNotification?.let { notification ->
@@ -280,93 +500,173 @@ fun SellerDashboardContent(
                 }
             }
             
-            // Perfil del vendedor con padding adicional para evitar superposición
+            // Perfil del vendedor con padding para evitar solapamiento
             item {
                 Box(
-                    modifier = Modifier.padding(top = 4.dp) // Padding adicional para separar del TopAppBar
+                    modifier = Modifier.padding(top = 48.dp)
                 ) {
-                    SellerProfileCard(
-                        sellerId = userProfile?.sellerId?.toInt(),
-                        sellerName = userProfile?.sellerName,
-                        branchName = userProfile?.branchName,
-                        connectionState = connectionState
+                    if (userProfile != null) {
+                        SellerProfileCard(
+                            sellerId = userProfile?.sellerId?.toInt(),
+                            sellerName = userProfile?.sellerName ?: "Vendedor",
+                            branchName = userProfile?.branchName ?: "Sucursal Principal",
+                            connectionState = connectionState
+                        )
+                    } else {
+                        // Estado de carga para el perfil
+                        androidx.compose.material3.Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            colors = androidx.compose.material3.CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(48.dp),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = "Cargando perfil...",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Obteniendo información del vendedor",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Resumen de estadísticas con mejor jerarquía visual
+            item {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "Resumen de Ventas",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Estado actual de tus transacciones",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp)
                     )
                 }
             }
             
-            // Estadísticas del día
-            item {
-                Text(
-                    text = "Estadísticas del Día",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-            }
-            
-            // Tarjetas de estadísticas
+            // Tarjetas de estadísticas usando componentes reutilizables
             item {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp) // Menos espacio entre tarjetas
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     if (isLoadingStats) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    } else {
-                        PulsingProfessionalStatsCard(
+                        // Usar componentes con estilo admin para estado de carga
+                        SellerStatCard(
                             title = "Confirmados",
-                            value = confirmedPaymentsCount.toString(),
+                            value = "...",
                             icon = Icons.Filled.CheckCircle,
-                            iconColor = androidx.compose.ui.graphics.Color(0xFF4CAF50),
-                            backgroundColor = androidx.compose.ui.graphics.Color(0xFFE8F5E8),
+                            color = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.weight(1f)
                         )
                         
-                        ProfessionalStatsCard(
-                            title = "Total",
+                        SellerStatCard(
+                            title = "Total Recaudado",
+                            value = "...",
+                            icon = Icons.Filled.CheckCircle,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        // Usar componentes con estilo admin (fondo blanco, mismo tamaño)
+                        SellerStatCard(
+                            title = "Confirmados",
+                            value = confirmedPaymentsCount.toString(),
+                            icon = Icons.Filled.CheckCircle,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        SellerStatCard(
+                            title = "Total Recaudado",
                             value = "S/ ${String.format("%.0f", totalAmountCollected)}",
-                            icon = Icons.Filled.AttachMoney,
-                            iconColor = androidx.compose.ui.graphics.Color(0xFF2196F3),
-                            backgroundColor = androidx.compose.ui.graphics.Color(0xFFE3F2FD),
+                            icon = Icons.Filled.CheckCircle,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
                         )
                     }
                 }
             }
             
-            // Pagos pendientes - Header compacto para móvil
+            // Pagos pendientes - Header mejorado con mejor diseño
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp), // Menos padding vertical
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Text(
-                        text = "Pagos Pendientes",
-                        style = MaterialTheme.typography.titleMedium, // Tamaño reducido
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    if (pendingPayments.size > 2) {
-                        androidx.compose.material3.Surface(
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer
-                        ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
                             Text(
-                                text = "${pendingPayments.size}",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                text = "Pagos Pendientes",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
+                            Text(
+                                text = "Transacciones por confirmar",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                        
+                        if (pendingPayments.isNotEmpty()) {
+                            androidx.compose.material3.Surface(
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shadowElevation = 2.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "${pendingPayments.size}",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -407,6 +707,50 @@ fun SellerDashboardContent(
                 }
             }
             
+            // Estado vacío siguiendo el estilo admin
+            if (displayedPayments.isEmpty() && !isLoadingMore) {
+                item {
+                    androidx.compose.material3.Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = "Sin pagos pendientes",
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            
+                            Text(
+                                text = "¡Todo al día!",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            
+                            Text(
+                                text = "No tienes pagos pendientes en este momento",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+            
             items(
                 items = displayedPayments,
                 key = { it.paymentId }
@@ -426,7 +770,7 @@ fun SellerDashboardContent(
                         animationSpec = androidx.compose.animation.core.tween(250)
                     )
                 ) {
-                    PaymentItemCard(
+                    SellerPaymentCard(
                         payment = payment,
                         isProcessing = processingPayments.contains(payment.paymentId),
                         onClaim = {
@@ -480,80 +824,115 @@ fun SellerDashboardContent(
                 }
             }
             
-            // Botón "Ver más" compacto para móvil
+            // Botón "Ver más" siguiendo el estilo admin
             if (pendingPayments.size > 2 && !showAllPayments) {
                 item {
                     androidx.compose.material3.Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                            .padding(horizontal = 16.dp),
                         colors = androidx.compose.material3.CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                         onClick = { showAllPayments = true }
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.Center,
+                                .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.ExpandMore,
                                 contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Ver ${pendingPayments.size - 2} pagos más",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium
+                            
+                            Spacer(modifier = Modifier.width(16.dp))
+                            
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Ver más pagos",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                
+                                Text(
+                                    text = "Mostrar ${pendingPayments.size - 2} pagos adicionales",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                 }
             }
             
-            // Botón "Ver menos" compacto
+            // Botón "Ver menos" siguiendo el estilo admin
             if (showAllPayments && pendingPayments.size > 2) {
                 item {
                     androidx.compose.material3.Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                            .padding(horizontal = 16.dp),
                         colors = androidx.compose.material3.CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                         onClick = { showAllPayments = false }
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.Center,
+                                .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.ExpandLess,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(32.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Ver menos",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            
+                            Spacer(modifier = Modifier.width(16.dp))
+                            
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Ver menos",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                
+                                Text(
+                                    text = "Ocultar pagos adicionales",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                 }
             }
             
-            // Indicador de carga para más pagos
+            // Indicador de carga siguiendo el estilo admin
             if (isLoadingMore) {
                 item {
                     Box(
@@ -562,56 +941,59 @@ fun SellerDashboardContent(
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "Cargando más pagos...",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        CircularProgressIndicator()
                     }
                 }
             }
             
-            // Botón para cargar más pagos si hay más disponibles
+            // Botón para cargar más pagos siguiendo el estilo admin
             if (showAllPayments && hasMorePayments && !isLoadingMore) {
                 item {
                     androidx.compose.material3.Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                            .padding(horizontal = 16.dp),
                         colors = androidx.compose.material3.CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                         onClick = loadMorePayments
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.Center,
+                                .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.ExpandMore,
                                 contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Cargar más pagos",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium
+                            
+                            Spacer(modifier = Modifier.width(16.dp))
+                            
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Cargar más pagos",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                
+                                Text(
+                                    text = "Ver pagos adicionales",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }

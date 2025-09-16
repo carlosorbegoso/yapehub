@@ -86,10 +86,8 @@ fun SellerDashboardTopBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            containerColor = MaterialTheme.colorScheme.surface // Mismo estilo que admin
         ),
-        modifier = modifier
+        modifier = modifier.padding(horizontal = 2.dp) // Ultra compacto
     )
 }
