@@ -22,12 +22,10 @@ import org.sysarp.project.ui.screens.PaymentsScreen
 import org.sysarp.project.ui.screens.ProfileSelectionScreen
 import org.sysarp.project.ui.screens.QRDisplayScreen
 import org.sysarp.project.ui.screens.ReportsScreen
-import org.sysarp.project.ui.screens.SellerAffiliationScreen
 import org.sysarp.project.ui.screens.SellerDashboardScreen
-import org.sysarp.project.ui.screens.SellerLoginScreen
 import org.sysarp.project.ui.screens.SellerManagementScreen
 import org.sysarp.project.ui.screens.SellerPaymentsScreen
-import org.sysarp.project.ui.screens.SellerRegistrationScreen
+import org.sysarp.project.ui.screens.SellerUnifiedScreen
 import org.sysarp.project.ui.screens.SettingsScreen
 import org.sysarp.project.ui.screens.SplashScreen
 import org.sysarp.project.ui.screens.UserManagementScreen
@@ -129,27 +127,27 @@ fun AppContent(
             )
         }
         is Screen.SellerLogin -> {
-            SellerAffiliationScreen(
+            SellerUnifiedScreen(
                 sellerService = sellerService,
+                authService = authService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
-                onAffiliationSuccess = { navigationManager.navigateToSellerDashboard() },
-                onLoginSuccess = { navigationManager.navigateToSellerDashboard() }
+                onSuccess = { navigationManager.navigateToSellerDashboard() }
             )
         }
         is Screen.SellerRegistration -> {
-            SellerAffiliationScreen(
+            SellerUnifiedScreen(
                 sellerService = sellerService,
+                authService = authService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
-                onAffiliationSuccess = { navigationManager.navigateToSellerDashboard() },
-                onLoginSuccess = { navigationManager.navigateToSellerDashboard() }
+                onSuccess = { navigationManager.navigateToSellerDashboard() }
             )
         }
         is Screen.SellerAffiliation -> {
-            SellerAffiliationScreen(
+            SellerUnifiedScreen(
                 sellerService = sellerService,
+                authService = authService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
-                onAffiliationSuccess = { navigationManager.navigateToSellerDashboard() },
-                onLoginSuccess = { navigationManager.navigateToSellerDashboard() }
+                onSuccess = { navigationManager.navigateToSellerDashboard() }
             )
         }
         is Screen.AdminDashboard -> {

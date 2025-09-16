@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -216,30 +217,33 @@ fun ProfileSelectionScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
-                text = "Usa tu código de afiliación para acceder",
+                text = "Completa tus datos para acceder",
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
-            // Botón único de Afiliarse/Acceder
+
+            // Botón único simplificado
             Button(
                 onClick = {
                     isLoading = true
-                    onSellerRegistration() // Usar la pantalla unificada
+                    onSellerRegistration() // Usar la nueva pantalla unificada
                 },
                 enabled = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -247,17 +251,27 @@ fun ProfileSelectionScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text(
-                        text = "Acceder con Código",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Key,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Continuar",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Botón de volver
             Button(
                 onClick = {
@@ -287,7 +301,7 @@ fun ProfileSelectionScreen(
                     if (selectedType != null) {
                         when (selectedType) {
                             UserType.ADMIN -> showAdminOptions = true
-                            UserType.SELLER -> showSellerOptions = true
+                            UserType.SELLER -> onSellerRegistration() // Ir directamente al formulario
                             null -> {}
                         }
                     }
