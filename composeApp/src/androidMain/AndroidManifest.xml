@@ -5,17 +5,18 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
-    <!-- Permisos necesarios para capturar notificaciones -->
+    <!-- Permisos necesarios para capturar notificaciones - TEMPORALMENTE DESHABILITADOS -->
+    <!--
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     
-    <!-- Permisos adicionales para múltiples métodos de captura -->
     <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
     <uses-permission android:name="android.permission.READ_LOGS" />
     <uses-permission android:name="android.permission.READ_CLIPBOARD" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    -->
     
     <application
         android:allowBackup="true"
@@ -34,7 +35,8 @@
             </intent-filter>
         </activity>
         
-        <!-- Servicio para capturar notificaciones -->
+        <!-- Servicio para capturar notificaciones - TEMPORALMENTE DESHABILITADO -->
+        <!--
         <service
             android:name=".service.AndroidNotificationCaptureService"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
@@ -43,6 +45,7 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+        -->
         
         
         
