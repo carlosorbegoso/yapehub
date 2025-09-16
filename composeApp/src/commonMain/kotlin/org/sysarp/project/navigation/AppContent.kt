@@ -10,11 +10,14 @@ import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.stats.StatsService
+import org.sysarp.project.service.affiliation.AffiliationService
+import org.sysarp.project.service.branch.BranchService
 
 import org.sysarp.project.ui.screens.AdminDashboardScreen
 import org.sysarp.project.ui.screens.AdminPaymentsScreen
 import org.sysarp.project.ui.screens.AdminRegistrationScreen
 import org.sysarp.project.ui.screens.AnalyticsScreen
+import org.sysarp.project.ui.screens.BranchManagementScreen
 import org.sysarp.project.ui.screens.DeactivationRequestScreen
 import org.sysarp.project.ui.screens.ForgotPasswordScreen
 import org.sysarp.project.ui.screens.LoginScreen
@@ -40,6 +43,8 @@ fun AppContent(
     sellerService: SellerService,
     paymentService: PaymentService,
     statsService: StatsService,
+    affiliationService: AffiliationService,
+    branchService: BranchService,
     webSocketService: org.sysarp.project.service.websocket.PaymentWebSocketService,
     paymentNotificationService: org.sysarp.project.service.notifications.PaymentNotificationService,
     modifier: Modifier = Modifier
@@ -155,7 +160,9 @@ fun AppContent(
                 authService = authService,
                 sellerService = sellerService,
                 statsService = statsService,
+                affiliationService = affiliationService,
                 onNavigateToSellerManagement = { navigationManager.navigateTo(Screen.SellerManagement) },
+                onNavigateToBranchManagement = { navigationManager.navigateTo(Screen.BranchManagement) },
                 onNavigateToAnalytics = { navigationManager.navigateTo(Screen.Analytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.PendingPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
@@ -184,6 +191,22 @@ fun AppContent(
                 onNavigateBack = { navigationManager.navigateBack() },
                 onNavigateToQR = { qrCode -> navigationManager.navigateToQRDisplay(qrCode) }
             )
+        }
+        is Screen.BranchManagement -> {
+            val userProfile by authService.userProfile.collectAsState()
+            val accessToken by authService.accessToken.collectAsState()
+            
+            if (userProfile?.adminId != null && accessToken != null) {
+                BranchManagementScreen(
+                    branchService = branchService,
+                    adminId = userProfile!!.adminId!!.toInt(),
+                    accessToken = accessToken!!,
+                    onBackClick = { navigationManager.navigateBack() }
+                )
+            } else {
+                // Manejar caso de error
+                Text("Error: No se pudo obtener información del administrador")
+            }
         }
         is Screen.Analytics -> {
             AnalyticsScreen(

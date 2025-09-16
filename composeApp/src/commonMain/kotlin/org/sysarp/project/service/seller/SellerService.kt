@@ -129,13 +129,13 @@ class SellerService(private val authService: AuthService) {
 
 
     /**
-     * Login de vendedor por teléfono
+     * Login de vendedor por teléfono y código de afiliación
      */
-    suspend fun loginSellerByPhone(phone: String): Result<org.sysarp.project.data.SellerLoginByPhoneResponse> {
+    suspend fun loginSellerByPhone(phone: String, affiliationCode: String): Result<org.sysarp.project.data.SellerLoginByPhoneResponse> {
         return try {
-            Logger.auth("SELLER_SERVICE", "Iniciando login de vendedor por teléfono: $phone")
+            Logger.auth("SELLER_SERVICE", "Iniciando login de vendedor por teléfono: $phone con código: $affiliationCode")
             
-            val result = sellerApiClient.loginSellerByPhone(phone)
+            val result = sellerApiClient.loginSellerByPhone(phone, affiliationCode)
             
             result.fold(
                 onSuccess = { response ->
@@ -143,31 +143,33 @@ class SellerService(private val authService: AuthService) {
                     
                     // Actualizar AuthService con los datos del usuario
                     if (response.success && response.data != null) {
-                        val userData = response.data.user
-                        val loginData = LoginUserData(
-                            id = userData.id ?: 0,
-                            email = userData.email ?: "",
-                            role = userData.role ?: "SELLER",
-                            businessId = userData.branchId ?: 0,
-                            businessName = userData.branchName ?: "",
-                            isVerified = userData.isVerified,
-                            sellerId = userData.sellerId
+                        val loginData = response.data
+                        val userData = LoginUserData(
+                            id = loginData.sellerId,
+                            email = loginData.email,
+                            role = "SELLER",
+                            businessId = loginData.branchId,
+                            businessName = loginData.branchName,
+                            isVerified = true,
+                            sellerId = loginData.sellerId
                         )
                         
                         authService.updateUserProfile(
-                            id = loginData.id,
-                            name = userData.name ?: userData.email ?: "",
-                            email = loginData.email,
-                            role = loginData.role,
-                            branchId = loginData.businessId,
-                            branchName = loginData.businessName,
-                            isVerified = loginData.isVerified,
-                            sellerId = loginData.sellerId
+                            id = userData.id,
+                            name = loginData.sellerName,
+                            email = userData.email,
+                            role = userData.role,
+                            branchId = userData.businessId,
+                            branchName = userData.businessName,
+                            branchCode = loginData.branchCode,
+                            isVerified = userData.isVerified,
+                            sellerId = userData.sellerId,
+                            affiliationCode = loginData.affiliationCode
                         )
-                        authService.setAccessToken(response.data.accessToken)
+                        authService.setAccessToken(loginData.accessToken)
                         authService.setAuthState(AuthState.AUTHENTICATED)
                         
-                        Logger.auth("SELLER_SERVICE", "AuthService actualizado para vendedor: ${userData.sellerId}")
+                        Logger.auth("SELLER_SERVICE", "AuthService actualizado para vendedor: ${loginData.sellerId} en sucursal: ${loginData.branchName}")
                     }
                     
                     Result.success(response)

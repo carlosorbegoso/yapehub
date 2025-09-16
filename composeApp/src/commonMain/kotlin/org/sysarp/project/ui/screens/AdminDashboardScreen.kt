@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.PauseCircle
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -56,6 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
+import org.sysarp.project.service.affiliation.AffiliationService
+import org.sysarp.project.data.AffiliationCodeData
+import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
 import androidx.compose.runtime.*
 import org.sysarp.project.data.DeactivationRequest
 import org.sysarp.project.data.QuickSummaryData
@@ -68,7 +72,9 @@ fun AdminDashboardScreen(
     authService: AuthService,
     sellerService: SellerService,
     statsService: org.sysarp.project.service.stats.StatsService,
+    affiliationService: AffiliationService,
     onNavigateToSellerManagement: () -> Unit,
+    onNavigateToBranchManagement: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -96,6 +102,12 @@ fun AdminDashboardScreen(
     var connectedSellersData by remember { mutableStateOf<org.sysarp.project.data.ConnectedSellersData?>(null) }
     var isLoadingSellers by remember { mutableStateOf(false) }
     var sellersError by remember { mutableStateOf("") }
+    
+    // Estado para códigos de afiliación
+    var showAffiliationDialog by remember { mutableStateOf(false) }
+    var isLoadingAffiliation by remember { mutableStateOf(false) }
+    var generatedAffiliationCode by remember { mutableStateOf<AffiliationCodeData?>(null) }
+    var affiliationError by remember { mutableStateOf<String?>(null) }
     
     // Cargar estadísticas rápidas
     LaunchedEffect(userProfile?.adminId, accessToken) {
@@ -156,6 +168,12 @@ fun AdminDashboardScreen(
                     )
                 },
                 actions = {
+                    IconButton(onClick = { showAffiliationDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.QrCode,
+                            contentDescription = "Generar código de afiliación"
+                        )
+                    }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(
                             imageVector = Icons.Filled.Settings,
@@ -395,6 +413,13 @@ fun AdminDashboardScreen(
                     )
                     
                     ActionCard(
+                        title = "Gestionar Sucursales",
+                        subtitle = "Crear, editar y administrar sucursales",
+                        icon = Icons.Filled.Business,
+                        onClick = onNavigateToBranchManagement
+                    )
+                    
+                    ActionCard(
                         title = "Ver Analytics",
                         subtitle = "Reportes y estadísticas detalladas",
                         icon = Icons.Filled.Analytics,
@@ -532,10 +557,10 @@ fun AdminDashboardScreen(
                                 }
                             }
                         } else {
-                            Column(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                                 sellersData.connectedSellers.forEach { seller ->
                                     ConnectedSellerCard(
                                         sellerInfo = seller
@@ -573,6 +598,47 @@ fun AdminDashboardScreen(
             }
         }
     }
+    
+    // Diálogo para generar códigos de afiliación
+    GenerateAffiliationCodeDialog(
+        isVisible = showAffiliationDialog,
+        onDismiss = { 
+            showAffiliationDialog = false
+            generatedAffiliationCode = null
+            affiliationError = null
+        },
+        onGenerate = { expirationHours, maxUses, branchId, notes ->
+            if (userProfile?.adminId != null && accessToken != null) {
+                isLoadingAffiliation = true
+                affiliationError = null
+                
+                coroutineScope.launch {
+                    affiliationService.generateAffiliationCode(
+                        adminId = userProfile!!.adminId!!.toInt(),
+                        branchId = branchId,
+                        expirationHours = expirationHours,
+                        maxUses = maxUses,
+                        notes = notes,
+                        accessToken = accessToken!!
+                    ).fold(
+                        onSuccess = { affiliationData ->
+                            generatedAffiliationCode = affiliationData
+                            isLoadingAffiliation = false
+                            println("🔍 [ADMIN_DASHBOARD] Código de afiliación generado: ${affiliationData.affiliationCode}")
+                        },
+                        onFailure = { error ->
+                            affiliationError = error.message ?: "Error generando código de afiliación"
+                            isLoadingAffiliation = false
+                            println("🔍 [ADMIN_DASHBOARD] Error generando código: ${error.message}")
+                        }
+                    )
+                }
+            }
+        },
+        isLoading = isLoadingAffiliation,
+        generatedCode = generatedAffiliationCode,
+        errorMessage = affiliationError
+    )
 }
 
 @Composable

@@ -44,15 +44,16 @@ class AuthApiClient : BaseApiClient() {
     }
     
     /**
-     * Login de vendedor por teléfono
+     * Login de vendedor por teléfono y código de afiliación
      */
-    suspend fun sellerLoginByPhone(phone: String): Result<SellerLoginByPhoneResponse> {
+    suspend fun sellerLoginByPhone(phone: String, affiliationCode: String): Result<SellerLoginByPhoneResponse> {
         return try {
-            logInfo("AUTH_API", "Intentando login de vendedor por teléfono: $phone")
+            logInfo("AUTH_API", "Intentando login de vendedor por teléfono: $phone con código: $affiliationCode")
             
             val response = client.post("$baseUrl/api/auth/seller/login-by-phone") {
                 contentType(ContentType.Application.Json)
                 parameter("phone", phone)
+                parameter("affiliationCode", affiliationCode)
             }
             
             if (response.status.isSuccess()) {

@@ -17,6 +17,7 @@ import org.sysarp.project.utils.UserProfileFactory
 class AuthService {
     
     private val apiClient = ApiClient()
+    private val authApiClient = AuthApiClient()
     
     // Estados básicos
     private val _authState = MutableStateFlow(AuthState.LOADING)
@@ -97,38 +98,40 @@ class AuthService {
      */
     suspend fun loginSellerByPhone(
         phone: String,
-        password: String
-    ): Result<LoginUserData> {
+        affiliationCode: String
+    ): Result<SellerLoginData> {
         return try {
             Logger.auth("AUTH_SERVICE", "Iniciando login de vendedor por teléfono: $phone")
             
-            val apiResponse = apiClient.sellerLoginByPhone(phone)
+            val apiResponse = authApiClient.sellerLoginByPhone(phone, affiliationCode)
             
             apiResponse.fold(
                 onSuccess = { response ->
                     if (response.success && response.data != null) {
-                        val userData = response.data.user
-                        val loginData = LoginUserData(
-                            id = userData.id ?: 0,
-                            email = userData.email ?: "",
-                            role = userData.role ?: "VENDOR",
-                            businessId = userData.branchId ?: 0,
-                            businessName = userData.branchName ?: "",
-                            isVerified = userData.isVerified,
-                            sellerId = userData.sellerId
+                        val loginData = response.data
+                        val userData = LoginUserData(
+                            id = loginData.sellerId,
+                            email = loginData.email,
+                            role = "SELLER",
+                            businessId = loginData.branchId,
+                            businessName = loginData.branchName,
+                            isVerified = true,
+                            sellerId = loginData.sellerId
                         )
                         
                         _userProfile.value = UserProfileFactory.createSellerProfile(
-                            id = loginData.id,
-                            name = loginData.email,
+                            id = loginData.sellerId,
+                            name = loginData.sellerName,
                             email = loginData.email,
-                            role = loginData.role,
-                            branchId = loginData.businessId,
-                            branchName = loginData.businessName,
-                            isVerified = loginData.isVerified,
-                            sellerId = loginData.sellerId
+                            role = "SELLER",
+                            branchId = loginData.branchId,
+                            branchName = loginData.branchName,
+                            branchCode = loginData.branchCode,
+                            isVerified = true,
+                            sellerId = loginData.sellerId,
+                            affiliationCode = loginData.affiliationCode
                         )
-                        _accessToken.value = response.data.accessToken
+                        _accessToken.value = loginData.accessToken
                         _authState.value = AuthState.AUTHENTICATED
                         
                         Logger.auth("AUTH_SERVICE", "Login exitoso para vendedor: $phone")
@@ -179,8 +182,10 @@ class AuthService {
         role: String,
         branchId: Int,
         branchName: String,
+        branchCode: String? = null,
         isVerified: Boolean,
-        sellerId: Int?
+        sellerId: Int?,
+        affiliationCode: String? = null
     ) {
         _userProfile.value = UserProfileFactory.createSellerProfile(
             id = id,
@@ -189,8 +194,10 @@ class AuthService {
             role = role,
             branchId = branchId,
             branchName = branchName,
+            branchCode = branchCode,
             isVerified = isVerified,
-            sellerId = sellerId
+            sellerId = sellerId,
+            affiliationCode = affiliationCode
         )
     }
     
@@ -286,7 +293,7 @@ class AuthService {
         return loginAdmin(email, password)
     }
     
-    suspend fun sellerLoginByPhone(phone: String, password: String): Result<LoginUserData> {
-        return loginSellerByPhone(phone, password)
+    suspend fun sellerLoginByPhone(phone: String, affiliationCode: String): Result<SellerLoginData> {
+        return loginSellerByPhone(phone, affiliationCode)
     }
 }

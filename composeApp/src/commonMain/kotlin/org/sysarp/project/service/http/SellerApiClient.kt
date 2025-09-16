@@ -244,15 +244,16 @@ class SellerApiClient : BaseApiClient() {
 
 
     /**
-     * Login de vendedor por teléfono
+     * Login de vendedor por teléfono y código de afiliación
      */
-    suspend fun loginSellerByPhone(phone: String): Result<org.sysarp.project.data.SellerLoginByPhoneResponse> {
+    suspend fun loginSellerByPhone(phone: String, affiliationCode: String): Result<org.sysarp.project.data.SellerLoginByPhoneResponse> {
         return try {
-            logInfo("SELLER_API", "Intentando login de vendedor por teléfono: $phone")
+            logInfo("SELLER_API", "Intentando login de vendedor por teléfono: $phone con código: $affiliationCode")
             
             val response = client.post("$baseUrl/api/auth/seller/login-by-phone") {
                 contentType(ContentType.Application.Json)
                 parameter("phone", phone)
+                parameter("affiliationCode", affiliationCode)
             }
             
             if (response.status.isSuccess()) {

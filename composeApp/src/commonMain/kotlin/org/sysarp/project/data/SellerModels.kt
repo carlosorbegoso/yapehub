@@ -145,7 +145,7 @@ data class SellerRegistrationData(
     val registeredAt: String
 )
 
-// Modelos para login de vendedores
+// Modelos para login de vendedores con código de afiliación
 @Serializable
 data class SellerLoginByPhoneResponse(
     val success: Boolean,
@@ -156,6 +156,20 @@ data class SellerLoginByPhoneResponse(
 
 @Serializable
 data class SellerLoginData(
+    val sellerId: Int,
+    val sellerName: String,
+    val email: String,
+    val phone: String,
+    val branchId: Int,
+    val branchName: String,
+    val branchCode: String,
+    val affiliationCode: String,
+    val accessToken: String
+)
+
+// Modelos legacy para compatibilidad
+@Serializable
+data class SellerLoginDataLegacy(
     val user: SellerUserData,
     val accessToken: String,
     val refreshToken: String,
@@ -171,11 +185,13 @@ data class SellerUserData(
     val role: String? = null,
     val branchId: Int? = null,
     val branchName: String? = null,
+    val branchCode: String? = null,
     val adminId: Int? = null,
     val adminName: String? = null,
     val isActive: Boolean? = null,
     val isVerified: Boolean = false,
-    val sellerId: Int? = null  // ← Agregar el sellerId del login response
+    val sellerId: Int? = null,
+    val affiliationCode: String? = null
 )
 
 // Modelos para validación de códigos de afiliación

@@ -18,6 +18,7 @@ sealed class Screen {
     object AdminDashboard : Screen()
     object SellerDashboard : Screen()
     object SellerManagement : Screen()
+    object BranchManagement : Screen()
     object Analytics : Screen()
     object Reports : Screen()
     object Settings : Screen()

@@ -618,6 +618,8 @@ fun SellerDashboardContent(
                             sellerId = userProfile?.sellerId?.toInt(),
                             sellerName = userProfile?.sellerName ?: "Vendedor",
                             branchName = userProfile?.branchName ?: "Sucursal Principal",
+                            branchCode = userProfile?.branchCode,
+                            affiliationCode = userProfile?.affiliationCode,
                             connectionState = connectionState
                         )
                     } else {

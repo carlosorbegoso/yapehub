@@ -16,6 +16,10 @@ import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.http.PaymentApiClient
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.http.StatsApiClient
+import org.sysarp.project.service.affiliation.AffiliationService
+import org.sysarp.project.service.http.AffiliationApiClient
+import org.sysarp.project.service.branch.BranchService
+import org.sysarp.project.service.http.BranchApiClient
 import io.ktor.client.HttpClient
 import org.sysarp.project.ui.theme.YapeHubTheme
 import org.sysarp.project.viewmodel.YapeViewModel
@@ -131,6 +135,10 @@ fun YapeApp() {
         }
     }
     
+    val httpClient = remember {
+        HttpClient()
+    }
+    
     val authService = remember {
         AuthService()
     }
@@ -139,14 +147,20 @@ fun YapeApp() {
         SellerService(authService)
     }
     
+    val affiliationService = remember {
+        AffiliationService(AffiliationApiClient(httpClient))
+    }
+    
+    val branchService = remember {
+        BranchService(BranchApiClient(httpClient))
+    }
+    
     val paymentService = remember {
-        val httpClient = HttpClient()
         val paymentApiClient = PaymentApiClient(httpClient)
         PaymentService(paymentApiClient)
     }
     
     val statsService = remember {
-        val httpClient = HttpClient()
         val statsApiClient = StatsApiClient()
         StatsService(statsApiClient)
     }
@@ -186,6 +200,8 @@ fun YapeApp() {
         sellerService = sellerService,
         paymentService = paymentService,
         statsService = statsService,
+        affiliationService = affiliationService,
+        branchService = branchService,
         webSocketService = webSocketService,
         paymentNotificationService = paymentNotificationService,
         viewModel = viewModel,

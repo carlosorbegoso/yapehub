@@ -46,8 +46,10 @@ object UserProfileFactory {
         role: String,
         branchId: Int?,
         branchName: String?,
+        branchCode: String? = null,
         isVerified: Boolean,
-        sellerId: Int?
+        sellerId: Int?,
+        affiliationCode: String? = null
     ): UserProfile {
         return UserProfile(
             id = id?.toString() ?: "0",
@@ -56,10 +58,12 @@ object UserProfileFactory {
             role = if (role == "ADMIN") UserRole.ADMIN else UserRole.VENDOR,
             businessId = branchId,
             businessName = branchName,
+            branchCode = branchCode,
             isVerified = isVerified,
             deviceId = id?.toString() ?: "0",
             adminId = id?.toString(),
             sellerId = sellerId?.toString(),
+            affiliationCode = affiliationCode,
             permissions = getSellerPermissions(),
             subscriptionPlan = "BASIC",
             subscriptionStatus = "ACTIVE"

@@ -20,6 +20,7 @@ data class UserProfile(
     val sellerName: String? = null,
     val branchCode: String? = null,
     val branchName: String? = null,
+    val affiliationCode: String? = null,
     val permissions: List<String> = emptyList(),
     val subscriptionPlan: String? = null,
     val subscriptionStatus: String? = null

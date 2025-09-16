@@ -654,8 +654,8 @@ private fun processSellerAction(
             
             registerResult.fold(
                 onSuccess = { registrationResponse ->
-                    // Registro exitoso, ahora hacer login
-                    val loginResult = sellerService.loginSellerByPhone(phone)
+                    // Registro exitoso, ahora hacer login con código de afiliación
+                    val loginResult = sellerService.loginSellerByPhone(phone, affiliationCode)
                     
                     loginResult.fold(
                         onSuccess = { loginResponse ->
@@ -669,8 +669,8 @@ private fun processSellerAction(
                     )
                 },
                 onFailure = { registerError ->
-                    // Si el registro falla, podría ser porque ya existe, intentar login
-                    val loginResult = sellerService.loginSellerByPhone(phone)
+                    // Si el registro falla, podría ser porque ya existe, intentar login con código de afiliación
+                    val loginResult = sellerService.loginSellerByPhone(phone, affiliationCode)
                     
                     loginResult.fold(
                         onSuccess = { loginResponse ->

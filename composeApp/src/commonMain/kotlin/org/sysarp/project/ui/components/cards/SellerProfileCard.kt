@@ -27,6 +27,8 @@ fun SellerProfileCard(
     sellerId: Int?,
     sellerName: String?,
     branchName: String?,
+    branchCode: String? = null,
+    affiliationCode: String? = null,
     connectionState: WebSocketConnectionState,
     modifier: Modifier = Modifier
 ) {
@@ -93,13 +95,33 @@ fun SellerProfileCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                     
-                    // Sucursal
+                    // Información de sucursal
                     if (!branchName.isNullOrBlank()) {
-                        AnimatedText(
-                            text = branchName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Column {
+                            AnimatedText(
+                                text = branchName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            // Código de sucursal si está disponible
+                            if (!branchCode.isNullOrBlank()) {
+                                AnimatedText(
+                                    text = "Código: $branchCode",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                            
+                            // Código de afiliación si está disponible
+                            if (!affiliationCode.isNullOrBlank()) {
+                                AnimatedText(
+                                    text = "Afiliación: $affiliationCode",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
                     }
                 }
                 
