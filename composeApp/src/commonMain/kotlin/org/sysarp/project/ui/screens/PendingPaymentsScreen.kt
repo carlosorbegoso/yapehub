@@ -20,6 +20,7 @@ import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
 import java.text.SimpleDateFormat
 import java.util.*
+import org.sysarp.project.utils.extractShortYapeCode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -435,7 +436,7 @@ fun PendingPaymentCard(payment: org.sysarp.project.data.SellerPendingPayment) {
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = payment.yapeCode,
+                            text = extractShortYapeCode(payment.yapeCode),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace

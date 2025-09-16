@@ -86,4 +86,32 @@ class PaymentService(
             Result.failure(e)
         }
     }
+
+    suspend fun getAdminPaymentManagement(
+        adminId: Int,
+        page: Int = 0,
+        size: Int = 20,
+        status: String? = null,
+        token: String
+    ): Result<org.sysarp.project.data.AdminPaymentManagementResponse> {
+        return try {
+            Logger.auth("PAYMENT_SERVICE", "Obteniendo gestión de pagos para admin: $adminId, página: $page")
+
+            val result = paymentApiClient.getAdminPaymentManagement(adminId, page, size, status, token)
+
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("PAYMENT_SERVICE", "Gestión de pagos obtenida: ${response.data.payments.size} pagos en página ${response.data.pagination.currentPage}")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("PAYMENT_SERVICE", "Error obteniendo gestión de pagos: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("PAYMENT_SERVICE", "Error obteniendo gestión de pagos: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

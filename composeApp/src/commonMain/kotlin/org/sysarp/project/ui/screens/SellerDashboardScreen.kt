@@ -58,6 +58,7 @@ import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import org.sysarp.project.utils.extractShortYapeCode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -800,7 +801,7 @@ fun PendingPaymentCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = payment.yapeCode,
+                            text = extractShortYapeCode(payment.yapeCode),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary

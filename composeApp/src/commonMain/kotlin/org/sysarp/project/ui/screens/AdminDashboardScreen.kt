@@ -28,10 +28,13 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +56,9 @@ import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
 import androidx.compose.runtime.*
 import org.sysarp.project.data.DeactivationRequest
+import org.sysarp.project.data.QuickSummaryData
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,6 +82,37 @@ fun AdminDashboardScreen(
         }
     }
     val userProfile by authService.userProfile.collectAsState()
+    val accessToken by authService.accessToken.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Estado para las estadísticas rápidas
+    var quickSummaryData by remember { mutableStateOf<QuickSummaryData?>(null) }
+    var isLoadingStats by remember { mutableStateOf(false) }
+    var statsError by remember { mutableStateOf("") }
+    
+    // Cargar estadísticas rápidas
+    LaunchedEffect(userProfile?.adminId, accessToken) {
+        if (userProfile?.adminId != null && accessToken != null) {
+            isLoadingStats = true
+            statsError = ""
+            
+            statsService.getQuickSummary(
+                adminId = userProfile!!.adminId!!.toInt(),
+                token = accessToken!!
+            ).fold(
+                onSuccess = { response ->
+                    quickSummaryData = response.data
+                    isLoadingStats = false
+                    println("🔍 [ADMIN_DASHBOARD] Estadísticas rápidas cargadas: ${response.data.totalSales}")
+                },
+                onFailure = { error ->
+                    statsError = error.message ?: "Error cargando estadísticas"
+                    isLoadingStats = false
+                    println("🔍 [ADMIN_DASHBOARD] Error cargando estadísticas: ${error.message}")
+                }
+            )
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -168,18 +205,83 @@ fun AdminDashboardScreen(
             }
             
             item {
-                val quickStats = getQuickStats()
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp)
-                ) {
-                    items(quickStats) { stat ->
-                        StatCard(
-                            title = stat.title,
-                            value = stat.value,
-                            icon = stat.icon,
-                            color = stat.color
+                if (isLoadingStats) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else if (statsError.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
                         )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Error cargando estadísticas",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = statsError,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    val quickStats = quickSummaryData?.let { data ->
+                        listOf(
+                            QuickStat(
+                                title = "Total Vendido",
+                                value = "S/ ${String.format("%.2f", data.totalSales)}",
+                                icon = Icons.Filled.AttachMoney,
+                                color = MaterialTheme.colorScheme.primary
+                            ),
+                            QuickStat(
+                                title = "Transacciones",
+                                value = "${data.totalTransactions}",
+                                icon = Icons.Filled.Payment,
+                                color = MaterialTheme.colorScheme.secondary
+                            ),
+                            QuickStat(
+                                title = "Promedio",
+                                value = "S/ ${String.format("%.2f", data.averageTransactionValue)}",
+                                icon = Icons.Filled.TrendingUp,
+                                color = MaterialTheme.colorScheme.tertiary
+                            ),
+                            QuickStat(
+                                title = "Pendientes",
+                                value = "${data.pendingPayments}",
+                                icon = Icons.Filled.Schedule,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        )
+                    } ?: emptyList()
+                    
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp)
+                    ) {
+                        items(quickStats) { stat ->
+                            StatCard(
+                                title = stat.title,
+                                value = stat.value,
+                                icon = stat.icon,
+                                color = stat.color
+                            )
+                        }
                     }
                 }
             }

@@ -80,3 +80,47 @@ data class PaymentRejectData(
     val rejectedAt: String,
     val reason: String
 )
+
+// Modelos para gestión de pagos del administrador
+@Serializable
+data class AdminPaymentManagementResponse(
+    val success: Boolean,
+    val message: String,
+    val data: AdminPaymentManagementData,
+    val error: Boolean
+)
+
+@Serializable
+data class AdminPaymentManagementData(
+    val payments: List<AdminPayment>,
+    val summary: PaymentSummary,
+    val pagination: PaymentPagination
+)
+
+@Serializable
+data class AdminPayment(
+    val paymentId: Int,
+    val amount: Double,
+    val senderName: String,
+    val yapeCode: String,
+    val status: String,
+    val createdAt: String,
+    val confirmedBy: Int?,
+    val confirmedAt: String?,
+    val rejectedBy: Int?,
+    val rejectedAt: String?,
+    val rejectionReason: String?,
+    val sellerName: String,
+    val branchName: String
+)
+
+@Serializable
+data class PaymentSummary(
+    val totalPayments: Int,
+    val pendingCount: Int,
+    val confirmedCount: Int,
+    val rejectedCount: Int,
+    val totalAmount: Double,
+    val confirmedAmount: Double,
+    val pendingAmount: Double
+)

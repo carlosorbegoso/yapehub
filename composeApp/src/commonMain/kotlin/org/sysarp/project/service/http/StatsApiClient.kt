@@ -6,6 +6,8 @@ import io.ktor.client.call.*
 import kotlinx.serialization.json.Json
 import org.sysarp.project.data.AdminStatsResponse
 import org.sysarp.project.data.SellerStatsResponse
+import org.sysarp.project.data.QuickSummaryResponse
+import org.sysarp.project.data.AnalyticsResponse
 
 /**
  * Cliente HTTP para estadísticas
@@ -165,6 +167,114 @@ class StatsApiClient : BaseApiClient() {
             }
         } catch (e: Exception) {
             logError("STATS_API", "Error obteniendo estadísticas de vendedor: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getQuickSummary(
+        adminId: Int,
+        startDate: String? = null,
+        endDate: String? = null,
+        token: String
+    ): Result<QuickSummaryResponse> {
+        return try {
+            logInfo("STATS_API", "Obteniendo resumen rápido para admin: $adminId")
+
+            val response = client.get("$baseUrl/api/stats/quick-summary") {
+                parameter("adminId", adminId)
+                startDate?.let { parameter("startDate", it) }
+                endDate?.let { parameter("endDate", it) }
+                header("Authorization", "Bearer $token")
+                header("accept", "application/json")
+            }
+
+            if (response.status.value in 200..299) {
+                try {
+                    val quickSummaryResponse = response.body<QuickSummaryResponse>()
+                    logInfo("STATS_API", "Resumen rápido obtenido exitosamente")
+                    Result.success(quickSummaryResponse)
+                } catch (e: Exception) {
+                    // Fallback: intentar deserialización manual
+                    try {
+                        val responseBody = response.body<String>()
+                        logInfo("STATS_API", "Respuesta raw: $responseBody")
+                        val quickSummaryResponse = Json.decodeFromString<QuickSummaryResponse>(responseBody)
+                        logInfo("STATS_API", "Resumen rápido deserializado manualmente")
+                        Result.success(quickSummaryResponse)
+                    } catch (manualError: Exception) {
+                        logError("STATS_API", "Error en deserialización manual: ${manualError.message}")
+                        Result.failure(manualError)
+                    }
+                }
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("STATS_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+
+                val finalErrorMessage = "Error obteniendo resumen rápido: ${response.status} - $errorMessage"
+                logError("STATS_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("STATS_API", "Error obteniendo resumen rápido: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getAnalytics(
+        adminId: Int,
+        startDate: String? = null,
+        endDate: String? = null,
+        token: String
+    ): Result<AnalyticsResponse> {
+        return try {
+            logInfo("STATS_API", "Obteniendo analytics completos para admin: $adminId")
+
+            val response = client.get("$baseUrl/api/stats/analytics") {
+                parameter("adminId", adminId)
+                startDate?.let { parameter("startDate", it) }
+                endDate?.let { parameter("endDate", it) }
+                header("Authorization", "Bearer $token")
+                header("accept", "application/json")
+            }
+
+            if (response.status.value in 200..299) {
+                try {
+                    val analyticsResponse = response.body<AnalyticsResponse>()
+                    logInfo("STATS_API", "Analytics obtenidos exitosamente")
+                    Result.success(analyticsResponse)
+                } catch (e: Exception) {
+                    // Fallback: intentar deserialización manual
+                    try {
+                        val responseBody = response.body<String>()
+                        logInfo("STATS_API", "Respuesta raw: $responseBody")
+                        val analyticsResponse = Json.decodeFromString<AnalyticsResponse>(responseBody)
+                        logInfo("STATS_API", "Analytics deserializados manualmente")
+                        Result.success(analyticsResponse)
+                    } catch (manualError: Exception) {
+                        logError("STATS_API", "Error en deserialización manual: ${manualError.message}")
+                        Result.failure(manualError)
+                    }
+                }
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("STATS_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+
+                val finalErrorMessage = "Error obteniendo analytics: ${response.status} - $errorMessage"
+                logError("STATS_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("STATS_API", "Error obteniendo analytics: ${e.message}")
             Result.failure(e)
         }
     }

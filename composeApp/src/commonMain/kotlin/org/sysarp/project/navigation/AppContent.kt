@@ -12,6 +12,7 @@ import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.stats.StatsService
 
 import org.sysarp.project.ui.screens.AdminDashboardScreen
+import org.sysarp.project.ui.screens.AdminPaymentsScreen
 import org.sysarp.project.ui.screens.AdminRegistrationScreen
 import org.sysarp.project.ui.screens.AnalyticsScreen
 import org.sysarp.project.ui.screens.DeactivationRequestScreen
@@ -65,9 +66,9 @@ fun AppContent(
             )
         }
         is Screen.PendingPayments -> {
-            PaymentsScreen(
+            AdminPaymentsScreen(
                 authService = authService,
-                viewModel = viewModel,
+                paymentService = paymentService,
                 onNavigateBack = navigationManager::navigateBack
             )
         }
@@ -185,6 +186,7 @@ fun AppContent(
         is Screen.Analytics -> {
             AnalyticsScreen(
                 authService = authService,
+                statsService = statsService,
                 viewModel = viewModel,
                 onNavigateBack = { navigationManager.navigateBack() }
             )

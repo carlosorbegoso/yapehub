@@ -93,3 +93,82 @@ data class SellerStats(
     val averageValue: Double,
     val pendingCount: Int
 )
+
+// Modelos para Quick Summary endpoint
+@Serializable
+data class QuickSummaryResponse(
+    val success: Boolean,
+    val message: String,
+    val data: QuickSummaryData,
+    val error: Boolean
+)
+
+@Serializable
+data class QuickSummaryData(
+    val totalSales: Double,
+    val totalTransactions: Int,
+    val averageTransactionValue: Double,
+    val salesGrowth: Double,        // +12.5%
+    val transactionGrowth: Double,  // +8.2%
+    val averageGrowth: Double,      // +3.1%
+    val pendingPayments: Int,
+    val confirmedPayments: Int,
+    val rejectedPayments: Int,
+    val claimRate: Double,          // 6.35%
+    val averageConfirmationTime: Double  // 2.3 minutos
+)
+
+// Modelos para Analytics endpoint
+@Serializable
+data class AnalyticsResponse(
+    val success: Boolean,
+    val message: String,
+    val data: AnalyticsData,
+    val error: Boolean
+)
+
+@Serializable
+data class AnalyticsData(
+    val overview: AnalyticsOverview,
+    val dailySales: List<DailySalesData>,
+    val topSellers: List<TopSellerData>,
+    val performanceMetrics: PerformanceMetricsData
+)
+
+@Serializable
+data class AnalyticsOverview(
+    val totalSales: Double,
+    val totalTransactions: Int,
+    val averageTransactionValue: Double,
+    val salesGrowth: Double,
+    val transactionGrowth: Double,
+    val averageGrowth: Double
+)
+
+@Serializable
+data class DailySalesData(
+    val date: String,
+    val dayName: String,  // "Lun", "Mar", "Mié", etc.
+    val sales: Double,
+    val transactions: Int
+)
+
+@Serializable
+data class TopSellerData(
+    val rank: Int?,
+    val sellerId: Int,
+    val sellerName: String,
+    val branchName: String,
+    val totalSales: Double,
+    val transactionCount: Int
+)
+
+@Serializable
+data class PerformanceMetricsData(
+    val averageConfirmationTime: Double,
+    val claimRate: Double,
+    val rejectionRate: Double,
+    val pendingPayments: Int,
+    val confirmedPayments: Int,
+    val rejectedPayments: Int
+)

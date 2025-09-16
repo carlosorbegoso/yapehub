@@ -17,18 +17,54 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.UserRole
 import org.sysarp.project.data.YapeTransaction
+import org.sysarp.project.data.AnalyticsData
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.viewmodel.YapeViewModel
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
     authService: AuthService,
+    statsService: StatsService,
     viewModel: YapeViewModel,
     onNavigateBack: () -> Unit
 ) {
     val userProfile by authService.userProfile.collectAsState()
+    val accessToken by authService.accessToken.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
     val transactions by viewModel.transactions.collectAsState()
+    
+    // Estado para los datos de analytics
+    var analyticsData by remember { mutableStateOf<AnalyticsData?>(null) }
+    var isLoadingAnalytics by remember { mutableStateOf(false) }
+    var analyticsError by remember { mutableStateOf("") }
+    
+    // Cargar datos de analytics
+    LaunchedEffect(userProfile?.adminId, accessToken) {
+        if (userProfile?.adminId != null && accessToken != null) {
+            isLoadingAnalytics = true
+            analyticsError = ""
+            
+            statsService.getAnalytics(
+                adminId = userProfile!!.adminId!!.toInt(),
+                token = accessToken!!
+            ).fold(
+                onSuccess = { response ->
+                    analyticsData = response.data
+                    isLoadingAnalytics = false
+                    println("🔍 [ANALYTICS] Datos de analytics cargados: ${response.data.overview.totalSales}")
+                },
+                onFailure = { error ->
+                    analyticsError = error.message ?: "Error cargando analytics"
+                    isLoadingAnalytics = false
+                    println("🔍 [ANALYTICS] Error cargando analytics: ${error.message}")
+                }
+            )
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -115,19 +151,88 @@ fun AnalyticsScreen(
             }
             
             item {
-                val analyticsStats = getAnalyticsStats(transactions)
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp)
-                ) {
-                    items(analyticsStats) { stat ->
-                        AnalyticsStatCard(
-                            title = stat.title,
-                            value = stat.value,
-                            icon = stat.icon,
-                            color = stat.color,
-                            trend = stat.trend
+                if (isLoadingAnalytics) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else if (analyticsError.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
                         )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Error cargando analytics",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = analyticsError,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    val analyticsStats = analyticsData?.let { data ->
+                        listOf(
+                            AnalyticsStat(
+                                title = "Total Vendido",
+                                value = "S/ ${String.format("%.2f", data.overview.totalSales)}",
+                                icon = Icons.Filled.AttachMoney,
+                                color = MaterialTheme.colorScheme.primary,
+                                trend = "+${String.format("%.1f", data.overview.salesGrowth)}%"
+                            ),
+                            AnalyticsStat(
+                                title = "Transacciones",
+                                value = "${data.overview.totalTransactions}",
+                                icon = Icons.Filled.Receipt,
+                                color = MaterialTheme.colorScheme.secondary,
+                                trend = "+${String.format("%.1f", data.overview.transactionGrowth)}%"
+                            ),
+                            AnalyticsStat(
+                                title = "Promedio",
+                                value = "S/ ${String.format("%.2f", data.overview.averageTransactionValue)}",
+                                icon = Icons.Filled.TrendingUp,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                trend = "+${String.format("%.1f", data.overview.averageGrowth)}%"
+                            ),
+                            AnalyticsStat(
+                                title = "Confirmados",
+                                value = "${data.performanceMetrics.confirmedPayments}",
+                                icon = Icons.Filled.CheckCircle,
+                                color = MaterialTheme.colorScheme.primary,
+                                trend = "+${String.format("%.1f", data.performanceMetrics.claimRate)}%"
+                            )
+                        )
+                    } ?: emptyList()
+                    
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp)
+                    ) {
+                        items(analyticsStats) { stat ->
+                            AnalyticsStatCard(
+                                title = stat.title,
+                                value = stat.value,
+                                icon = stat.icon,
+                                color = stat.color,
+                                trend = stat.trend
+                            )
+                        }
                     }
                 }
             }
@@ -166,42 +271,55 @@ fun AnalyticsScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Simular gráfico de barras simple
-                        val dailySales = getDailySales()
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            dailySales.forEach { day ->
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(24.dp)
-                                            .height((day.amount / 10).dp)
-                                            .background(
-                                                color = MaterialTheme.colorScheme.primary,
-                                                shape = RoundedCornerShape(4.dp)
-                                            )
-                                    )
-                                    
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    
-                                    Text(
-                                        text = day.day,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    
-                                    Text(
-                                        text = "S/ ${day.amount}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                        // Gráfico de barras con datos reales
+                        val dailySales = analyticsData?.dailySales?.map { dailyData ->
+                            DailySale(dailyData.dayName, dailyData.sales)
+                        } ?: emptyList()
+                        
+                        if (dailySales.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.Bottom
+                            ) {
+                                dailySales.forEach { day ->
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(24.dp)
+                                                .height((day.amount / 10).dp.coerceAtLeast(4.dp))
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    shape = RoundedCornerShape(4.dp)
+                                                )
+                                        )
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        
+                                        Text(
+                                            text = day.day,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        
+                                        Text(
+                                            text = "S/ ${String.format("%.0f", day.amount)}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
+                        } else {
+                            Text(
+                                text = "No hay datos de ventas diarias disponibles",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
@@ -223,14 +341,34 @@ fun AnalyticsScreen(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        getTopSellers().forEachIndexed { index, seller ->
-                            TopSellerCard(
-                                rank = index + 1,
-                                sellerName = seller.name,
-                                branchName = seller.branch,
-                                totalSales = seller.totalSales,
-                                totalTransactions = seller.totalTransactions
-                            )
+                        val topSellers = analyticsData?.topSellers ?: emptyList()
+                        if (topSellers.isNotEmpty()) {
+                            topSellers.forEachIndexed { index, seller ->
+                                TopSellerCard(
+                                    rank = index + 1,
+                                    sellerName = seller.sellerName,
+                                    branchName = seller.branchName,
+                                    totalSales = "S/ ${String.format("%.2f", seller.totalSales)}",
+                                    totalTransactions = seller.transactionCount
+                                )
+                            }
+                        } else {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            ) {
+                                Text(
+                                    text = "No hay datos de vendedores disponibles",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -251,19 +389,50 @@ fun AnalyticsScreen(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    PerformanceMetricCard(
-                        title = "Tiempo Promedio de Confirmación",
-                        value = "2.3 min",
-                        icon = Icons.Filled.Schedule,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    
-                    PerformanceMetricCard(
-                        title = "Tasa de Confirmación",
-                        value = "94.2%",
-                        icon = Icons.Filled.CheckCircle,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
+                    val performanceMetrics = analyticsData?.performanceMetrics
+                    if (performanceMetrics != null) {
+                        PerformanceMetricCard(
+                            title = "Tiempo Promedio de Confirmación",
+                            value = "${String.format("%.1f", performanceMetrics.averageConfirmationTime)} min",
+                            icon = Icons.Filled.Schedule,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        
+                        PerformanceMetricCard(
+                            title = "Tasa de Confirmación",
+                            value = "${String.format("%.1f", performanceMetrics.claimRate)}%",
+                            icon = Icons.Filled.CheckCircle,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        
+                        PerformanceMetricCard(
+                            title = "Tasa de Rechazo",
+                            value = "${String.format("%.1f", performanceMetrics.rejectionRate)}%",
+                            icon = Icons.Filled.Cancel,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        
+                        PerformanceMetricCard(
+                            title = "Pagos Pendientes",
+                            value = "${performanceMetrics.pendingPayments}",
+                            icon = Icons.Filled.Schedule,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    } else {
+                        PerformanceMetricCard(
+                            title = "Tiempo Promedio de Confirmación",
+                            value = "Cargando...",
+                            icon = Icons.Filled.Schedule,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        
+                        PerformanceMetricCard(
+                            title = "Tasa de Confirmación",
+                            value = "Cargando...",
+                            icon = Icons.Filled.CheckCircle,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                     
                     PerformanceMetricCard(
                         title = "Transacciones por Hora",

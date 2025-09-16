@@ -153,4 +153,61 @@ class PaymentApiClient(
             Result.failure(e)
         }
     }
+
+    suspend fun getAdminPaymentManagement(
+        adminId: Int,
+        page: Int = 0,
+        size: Int = 20,
+        status: String? = null,
+        token: String
+    ): Result<org.sysarp.project.data.AdminPaymentManagementResponse> {
+        return try {
+            logInfo("PAYMENT_API", "Obteniendo gestión de pagos para admin: $adminId, página: $page, tamaño: $size, estado: $status")
+
+            val response = httpClient.get("$baseUrl/api/payments/admin/management") {
+                parameter("adminId", adminId)
+                parameter("page", page)
+                parameter("size", size)
+                status?.let { parameter("status", it) }
+                header("Authorization", "Bearer $token")
+                header("accept", "application/json")
+            }
+
+            if (response.status.value in 200..299) {
+                try {
+                    val adminPaymentResponse = response.body<org.sysarp.project.data.AdminPaymentManagementResponse>()
+                    logInfo("PAYMENT_API", "Gestión de pagos obtenida exitosamente: ${adminPaymentResponse.data.payments.size} pagos en página ${adminPaymentResponse.data.pagination.currentPage}")
+                    Result.success(adminPaymentResponse)
+                } catch (e: Exception) {
+                    // Si falla la deserialización automática, intentamos manualmente
+                    logError("PAYMENT_API", "Error deserializando automáticamente: ${e.message}")
+                    try {
+                        val responseBody = response.body<String>()
+                        logInfo("PAYMENT_API", "Respuesta del servidor: $responseBody")
+                        val adminPaymentResponse = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.AdminPaymentManagementResponse>(responseBody)
+                        logInfo("PAYMENT_API", "Gestión de pagos obtenida exitosamente (manual): ${adminPaymentResponse.data.payments.size} pagos en página ${adminPaymentResponse.data.pagination.currentPage}")
+                        Result.success(adminPaymentResponse)
+                    } catch (e2: Exception) {
+                        logError("PAYMENT_API", "Error deserializando manualmente: ${e2.message}")
+                        Result.failure(Exception("Error deserializando respuesta del servidor: ${e2.message}"))
+                    }
+                }
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("PAYMENT_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+
+                val finalErrorMessage = "Error obteniendo gestión de pagos: ${response.status} - $errorMessage"
+                logError("PAYMENT_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("PAYMENT_API", "Error obteniendo gestión de pagos: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }
