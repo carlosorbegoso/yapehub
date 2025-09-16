@@ -42,6 +42,8 @@ fun AppContent(
     sellerService: SellerService,
     paymentService: PaymentService,
     statsService: StatsService,
+    webSocketService: org.sysarp.project.service.websocket.PaymentWebSocketService,
+    paymentNotificationService: org.sysarp.project.service.notifications.PaymentNotificationService,
     modifier: Modifier = Modifier
 ) {
     val currentScreen by navigationManager.currentScreen.collectAsState()
@@ -168,6 +170,8 @@ fun AppContent(
                 authService = authService,
                 paymentService = paymentService,
                 statsService = statsService,
+                webSocketService = webSocketService,
+                notificationService = paymentNotificationService,
                 onNavigateToHistory = { navigationManager.navigateTo(Screen.Analytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.SellerPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },

@@ -151,9 +151,29 @@ fun YapeApp() {
         StatsService(statsApiClient)
     }
     
+    val webSocketService = remember {
+        org.sysarp.project.service.websocket.PaymentWebSocketService(authService)
+    }
+    
+    val paymentNotificationService = remember {
+        org.sysarp.project.service.notifications.PaymentNotificationService()
+    }
+    
     // CORREGIDO: Usar el mismo repositorio singleton
     val viewModel = remember {
         YapeViewModel(repository, notificationService, userProfileRepository)
+    }
+    
+    // Iniciar servicios WebSocket
+    LaunchedEffect(Unit) {
+        webSocketService.start()
+    }
+    
+    // Detener servicios al desmontar
+    DisposableEffect(Unit) {
+        onDispose {
+            webSocketService.stop()
+        }
     }
     
     // Sistema de navegación simple multiplataforma
@@ -166,6 +186,8 @@ fun YapeApp() {
         sellerService = sellerService,
         paymentService = paymentService,
         statsService = statsService,
+        webSocketService = webSocketService,
+        paymentNotificationService = paymentNotificationService,
         viewModel = viewModel,
         userProfileRepository = userProfileRepository
     )

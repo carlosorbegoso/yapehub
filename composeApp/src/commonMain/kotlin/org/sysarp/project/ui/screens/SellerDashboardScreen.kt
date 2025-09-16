@@ -59,6 +59,13 @@ import org.sysarp.project.service.payment.PaymentService
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import org.sysarp.project.utils.extractShortYapeCode
+import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.service.websocket.WebSocketConnectionState
+import org.sysarp.project.service.notifications.PaymentNotificationService
+import org.sysarp.project.ui.components.WebSocketStatusIndicator
+import org.sysarp.project.ui.components.PaymentNotificationCard
+import org.sysarp.project.data.PaymentNotificationData
+import org.sysarp.project.data.PaymentResultData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +73,8 @@ fun SellerDashboardScreen(
     authService: AuthService,
     paymentService: PaymentService,
     statsService: org.sysarp.project.service.stats.StatsService,
+    webSocketService: PaymentWebSocketService,
+    notificationService: PaymentNotificationService,
     onNavigateToHistory: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -75,6 +84,14 @@ fun SellerDashboardScreen(
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    
+    // Estados del WebSocket
+    val connectionState by webSocketService.connectionState.collectAsState()
+    val isConnected by webSocketService.isConnected.collectAsState()
+    
+    // Estados de notificaciones
+    var currentNotification by remember { mutableStateOf<PaymentNotificationData?>(null) }
+    var currentResultNotification by remember { mutableStateOf<PaymentResultData?>(null) }
     
     var pendingPayments by remember { mutableStateOf<List<org.sysarp.project.data.SellerPendingPayment>>(emptyList()) }
     var confirmedPaymentsCount by remember { mutableStateOf(0) }
@@ -293,6 +310,31 @@ fun SellerDashboardScreen(
         }
     }
     
+    // Manejar notificaciones de nuevos pagos
+    LaunchedEffect(Unit) {
+        webSocketService.paymentNotifications.collect { notification ->
+            coroutineScope.launch {
+                notificationService.processNewPayment(notification)
+                currentNotification = notification
+                // Recargar pagos pendientes
+                loadPendingPayments()
+            }
+        }
+    }
+    
+    // Manejar resultados de pagos
+    LaunchedEffect(Unit) {
+        webSocketService.paymentResults.collect { result ->
+            coroutineScope.launch {
+                notificationService.processPaymentResult(result)
+                currentResultNotification = result
+                // Recargar estadísticas y pagos
+                loadSellerStats()
+                loadPendingPayments()
+            }
+        }
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -335,6 +377,42 @@ fun SellerDashboardScreen(
                 .padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Indicador de estado WebSocket
+            item {
+                WebSocketStatusIndicator(
+                    connectionState = connectionState,
+                    sellerId = userProfile?.sellerId?.toInt(),
+                    onReconnectClick = { webSocketService.reconnect() }
+                )
+            }
+            
+            // Notificación de nuevo pago
+            currentNotification?.let { notification ->
+                item {
+                    PaymentNotificationCard(
+                        notification = notification,
+                        onDismiss = { currentNotification = null }
+                    )
+                }
+            }
+            
+            // Notificación de resultado de pago
+            currentResultNotification?.let { result ->
+                item {
+                    PaymentNotificationCard(
+                        notification = PaymentNotificationData(
+                            paymentId = result.paymentId,
+                            amount = 0.0, // No tenemos el monto en el resultado
+                            senderName = result.sellerName,
+                            yapeCode = "",
+                            status = result.status,
+                            timestamp = "",
+                            message = result.message
+                        ),
+                        onDismiss = { currentResultNotification = null }
+                    )
+                }
+            }
             // Header con información del vendedor
             item {
                 Card(

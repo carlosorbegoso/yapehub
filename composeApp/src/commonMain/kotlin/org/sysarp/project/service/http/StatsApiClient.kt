@@ -29,22 +29,15 @@ class StatsApiClient : BaseApiClient() {
 
             if (response.status.value in 200..299) {
                 try {
-                    val adminStatsResponse = response.body<AdminStatsResponse>()
+                    // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
+                    val responseBody = response.body<String>()
+                    logInfo("STATS_API", "Respuesta del servidor: $responseBody")
+                    val adminStatsResponse = kotlinx.serialization.json.Json.decodeFromString<AdminStatsResponse>(responseBody)
                     logInfo("STATS_API", "Estadísticas de admin obtenidas exitosamente")
                     Result.success(adminStatsResponse)
                 } catch (e: Exception) {
-                    // Si falla la deserialización automática, intentamos manualmente
-                    logError("STATS_API", "Error deserializando automáticamente: ${e.message}")
-                    try {
-                        val responseBody = response.body<String>()
-                        logInfo("STATS_API", "Respuesta del servidor: $responseBody")
-                        val adminStatsResponse = kotlinx.serialization.json.Json.decodeFromString<AdminStatsResponse>(responseBody)
-                        logInfo("STATS_API", "Estadísticas de admin obtenidas exitosamente (manual)")
-                        Result.success(adminStatsResponse)
-                    } catch (e2: Exception) {
-                        logError("STATS_API", "Error deserializando manualmente: ${e2.message}")
-                        Result.failure(Exception("Error deserializando respuesta del servidor: ${e2.message}"))
-                    }
+                    logError("STATS_API", "Error deserializando respuesta: ${e.message}")
+                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
                 }
             } else {
                 val errorMessage = try {
@@ -84,22 +77,15 @@ class StatsApiClient : BaseApiClient() {
 
             if (response.status.value in 200..299) {
                 try {
-                    val adminStatsResponse = response.body<AdminStatsResponse>()
+                    // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
+                    val responseBody = response.body<String>()
+                    logInfo("STATS_API", "Respuesta del servidor: $responseBody")
+                    val adminStatsResponse = kotlinx.serialization.json.Json.decodeFromString<AdminStatsResponse>(responseBody)
                     logInfo("STATS_API", "Estadísticas de admin obtenidas exitosamente")
                     Result.success(adminStatsResponse)
                 } catch (e: Exception) {
-                    // Si falla la deserialización automática, intentamos manualmente
-                    logError("STATS_API", "Error deserializando automáticamente: ${e.message}")
-                    try {
-                        val responseBody = response.body<String>()
-                        logInfo("STATS_API", "Respuesta del servidor: $responseBody")
-                        val adminStatsResponse = kotlinx.serialization.json.Json.decodeFromString<AdminStatsResponse>(responseBody)
-                        logInfo("STATS_API", "Estadísticas de admin obtenidas exitosamente (manual)")
-                        Result.success(adminStatsResponse)
-                    } catch (e2: Exception) {
-                        logError("STATS_API", "Error deserializando manualmente: ${e2.message}")
-                        Result.failure(Exception("Error deserializando respuesta del servidor: ${e2.message}"))
-                    }
+                    logError("STATS_API", "Error deserializando respuesta: ${e.message}")
+                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
                 }
             } else {
                 val errorMessage = try {
@@ -135,22 +121,15 @@ class StatsApiClient : BaseApiClient() {
 
             if (response.status.value in 200..299) {
                 try {
-                    val sellerStatsResponse = response.body<SellerStatsResponse>()
+                    // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
+                    val responseBody = response.body<String>()
+                    logInfo("STATS_API", "Respuesta del servidor: $responseBody")
+                    val sellerStatsResponse = kotlinx.serialization.json.Json.decodeFromString<SellerStatsResponse>(responseBody)
                     logInfo("STATS_API", "Estadísticas de vendedor obtenidas exitosamente")
                     Result.success(sellerStatsResponse)
                 } catch (e: Exception) {
-                    // Si falla la deserialización automática, intentamos manualmente
-                    logError("STATS_API", "Error deserializando automáticamente: ${e.message}")
-                    try {
-                        val responseBody = response.body<String>()
-                        logInfo("STATS_API", "Respuesta del servidor: $responseBody")
-                        val sellerStatsResponse = kotlinx.serialization.json.Json.decodeFromString<SellerStatsResponse>(responseBody)
-                        logInfo("STATS_API", "Estadísticas de vendedor obtenidas exitosamente (manual)")
-                        Result.success(sellerStatsResponse)
-                    } catch (e2: Exception) {
-                        logError("STATS_API", "Error deserializando manualmente: ${e2.message}")
-                        Result.failure(Exception("Error deserializando respuesta del servidor: ${e2.message}"))
-                    }
+                    logError("STATS_API", "Error deserializando respuesta: ${e.message}")
+                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
                 }
             } else {
                 val errorMessage = try {
@@ -190,21 +169,15 @@ class StatsApiClient : BaseApiClient() {
 
             if (response.status.value in 200..299) {
                 try {
-                    val quickSummaryResponse = response.body<QuickSummaryResponse>()
+                    // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
+                    val responseBody = response.body<String>()
+                    logInfo("STATS_API", "Respuesta raw: $responseBody")
+                    val quickSummaryResponse = Json.decodeFromString<QuickSummaryResponse>(responseBody)
                     logInfo("STATS_API", "Resumen rápido obtenido exitosamente")
                     Result.success(quickSummaryResponse)
                 } catch (e: Exception) {
-                    // Fallback: intentar deserialización manual
-                    try {
-                        val responseBody = response.body<String>()
-                        logInfo("STATS_API", "Respuesta raw: $responseBody")
-                        val quickSummaryResponse = Json.decodeFromString<QuickSummaryResponse>(responseBody)
-                        logInfo("STATS_API", "Resumen rápido deserializado manualmente")
-                        Result.success(quickSummaryResponse)
-                    } catch (manualError: Exception) {
-                        logError("STATS_API", "Error en deserialización manual: ${manualError.message}")
-                        Result.failure(manualError)
-                    }
+                    logError("STATS_API", "Error deserializando respuesta: ${e.message}")
+                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
                 }
             } else {
                 val errorMessage = try {
@@ -244,21 +217,15 @@ class StatsApiClient : BaseApiClient() {
 
             if (response.status.value in 200..299) {
                 try {
-                    val analyticsResponse = response.body<AnalyticsResponse>()
+                    // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
+                    val responseBody = response.body<String>()
+                    logInfo("STATS_API", "Respuesta raw: $responseBody")
+                    val analyticsResponse = Json.decodeFromString<AnalyticsResponse>(responseBody)
                     logInfo("STATS_API", "Analytics obtenidos exitosamente")
                     Result.success(analyticsResponse)
                 } catch (e: Exception) {
-                    // Fallback: intentar deserialización manual
-                    try {
-                        val responseBody = response.body<String>()
-                        logInfo("STATS_API", "Respuesta raw: $responseBody")
-                        val analyticsResponse = Json.decodeFromString<AnalyticsResponse>(responseBody)
-                        logInfo("STATS_API", "Analytics deserializados manualmente")
-                        Result.success(analyticsResponse)
-                    } catch (manualError: Exception) {
-                        logError("STATS_API", "Error en deserialización manual: ${manualError.message}")
-                        Result.failure(manualError)
-                    }
+                    logError("STATS_API", "Error deserializando respuesta: ${e.message}")
+                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
                 }
             } else {
                 val errorMessage = try {

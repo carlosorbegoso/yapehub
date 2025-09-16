@@ -124,3 +124,43 @@ data class PaymentSummary(
     val confirmedAmount: Double,
     val pendingAmount: Double
 )
+
+// Modelos para WebSocket
+@Serializable
+data class WebSocketMessage(
+    val type: String,
+    val data: WebSocketData
+)
+
+@Serializable
+data class WebSocketData(
+    val paymentId: Int,
+    val amount: Double,
+    val senderName: String,
+    val yapeCode: String,
+    val status: String,
+    val timestamp: String,
+    val message: String,
+    val sellerId: Int? = null,
+    val sellerName: String? = null
+)
+
+@Serializable
+data class PaymentNotificationData(
+    val paymentId: Int,
+    val amount: Double,
+    val senderName: String,
+    val yapeCode: String,
+    val status: String,
+    val timestamp: String,
+    val message: String
+)
+
+@Serializable
+data class PaymentResultData(
+    val paymentId: Int,
+    val status: String,
+    val message: String,
+    val sellerId: Int,
+    val sellerName: String
+)
