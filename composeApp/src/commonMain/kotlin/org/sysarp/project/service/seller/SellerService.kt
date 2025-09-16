@@ -207,4 +207,66 @@ class SellerService(private val authService: AuthService) {
             Result.failure(e)
         }
     }
+    
+    /**
+     * Obtener vendedores conectados
+     */
+    suspend fun getConnectedSellers(
+        adminId: Int,
+        token: String
+    ): Result<ConnectedSellersResponse> {
+        return try {
+            Logger.auth("SELLER_SERVICE", "Obteniendo vendedores conectados para admin: $adminId")
+            
+            val result = sellerApiClient.getConnectedSellers(
+                adminId = adminId,
+                accessToken = token
+            )
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("SELLER_SERVICE", "Vendedores conectados obtenidos exitosamente")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("SELLER_SERVICE", "Error obteniendo vendedores conectados: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("SELLER_SERVICE", "Error obteniendo vendedores conectados: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Obtener estado de todos los vendedores
+     */
+    suspend fun getSellersStatus(
+        adminId: Int,
+        token: String
+    ): Result<SellersStatusResponse> {
+        return try {
+            Logger.auth("SELLER_SERVICE", "Obteniendo estado de vendedores para admin: $adminId")
+            
+            val result = sellerApiClient.getSellersStatus(
+                adminId = adminId,
+                accessToken = token
+            )
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("SELLER_SERVICE", "Estado de vendedores obtenido exitosamente")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("SELLER_SERVICE", "Error obteniendo estado de vendedores: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("SELLER_SERVICE", "Error obteniendo estado de vendedores: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

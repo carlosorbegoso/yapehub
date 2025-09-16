@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -15,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.QRCodeData
@@ -50,8 +53,12 @@ fun SellerManagementScreen(
     // Estados para búsqueda y filtros
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var showSearchBar by remember { mutableStateOf(false) }
+    var showFilters by remember { mutableStateOf(false) }
     var filterActive by remember { mutableStateOf<Boolean?>(null) } // null = todos, true = activos, false = inactivos
-    var sortBy by remember { mutableStateOf("name") } // name, payments, amount
+    var filterOnline by remember { mutableStateOf<Boolean?>(null) } // null = todos, true = en línea, false = desconectados
+    var sortBy by remember { mutableStateOf("name") } // name, payments, amount, date
+    var sortOrder by remember { mutableStateOf("asc") } // asc, desc
+    var isRefreshing by remember { mutableStateOf(false) }
     
     val qrService = remember { QRService() }
     val activeQRCode by qrService.activeQRCode.collectAsState()
@@ -60,7 +67,7 @@ fun SellerManagementScreen(
     val coroutineScope = rememberCoroutineScope()
     
     // Función para filtrar y ordenar vendedores
-    val filteredSellers = remember(sellers, searchQuery.text, filterActive, sortBy) {
+    val filteredSellers = remember(sellers, searchQuery.text, filterActive, filterOnline, sortBy, sortOrder) {
         var filtered = sellers
         
         // Filtrar por búsqueda
@@ -69,7 +76,8 @@ fun SellerManagementScreen(
             filtered = filtered.filter { seller ->
                 seller.name.lowercase().contains(query) ||
                 seller.email.lowercase().contains(query) ||
-                seller.phone.contains(query)
+                seller.phone.contains(query) ||
+                seller.branchName?.lowercase()?.contains(query) == true
             }
         }
         
@@ -78,11 +86,29 @@ fun SellerManagementScreen(
             filtered = filtered.filter { it.isActive == active }
         }
         
+        // Filtrar por estado en línea/desconectado
+        filterOnline?.let { online ->
+            filtered = filtered.filter { it.isOnline == online }
+        }
+        
         // Ordenar
         filtered = when (sortBy) {
-            "payments" -> filtered.sortedByDescending { it.totalPayments }
-            "amount" -> filtered.sortedByDescending { it.totalAmount }
-            "name" -> filtered.sortedBy { it.name }
+            "payments" -> if (sortOrder == "asc") 
+                filtered.sortedBy { it.totalPayments } 
+            else 
+                filtered.sortedByDescending { it.totalPayments }
+            "amount" -> if (sortOrder == "asc") 
+                filtered.sortedBy { it.totalAmount } 
+            else 
+                filtered.sortedByDescending { it.totalAmount }
+            "name" -> if (sortOrder == "asc") 
+                filtered.sortedBy { it.name } 
+            else 
+                filtered.sortedByDescending { it.name }
+            "date" -> if (sortOrder == "asc") 
+                filtered.sortedBy { it.affiliationDate ?: "" } 
+            else 
+                filtered.sortedByDescending { it.affiliationDate ?: "" }
             else -> filtered
         }
         
@@ -119,6 +145,15 @@ fun SellerManagementScreen(
         }
     }
     
+    // Función para refrescar datos
+    val refreshData = {
+        coroutineScope.launch {
+            isRefreshing = true
+            loadSellers(currentPage)
+            isRefreshing = false
+        }
+    }
+    
     // Cargar vendedores al iniciar
     LaunchedEffect(userProfile, accessToken) {
         val profile = userProfile
@@ -133,7 +168,7 @@ fun SellerManagementScreen(
                 title = { 
                     Text(
                         "Gestión de Vendedores",
-                        style = MaterialTheme.typography.headlineSmall,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -154,11 +189,12 @@ fun SellerManagementScreen(
                         )
                     }
                     
-                    // Botón de filtros
-                    IconButton(onClick = { /* TODO: Mostrar menú de filtros */ }) {
+                    // Botón de filtros avanzados
+                    IconButton(onClick = { showFilters = !showFilters }) {
                         Icon(
-                            imageVector = Icons.Filled.FilterList,
-                            contentDescription = "Filtros"
+                            imageVector = if (showFilters) Icons.Filled.FilterListOff else Icons.Filled.FilterList,
+                            contentDescription = if (showFilters) "Ocultar filtros" else "Mostrar filtros",
+                            tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -242,74 +278,332 @@ fun SellerManagementScreen(
                 }
             }
             
+            // Filtros avanzados
+            if (showFilters) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = "Filtros Avanzados",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        
+                        // Filtros de estado
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            FilterChip(
+                                onClick = { filterActive = null },
+                                label = { Text("Todos", fontSize = 12.sp) },
+                                selected = filterActive == null,
+                                leadingIcon = if (filterActive == null) {
+                                    { Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                                } else null,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            
+                            FilterChip(
+                                onClick = { filterActive = true },
+                                label = { Text("Activos", fontSize = 12.sp) },
+                                selected = filterActive == true,
+                                leadingIcon = if (filterActive == true) {
+                                    { Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                                } else null,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            
+                            FilterChip(
+                                onClick = { filterActive = false },
+                                label = { Text("Inactivos", fontSize = 12.sp) },
+                                selected = filterActive == false,
+                                leadingIcon = if (filterActive == false) {
+                                    { Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                                } else null,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                        
+                        // Filtros de conexión
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            FilterChip(
+                                onClick = { filterOnline = null },
+                                label = { Text("Todos", fontSize = 12.sp) },
+                                selected = filterOnline == null,
+                                leadingIcon = if (filterOnline == null) {
+                                    { Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                                } else null,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            
+                            FilterChip(
+                                onClick = { filterOnline = true },
+                                label = { Text("En línea", fontSize = 12.sp) },
+                                selected = filterOnline == true,
+                                leadingIcon = if (filterOnline == true) {
+                                    { Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                                } else null,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            
+                            FilterChip(
+                                onClick = { filterOnline = false },
+                                label = { Text("Desconectados", fontSize = 12.sp) },
+                                selected = filterOnline == false,
+                                leadingIcon = if (filterOnline == false) {
+                                    { Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                                } else null,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                        
+                        // Ordenamiento
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Ordenar por:",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                FilterChip(
+                                    onClick = { 
+                                        sortBy = "name"
+                                        sortOrder = if (sortBy == "name" && sortOrder == "asc") "desc" else "asc"
+                                    },
+                                    label = { Text("Nombre", fontSize = 11.sp) },
+                                    selected = sortBy == "name",
+                                    leadingIcon = if (sortBy == "name") {
+                                        { Icon(
+                                            if (sortOrder == "asc") Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward, 
+                                            contentDescription = null, 
+                                            modifier = Modifier.size(12.dp)
+                                        ) }
+                                    } else null,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                
+                                FilterChip(
+                                    onClick = { 
+                                        sortBy = "payments"
+                                        sortOrder = if (sortBy == "payments" && sortOrder == "asc") "desc" else "asc"
+                                    },
+                                    label = { Text("Pagos", fontSize = 11.sp) },
+                                    selected = sortBy == "payments",
+                                    leadingIcon = if (sortBy == "payments") {
+                                        { Icon(
+                                            if (sortOrder == "asc") Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward, 
+                                            contentDescription = null, 
+                                            modifier = Modifier.size(12.dp)
+                                        ) }
+                                    } else null,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                
+                                FilterChip(
+                                    onClick = { 
+                                        sortBy = "amount"
+                                        sortOrder = if (sortBy == "amount" && sortOrder == "asc") "desc" else "asc"
+                                    },
+                                    label = { Text("Monto", fontSize = 11.sp) },
+                                    selected = sortBy == "amount",
+                                    leadingIcon = if (sortBy == "amount") {
+                                        { Icon(
+                                            if (sortOrder == "asc") Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward, 
+                                            contentDescription = null, 
+                                            modifier = Modifier.size(12.dp)
+                                        ) }
+                                    } else null,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+                        }
+                        
+                        // Botón para limpiar filtros
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    searchQuery = TextFieldValue("")
+                                    filterActive = null
+                                    filterOnline = null
+                                    sortBy = "name"
+                                    sortOrder = "asc"
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Clear,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Limpiar filtros",
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
             // Filtros rápidos
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Filtro: Todos
                     FilterChip(
                         onClick = { filterActive = null },
-                        label = { Text("Todos") },
+                        label = { Text("Todos", fontSize = 12.sp) },
                         selected = filterActive == null,
                         leadingIcon = if (filterActive == null) {
-                            { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                        } else null
+                            { Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
                     )
                     
                     // Filtro: Activos
                     FilterChip(
                         onClick = { filterActive = true },
-                        label = { Text("Activos") },
+                        label = { Text("Activos", fontSize = 12.sp) },
                         selected = filterActive == true,
                         leadingIcon = if (filterActive == true) {
-                            { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                        } else null
+                            { Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
                     )
                     
                     // Filtro: Inactivos
                     FilterChip(
                         onClick = { filterActive = false },
-                        label = { Text("Inactivos") },
+                        label = { Text("Inactivos", fontSize = 12.sp) },
                         selected = filterActive == false,
                         leadingIcon = if (filterActive == false) {
-                            { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                        } else null
+                            { Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
                     )
                 }
             }
             
-            // Lista de vendedores
+            // Lista de vendedores con pull-to-refresh
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragEnd = {
+                                if (isRefreshing) {
+                                    refreshData()
+                                }
+                            }
+                        ) { _, dragAmount ->
+                            if (dragAmount.y > 0 && !isRefreshing) {
+                                isRefreshing = true
+                            }
+                        }
+                    },
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Indicador de refresh
+                if (isRefreshing) {
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Actualizando vendedores...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
             // Header con estadísticas
             item {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(horizontal = 12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(12.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         val totalSellers = filteredSellers.size
@@ -442,33 +736,64 @@ fun SellerManagementScreen(
                 )
             }
             
-            // Controles de paginación
+            // Controles de paginación mejorados
             if (totalPages > 1) {
                 item {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(horizontal = 12.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = "Página $currentPage de $totalPages",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            
+                            // Información de paginación
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Button(
+                                Text(
+                                    text = "Página $currentPage de $totalPages",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                
+                                Text(
+                                    text = "$totalItems vendedores total",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            // Controles de navegación
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Botón primera página
+                                OutlinedButton(
+                                    onClick = { loadSellers(1) },
+                                    enabled = currentPage > 1 && !isLoading,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.FirstPage,
+                                        contentDescription = "Primera página",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                
+                                // Botón página anterior
+                                OutlinedButton(
                                     onClick = { loadSellers(currentPage - 1) },
                                     enabled = currentPage > 1 && !isLoading,
                                     modifier = Modifier.size(40.dp)
@@ -480,7 +805,38 @@ fun SellerManagementScreen(
                                     )
                                 }
                                 
-                                Button(
+                                // Números de página (mostrar máximo 5 páginas)
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    val startPage = maxOf(1, currentPage - 2)
+                                    val endPage = minOf(totalPages, startPage + 4)
+                                    
+                                    for (page in startPage..endPage) {
+                                        Button(
+                                            onClick = { loadSellers(page) },
+                                            enabled = !isLoading,
+                                            modifier = Modifier.size(40.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = if (page == currentPage) 
+                                                    MaterialTheme.colorScheme.primary 
+                                                else MaterialTheme.colorScheme.surfaceVariant,
+                                                contentColor = if (page == currentPage) 
+                                                    MaterialTheme.colorScheme.onPrimary 
+                                                else MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        ) {
+                                            Text(
+                                                text = page.toString(),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = if (page == currentPage) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        }
+                                    }
+                                }
+                                
+                                // Botón página siguiente
+                                OutlinedButton(
                                     onClick = { loadSellers(currentPage + 1) },
                                     enabled = currentPage < totalPages && !isLoading,
                                     modifier = Modifier.size(40.dp)
@@ -488,6 +844,19 @@ fun SellerManagementScreen(
                                     Icon(
                                         imageVector = Icons.Filled.ChevronRight,
                                         contentDescription = "Página siguiente",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                
+                                // Botón última página
+                                OutlinedButton(
+                                    onClick = { loadSellers(totalPages) },
+                                    enabled = currentPage < totalPages && !isLoading,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.LastPage,
+                                        contentDescription = "Última página",
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -600,23 +969,23 @@ fun StatItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(24.dp)
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
         )
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineSmall,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            color = MaterialTheme.colorScheme.onSurface
         )
         
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -632,16 +1001,17 @@ fun SellerCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -650,7 +1020,7 @@ fun SellerCard(
                 // Avatar
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(32.dp)
                         .background(
                             color = if (seller.isActive) 
                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
@@ -665,41 +1035,42 @@ fun SellerCard(
                         tint = if (seller.isActive) 
                             MaterialTheme.colorScheme.primary 
                         else MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
                 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = seller.name,
-                        style = MaterialTheme.typography.titleMedium,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     
                     Text(
-                        text = seller.branchName,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = seller.branchName ?: "Sin sucursal",
+                        fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     
                     Text(
                         text = seller.email,
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     
                     Text(
                         text = seller.phone,
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     
                     Text(
                         text = if (seller.isActive) "Activo" else "Inactivo",
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
                         color = if (seller.isActive) 
                             MaterialTheme.colorScheme.primary 
                         else MaterialTheme.colorScheme.error
@@ -709,7 +1080,7 @@ fun SellerCard(
                 // Indicador de estado
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(10.dp)
                         .background(
                             color = if (seller.isOnline) 
                                 MaterialTheme.colorScheme.primary 
@@ -719,7 +1090,7 @@ fun SellerCard(
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Estadísticas del vendedor
             Row(
@@ -727,15 +1098,15 @@ fun SellerCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 StatChip("Pagos: ${seller.totalPayments}", Icons.Filled.Payment)
-                StatChip("S/ ${String.format("%.2f", seller.totalAmount)}", Icons.Filled.AttachMoney)
+                StatChip("S/ ${String.format("%.2f", seller.totalAmount)}", Icons.Filled.CheckCircle)
                 StatChip("Último: ${seller.lastPayment ?: "Nunca"}", Icons.Filled.Schedule)
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
                     // Botones de acción
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         // Primera fila: Editar y Pagos
                         Row(
@@ -749,10 +1120,10 @@ fun SellerCard(
                                 Icon(
                                     imageVector = Icons.Filled.Edit,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Editar")
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Editar", fontSize = 11.sp)
                             }
 
                             Button(
@@ -767,12 +1138,12 @@ fun SellerCard(
                                 Icon(
                                     imageVector = Icons.Filled.Payment,
                                     contentDescription = "Ver pagos pendientes",
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
                                 Text(
                                     text = "Pagos",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    fontSize = 11.sp
                                 )
                             }
                         }
@@ -801,12 +1172,12 @@ fun SellerCard(
                                 Icon(
                                     imageVector = if (seller.isActive) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                     contentDescription = if (seller.isActive) "Pausar vendedor" else "Activar vendedor",
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
                                 Text(
                                     text = if (seller.isActive) "Pausar" else "Activar",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    fontSize = 11.sp
                                 )
                             }
 
@@ -822,12 +1193,12 @@ fun SellerCard(
                                 Icon(
                                     imageVector = Icons.Filled.Delete,
                                     contentDescription = "Eliminar vendedor",
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
                                 Text(
                                     text = "Eliminar",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    fontSize = 11.sp
                                 )
                             }
                         }
@@ -843,24 +1214,25 @@ fun StatChip(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(12.dp),
+                modifier = Modifier.size(8.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(3.dp))
             Text(
                 text = text,
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = 9.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

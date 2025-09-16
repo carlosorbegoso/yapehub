@@ -378,6 +378,68 @@ class SellerApiClient : BaseApiClient() {
     }
     
     /**
+     * Obtener vendedores conectados
+     */
+    suspend fun getConnectedSellers(
+        adminId: Int,
+        accessToken: String
+    ): Result<ConnectedSellersResponse> {
+        return try {
+            logInfo("SELLER_API", "Obteniendo vendedores conectados para admin: $adminId")
+            
+            val response = client.get("$baseUrl/api/payments/admin/connected-sellers") {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                parameter("adminId", adminId)
+            }
+            
+            if (response.status.isSuccess()) {
+                val connectedSellersResponse = response.body<ConnectedSellersResponse>()
+                logInfo("SELLER_API", "Vendedores conectados obtenidos: ${connectedSellersResponse.data?.totalConnected} conectados")
+                Result.success(connectedSellersResponse)
+            } else {
+                val errorMessage = "Error obteniendo vendedores conectados: ${response.status}"
+                logError("SELLER_API", errorMessage)
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            logError("SELLER_API", "Error obteniendo vendedores conectados: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Obtener estado de todos los vendedores
+     */
+    suspend fun getSellersStatus(
+        adminId: Int,
+        accessToken: String
+    ): Result<SellersStatusResponse> {
+        return try {
+            logInfo("SELLER_API", "Obteniendo estado de vendedores para admin: $adminId")
+            
+            val response = client.get("$baseUrl/api/payments/admin/sellers-status") {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                parameter("adminId", adminId)
+            }
+            
+            if (response.status.isSuccess()) {
+                val sellersStatusResponse = response.body<SellersStatusResponse>()
+                logInfo("SELLER_API", "Estado de vendedores obtenido: ${sellersStatusResponse.data?.totalSellers} total")
+                Result.success(sellersStatusResponse)
+            } else {
+                val errorMessage = "Error obteniendo estado de vendedores: ${response.status}"
+                logError("SELLER_API", errorMessage)
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            logError("SELLER_API", "Error obteniendo estado de vendedores: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /**
      * Convierte mensajes técnicos a mensajes amigables
      */
     private fun getFriendlyMessage(message: String): String {

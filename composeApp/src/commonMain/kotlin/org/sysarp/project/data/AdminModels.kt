@@ -82,6 +82,67 @@ data class GenerateAffiliationCodeRequest(
     val notes: String? = null
 )
 
+// Modelos para vendedores conectados
+@Serializable
+data class ConnectedSellersResponse(
+    val success: Boolean,
+    val message: String,
+    val data: ConnectedSellersData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class ConnectedSellersData(
+    val adminId: Int,
+    val connectedSellers: List<ConnectedSellerInfo>,
+    val totalConnected: Int,
+    val timestamp: String
+)
+
+@Serializable
+data class ConnectedSellerInfo(
+    val sellerId: Int,
+    val sellerName: String,
+    val email: String,
+    val phone: String,
+    val branchId: Int,
+    val branchName: String,
+    val isConnected: Boolean,
+    val lastSeen: String
+)
+
+// Modelos para estado de vendedores
+@Serializable
+data class SellersStatusResponse(
+    val success: Boolean,
+    val message: String,
+    val data: SellersStatusData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class SellersStatusData(
+    val adminId: Int,
+    val totalSellers: Int,
+    val connectedCount: Int,
+    val disconnectedCount: Int,
+    val sellers: List<SellerStatusInfo>
+)
+
+@Serializable
+data class SellerStatusInfo(
+    val sellerId: Int,
+    val sellerName: String,
+    val email: String,
+    val phone: String,
+    val branchId: Int,
+    val branchName: String,
+    val isConnected: Boolean,
+    val lastSeen: String,
+    val totalPayments: Int,
+    val totalAmount: Double
+)
+
 @Serializable
 data class GenerateAffiliationCodeResponse(
     val success: Boolean,

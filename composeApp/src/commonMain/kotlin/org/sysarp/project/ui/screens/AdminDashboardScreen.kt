@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -52,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
 import androidx.compose.runtime.*
@@ -90,6 +92,11 @@ fun AdminDashboardScreen(
     var isLoadingStats by remember { mutableStateOf(false) }
     var statsError by remember { mutableStateOf("") }
     
+    // Estado para vendedores conectados
+    var connectedSellersData by remember { mutableStateOf<org.sysarp.project.data.ConnectedSellersData?>(null) }
+    var isLoadingSellers by remember { mutableStateOf(false) }
+    var sellersError by remember { mutableStateOf("") }
+    
     // Cargar estadísticas rápidas
     LaunchedEffect(userProfile?.adminId, accessToken) {
         if (userProfile?.adminId != null && accessToken != null) {
@@ -109,6 +116,30 @@ fun AdminDashboardScreen(
                     statsError = error.message ?: "Error cargando estadísticas"
                     isLoadingStats = false
                     println("🔍 [ADMIN_DASHBOARD] Error cargando estadísticas: ${error.message}")
+                }
+            )
+        }
+    }
+    
+    // Cargar vendedores conectados
+    LaunchedEffect(userProfile?.adminId, accessToken) {
+        if (userProfile?.adminId != null && accessToken != null) {
+            isLoadingSellers = true
+            sellersError = ""
+            
+            sellerService.getConnectedSellers(
+                adminId = userProfile!!.adminId!!.toInt(),
+                token = accessToken!!
+            ).fold(
+                onSuccess = { response ->
+                    connectedSellersData = response.data
+                    isLoadingSellers = false
+                    println("🔍 [ADMIN_DASHBOARD] Vendedores conectados cargados: ${response.data?.totalConnected} conectados")
+                },
+                onFailure = { error ->
+                    sellersError = error.message ?: "Error cargando vendedores"
+                    isLoadingSellers = false
+                    println("🔍 [ADMIN_DASHBOARD] Error cargando vendedores: ${error.message}")
                 }
             )
         }
@@ -397,20 +428,141 @@ fun AdminDashboardScreen(
             }
             
             item {
-                val connectedSellers = getConnectedSellers()
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Simular vendedores conectados
-                    connectedSellers.forEach { seller ->
-                        SellerStatusCard(
-                            sellerName = seller.name,
-                            branchName = seller.branch,
-                            isOnline = seller.isOnline,
-                            lastSeen = seller.lastSeen,
-                            totalPayments = seller.totalPayments
+                if (isLoadingSellers) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else if (sellersError.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
                         )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Error cargando vendedores",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = sellersError,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    val sellersData = connectedSellersData
+                    if (sellersData != null) {
+                        // Estadísticas de conexión
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                ConnectionStatItem("Conectados", sellersData.totalConnected.toString(), Icons.Filled.CheckCircle)
+                                ConnectionStatItem("Total", sellersData.connectedSellers.size.toString(), Icons.Filled.People)
+                                ConnectionStatItem("Última actualización", formatTimestamp(sellersData.timestamp), Icons.Filled.Schedule)
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Lista de vendedores
+                        if (sellersData.connectedSellers.isEmpty()) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.People,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    
+                                    Text(
+                                        text = "No hay vendedores conectados",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    
+                                    Text(
+                                        text = "Los vendedores aparecerán aquí cuando se conecten",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                sellersData.connectedSellers.forEach { seller ->
+                                    ConnectedSellerCard(
+                                        sellerInfo = seller
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "No hay datos de vendedores",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -626,3 +778,137 @@ data class SellerInfo(
     val lastSeen: String,
     val totalPayments: Int
 )
+
+@Composable
+fun ConnectionStatItem(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(6.dp))
+        
+        Text(
+            text = value,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+fun ConnectedSellerCard(
+    sellerInfo: org.sysarp.project.data.ConnectedSellerInfo
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Indicador de estado
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .background(
+                        color = if (sellerInfo.isConnected) 
+                            MaterialTheme.colorScheme.primary 
+                        else MaterialTheme.colorScheme.outline,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    )
+            )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = sellerInfo.sellerName,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Text(
+                    text = sellerInfo.branchName,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Text(
+                    text = sellerInfo.email,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Text(
+                    text = sellerInfo.phone,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Text(
+                    text = if (sellerInfo.isConnected) "En línea" else "Última vez: ${formatLastSeen(sellerInfo.lastSeen)}",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (sellerInfo.isConnected) 
+                        MaterialTheme.colorScheme.primary 
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+private fun formatLastSeen(lastSeen: String): String {
+    return try {
+        // Formatear la fecha para mostrar de manera más amigable
+        val date = java.time.Instant.parse(lastSeen)
+        val now = java.time.Instant.now()
+        val duration = java.time.Duration.between(date, now)
+        
+        when {
+            duration.toMinutes() < 1 -> "hace menos de 1 min"
+            duration.toMinutes() < 60 -> "hace ${duration.toMinutes()} min"
+            duration.toHours() < 24 -> "hace ${duration.toHours()} h"
+            else -> "hace ${duration.toDays()} días"
+        }
+    } catch (e: Exception) {
+        "desconocido"
+    }
+}
+
+private fun formatTimestamp(timestamp: String): String {
+    return try {
+        // Formatear timestamp para mostrar hora de actualización
+        val date = java.time.Instant.parse(timestamp)
+        val localTime = java.time.LocalDateTime.ofInstant(date, java.time.ZoneId.systemDefault())
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+        localTime.format(formatter)
+    } catch (e: Exception) {
+        "N/A"
+    }
+}
