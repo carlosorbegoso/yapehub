@@ -32,7 +32,7 @@ data class NotificationData(
 @Serializable
 data class YapeNotificationRequest(
     val adminId: Int,
-    val encryptedNotification: String, // NOTA: Este campo contiene el texto original sin encriptar
+    val encryptedNotification: String, // NOTA: Este campo contiene la notificación completa ENCRIPTADA (sin parsear)
     val deviceFingerprint: String,
     val timestamp: Long
 )
