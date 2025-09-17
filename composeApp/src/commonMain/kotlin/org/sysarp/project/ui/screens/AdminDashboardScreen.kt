@@ -685,6 +685,8 @@ fun AdminDashboardScreen(
                         onSuccess = { qrData ->
                             generatedQRCode = qrData
                             isLoadingQR = false
+                            // Cerrar el diálogo de afiliación y mostrar el QR
+                            showAffiliationDialog = false
                             showQRDialog = true
                         },
                         onFailure = { error ->
@@ -706,6 +708,7 @@ fun AdminDashboardScreen(
             onNavigateBack = { 
                 showQRDialog = false
                 generatedQRCode = null
+                qrError = null
             },
             onShareQR = { 
                 // TODO: Implementar compartir QR
@@ -714,6 +717,7 @@ fun AdminDashboardScreen(
                 // TODO: Implementar invalidar QR
                 showQRDialog = false
                 generatedQRCode = null
+                qrError = null
             }
         )
     }
