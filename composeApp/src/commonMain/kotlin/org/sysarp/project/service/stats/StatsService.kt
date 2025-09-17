@@ -141,4 +141,31 @@ class StatsService(
             Result.failure(e)
         }
     }
+
+    suspend fun getSellerAnalytics(
+        sellerId: Int,
+        startDate: String? = null,
+        endDate: String? = null,
+        token: String
+    ): Result<AnalyticsResponse> {
+        return try {
+            Logger.auth("STATS_SERVICE", "Obteniendo analytics completos para vendedor: $sellerId")
+
+            val result = statsApiClient.getSellerAnalytics(sellerId, startDate, endDate, token)
+
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("STATS_SERVICE", "Analytics de vendedor obtenidos exitosamente")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("STATS_SERVICE", "Error obteniendo analytics de vendedor: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("STATS_SERVICE", "Error obteniendo analytics de vendedor: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

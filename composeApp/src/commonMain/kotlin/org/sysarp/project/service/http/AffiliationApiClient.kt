@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import org.sysarp.project.data.AffiliationCodeData
 import org.sysarp.project.data.AffiliationCodeRequest
 import org.sysarp.project.data.AffiliationCodeResponse
+import org.sysarp.project.utils.Constants
 
 class AffiliationApiClient(private val httpClient: HttpClient) {
     
@@ -27,7 +28,7 @@ class AffiliationApiClient(private val httpClient: HttpClient) {
     ): Result<AffiliationCodeData> {
         return try {
             
-            val response: HttpResponse = httpClient.post("http://localhost:8080/api/generate-affiliation-code-protected") {
+            val response: HttpResponse = httpClient.post("${Constants.BASE_URL}/api/generate-affiliation-code-protected") {
                 header(HttpHeaders.Accept, "*/*")
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 parameter("adminId", adminId)
