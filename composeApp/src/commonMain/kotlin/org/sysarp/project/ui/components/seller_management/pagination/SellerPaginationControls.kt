@@ -3,6 +3,7 @@ package org.sysarp.project.ui.components.seller_management.pagination
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.LastPage
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -141,7 +142,7 @@ fun SellerPaginationControls(
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.LastPage,
+                            imageVector = Icons.AutoMirrored.Filled.LastPage,
                             contentDescription = "Última página",
                             modifier = Modifier.size(20.dp)
                         )

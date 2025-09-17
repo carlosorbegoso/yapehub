@@ -33,7 +33,7 @@ class WebSocketService(
             println("🔌 [WEBSOCKET] Token: ${accessToken.take(20)}...")
             println("🔌 [WEBSOCKET] URL Base: $baseUrl")
             
-            val webSocketUrl = "wss://${baseUrl.removePrefix("https://")}/ws/payments/$sellerId"
+            val webSocketUrl = "wss://${baseUrl.removePrefix("https://")}/ws/payments/$sellerId?token=$accessToken"
             println("🔌 [WEBSOCKET] WebSocket URL: $webSocketUrl")
             
             // Crear flow si no existe

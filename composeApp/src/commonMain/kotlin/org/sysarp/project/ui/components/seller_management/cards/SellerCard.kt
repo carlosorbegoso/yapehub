@@ -29,58 +29,36 @@ fun SellerCard(
     onDelete: () -> Unit,
     onViewPayments: () -> Unit
 ) {
-    val elevation by animateFloatAsState(
-        targetValue = 8.dp.value,
-        animationSpec = tween(300),
-        label = "elevation"
-    )
-    
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = elevation.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(16.dp)
         ) {
             // Header con avatar y información principal
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Avatar mejorado con gradiente
+                // Avatar simplificado
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(
-                            brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                colors = if (seller.isActive) 
-                                    listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                    )
-                                else 
-                                    listOf(
-                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                                    )
-                            )
-                        )
-                        .border(
-                            width = 2.dp,
                             color = if (seller.isActive) 
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                             else 
-                                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                            shape = CircleShape
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -89,8 +67,8 @@ fun SellerCard(
                         contentDescription = null,
                         tint = if (seller.isActive) 
                             MaterialTheme.colorScheme.primary 
-                        else MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(28.dp)
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 
@@ -99,7 +77,7 @@ fun SellerCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = seller.name,
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -108,73 +86,40 @@ fun SellerCard(
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Business,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = seller.branchName ?: "Sin sucursal",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    Text(
+                        text = seller.branchName ?: "Sin sucursal",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     
                     Spacer(modifier = Modifier.height(2.dp))
                     
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Email,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = seller.email,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    Text(
+                        text = seller.email,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     
                     Spacer(modifier = Modifier.height(2.dp))
                     
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Phone,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = seller.phone,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = seller.phone,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 
-                // Indicador de estado mejorado
+                // Indicador de estado simplificado
                 Column(
                     horizontalAlignment = Alignment.End
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(12.dp)
+                            .size(10.dp)
                             .clip(CircleShape)
                             .background(
                                 color = if (seller.isOnline) 
@@ -188,14 +133,14 @@ fun SellerCard(
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = if (seller.isActive) 
-                                MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.errorContainer
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                            else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
                         ),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = if (seller.isActive) "Activo" else "Inactivo",
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (seller.isActive) 
                                 MaterialTheme.colorScheme.onPrimaryContainer 
@@ -206,28 +151,28 @@ fun SellerCard(
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
-            // Estadísticas mejoradas con diseño de tarjetas
+            // Estadísticas simplificadas
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                ModernStatChip(
+                SimpleStatChip(
                     icon = Icons.Filled.Payment,
                     value = seller.totalPayments.toString(),
                     label = "Pagos",
                     modifier = Modifier.weight(1f)
                 )
                 
-                ModernStatChip(
+                SimpleStatChip(
                     icon = Icons.Filled.CheckCircle,
                     value = "S/ ${String.format("%.0f", seller.totalAmount)}",
                     label = "Total",
                     modifier = Modifier.weight(1f)
                 )
                 
-                ModernStatChip(
+                SimpleStatChip(
                     icon = Icons.Filled.Schedule,
                     value = seller.lastPayment?.let { "Reciente" } ?: "Nunca",
                     label = "Último",
@@ -235,18 +180,18 @@ fun SellerCard(
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
-            // Botones de acción mejorados
+            // Botones de acción simplificados
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // Botón Editar
                 OutlinedButton(
                     onClick = onEdit,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.primary
                     )
@@ -254,10 +199,10 @@ fun SellerCard(
                     Icon(
                         imageVector = Icons.Filled.Edit,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Editar", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Editar", fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 }
 
                 // Botón Pagos
@@ -265,18 +210,18 @@ fun SellerCard(
                     onClick = onViewPayments,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(10.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Payment,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Pagos", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Pagos", fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 }
             }
             
@@ -406,6 +351,52 @@ fun StatChip(
             Spacer(modifier = Modifier.width(3.dp))
             Text(
                 text = text,
+                fontSize = 9.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun SimpleStatChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        ),
+        shape = RoundedCornerShape(10.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = value,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Text(
+                text = label,
                 fontSize = 9.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

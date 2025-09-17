@@ -161,6 +161,7 @@ fun AppContent(
                 sellerService = sellerService,
                 statsService = statsService,
                 affiliationService = affiliationService,
+                branchService = branchService,
                 onNavigateToSellerManagement = { navigationManager.navigateTo(Screen.SellerManagement) },
                 onNavigateToBranchManagement = { navigationManager.navigateTo(Screen.BranchManagement) },
                 onNavigateToAnalytics = { navigationManager.navigateTo(Screen.Analytics) },

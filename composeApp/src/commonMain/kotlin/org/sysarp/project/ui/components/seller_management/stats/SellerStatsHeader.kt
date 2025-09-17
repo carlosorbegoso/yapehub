@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -23,12 +24,6 @@ fun SellerStatsHeader(
     activeSellers: Int,
     inactiveSellers: Int
 ) {
-    val elevation by animateFloatAsState(
-        targetValue = 12.dp.value,
-        animationSpec = tween(500),
-        label = "elevation"
-    )
-    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -36,13 +31,13 @@ fun SellerStatsHeader(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = elevation.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(16.dp)
         ) {
             // Título del resumen
             Row(
@@ -52,13 +47,13 @@ fun SellerStatsHeader(
                 Icon(
                     imageVector = Icons.Filled.Analytics,
                     contentDescription = null,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Resumen de Vendedores",
-                    fontSize = 18.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -66,44 +61,135 @@ fun SellerStatsHeader(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Estadísticas con diseño mejorado
+            // Estadísticas con diseño elegante sin bordes
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                ModernStatItem(
+                ElegantStatItem(
                     label = "Total",
                     value = totalSellers.toString(),
                     icon = Icons.Filled.People,
-                    gradientColors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    ),
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
                 
-                ModernStatItem(
+                ElegantStatItem(
                     label = "Activos",
                     value = activeSellers.toString(),
                     icon = Icons.Filled.CheckCircle,
-                    gradientColors = listOf(
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
-                    ),
+                    color = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.weight(1f)
                 )
                 
-                ModernStatItem(
+                ElegantStatItem(
                     label = "Inactivos",
                     value = inactiveSellers.toString(),
                     icon = Icons.Filled.PauseCircle,
-                    gradientColors = listOf(
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.3f),
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
-                    ),
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.weight(1f)
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ElegantStatItem(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = color.copy(alpha = 0.08f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Icono con fondo circular
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(
+                    color = color.copy(alpha = 0.15f),
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = value,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+fun CleanStatItem(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(6.dp))
+            
+            Text(
+                text = value,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

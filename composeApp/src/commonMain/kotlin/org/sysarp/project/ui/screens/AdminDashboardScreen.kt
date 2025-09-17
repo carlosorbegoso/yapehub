@@ -73,6 +73,7 @@ fun AdminDashboardScreen(
     sellerService: SellerService,
     statsService: org.sysarp.project.service.stats.StatsService,
     affiliationService: AffiliationService,
+    branchService: org.sysarp.project.service.branch.BranchService,
     onNavigateToSellerManagement: () -> Unit,
     onNavigateToBranchManagement: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
@@ -108,6 +109,31 @@ fun AdminDashboardScreen(
     var isLoadingAffiliation by remember { mutableStateOf(false) }
     var generatedAffiliationCode by remember { mutableStateOf<AffiliationCodeData?>(null) }
     var affiliationError by remember { mutableStateOf<String?>(null) }
+    
+    // Estado para sucursales
+    var branches by remember { mutableStateOf<List<org.sysarp.project.data.BranchInfo>>(emptyList()) }
+    var isLoadingBranches by remember { mutableStateOf(false) }
+    
+    // Cargar sucursales cuando se abre el diálogo
+    LaunchedEffect(showAffiliationDialog, userProfile?.adminId, accessToken) {
+        if (showAffiliationDialog && userProfile?.adminId != null && accessToken != null) {
+            isLoadingBranches = true
+            branchService.getBranches(
+                adminId = userProfile!!.adminId!!.toInt(),
+                accessToken = accessToken!!
+            ).fold(
+                onSuccess = { branchesData ->
+                    branches = branchesData.branches
+                    isLoadingBranches = false
+                    println("🔍 [ADMIN_DASHBOARD] Sucursales cargadas: ${branches.size}")
+                },
+                onFailure = { error ->
+                    println("🔍 [ADMIN_DASHBOARD] Error cargando sucursales: ${error.message}")
+                    isLoadingBranches = false
+                }
+            )
+        }
+    }
     
     // Cargar estadísticas rápidas
     LaunchedEffect(userProfile?.adminId, accessToken) {
@@ -618,7 +644,7 @@ fun AdminDashboardScreen(
                         branchId = branchId,
                         expirationHours = expirationHours,
                         maxUses = maxUses,
-                        notes = notes,
+                        notes = notes ?: "",
                         accessToken = accessToken!!
                     ).fold(
                         onSuccess = { affiliationData ->
@@ -635,6 +661,7 @@ fun AdminDashboardScreen(
                 }
             }
         },
+        branches = branches,
         isLoading = isLoadingAffiliation,
         generatedCode = generatedAffiliationCode,
         errorMessage = affiliationError

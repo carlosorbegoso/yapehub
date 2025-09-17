@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.History
@@ -86,7 +88,7 @@ fun SellerDashboardActions(
         ActionCard(
             title = "Solicitar Desactivación",
             subtitle = "Dar de baja tu cuenta de vendedor",
-            icon = Icons.Filled.ExitToApp,
+            icon = Icons.AutoMirrored.Filled.ExitToApp,
             onClick = onNavigateToDeactivationRequest
         )
     }
@@ -141,7 +143,7 @@ fun ActionCard(
             }
             
             Icon(
-                imageVector = Icons.Filled.ArrowForward,
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
