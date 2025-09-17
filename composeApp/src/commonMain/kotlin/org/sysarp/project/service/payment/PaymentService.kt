@@ -114,4 +114,35 @@ class PaymentService(
             Result.failure(e)
         }
     }
+
+    /**
+     * Obtener pagos pendientes de un vendedor específico (para administradores)
+     */
+    suspend fun getSellerPendingPaymentsForAdmin(
+        sellerId: Int,
+        adminId: Int,
+        page: Int = 0,
+        size: Int = 20,
+        token: String
+    ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
+        return try {
+            Logger.auth("PAYMENT_SERVICE", "Obteniendo pagos pendientes del vendedor $sellerId para admin $adminId, página: $page")
+
+            val result = paymentApiClient.getSellerPendingPaymentsForAdmin(sellerId, adminId, page, size, token)
+
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("PAYMENT_SERVICE", "Pagos pendientes obtenidos: ${response.data.payments.size} pagos en página ${response.data.pagination.currentPage}")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("PAYMENT_SERVICE", "Error obteniendo pagos pendientes: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("PAYMENT_SERVICE", "Error obteniendo pagos pendientes: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

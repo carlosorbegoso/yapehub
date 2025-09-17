@@ -74,6 +74,7 @@ fun AdminDashboardScreen(
     sellerService: SellerService,
     statsService: org.sysarp.project.service.stats.StatsService,
     affiliationService: AffiliationService,
+    qrService: org.sysarp.project.service.qr.QRService,
     branchService: org.sysarp.project.service.branch.BranchService,
     onNavigateToSellerManagement: () -> Unit,
     onNavigateToBranchManagement: () -> Unit,
@@ -111,6 +112,12 @@ fun AdminDashboardScreen(
     var isLoadingAffiliation by remember { mutableStateOf(false) }
     var generatedAffiliationCode by remember { mutableStateOf<AffiliationCodeData?>(null) }
     var affiliationError by remember { mutableStateOf<String?>(null) }
+    
+    // Estados para QR
+    var generatedQRCode by remember { mutableStateOf<org.sysarp.project.data.QRCodeData?>(null) }
+    var qrError by remember { mutableStateOf<String?>(null) }
+    var isLoadingQR by remember { mutableStateOf(false) }
+    var showQRDialog by remember { mutableStateOf(false) }
     
     // Estado para sucursales
     var branches by remember { mutableStateOf<List<org.sysarp.project.data.BranchInfo>>(emptyList()) }
@@ -664,8 +671,52 @@ fun AdminDashboardScreen(
         branches = branches,
         isLoading = isLoadingAffiliation,
         generatedCode = generatedAffiliationCode,
-        errorMessage = affiliationError
+        errorMessage = affiliationError,
+        onGenerateQR = { affiliationCode ->
+            if (accessToken != null) {
+                isLoadingQR = true
+                qrError = null
+                
+                coroutineScope.launch {
+                    qrService.generateQRFromAffiliationCode(
+                        affiliationCode = affiliationCode,
+                        accessToken = accessToken!!
+                    ).fold(
+                        onSuccess = { qrData ->
+                            generatedQRCode = qrData
+                            isLoadingQR = false
+                            showQRDialog = true
+                        },
+                        onFailure = { error ->
+                            qrError = error.message ?: "Error generando código QR"
+                            isLoadingQR = false
+                        }
+                    )
+                }
+            }
+        },
+        isLoadingQR = isLoadingQR,
+        qrError = qrError
     )
+    
+    // Diálogo para mostrar QR generado
+    if (showQRDialog && generatedQRCode != null) {
+        ServerQRDisplayScreen(
+            qrData = generatedQRCode!!,
+            onNavigateBack = { 
+                showQRDialog = false
+                generatedQRCode = null
+            },
+            onShareQR = { 
+                // TODO: Implementar compartir QR
+            },
+            onInvalidateQR = { 
+                // TODO: Implementar invalidar QR
+                showQRDialog = false
+                generatedQRCode = null
+            }
+        )
+    }
 }
 
 @Composable

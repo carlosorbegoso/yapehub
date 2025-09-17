@@ -138,28 +138,3 @@ data class ForgotPasswordData(
     val expiresAt: String? = null
 )
 
-// Modelos para validar código de afiliación
-@Serializable
-data class ValidateAffiliationCodeRequest(
-    val affiliationCode: String
-)
-
-@Serializable
-data class ValidateAffiliationCodeResponse(
-    val success: Boolean,
-    val message: String,
-    val data: ValidateAffiliationCodeData? = null,
-    val error: Boolean = false
-)
-
-@Serializable
-data class ValidateAffiliationCodeData(
-    val isValid: Boolean,
-    val affiliationCode: String,
-    val branchId: Int? = null,
-    val branchName: String? = null,
-    val adminId: Int? = null,
-    val adminName: String? = null,
-    val expiresAt: String? = null,
-    val remainingUses: Int? = null
-)

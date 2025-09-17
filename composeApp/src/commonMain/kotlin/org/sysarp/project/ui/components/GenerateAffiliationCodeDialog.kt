@@ -1,5 +1,7 @@
 package org.sysarp.project.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,8 +14,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -29,7 +37,10 @@ fun GenerateAffiliationCodeDialog(
     branches: List<BranchInfo> = emptyList(),
     isLoading: Boolean = false,
     generatedCode: AffiliationCodeData? = null,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    onGenerateQR: ((String) -> Unit)? = null,
+    isLoadingQR: Boolean = false,
+    qrError: String? = null
 ) {
     if (isVisible) {
         Dialog(onDismissRequest = onDismiss) {
@@ -282,6 +293,9 @@ fun GenerateAffiliationCodeDialog(
                         }
                     } else {
                         // Código generado
+                        val clipboardManager = LocalClipboardManager.current
+                        var showCopiedMessage by remember { mutableStateOf(false) }
+                        
                         Card(
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -289,64 +303,218 @@ fun GenerateAffiliationCodeDialog(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(20.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.CheckCircle,
                                     contentDescription = null,
-                                    modifier = Modifier.size(32.dp),
+                                    modifier = Modifier.size(40.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
                                 
                                 Text(
-                                    text = "Código Generado",
-                                    fontSize = 16.sp,
+                                    text = "¡Código Generado!",
+                                    fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
                                 
+                                // Código con botón de copiar
                                 Card(
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.surface
                                     ),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(
+                                            width = 2.dp,
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                            shape = RoundedCornerShape(16.dp)
+                                        )
                                 ) {
-                                    Text(
-                                        text = generatedCode.affiliationCode,
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.padding(16.dp)
-                                    )
+                                    Column(
+                                        modifier = Modifier.padding(20.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Tu código de afiliación",
+                                            fontSize = 14.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        
+                                        Text(
+                                            text = generatedCode.affiliationCode,
+                                            fontSize = 28.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontFamily = FontFamily.Monospace,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f),
+                                                    shape = RoundedCornerShape(8.dp)
+                                                )
+                                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                                        )
+                                        
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        
+                                        Button(
+                                            onClick = {
+                                                clipboardManager.setText(AnnotatedString(generatedCode.affiliationCode))
+                                                showCopiedMessage = true
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.ContentCopy,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = if (showCopiedMessage) "¡Copiado!" else "Copiar Código",
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                        
+                                        if (showCopiedMessage) {
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = "✓ Código copiado al portapapeles",
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                        
+                                        // Botón para generar QR
+                                        if (onGenerateQR != null) {
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            
+                                            OutlinedButton(
+                                                onClick = { onGenerateQR(generatedCode.affiliationCode) },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = RoundedCornerShape(12.dp),
+                                                enabled = !isLoadingQR
+                                            ) {
+                                                if (isLoadingQR) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(16.dp),
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                }
+                                                Icon(
+                                                    imageVector = Icons.Filled.QrCode,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = if (isLoadingQR) "Generando QR..." else "Generar Código QR",
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                            
+                                            // Error de QR
+                                            if (qrError != null) {
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Text(
+                                                    text = "Error generando QR: $qrError",
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                                 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
                                 
-                                Text(
-                                    text = "Expira: ${generatedCode.expiresAt}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                
-                                Text(
-                                    text = "Usos restantes: ${generatedCode.remainingUses}/${generatedCode.maxUses}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
+                                // Información adicional
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Schedule,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "Expira: ${generatedCode.expiresAt}",
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.People,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "Usos restantes: ${generatedCode.remainingUses}/${generatedCode.maxUses}",
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
                         
                         Button(
                             onClick = onDismiss,
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
                         ) {
-                            Text("Cerrar")
+                            Text(
+                                text = "Cerrar",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
                     }
                 }

@@ -51,27 +51,35 @@ fun BranchManagementScreen(
     
     // Cargar sucursales
     LaunchedEffect(adminId, accessToken, currentPage, filterStatus) {
-        isLoading = true
-        errorMessage = null
-        
-        branchService.getBranches(
-            adminId = adminId,
-            accessToken = accessToken,
-            status = filterStatus,
-            page = currentPage,
-            size = 20
-        ).fold(
-            onSuccess = { response ->
-                branchesData = response
+        if (adminId > 0 && accessToken.isNotEmpty()) {
+            isLoading = true
+            errorMessage = null
+            
+            try {
+                branchService.getBranches(
+                    adminId = adminId,
+                    accessToken = accessToken,
+                    status = filterStatus,
+                    page = currentPage,
+                    size = 20
+                ).fold(
+                    onSuccess = { response ->
+                        branchesData = response
+                        isLoading = false
+                        println("🔍 [BRANCH_MANAGEMENT] Sucursales cargadas: ${response.branches.size}")
+                    },
+                    onFailure = { error ->
+                        errorMessage = error.message ?: "Error cargando sucursales"
+                        isLoading = false
+                        println("🔍 [BRANCH_MANAGEMENT] Error cargando sucursales: ${error.message}")
+                    }
+                )
+            } catch (e: Exception) {
+                errorMessage = "Error de conexión: ${e.message}"
                 isLoading = false
-                println("🔍 [BRANCH_MANAGEMENT] Sucursales cargadas: ${response.branches.size}")
-            },
-            onFailure = { error ->
-                errorMessage = error.message ?: "Error cargando sucursales"
-                isLoading = false
-                println("🔍 [BRANCH_MANAGEMENT] Error cargando sucursales: ${error.message}")
+                println("🔍 [BRANCH_MANAGEMENT] Excepción cargando sucursales: ${e.message}")
             }
-        )
+        }
     }
     
     val branches = branchesData?.branches ?: emptyList()

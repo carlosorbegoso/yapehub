@@ -151,6 +151,10 @@ fun YapeApp() {
         AffiliationService()
     }
     
+    val qrService = remember {
+        org.sysarp.project.service.qr.QRService()
+    }
+    
     val branchService = remember {
         BranchService()
     }
@@ -201,6 +205,7 @@ fun YapeApp() {
         paymentService = paymentService,
         statsService = statsService,
         affiliationService = affiliationService,
+        qrService = qrService,
         branchService = branchService,
         webSocketService = webSocketService,
         paymentNotificationService = paymentNotificationService,

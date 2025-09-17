@@ -114,18 +114,6 @@ data class SellerLoginByPhoneResponse(
     val error: Boolean = false
 )
 
-@Serializable
-data class SellerLoginData(
-    val sellerId: Int,
-    val sellerName: String,
-    val email: String,
-    val phone: String,
-    val branchId: Int,
-    val branchName: String,
-    val branchCode: String,
-    val affiliationCode: String,
-    val accessToken: String
-)
 
 // Modelos legacy para compatibilidad
 @Serializable

@@ -11,6 +11,7 @@ import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.affiliation.AffiliationService
+import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.branch.BranchService
 
 import org.sysarp.project.ui.screens.AdminDashboardScreen
@@ -31,6 +32,7 @@ import org.sysarp.project.ui.screens.SellerPaymentsScreen
 import org.sysarp.project.ui.screens.SellerUnifiedScreen
 import org.sysarp.project.ui.screens.AdminProfileScreen
 import org.sysarp.project.ui.screens.SellerNotificationsScreen
+import org.sysarp.project.ui.screens.SellerSpecificPaymentsScreen
 import org.sysarp.project.ui.screens.SettingsScreen
 import org.sysarp.project.ui.screens.SplashScreen
 import org.sysarp.project.ui.screens.UserManagementScreen
@@ -46,6 +48,7 @@ fun AppContent(
     paymentService: PaymentService,
     statsService: StatsService,
     affiliationService: AffiliationService,
+    qrService: QRService,
     branchService: BranchService,
     webSocketService: org.sysarp.project.service.websocket.PaymentWebSocketService,
     paymentNotificationService: org.sysarp.project.service.notifications.PaymentNotificationService,
@@ -163,6 +166,7 @@ fun AppContent(
                 sellerService = sellerService,
                 statsService = statsService,
                 affiliationService = affiliationService,
+                qrService = qrService,
                 branchService = branchService,
                 onNavigateToSellerManagement = { navigationManager.navigateTo(Screen.SellerManagement) },
                 onNavigateToBranchManagement = { navigationManager.navigateTo(Screen.BranchManagement) },
@@ -194,7 +198,10 @@ fun AppContent(
                 authService = authService,
                 sellerService = sellerService,
                 onNavigateBack = { navigationManager.navigateBack() },
-                onNavigateToQR = { qrCode -> navigationManager.navigateToQRDisplay(qrCode) }
+                onNavigateToQR = { qrCode -> navigationManager.navigateToQRDisplay(qrCode) },
+                onNavigateToSellerPayments = { sellerId, sellerName -> 
+                    navigationManager.navigateToSellerSpecificPayments(sellerId, sellerName) 
+                }
             )
         }
         is Screen.BranchManagement -> {
@@ -240,11 +247,22 @@ fun AppContent(
         is Screen.AdminProfile -> {
             AdminProfileScreen(
                 authService = authService,
-                onNavigateBack = { navigationManager.navigateBack() }
+                onNavigateBack = { navigationManager.navigateBack() },
+                onNavigateToQR = { qrCode -> navigationManager.navigateToQRDisplay(qrCode) }
             )
         }
         is Screen.SellerNotifications -> {
             SellerNotificationsScreen(
+                authService = authService,
+                onNavigateBack = { navigationManager.navigateBack() }
+            )
+        }
+        is Screen.SellerSpecificPayments -> {
+            val sellerSpecificScreen = currentScreen as Screen.SellerSpecificPayments
+            SellerSpecificPaymentsScreen(
+                sellerId = sellerSpecificScreen.sellerId,
+                sellerName = sellerSpecificScreen.sellerName,
+                paymentService = paymentService,
                 authService = authService,
                 onNavigateBack = { navigationManager.navigateBack() }
             )

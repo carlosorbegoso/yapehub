@@ -34,7 +34,8 @@ fun SellerManagementScreen(
     authService: AuthService,
     sellerService: SellerService,
     onNavigateBack: () -> Unit,
-    onNavigateToQR: (QRCodeData) -> Unit = {}
+    onNavigateToQR: (QRCodeData) -> Unit = {},
+    onNavigateToSellerPayments: (Int, String) -> Unit = { _, _ -> }
 ) {
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()
@@ -395,9 +396,7 @@ fun SellerManagementScreen(
                             showEditSellerDialog = true
                         },
                         onViewPayments = {
-                            // Navegar a la pantalla de pagos del vendedor
-                            // TODO: Implementar navegación a SellerPaymentsScreen
-                            println("Ver pagos del vendedor: ${seller.name} (ID: ${seller.sellerId})")
+                            onNavigateToSellerPayments(seller.sellerId, seller.name)
                         },
                         onToggleStatus = {
                             coroutineScope.launch {
