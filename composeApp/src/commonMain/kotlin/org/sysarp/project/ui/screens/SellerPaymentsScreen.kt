@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -66,10 +67,30 @@ fun SellerPaymentsScreen(
         }
     }
 
-    // Función para cargar pagos confirmados (placeholder por ahora)
+    // Función para cargar pagos confirmados
     val loadConfirmedPayments: () -> Unit = {
-        // TODO: Implementar cuando tengas la API de pagos confirmados
-        confirmedPayments = emptyList()
+        if (accessToken != null && userProfile?.sellerId != null) {
+            coroutineScope.launch {
+                isLoading = true
+                errorMessage = ""
+
+                paymentService.getConfirmedPayments(
+                    sellerId = userProfile!!.sellerId!!.toInt(),
+                    page = 0,
+                    size = 50, // Cargar más para tener una vista completa
+                    token = accessToken!!
+                ).fold(
+                    onSuccess = { response ->
+                        confirmedPayments = response.data.payments
+                        isLoading = false
+                    },
+                    onFailure = { error ->
+                        errorMessage = error.message ?: "Error cargando pagos confirmados"
+                        isLoading = false
+                    }
+                )
+            }
+        }
     }
 
     // Función para confirmar un pago
@@ -82,8 +103,9 @@ fun SellerPaymentsScreen(
                     token = accessToken!!
                 ).fold(
                     onSuccess = { response ->
-                        // Recargar la lista de pagos pendientes
+                        // Recargar ambas listas
                         loadPendingPayments()
+                        loadConfirmedPayments()
                     },
                     onFailure = { error ->
                         errorMessage = "Error confirmando pago: ${error.message}"
@@ -334,44 +356,232 @@ fun ConfirmedPaymentsContent(
     errorMessage: String,
     onRefresh: () -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Filled.CheckCircle,
-            contentDescription = null,
-            modifier = Modifier.size(96.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Pagos Confirmados",
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Esta funcionalidad estará disponible próximamente.\nSe mostrarán todos los pagos confirmados.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            ),
-            shape = RoundedCornerShape(8.dp)
+    if (isLoading) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            CircularProgressIndicator()
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Cargando pagos confirmados...")
+        }
+    } else if (errorMessage.isNotEmpty()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Error,
+                contentDescription = null,
+                modifier = Modifier.size(96.dp),
+                tint = MaterialTheme.colorScheme.error
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Próximamente: API de pagos confirmados",
-                modifier = Modifier.padding(16.dp),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                style = MaterialTheme.typography.bodySmall
+                text = "Error",
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onRefresh) {
+                Text("Reintentar")
+            }
+        }
+    } else if (payments.isEmpty()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.CheckCircle,
+                contentDescription = null,
+                modifier = Modifier.size(96.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "No hay pagos confirmados",
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Los pagos confirmados aparecerán aquí.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
         }
+    } else {
+        // Estadísticas rápidas
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                val totalAmount = payments.sumOf { it.amount }
+                
+                PaymentStatItem("Confirmados", payments.size.toString(), Icons.Filled.CheckCircle)
+                PaymentStatItem("Total", "S/ ${String.format("%.2f", totalAmount)}", Icons.Filled.AttachMoney)
+            }
+        }
+
+        // Lista de pagos confirmados
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            items(payments) { payment ->
+                ConfirmedPaymentCard(payment = payment)
+            }
+
+            // Espacio adicional
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun ConfirmedPaymentCard(
+    payment: org.sysarp.project.data.SellerPendingPayment
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Header con estado
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Pago #${payment.paymentId}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Confirmado",
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Información del pago
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                PaymentInfoRow(
+                    label = "Monto",
+                    value = "S/ ${String.format("%.2f", payment.amount)}",
+                    icon = Icons.Filled.AttachMoney
+                )
+                
+                PaymentInfoRow(
+                    label = "Cliente",
+                    value = payment.senderName,
+                    icon = Icons.Filled.Person
+                )
+                
+                PaymentInfoRow(
+                    label = "Código Yape",
+                    value = payment.yapeCode,
+                    icon = Icons.Filled.QrCode
+                )
+                
+                PaymentInfoRow(
+                    label = "Fecha",
+                    value = payment.timestamp,
+                    icon = Icons.Filled.Schedule
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PaymentInfoRow(
+    label: String,
+    value: String,
+    icon: ImageVector
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(80.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

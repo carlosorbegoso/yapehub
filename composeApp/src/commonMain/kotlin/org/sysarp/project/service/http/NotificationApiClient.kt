@@ -85,6 +85,7 @@ class NotificationApiClient : BaseApiClient() {
      */
     suspend fun getSellerNotifications(
         token: String,
+        userId: Int,
         page: Int = 0,
         size: Int = 20
     ): Result<SellerNotificationsResponse> {
@@ -93,7 +94,9 @@ class NotificationApiClient : BaseApiClient() {
             
             val response = client.get("$baseUrl/api/notifications") {
                 parameter("page", page)
-                parameter("size", size)
+                parameter("limit", size)
+                parameter("userId", userId)
+                parameter("userRole", "SELLER")
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }

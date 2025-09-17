@@ -145,4 +145,34 @@ class PaymentService(
             Result.failure(e)
         }
     }
+
+    /**
+     * Obtener pagos confirmados de un vendedor
+     */
+    suspend fun getConfirmedPayments(
+        sellerId: Int,
+        page: Int = 0,
+        size: Int = 20,
+        token: String
+    ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
+        return try {
+            Logger.auth("PAYMENT_SERVICE", "Obteniendo pagos confirmados del vendedor: $sellerId, página: $page")
+
+            val result = paymentApiClient.getConfirmedPayments(sellerId, page, size, token)
+
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("PAYMENT_SERVICE", "Pagos confirmados obtenidos: ${response.data.payments.size} pagos en página ${response.data.pagination.currentPage}")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("PAYMENT_SERVICE", "Error obteniendo pagos confirmados: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("PAYMENT_SERVICE", "Error obteniendo pagos confirmados: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

@@ -326,4 +326,54 @@ class PaymentApiClient(
             Result.failure(e)
         }
     }
+
+    /**
+     * Obtener pagos confirmados de un vendedor
+     */
+    suspend fun getConfirmedPayments(
+        sellerId: Int,
+        page: Int = 0,
+        size: Int = 20,
+        token: String
+    ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
+        return try {
+            logInfo("PAYMENT_API", "Obteniendo pagos confirmados del vendedor: $sellerId, página: $page, límite: $size")
+
+            val response = client.get("$baseUrl/api/payments/confirmed") {
+                parameter("sellerId", sellerId)
+                parameter("page", page)
+                parameter("size", size)
+                header("Authorization", "Bearer $token")
+                header("accept", "application/json")
+            }
+
+            if (response.status.value in 200..299) {
+                try {
+                    val responseBody = response.body<String>()
+                    logInfo("PAYMENT_API", "Respuesta del servidor: $responseBody")
+                    val confirmedPaymentsResponse = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.PendingPaymentsResponse>(responseBody)
+                    logInfo("PAYMENT_API", "Pagos confirmados obtenidos exitosamente: ${confirmedPaymentsResponse.data.payments.size} pagos en página ${confirmedPaymentsResponse.data.pagination.currentPage}")
+                    Result.success(confirmedPaymentsResponse)
+                } catch (e: Exception) {
+                    logError("PAYMENT_API", "Error deserializando respuesta: ${e.message}")
+                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
+                }
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("PAYMENT_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+
+                val finalErrorMessage = "Error obteniendo pagos confirmados: ${response.status} - $errorMessage"
+                logError("PAYMENT_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("PAYMENT_API", "Error obteniendo pagos confirmados: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

@@ -60,11 +60,14 @@ class PaymentWebSocketClient(
         _connectionState.value = WebSocketConnectionState.CONNECTING
         
         try {
-            val url = "${Constants.WEBSOCKET_URL}/ws/payments/$sellerId"
+            val url = "${Constants.WEBSOCKET_URL}/ws/payments/$sellerId?token=$token"
             Logger.auth("WEBSOCKET", "🔗 Conectando a: $url")
             Logger.auth("WEBSOCKET", "🔑 Token: ${token.take(20)}...")
+            Logger.auth("WEBSOCKET", "👤 Seller ID: $sellerId")
             
             httpClient.webSocket(url) {
+                webSocketSession = this
+                
                 // Escuchar mensajes entrantes
                 for (frame in incoming) {
                     when (frame) {
@@ -95,9 +98,16 @@ class PaymentWebSocketClient(
         } catch (e: Exception) {
             Logger.auth("WEBSOCKET", "❌ Error conectando: ${e.message}")
             Logger.auth("WEBSOCKET", "🔍 Tipo de error: ${e::class.simpleName}")
-            e.printStackTrace()
+            Logger.auth("WEBSOCKET", "🔍 Stack trace: ${e.stackTraceToString()}")
             _connectionState.value = WebSocketConnectionState.DISCONNECTED
-            scheduleReconnect()
+            
+            // Solo reintentar si no es un error de autenticación
+            val message = e.message ?: ""
+            if (!message.contains("401") && !message.contains("403")) {
+                scheduleReconnect()
+            } else {
+                Logger.auth("WEBSOCKET", "🚫 Error de autenticación, no reintentando")
+            }
         }
     }
     

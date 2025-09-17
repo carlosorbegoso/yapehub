@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,6 +34,7 @@ import org.sysarp.project.ui.components.seller_dashboard.sections.SellerPayments
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerProfileSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerStatsSection
 import org.sysarp.project.ui.components.seller_dashboard.utils.SellerDashboardLogic
+import org.sysarp.project.utils.Logger
 
 /**
  * Contenido principal del dashboard del vendedor
@@ -156,7 +160,9 @@ fun SellerDashboardContent(
     
     // Función para manejar notificación
     val handleNotification = { notification: PaymentNotificationData ->
+        Logger.auth("DASHBOARD", "🎯 handleNotification llamado con: ${notification.paymentId}")
         currentNotification = notification
+        Logger.auth("DASHBOARD", "✅ currentNotification asignado: ${currentNotification?.paymentId}")
     }
     
     // Función para descartar notificación
@@ -259,7 +265,10 @@ fun SellerDashboardContent(
     // Manejar notificaciones de WebSocket
     LaunchedEffect(webSocketService) {
         webSocketService.paymentNotifications.collect { notification ->
+            Logger.auth("DASHBOARD", "🔔 Notificación recibida en UI: ${notification.paymentId} - S/ ${notification.amount}")
+            Logger.auth("DASHBOARD", "👤 Cliente: ${notification.senderName}")
             handleNotification(notification)
+            Logger.auth("DASHBOARD", "📱 currentNotification actualizado: ${currentNotification?.paymentId}")
         }
     }
     
@@ -267,80 +276,69 @@ fun SellerDashboardContent(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Sección de notificaciones
-                item {
-                SellerNotificationSection(
-                    currentNotification = currentNotification,
-                    onDismissNotification = dismissNotification,
-                    onClaimNotification = claimFromNotification,
-                    onRejectNotification = rejectFromNotification
-                )
-            }
+            SellerNotificationSection(
+                currentNotification = currentNotification,
+                onDismissNotification = dismissNotification,
+                onClaimNotification = claimFromNotification,
+                onRejectNotification = rejectFromNotification
+            )
             
             // Sección del perfil del vendedor
-            item {
-                SellerProfileSection(
-                    userProfile = userProfile,
-                            connectionState = connectionState
-                        )
-            }
+            SellerProfileSection(
+                userProfile = userProfile,
+                connectionState = connectionState
+            )
             
             // Sección de estadísticas
-            item {
-                SellerStatsSection(
-                    confirmedPaymentsCount = sellerStats?.transactionCount ?: 0,
-                    totalAmountCollected = sellerStats?.totalSales ?: 0.0,
-                    isLoadingStats = sellerStats == null
-                )
-            }
+            SellerStatsSection(
+                confirmedPaymentsCount = sellerStats?.transactionCount ?: 0,
+                totalAmountCollected = sellerStats?.totalSales ?: 0.0,
+                isLoadingStats = sellerStats == null
+            )
             
             // Sección de pagos pendientes (header, búsqueda, filtros)
-            item {
-                SellerPaymentsSection(
-                    pendingPayments = pendingPayments,
-                    filteredPayments = filteredPayments,
-                    searchQuery = searchQuery,
-                    onSearchQueryChange = { searchQuery = it },
-                    showFilters = false,
-                    onToggleFilters = { },
-                    isRefreshing = isRefreshing,
-                    onRefresh = refreshData
-                )
-            }
+            SellerPaymentsSection(
+                pendingPayments = pendingPayments,
+                filteredPayments = filteredPayments,
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                showFilters = false,
+                onToggleFilters = { },
+                isRefreshing = isRefreshing,
+                onRefresh = refreshData
+            )
             
             // Sección de lista de pagos
-            item {
-                SellerPaymentListSection(
-                    filteredPayments = filteredPayments,
-                    pendingPayments = pendingPayments,
-                    showAllPayments = showAllPayments,
-                    processingPayments = processingPayments,
-                    isRefreshing = isRefreshing,
-                    onClaimPayment = claimPayment,
-                    onRejectPayment = rejectPayment
-                )
-            }
+            SellerPaymentListSection(
+                filteredPayments = filteredPayments,
+                pendingPayments = pendingPayments,
+                showAllPayments = showAllPayments,
+                processingPayments = processingPayments,
+                isRefreshing = isRefreshing,
+                onClaimPayment = claimPayment,
+                onRejectPayment = rejectPayment
+            )
             
             // Sección de acciones
-            item {
-                SellerActionsSection(
-                    pendingPayments = pendingPayments,
-                    showAllPayments = showAllPayments,
-                    onToggleShowAllPayments = { showAllPayments = it },
-                    onNavigateToHistory = onNavigateToHistory,
-                    onNavigateToPendingPayments = onNavigateToPendingPayments,
-                    onNavigateToSettings = onNavigateToSettings,
-                    onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
-                    onNavigateToNotifications = onNavigateToNotifications,
-                    onNavigateToQRScanner = onNavigateToQRScanner
-                )
-            }
+            SellerActionsSection(
+                pendingPayments = pendingPayments,
+                showAllPayments = showAllPayments,
+                onToggleShowAllPayments = { showAllPayments = it },
+                onNavigateToHistory = onNavigateToHistory,
+                onNavigateToPendingPayments = onNavigateToPendingPayments,
+                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
+                onNavigateToNotifications = onNavigateToNotifications,
+                onNavigateToQRScanner = onNavigateToQRScanner
+            )
         }
     }
 }
