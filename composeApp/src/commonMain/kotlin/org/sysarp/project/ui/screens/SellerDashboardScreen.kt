@@ -58,16 +58,12 @@ fun SellerDashboardScreen(
         }
     ) { paddingValues ->
         SellerDashboardContent(
-            authService = authService,
-            webSocketService = webSocketService,
-            notificationService = notificationService,
-            paymentManager = paymentManager,
-            statsManager = statsManager,
+            accessToken = authService.accessToken.value ?: "",
+            userProfile = userProfile,
             onNavigateToHistory = onNavigateToHistory,
             onNavigateToPendingPayments = onNavigateToPendingPayments,
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
-            onLogout = onLogout,
             modifier = Modifier.fillMaxSize()
         )
     }
