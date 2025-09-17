@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -52,6 +53,7 @@ fun SellerDashboardActions(
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequest: () -> Unit,
     onNavigateToNotifications: () -> Unit,
+    onNavigateToQRScanner: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -85,6 +87,13 @@ fun SellerDashboardActions(
             subtitle = "Ver todas las notificaciones recibidas",
             icon = Icons.Filled.Notifications,
             onClick = onNavigateToNotifications
+        )
+        
+        ActionCard(
+            title = "Escanear QR",
+            subtitle = "Escanea códigos QR de afiliación",
+            icon = Icons.Filled.QrCodeScanner,
+            onClick = onNavigateToQRScanner
         )
         
         ActionCard(

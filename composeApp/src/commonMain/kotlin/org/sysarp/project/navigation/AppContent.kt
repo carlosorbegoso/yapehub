@@ -25,6 +25,7 @@ import org.sysarp.project.ui.screens.LoginScreen
 import org.sysarp.project.ui.screens.PaymentsScreen
 import org.sysarp.project.ui.screens.ProfileSelectionScreen
 import org.sysarp.project.ui.screens.QRDisplayScreen
+import org.sysarp.project.ui.screens.QRScannerScreen
 import org.sysarp.project.ui.screens.ReportsScreen
 import org.sysarp.project.ui.screens.SellerDashboardScreen
 import org.sysarp.project.ui.screens.SellerManagementScreen
@@ -141,7 +142,8 @@ fun AppContent(
                 sellerService = sellerService,
                 authService = authService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
-                onSuccess = { navigationManager.navigateToSellerDashboard() }
+                onSuccess = { navigationManager.navigateToSellerDashboard() },
+                onNavigateToQRScanner = { navigationManager.navigateTo(Screen.QRScanner) }
             )
         }
         is Screen.SellerRegistration -> {
@@ -149,7 +151,8 @@ fun AppContent(
                 sellerService = sellerService,
                 authService = authService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
-                onSuccess = { navigationManager.navigateToSellerDashboard() }
+                onSuccess = { navigationManager.navigateToSellerDashboard() },
+                onNavigateToQRScanner = { navigationManager.navigateTo(Screen.QRScanner) }
             )
         }
         is Screen.SellerAffiliation -> {
@@ -157,7 +160,8 @@ fun AppContent(
                 sellerService = sellerService,
                 authService = authService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
-                onSuccess = { navigationManager.navigateToSellerDashboard() }
+                onSuccess = { navigationManager.navigateToSellerDashboard() },
+                onNavigateToQRScanner = { navigationManager.navigateTo(Screen.QRScanner) }
             )
         }
         is Screen.AdminDashboard -> {
@@ -190,6 +194,7 @@ fun AppContent(
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
                 onNavigateToDeactivationRequest = { navigationManager.navigateToDeactivationRequest() },
                 onNavigateToNotifications = { navigationManager.navigateTo(Screen.SellerNotifications) },
+                onNavigateToQRScanner = { navigationManager.navigateTo(Screen.QRScanner) },
                 onLogout = { navigationManager.navigateToProfileSelection() }
             )
         }
@@ -265,6 +270,25 @@ fun AppContent(
                 paymentService = paymentService,
                 authService = authService,
                 onNavigateBack = { navigationManager.navigateBack() }
+            )
+        }
+        is Screen.QRScanner -> {
+            QRScannerScreen(
+                onNavigateBack = { navigationManager.navigateBack() },
+                onQRScanned = { qrData ->
+                    // Aquí manejaremos el QR escaneado
+                    // Por ahora solo navegamos de vuelta
+                    navigationManager.navigateBack()
+                },
+                onManualCodeEntry = {
+                    // Aquí manejaremos la entrada manual de código
+                    // Por ahora solo navegamos de vuelta
+                    navigationManager.navigateBack()
+                },
+                onLoginSuccess = {
+                    // Navegar al dashboard del vendedor después del login exitoso
+                    navigationManager.navigateToSellerDashboard()
+                }
             )
         }
     }

@@ -40,6 +40,7 @@ fun SellerActionsSection(
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequest: () -> Unit,
     onNavigateToNotifications: () -> Unit,
+    onNavigateToQRScanner: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Botón "Ver más pagos" si hay más de 2 pagos
@@ -152,6 +153,7 @@ fun SellerActionsSection(
         onNavigateToPendingPayments = onNavigateToPendingPayments,
         onNavigateToSettings = onNavigateToSettings,
         onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
-        onNavigateToNotifications = onNavigateToNotifications
+        onNavigateToNotifications = onNavigateToNotifications,
+        onNavigateToQRScanner = onNavigateToQRScanner
     )
 }

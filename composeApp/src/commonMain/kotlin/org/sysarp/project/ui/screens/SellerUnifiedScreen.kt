@@ -38,7 +38,8 @@ fun SellerUnifiedScreen(
     sellerService: SellerService,
     authService: AuthService,
     onBackClick: () -> Unit,
-    onSuccess: () -> Unit
+    onSuccess: () -> Unit,
+    onNavigateToQRScanner: () -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
     
@@ -286,6 +287,25 @@ fun SellerUnifiedScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 2.dp)
                         )
+                        
+                        // Botón para escanear QR
+                        OutlinedButton(
+                            onClick = onNavigateToQRScanner,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            enabled = !isLoading
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.QrCodeScanner,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Escanear Código QR",
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                     
                     // Campo de nombre completo
@@ -678,7 +698,7 @@ private fun processSellerAction(
                             onLoadingChange(false)
                         },
                         onFailure = { loginError ->
-                            onError("Error de acceso: ${registerError.message}")
+                            onError("Error de acceso: ${loginError.message}")
                             onLoadingChange(false)
                         }
                     )

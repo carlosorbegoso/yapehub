@@ -1,5 +1,5 @@
 [versions]
-agp = "8.10.1"
+agp = "8.13.0"
 android-compileSdk = "36"
 android-minSdk = "24"
 android-targetSdk = "36"
@@ -16,12 +16,15 @@ sqlDelight = "2.0.2"
 kotlinx-datetime = "0.6.1"
 kotlinx-serialization = "1.7.3"
 kotlinx-coroutines = "1.9.0"
+kotlinx-io = "0.6.0"
 timber = "5.0.1"
 accompanist-permissions = "0.32.0"
 androidx-work = "2.9.0"
 androidx-test = "1.5.0"
 kotlinx-coroutines-test = "1.9.0"
 ktor = "2.3.7"
+camerax = "1.5.0"
+mlkit = "16.0.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -44,6 +47,7 @@ sqlDelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sq
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 
 # Core Libraries
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
@@ -61,6 +65,18 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+# CameraX for QR scanning
+camerax-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+camerax-mlkit-vision = { module = "androidx.camera:camera-mlkit-vision", version.ref = "camerax" }
+
+# ML Kit for QR code detection
+mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit" }
+
+# Skia for image processing
 
 # Testing
 androidx-test-ext-junit-new = { module = "androidx.test.ext:junit", version.ref = "androidx-test" }

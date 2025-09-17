@@ -41,11 +41,11 @@ fun SellerPaymentListSection(
     if (filteredPayments.isNotEmpty()) {
         val paymentsToShow = if (showAllPayments) filteredPayments else filteredPayments.take(2)
         
-        LazyColumn(
+        Column(
             modifier = modifier,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(paymentsToShow) { payment ->
+            paymentsToShow.forEach { payment ->
                 SellerPaymentCard(
                     payment = payment,
                     onClaim = onClaimPayment,

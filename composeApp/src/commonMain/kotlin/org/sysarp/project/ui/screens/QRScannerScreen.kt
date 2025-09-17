@@ -25,7 +25,8 @@ fun QRScannerScreen(
     onQRScanned: (String) -> Unit,
     onManualCodeEntry: () -> Unit,
     isLoading: Boolean = false,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    onLoginSuccess: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {

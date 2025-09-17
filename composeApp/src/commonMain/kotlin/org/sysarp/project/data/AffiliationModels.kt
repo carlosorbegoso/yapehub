@@ -100,6 +100,6 @@ data class SellerLoginData(
     val branchCode: String,
     val affiliationCode: String,
     val accessToken: String,
-    val refreshToken: String,
-    val affiliationDate: String
+    val refreshToken: String? = null,
+    val affiliationDate: String? = null
 )

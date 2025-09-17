@@ -40,6 +40,23 @@ kotlin {
             implementation(libs.ktor.client.android)
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.websockets)
+            
+            // CameraX for QR scanning
+            implementation(libs.camerax.core)
+            implementation(libs.camerax.camera2)
+            implementation(libs.camerax.lifecycle)
+            implementation(libs.camerax.view)
+            implementation(libs.camerax.mlkit.vision)
+            
+            // ML Kit for QR code detection
+            implementation(libs.mlkit.barcode.scanning)
+            
+            // Skia for image processing
+        }
+        
+        commonMain.dependencies {
+            // Kotlinx IO for image processing
+            implementation(libs.kotlinx.io.core)
         }
         
         commonMain.dependencies {

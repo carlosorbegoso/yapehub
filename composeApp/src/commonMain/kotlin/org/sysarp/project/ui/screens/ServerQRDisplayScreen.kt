@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import org.sysarp.project.data.QRCodeData
+import org.sysarp.project.utils.ImageUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,76 +113,6 @@ fun ServerQRDisplayScreen(
                 }
             }
             
-            // Código de afiliación
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Código de Afiliación",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Text(
-                        text = qrData.affiliationCode,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontFamily = FontFamily.Monospace,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Button(
-                        onClick = {
-                            clipboardManager.setText(AnnotatedString(qrData.affiliationCode))
-                            showCopiedMessage = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.ContentCopy,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (showCopiedMessage) "¡Copiado!" else "Copiar Código",
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    
-                    if (showCopiedMessage) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "✓ Código copiado al portapapeles",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-            
             // QR Code Display - Mejorado para mayor visibilidad
             Card(
                 colors = CardDefaults.cardColors(
@@ -192,83 +123,79 @@ fun ServerQRDisplayScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Título principal
                     Text(
                         text = "🎯 Código QR de Afiliación",
-                        fontSize = 22.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center
                     )
                     
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     
-                    // Área del QR con información mejorada
+                    // Área del QR con imagen real
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         ),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.size(200.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.size(180.dp)
                     ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                // Icono QR grande y prominente
-                                Icon(
-                                    imageVector = Icons.Filled.QrCode,
+                            // Decodificar imagen QR desde Base64
+                            val qrImageBitmap = ImageUtils.decodeBase64ToImageBitmap(qrData.qrBase64)
+                            
+                            if (qrImageBitmap != null) {
+                                // Mostrar imagen real del QR
+                                Image(
+                                    bitmap = qrImageBitmap,
                                     contentDescription = "Código QR de Afiliación",
-                                    modifier = Modifier.size(100.dp),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    modifier = Modifier
+                                        .size(160.dp)
+                                        .clip(RoundedCornerShape(8.dp))
                                 )
-                                
-                                Spacer(modifier = Modifier.height(12.dp))
-                                
-                                Text(
-                                    text = "QR Generado",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                
-                                Spacer(modifier = Modifier.height(4.dp))
-                                
-                                Text(
-                                    text = "Imagen PNG Base64",
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    textAlign = TextAlign.Center
-                                )
-                                
-                                Spacer(modifier = Modifier.height(8.dp))
-                                
-                                // Información del tamaño del Base64
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                                    ),
-                                    shape = RoundedCornerShape(8.dp)
+                            } else {
+                                // Fallback si no se puede decodificar la imagen
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.QrCode,
+                                        contentDescription = "Código QR de Afiliación",
+                                        modifier = Modifier.size(80.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    
                                     Text(
-                                        text = "${qrData.qrBase64.length} chars",
-                                        fontSize = 10.sp,
+                                        text = "QR Generado",
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    
+                                    Text(
+                                        text = "Listo para escanear",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        textAlign = TextAlign.Center
                                     )
                                 }
                             }
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     
                     // Código de afiliación destacado
                     Card(
@@ -291,16 +218,55 @@ fun ServerQRDisplayScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = qrData.affiliationCode,
-                                fontSize = 24.sp,
+                                fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = {
+                                    clipboardManager.setText(AnnotatedString(qrData.affiliationCode))
+                                    showCopiedMessage = true
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ContentCopy,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (showCopiedMessage) "¡Copiado!" else "Copiar Código",
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 12.sp
+                                )
+                            }
+                            if (showCopiedMessage) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "✓ Código copiado al portapapeles",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     // Información de estado del QR
                     Row(
@@ -312,27 +278,27 @@ fun ServerQRDisplayScreen(
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                             ),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(12.dp),
+                                modifier = Modifier.padding(8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Schedule,
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "Expira",
-                                    fontSize = 10.sp,
+                                    fontSize = 9.sp,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
                                     text = qrData.expiresAt.take(10), // Solo fecha
-                                    fontSize = 12.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
@@ -344,27 +310,27 @@ fun ServerQRDisplayScreen(
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
                             ),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(12.dp),
+                                modifier = Modifier.padding(8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.People,
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.onTertiaryContainer
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "Usos",
-                                    fontSize = 10.sp,
+                                    fontSize = 9.sp,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer
                                 )
                                 Text(
                                     text = "${qrData.remainingUses}/${qrData.maxUses}",
-                                    fontSize = 12.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer
                                 )
@@ -379,52 +345,52 @@ fun ServerQRDisplayScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 ),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier.padding(12.dp)
                 ) {
                     Text(
                         text = "📊 Información Detallada",
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     // Información de la sucursal
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Store,
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
                                     text = "Sucursal",
-                                    fontSize = 12.sp,
+                                    fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                     text = qrData.branchName,
-                                    fontSize = 16.sp,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -432,37 +398,37 @@ fun ServerQRDisplayScreen(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     // Información del admin
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.AdminPanelSettings,
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.secondary
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
                                     text = "Administrador",
-                                    fontSize = 12.sp,
+                                    fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                     text = qrData.adminName,
-                                    fontSize = 16.sp,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
