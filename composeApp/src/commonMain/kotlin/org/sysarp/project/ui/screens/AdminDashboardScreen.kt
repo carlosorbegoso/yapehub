@@ -125,10 +125,8 @@ fun AdminDashboardScreen(
                 onSuccess = { branchesData ->
                     branches = branchesData.branches
                     isLoadingBranches = false
-                    println("🔍 [ADMIN_DASHBOARD] Sucursales cargadas: ${branches.size}")
                 },
                 onFailure = { error ->
-                    println("🔍 [ADMIN_DASHBOARD] Error cargando sucursales: ${error.message}")
                     isLoadingBranches = false
                 }
             )
@@ -148,12 +146,10 @@ fun AdminDashboardScreen(
                 onSuccess = { response ->
                     quickSummaryData = response.data
                     isLoadingStats = false
-                    println("🔍 [ADMIN_DASHBOARD] Estadísticas rápidas cargadas: ${response.data.totalSales}")
                 },
                 onFailure = { error ->
                     statsError = error.message ?: "Error cargando estadísticas"
                     isLoadingStats = false
-                    println("🔍 [ADMIN_DASHBOARD] Error cargando estadísticas: ${error.message}")
                 }
             )
         }
@@ -172,12 +168,10 @@ fun AdminDashboardScreen(
                 onSuccess = { response ->
                     connectedSellersData = response.data
                     isLoadingSellers = false
-                    println("🔍 [ADMIN_DASHBOARD] Vendedores conectados cargados: ${response.data?.totalConnected} conectados")
                 },
                 onFailure = { error ->
                     sellersError = error.message ?: "Error cargando vendedores"
                     isLoadingSellers = false
-                    println("🔍 [ADMIN_DASHBOARD] Error cargando vendedores: ${error.message}")
                 }
             )
         }
@@ -650,12 +644,10 @@ fun AdminDashboardScreen(
                         onSuccess = { affiliationData ->
                             generatedAffiliationCode = affiliationData
                             isLoadingAffiliation = false
-                            println("🔍 [ADMIN_DASHBOARD] Código de afiliación generado: ${affiliationData.affiliationCode}")
                         },
                         onFailure = { error ->
                             affiliationError = error.message ?: "Error generando código de afiliación"
                             isLoadingAffiliation = false
-                            println("🔍 [ADMIN_DASHBOARD] Error generando código: ${error.message}")
                         }
                     )
                 }

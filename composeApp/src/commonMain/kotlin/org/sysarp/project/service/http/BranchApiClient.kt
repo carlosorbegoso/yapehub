@@ -25,8 +25,6 @@ class BranchApiClient(private val httpClient: HttpClient) {
         accessToken: String
     ): Result<BranchData> {
         return try {
-            println("🔐 [BRANCH_API] Creando sucursal: $name")
-            
             val request = CreateBranchRequest(
                 adminId = adminId,
                 name = name,
@@ -41,20 +39,17 @@ class BranchApiClient(private val httpClient: HttpClient) {
             }
             
             val responseBody = response.bodyAsText()
-            println("🔐 [BRANCH_API] Respuesta raw: $responseBody")
             
             if (response.status.isSuccess()) {
                 val branchResponse = json.decodeFromString<BranchResponse>(responseBody)
-                println("🔐 [BRANCH_API] Sucursal creada exitosamente: ${branchResponse.data?.name}")
                 Result.success(branchResponse.data!!)
             } else {
                 val errorMessage = "Error ${response.status.value}: ${response.status.description}"
-                println("🔐 [BRANCH_API] ERROR: $errorMessage")
                 Result.failure(Exception(errorMessage))
             }
             
         } catch (e: Exception) {
-            println("🔐 [BRANCH_API] ERROR: Error creando sucursal: ${e.message}")
+            println("❌ [BRANCH_API] Error creando sucursal: ${e.message}")
             Result.failure(e)
         }
     }
@@ -68,8 +63,6 @@ class BranchApiClient(private val httpClient: HttpClient) {
         size: Int = 20
     ): Result<BranchesData> {
         return try {
-            println("🔐 [BRANCH_API] Obteniendo sucursales para admin: $adminId")
-            
             val response: HttpResponse = httpClient.get("${Constants.BASE_URL}/api/admin/branches") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 parameter("adminId", adminId)
@@ -79,20 +72,17 @@ class BranchApiClient(private val httpClient: HttpClient) {
             }
             
             val responseBody = response.bodyAsText()
-            println("🔐 [BRANCH_API] Respuesta raw: $responseBody")
             
             if (response.status.isSuccess()) {
                 val branchesResponse = json.decodeFromString<BranchesResponse>(responseBody)
-                println("🔐 [BRANCH_API] Sucursales obtenidas: ${branchesResponse.data?.branches?.size}")
                 Result.success(branchesResponse.data!!)
             } else {
                 val errorMessage = "Error ${response.status.value}: ${response.status.description}"
-                println("🔐 [BRANCH_API] ERROR: $errorMessage")
                 Result.failure(Exception(errorMessage))
             }
             
         } catch (e: Exception) {
-            println("🔐 [BRANCH_API] ERROR: Error obteniendo sucursales: ${e.message}")
+            println("❌ [BRANCH_API] Error obteniendo sucursales: ${e.message}")
             Result.failure(e)
         }
     }
@@ -104,28 +94,23 @@ class BranchApiClient(private val httpClient: HttpClient) {
         accessToken: String
     ): Result<BranchData> {
         return try {
-            println("🔐 [BRANCH_API] Obteniendo detalles de sucursal: $branchId")
-            
             val response: HttpResponse = httpClient.get("${Constants.BASE_URL}/api/admin/branches/$branchId") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 parameter("adminId", adminId)
             }
             
             val responseBody = response.bodyAsText()
-            println("🔐 [BRANCH_API] Respuesta raw: $responseBody")
             
             if (response.status.isSuccess()) {
                 val branchResponse = json.decodeFromString<BranchResponse>(responseBody)
-                println("🔐 [BRANCH_API] Detalles obtenidos: ${branchResponse.data?.name}")
                 Result.success(branchResponse.data!!)
             } else {
                 val errorMessage = "Error ${response.status.value}: ${response.status.description}"
-                println("🔐 [BRANCH_API] ERROR: $errorMessage")
                 Result.failure(Exception(errorMessage))
             }
             
         } catch (e: Exception) {
-            println("🔐 [BRANCH_API] ERROR: Error obteniendo detalles: ${e.message}")
+            println("❌ [BRANCH_API] Error obteniendo detalles: ${e.message}")
             Result.failure(e)
         }
     }
@@ -141,8 +126,6 @@ class BranchApiClient(private val httpClient: HttpClient) {
         accessToken: String
     ): Result<BranchData> {
         return try {
-            println("🔐 [BRANCH_API] Actualizando sucursal: $branchId")
-            
             val request = UpdateBranchRequest(
                 adminId = adminId,
                 name = name,
@@ -158,20 +141,17 @@ class BranchApiClient(private val httpClient: HttpClient) {
             }
             
             val responseBody = response.bodyAsText()
-            println("🔐 [BRANCH_API] Respuesta raw: $responseBody")
             
             if (response.status.isSuccess()) {
                 val branchResponse = json.decodeFromString<BranchResponse>(responseBody)
-                println("🔐 [BRANCH_API] Sucursal actualizada: ${branchResponse.data?.name}")
                 Result.success(branchResponse.data!!)
             } else {
                 val errorMessage = "Error ${response.status.value}: ${response.status.description}"
-                println("🔐 [BRANCH_API] ERROR: $errorMessage")
                 Result.failure(Exception(errorMessage))
             }
             
         } catch (e: Exception) {
-            println("🔐 [BRANCH_API] ERROR: Error actualizando sucursal: ${e.message}")
+            println("❌ [BRANCH_API] Error actualizando sucursal: ${e.message}")
             Result.failure(e)
         }
     }
@@ -183,24 +163,20 @@ class BranchApiClient(private val httpClient: HttpClient) {
         accessToken: String
     ): Result<Boolean> {
         return try {
-            println("🔐 [BRANCH_API] Eliminando sucursal: $branchId")
-            
             val response: HttpResponse = httpClient.delete("${Constants.BASE_URL}/api/admin/branches/$branchId") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 parameter("adminId", adminId)
             }
             
             if (response.status.isSuccess()) {
-                println("🔐 [BRANCH_API] Sucursal eliminada exitosamente")
                 Result.success(true)
             } else {
                 val errorMessage = "Error ${response.status.value}: ${response.status.description}"
-                println("🔐 [BRANCH_API] ERROR: $errorMessage")
                 Result.failure(Exception(errorMessage))
             }
             
         } catch (e: Exception) {
-            println("🔐 [BRANCH_API] ERROR: Error eliminando sucursal: ${e.message}")
+            println("❌ [BRANCH_API] Error eliminando sucursal: ${e.message}")
             Result.failure(e)
         }
     }
@@ -214,8 +190,6 @@ class BranchApiClient(private val httpClient: HttpClient) {
         size: Int = 20
     ): Result<BranchSellersData> {
         return try {
-            println("🔐 [BRANCH_API] Obteniendo vendedores de sucursal: $branchId")
-            
             val response: HttpResponse = httpClient.get("${Constants.BASE_URL}/api/admin/branches/$branchId/sellers") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 parameter("adminId", adminId)
@@ -224,20 +198,17 @@ class BranchApiClient(private val httpClient: HttpClient) {
             }
             
             val responseBody = response.bodyAsText()
-            println("🔐 [BRANCH_API] Respuesta raw: $responseBody")
             
             if (response.status.isSuccess()) {
                 val sellersResponse = json.decodeFromString<BranchSellersResponse>(responseBody)
-                println("🔐 [BRANCH_API] Vendedores obtenidos: ${sellersResponse.data?.sellers?.size}")
                 Result.success(sellersResponse.data!!)
             } else {
                 val errorMessage = "Error ${response.status.value}: ${response.status.description}"
-                println("🔐 [BRANCH_API] ERROR: $errorMessage")
                 Result.failure(Exception(errorMessage))
             }
             
         } catch (e: Exception) {
-            println("🔐 [BRANCH_API] ERROR: Error obteniendo vendedores: ${e.message}")
+            println("❌ [BRANCH_API] Error obteniendo vendedores: ${e.message}")
             Result.failure(e)
         }
     }

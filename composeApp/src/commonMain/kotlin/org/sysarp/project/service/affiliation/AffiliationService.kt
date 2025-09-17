@@ -16,7 +16,6 @@ class AffiliationService(
         accessToken: String
     ): Result<AffiliationCodeData> {
         return try {
-            println("🔐 [AFFILIATION_SERVICE] Generando código de afiliación para admin: $adminId")
             
             val result = affiliationApiClient.generateAffiliationCode(
                 adminId = adminId,
@@ -28,15 +27,13 @@ class AffiliationService(
             )
             
             result.onSuccess { affiliationData ->
-                println("🔐 [AFFILIATION_SERVICE] Código generado exitosamente: ${affiliationData.affiliationCode}")
             }.onFailure { error ->
-                println("🔐 [AFFILIATION_SERVICE] Error generando código: ${error.message}")
             }
             
             result
             
         } catch (e: Exception) {
-            println("🔐 [AFFILIATION_SERVICE] ERROR: Error en servicio de afiliación: ${e.message}")
+            println("❌ [AFFILIATION_SERVICE] Error en servicio: ${e.message}")
             Result.failure(e)
         }
     }

@@ -28,13 +28,7 @@ class WebSocketService(
      */
     suspend fun connectSeller(sellerId: Int, accessToken: String): Flow<PaymentNotification> {
         return try {
-            println("🔌 [WEBSOCKET] ===== INICIANDO CONEXIÓN =====")
-            println("🔌 [WEBSOCKET] Vendedor ID: $sellerId")
-            println("🔌 [WEBSOCKET] Token: ${accessToken.take(20)}...")
-            println("🔌 [WEBSOCKET] URL Base: $baseUrl")
-            
             val webSocketUrl = "wss://${baseUrl.removePrefix("https://")}/ws/payments/$sellerId?token=$accessToken"
-            println("🔌 [WEBSOCKET] WebSocket URL: $webSocketUrl")
             
             // Crear flow si no existe
             if (!paymentFlows.containsKey(sellerId)) {
@@ -42,36 +36,17 @@ class WebSocketService(
                     replay = 1, // Mantener la última notificación para nuevos suscriptores
                     extraBufferCapacity = 10 // Buffer para notificaciones
                 )
-                println("🔌 [WEBSOCKET] Nuevo flow creado para vendedor $sellerId")
-                println("🔌 [WEBSOCKET] Flow configurado con replay=1 y buffer=10")
-            } else {
-                println("🔌 [WEBSOCKET] Reutilizando flow existente para vendedor $sellerId")
             }
             
             activeConnections[sellerId] = accessToken
-            println("🔌 [WEBSOCKET] Conexión registrada en mapa de conexiones activas")
-            
-            // Implementación WebSocket real usando polling HTTP como alternativa
-            // Esto simula WebSocket pero funciona de manera confiable
-            println("🔌 [WEBSOCKET] ===== ESTABLECIENDO CONEXIÓN REAL (POLLING) =====")
-            println("🔌 [WEBSOCKET] Conectando a: $webSocketUrl")
-            println("✅ [WEBSOCKET] ===== CONEXIÓN REAL ESTABLECIDA =====")
-            println("✅ [WEBSOCKET] Vendedor $sellerId conectado exitosamente")
-            println("✅ [WEBSOCKET] Total conexiones activas: ${activeConnections.size}")
-            println("✅ [WEBSOCKET] URL WebSocket configurada: $webSocketUrl")
-            println("✅ [WEBSOCKET] Token de autorización configurado")
-            println("🔌 [WEBSOCKET] Escuchando mensajes del backend...")
             
             // Implementar polling HTTP para simular WebSocket
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    println("🔌 [WEBSOCKET] Iniciando polling HTTP para notificaciones...")
-                    
                     while (activeConnections.containsKey(sellerId)) {
                         try {
                             // Hacer polling a un endpoint que devuelva notificaciones pendientes
-                            // Usar el sellerId real del usuario (viene del login response)
-                            val realSellerId = sellerId  // Usar el sellerId que viene del parámetro
+                            val realSellerId = sellerId
                             val response = httpClient.get("$baseUrl/payments/pending/$realSellerId") {
                                 headers {
                                     append("Authorization", "Bearer $accessToken")
@@ -80,35 +55,19 @@ class WebSocketService(
                             
                             if (response.status.value == 200) {
                                 val responseText = response.bodyAsText()
-                                println("📨 [WEBSOCKET] ===== RESPUESTA DE POLLING =====")
-                                println("📨 [WEBSOCKET] Respuesta: $responseText")
                                 
                                 if (responseText.isNotEmpty() && responseText != "[]" && responseText != "null") {
                                     try {
                                         // Intentar parsear como PaymentNotification
                                         val notification = Json.decodeFromString<PaymentNotification>(responseText)
-                                        println("📨 [WEBSOCKET] Notificación parseada:")
-                                        println("📨 [WEBSOCKET] ID: ${notification.id}")
-                                        println("📨 [WEBSOCKET] Monto: ${notification.amount} ${notification.currency}")
-                                        println("📨 [WEBSOCKET] Vendedor: ${notification.sellerId}")
-                                        println("📨 [WEBSOCKET] Remitente: ${notification.sender}")
-                                        println("📨 [WEBSOCKET] Transacción: ${notification.transactionId}")
-                                        println("📨 [WEBSOCKET] Estado: ${notification.status}")
-                                        println("📨 [WEBSOCKET] Timestamp: ${notification.timestamp}")
                                         
                                         val flow = paymentFlows[sellerId]
                                         if (flow != null) {
-                                            val emitted = flow.tryEmit(notification)
-                                            if (emitted) {
-                                                println("✅ [WEBSOCKET] Notificación del backend enviada al flow")
-                                            } else {
-                                                println("⚠️ [WEBSOCKET] Flow no tiene suscriptores activos")
-                                            }
+                                            flow.tryEmit(notification)
                                         }
                                         
                                     } catch (e: Exception) {
-                                        println("❌ [WEBSOCKET] Error parseando notificación del backend: ${e.message}")
-                                        println("❌ [WEBSOCKET] Respuesta que falló: $responseText")
+                                        println("❌ [WEBSOCKET] Error parseando notificación: ${e.message}")
                                     }
                                 }
                             }
@@ -140,42 +99,21 @@ class WebSocketService(
                     timestamp = System.currentTimeMillis()
                 )
                 
-                println("📨 [WEBSOCKET] ===== ENVIANDO NOTIFICACIÓN DE PRUEBA =====")
-                println("📨 [WEBSOCKET] ID: ${testNotification.id}")
-                println("📨 [WEBSOCKET] Monto: ${testNotification.amount} ${testNotification.currency}")
-                println("📨 [WEBSOCKET] Vendedor: ${testNotification.sellerId}")
-                println("📨 [WEBSOCKET] Remitente: ${testNotification.sender}")
-                println("📨 [WEBSOCKET] Transacción: ${testNotification.transactionId}")
-                println("📨 [WEBSOCKET] Estado: ${testNotification.status}")
-                println("📨 [WEBSOCKET] Timestamp: ${testNotification.timestamp}")
-                
                 val flow = paymentFlows[sellerId]
                 if (flow != null) {
                     try {
-                        val emitted = flow.tryEmit(testNotification)
-                        if (emitted) {
-                            println("✅ [WEBSOCKET] Notificación de prueba enviada exitosamente al flow")
-                        } else {
-                            println("⚠️ [WEBSOCKET] Flow no tiene suscriptores activos, pero la notificación está lista")
-                        }
+                        flow.tryEmit(testNotification)
                     } catch (e: Exception) {
-                        println("❌ [WEBSOCKET] Error emitiendo al flow: ${e.message}")
+                        println("❌ [WEBSOCKET] Error emitiendo notificación de prueba: ${e.message}")
                     }
-                } else {
-                    println("❌ [WEBSOCKET] Error: Flow no encontrado para vendedor $sellerId")
                 }
             }
             
             val sharedFlow = paymentFlows[sellerId]!!.asSharedFlow()
-            println("✅ [WEBSOCKET] SharedFlow creado y retornado para vendedor $sellerId")
-            println("✅ [WEBSOCKET] Flow está listo para recibir suscriptores")
             return sharedFlow
             
         } catch (e: Exception) {
-            println("❌ [WEBSOCKET] ===== ERROR EN CONEXIÓN =====")
-            println("❌ [WEBSOCKET] Vendedor: $sellerId")
-            println("❌ [WEBSOCKET] Error: ${e.message}")
-            println("❌ [WEBSOCKET] Stack trace: ${e.stackTraceToString()}")
+            println("❌ [WEBSOCKET] Error conectando vendedor $sellerId: ${e.message}")
             flowOf()
         }
     }
@@ -185,15 +123,9 @@ class WebSocketService(
      */
     suspend fun disconnectSeller(sellerId: Int) {
         try {
-            println("🔌 [WEBSOCKET] ===== DESCONECTANDO VENDEDOR =====")
-            println("🔌 [WEBSOCKET] Vendedor ID: $sellerId")
-            
             // Limpiar mapas
             activeConnections.remove(sellerId)
             paymentFlows.remove(sellerId)
-            
-            println("✅ [WEBSOCKET] Vendedor $sellerId desconectado completamente")
-            println("✅ [WEBSOCKET] Total conexiones activas: ${activeConnections.size}")
         } catch (e: Exception) {
             println("❌ [WEBSOCKET] Error desconectando vendedor $sellerId: ${e.message}")
         }
@@ -217,12 +149,8 @@ class WebSocketService(
      * Desconectar todos los vendedores
      */
     suspend fun disconnectAllSellers() {
-        println("🔌 [WEBSOCKET] Desconectando todos los vendedores")
-        
         activeConnections.keys.forEach { sellerId ->
             disconnectSeller(sellerId)
         }
-        
-        println("✅ [WEBSOCKET] Todos los vendedores desconectados")
     }
 }

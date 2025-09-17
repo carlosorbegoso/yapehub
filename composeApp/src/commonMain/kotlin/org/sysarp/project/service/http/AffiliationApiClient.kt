@@ -26,7 +26,6 @@ class AffiliationApiClient(private val httpClient: HttpClient) {
         accessToken: String
     ): Result<AffiliationCodeData> {
         return try {
-            println("🔐 [AFFILIATION_API] Generando código de afiliación para admin: $adminId, branch: $branchId")
             
             val response: HttpResponse = httpClient.post("http://localhost:8080/api/generate-affiliation-code-protected") {
                 header(HttpHeaders.Accept, "*/*")
@@ -39,20 +38,17 @@ class AffiliationApiClient(private val httpClient: HttpClient) {
             }
             
             val responseBody = response.bodyAsText()
-            println("🔐 [AFFILIATION_API] Respuesta raw: $responseBody")
             
             if (response.status.isSuccess()) {
                 val affiliationResponse = json.decodeFromString<AffiliationCodeResponse>(responseBody)
-                println("🔐 [AFFILIATION_API] Código de afiliación generado exitosamente: ${affiliationResponse.data?.affiliationCode}")
                 Result.success(affiliationResponse.data!!)
             } else {
                 val errorMessage = "Error ${response.status.value}: ${response.status.description}"
-                println("🔐 [AFFILIATION_API] ERROR: $errorMessage")
                 Result.failure(Exception(errorMessage))
             }
             
         } catch (e: Exception) {
-            println("🔐 [AFFILIATION_API] ERROR: Error generando código de afiliación: ${e.message}")
+            println("❌ [AFFILIATION_API] Error generando código: ${e.message}")
             Result.failure(e)
         }
     }
