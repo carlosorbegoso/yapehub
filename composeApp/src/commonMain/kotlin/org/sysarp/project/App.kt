@@ -148,11 +148,11 @@ fun YapeApp() {
     }
     
     val affiliationService = remember {
-        AffiliationService(AffiliationApiClient(httpClient))
+        AffiliationService()
     }
     
     val branchService = remember {
-        BranchService(BranchApiClient(httpClient))
+        BranchService()
     }
     
     val paymentService = remember {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,7 +34,7 @@ fun SellerManagementScreen(
     authService: AuthService,
     sellerService: SellerService,
     onNavigateBack: () -> Unit,
-    onNavigateToQR: (QRCodeData) -> Unit
+    onNavigateToQR: (QRCodeData) -> Unit = {}
 ) {
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()
@@ -102,7 +103,7 @@ fun SellerManagementScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
                         )
                     }
@@ -393,16 +394,35 @@ fun SellerManagementScreen(
                             selectedSeller = seller
                             showEditSellerDialog = true
                         },
-                        onToggleStatus = {
-                            selectedSeller = seller
-                            // Implementar toggle de estado
-                        },
-                        onDelete = {
-                            selectedSeller = seller
-                            showDeleteConfirmDialog = true
-                        },
                         onViewPayments = {
-                            // Implementar vista de pagos
+                            // Navegar a la pantalla de pagos del vendedor
+                            // TODO: Implementar navegación a SellerPaymentsScreen
+                            println("Ver pagos del vendedor: ${seller.name} (ID: ${seller.sellerId})")
+                        },
+                        onToggleStatus = {
+                            coroutineScope.launch {
+                                val profile = userProfile
+                                if (profile?.adminId != null && accessToken != null) {
+                                    sellerService.updateSeller(
+                                        sellerId = seller.sellerId,
+                                        adminId = profile.adminId!!.toInt(),
+                                        name = null,
+                                        phone = null,
+                                        isActive = !seller.isActive,
+                                        token = accessToken!!
+                                    ).fold(
+                                        onSuccess = { updatedSeller ->
+                                            // Actualizar la lista de vendedores
+                                            sellers = sellers.map { 
+                                                if (it.sellerId == updatedSeller.sellerId) updatedSeller else it 
+                                            }
+                                        },
+                                        onFailure = { error ->
+                                            println("Error actualizando estado del vendedor: ${error.message}")
+                                        }
+                                    )
+                                }
+                            }
                         }
                     )
                 }
@@ -461,10 +481,17 @@ fun SellerManagementScreen(
     selectedSeller?.let { seller ->
         EditSellerDialog(
             seller = seller,
-            onDismiss = { showEditSellerDialog = false },
-            onSave = { updatedSeller ->
-                // Implementar actualización
+            onDismiss = { 
                 showEditSellerDialog = false
+                selectedSeller = null
+            },
+            onSave = { updatedSeller ->
+                // Actualizar la lista de vendedores
+                sellers = sellers.map { 
+                    if (it.sellerId == updatedSeller.sellerId) updatedSeller else it 
+                }
+                showEditSellerDialog = false
+                selectedSeller = null
             },
             sellerService = sellerService,
             authService = authService
@@ -472,10 +499,35 @@ fun SellerManagementScreen(
         
         DeleteSellerDialog(
             seller = seller,
-            onDismiss = { showDeleteConfirmDialog = false },
-            onConfirm = {
-                // Implementar eliminación
+            onDismiss = { 
                 showDeleteConfirmDialog = false
+                selectedSeller = null
+            },
+            onConfirm = { action ->
+                coroutineScope.launch {
+                    val profile = userProfile
+                    if (profile?.adminId != null && accessToken != null) {
+                        sellerService.deleteSeller(
+                            sellerId = seller.sellerId,
+                            adminId = profile.adminId?.toInt() ?: return@launch,
+                            action = action,
+                            token = accessToken!!
+                        ).fold(
+                            onSuccess = {
+                                // Remover el vendedor de la lista
+                                sellers = sellers.filter { it.sellerId != seller.sellerId }
+                                showDeleteConfirmDialog = false
+                                selectedSeller = null
+                            },
+                            onFailure = { error ->
+                                // Mostrar error (podrías agregar un estado de error aquí)
+                                println("Error ${action} vendedor: ${error.message}")
+                                showDeleteConfirmDialog = false
+                                selectedSeller = null
+                            }
+                        )
+                    }
+                }
             },
             sellerService = sellerService,
             authService = authService
@@ -545,9 +597,8 @@ fun SellerStatCard(
 fun SellerCardV2(
     seller: MySeller,
     onEdit: () -> Unit,
-    onToggleStatus: () -> Unit,
-    onDelete: () -> Unit,
-    onViewPayments: () -> Unit
+    onViewPayments: () -> Unit,
+    onToggleStatus: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -715,6 +766,41 @@ fun SellerCardV2(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Pagos", fontSize = 12.sp)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Botón de estado
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onToggleStatus,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (seller.isActive)
+                            MaterialTheme.colorScheme.secondaryContainer
+                        else
+                            MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = if (seller.isActive)
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        else
+                            MaterialTheme.colorScheme.onTertiaryContainer
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(
+                        imageVector = if (seller.isActive) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (seller.isActive) "Pausar Vendedor" else "Activar Vendedor",
+                        fontSize = 12.sp
+                    )
                 }
             }
         }

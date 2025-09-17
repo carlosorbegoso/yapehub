@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -80,6 +81,7 @@ fun AdminDashboardScreen(
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequests: () -> Unit,
+    onNavigateToProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
     // Verificar sesión al entrar a la pantalla
@@ -192,6 +194,12 @@ fun AdminDashboardScreen(
                         Icon(
                             imageVector = Icons.Filled.QrCode,
                             contentDescription = "Generar código de afiliación"
+                        )
+                    }
+                    IconButton(onClick = onNavigateToProfile) {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = "Mi Perfil"
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {

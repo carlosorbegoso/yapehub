@@ -29,6 +29,8 @@ import org.sysarp.project.ui.screens.SellerDashboardScreen
 import org.sysarp.project.ui.screens.SellerManagementScreen
 import org.sysarp.project.ui.screens.SellerPaymentsScreen
 import org.sysarp.project.ui.screens.SellerUnifiedScreen
+import org.sysarp.project.ui.screens.AdminProfileScreen
+import org.sysarp.project.ui.screens.SellerNotificationsScreen
 import org.sysarp.project.ui.screens.SettingsScreen
 import org.sysarp.project.ui.screens.SplashScreen
 import org.sysarp.project.ui.screens.UserManagementScreen
@@ -120,8 +122,8 @@ fun AppContent(
         is Screen.ForgotPassword -> {
             ForgotPasswordScreen(
                 authService = authService,
-                onBackPressed = { navigationManager.navigateBack() },
-                onResetSuccess = { navigationManager.navigateBackToProfileSelection() }
+                onNavigateBack = { navigationManager.navigateBack() },
+                onNavigateToLogin = { navigationManager.navigateBackToProfileSelection() }
             )
         }
         is Screen.AdminRegistration -> {
@@ -168,6 +170,7 @@ fun AppContent(
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.PendingPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
                 onNavigateToDeactivationRequests = { navigationManager.navigateToDeactivationRequest() },
+                onNavigateToProfile = { navigationManager.navigateTo(Screen.AdminProfile) },
                 onLogout = { navigationManager.navigateToProfileSelection() }
             )
         }
@@ -182,6 +185,7 @@ fun AppContent(
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.SellerPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
                 onNavigateToDeactivationRequest = { navigationManager.navigateToDeactivationRequest() },
+                onNavigateToNotifications = { navigationManager.navigateTo(Screen.SellerNotifications) },
                 onLogout = { navigationManager.navigateToProfileSelection() }
             )
         }
@@ -230,6 +234,18 @@ fun AppContent(
             DeactivationRequestScreen(
                 authService = authService,
                 sellerService = sellerService,
+                onNavigateBack = { navigationManager.navigateBack() }
+            )
+        }
+        is Screen.AdminProfile -> {
+            AdminProfileScreen(
+                authService = authService,
+                onNavigateBack = { navigationManager.navigateBack() }
+            )
+        }
+        is Screen.SellerNotifications -> {
+            SellerNotificationsScreen(
+                authService = authService,
                 onNavigateBack = { navigationManager.navigateBack() }
             )
         }

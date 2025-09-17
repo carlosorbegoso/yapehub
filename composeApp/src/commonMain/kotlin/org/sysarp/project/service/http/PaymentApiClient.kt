@@ -6,6 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import kotlinx.serialization.json.Json
 import org.sysarp.project.service.http.BaseApiClient
+import org.sysarp.project.data.SellerConnectionStatusResponse
 
 class PaymentApiClient(
     private val httpClient: HttpClient
@@ -225,6 +226,51 @@ class PaymentApiClient(
             }
         } catch (e: Exception) {
             logError("PAYMENT_API", "Error obteniendo gestión de pagos: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Obtener estado de conexión del vendedor
+     */
+    suspend fun getSellerConnectionStatus(
+        sellerId: Int,
+        token: String
+    ): Result<SellerConnectionStatusResponse> {
+        return try {
+            logInfo("PAYMENT_API", "Obteniendo estado de conexión del vendedor: $sellerId")
+
+            val response = httpClient.get("$baseUrl/api/payments/status/$sellerId") {
+                header("Authorization", "Bearer $token")
+                header("accept", "application/json")
+            }
+
+            if (response.status.value in 200..299) {
+                try {
+                    val responseBody = response.body<String>()
+                    logInfo("PAYMENT_API", "Respuesta del servidor: $responseBody")
+                    val statusResponse = kotlinx.serialization.json.Json.decodeFromString<SellerConnectionStatusResponse>(responseBody)
+                    logInfo("PAYMENT_API", "Estado de conexión obtenido exitosamente")
+                    Result.success(statusResponse)
+                } catch (e: Exception) {
+                    logError("PAYMENT_API", "Error deserializando respuesta: ${e.message}")
+                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
+                }
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("PAYMENT_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+
+                val finalErrorMessage = "Error obteniendo estado de conexión: ${response.status} - $errorMessage"
+                logError("PAYMENT_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("PAYMENT_API", "Error obteniendo estado de conexión: ${e.message}")
             Result.failure(e)
         }
     }

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -50,6 +51,7 @@ fun SellerDashboardActions(
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequest: () -> Unit,
+    onNavigateToNotifications: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -76,6 +78,13 @@ fun SellerDashboardActions(
             subtitle = "Confirmar y rechazar pagos pendientes",
             icon = Icons.Filled.Payment,
             onClick = onNavigateToPendingPayments
+        )
+        
+        ActionCard(
+            title = "Notificaciones",
+            subtitle = "Ver todas las notificaciones recibidas",
+            icon = Icons.Filled.Notifications,
+            onClick = onNavigateToNotifications
         )
         
         ActionCard(

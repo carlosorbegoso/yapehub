@@ -41,6 +41,7 @@ fun SellerDashboardContent(
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequest: () -> Unit,
+    onNavigateToNotifications: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Estados principales
@@ -225,7 +226,8 @@ fun SellerDashboardContent(
                     onNavigateToHistory = onNavigateToHistory,
                     onNavigateToPendingPayments = onNavigateToPendingPayments,
                     onNavigateToSettings = onNavigateToSettings,
-                    onNavigateToDeactivationRequest = onNavigateToDeactivationRequest
+                    onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
+                    onNavigateToNotifications = onNavigateToNotifications
                 )
             }
         }

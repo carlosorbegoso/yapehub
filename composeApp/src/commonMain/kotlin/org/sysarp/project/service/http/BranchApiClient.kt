@@ -9,7 +9,7 @@ import kotlinx.serialization.json.Json
 import org.sysarp.project.data.*
 import org.sysarp.project.utils.Constants
 
-class BranchApiClient(private val httpClient: HttpClient) {
+class BranchApiClient : BaseApiClient() {
     
     private val json = Json {
         ignoreUnknownKeys = true
@@ -32,7 +32,7 @@ class BranchApiClient(private val httpClient: HttpClient) {
                 address = address
             )
             
-            val response: HttpResponse = httpClient.post("${Constants.BASE_URL}/api/admin/branches") {
+            val response: HttpResponse = client.post("$baseUrl/api/admin/branches") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 header(HttpHeaders.ContentType, "application/json")
                 setBody(request)
@@ -63,7 +63,7 @@ class BranchApiClient(private val httpClient: HttpClient) {
         size: Int = 20
     ): Result<BranchesData> {
         return try {
-            val response: HttpResponse = httpClient.get("${Constants.BASE_URL}/api/admin/branches") {
+            val response: HttpResponse = client.get("$baseUrl/api/admin/branches") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 parameter("adminId", adminId)
                 status?.let { parameter("status", it) }
@@ -94,7 +94,7 @@ class BranchApiClient(private val httpClient: HttpClient) {
         accessToken: String
     ): Result<BranchData> {
         return try {
-            val response: HttpResponse = httpClient.get("${Constants.BASE_URL}/api/admin/branches/$branchId") {
+            val response: HttpResponse = client.get("$baseUrl/api/admin/branches/$branchId") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 parameter("adminId", adminId)
             }
@@ -134,7 +134,7 @@ class BranchApiClient(private val httpClient: HttpClient) {
                 isActive = isActive
             )
             
-            val response: HttpResponse = httpClient.put("${Constants.BASE_URL}/api/admin/branches/$branchId") {
+            val response: HttpResponse = client.put("$baseUrl/api/admin/branches/$branchId") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 header(HttpHeaders.ContentType, "application/json")
                 setBody(request)
@@ -163,7 +163,7 @@ class BranchApiClient(private val httpClient: HttpClient) {
         accessToken: String
     ): Result<Boolean> {
         return try {
-            val response: HttpResponse = httpClient.delete("${Constants.BASE_URL}/api/admin/branches/$branchId") {
+            val response: HttpResponse = client.delete("$baseUrl/api/admin/branches/$branchId") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 parameter("adminId", adminId)
             }
@@ -190,7 +190,7 @@ class BranchApiClient(private val httpClient: HttpClient) {
         size: Int = 20
     ): Result<BranchSellersData> {
         return try {
-            val response: HttpResponse = httpClient.get("${Constants.BASE_URL}/api/admin/branches/$branchId/sellers") {
+            val response: HttpResponse = client.get("$baseUrl/api/admin/branches/$branchId/sellers") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 parameter("adminId", adminId)
                 parameter("page", page)

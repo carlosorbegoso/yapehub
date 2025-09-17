@@ -124,5 +124,59 @@ class AuthApiClient : BaseApiClient() {
             Result.failure(e)
         }
     }
+    
+    /**
+     * Recuperar contraseña
+     */
+    suspend fun forgotPassword(email: String): Result<ForgotPasswordResponse> {
+        return try {
+            logInfo("AUTH_API", "Solicitando recuperación de contraseña para: $email")
+            
+            val response = client.post("$baseUrl/api/auth/forgot-password") {
+                contentType(ContentType.Application.Json)
+                setBody(ForgotPasswordRequest(email = email))
+            }
+            
+            if (response.status.isSuccess()) {
+                val forgotResponse = response.body<ForgotPasswordResponse>()
+                logInfo("AUTH_API", "Solicitud de recuperación enviada exitosamente")
+                Result.success(forgotResponse)
+            } else {
+                val errorMessage = "Error en recuperación de contraseña: ${response.status}"
+                logError("AUTH_API", errorMessage)
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            logError("AUTH_API", "Error en recuperación de contraseña: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Validar código de afiliación
+     */
+    suspend fun validateAffiliationCode(affiliationCode: String): Result<ValidateAffiliationCodeResponse> {
+        return try {
+            logInfo("AUTH_API", "Validando código de afiliación: $affiliationCode")
+            
+            val response = client.post("$baseUrl/api/auth/validate-affiliation-code") {
+                contentType(ContentType.Application.Json)
+                setBody(ValidateAffiliationCodeRequest(affiliationCode = affiliationCode))
+            }
+            
+            if (response.status.isSuccess()) {
+                val validateResponse = response.body<ValidateAffiliationCodeResponse>()
+                logInfo("AUTH_API", "Código de afiliación validado exitosamente")
+                Result.success(validateResponse)
+            } else {
+                val errorMessage = "Error validando código de afiliación: ${response.status}"
+                logError("AUTH_API", errorMessage)
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            logError("AUTH_API", "Error validando código de afiliación: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }
 

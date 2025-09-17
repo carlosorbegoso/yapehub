@@ -33,6 +33,7 @@ fun SellerDashboardScreen(
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequest: () -> Unit,
+    onNavigateToNotifications: () -> Unit,
     onLogout: () -> Unit
 ) {
     val userProfile by authService.userProfile.collectAsState()
@@ -64,6 +65,7 @@ fun SellerDashboardScreen(
             onNavigateToPendingPayments = onNavigateToPendingPayments,
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
+            onNavigateToNotifications = onNavigateToNotifications,
             modifier = Modifier.fillMaxSize()
         )
     }

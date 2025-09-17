@@ -3,9 +3,9 @@ package org.sysarp.project.service.branch
 import org.sysarp.project.data.*
 import org.sysarp.project.service.http.BranchApiClient
 
-class BranchService(
-    private val branchApiClient: BranchApiClient
-) {
+class BranchService {
+    
+    private val branchApiClient = BranchApiClient()
     
     suspend fun createBranch(
         adminId: Int,

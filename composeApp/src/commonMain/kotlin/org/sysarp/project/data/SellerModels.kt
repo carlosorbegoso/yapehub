@@ -52,47 +52,7 @@ data class MySellersData(
     val pagination: PaginationData
 )
 
-// Modelos para actualización de vendedores
-@Serializable
-data class UpdateSellerRequest(
-    val name: String? = null,
-    val phone: String? = null,
-    val isActive: Boolean? = null
-)
-
-@Serializable
-data class UpdateSellerResponse(
-    val success: Boolean,
-    val message: String,
-    val data: UpdateSellerData? = null,
-    val error: Boolean = false
-)
-
-@Serializable
-data class UpdateSellerData(
-    val sellerId: Int,
-    val name: String,
-    val phone: String,
-    val isActive: Boolean,
-    val updatedAt: String
-)
-
-// Modelos para eliminación/pausa de vendedores
-@Serializable
-data class DeleteSellerResponse(
-    val success: Boolean,
-    val message: String,
-    val data: DeleteSellerData? = null,
-    val error: Boolean = false
-)
-
-@Serializable
-data class DeleteSellerData(
-    val sellerId: Int,
-    val action: String,  // "pause", "delete", "activate"
-    val status: String,
-    val updatedAt: String
-)
+// Modelos para actualización de vendedores (movidos a AdminModels.kt)
 
 @Serializable
 data class SellersResponse(
@@ -194,28 +154,7 @@ data class SellerUserData(
     val affiliationCode: String? = null
 )
 
-// Modelos para validación de códigos de afiliación
-@Serializable
-data class ValidateAffiliationCodeRequest(
-    val affiliationCode: String
-)
-
-@Serializable
-data class ValidateAffiliationCodeResponse(
-    val success: Boolean,
-    val message: String,
-    val data: ValidateAffiliationCodeData? = null,
-    val error: Boolean = false
-)
-
-@Serializable
-data class ValidateAffiliationCodeData(
-    val isValid: Boolean,
-    val affiliationCode: String,
-    val branchId: Int?,
-    val branchName: String?,
-    val adminId: Int?
-)
+// Modelos para validación de códigos de afiliación (movidos a AuthModels.kt)
 
 // Alias para compatibilidad
 typealias SellerData = Seller

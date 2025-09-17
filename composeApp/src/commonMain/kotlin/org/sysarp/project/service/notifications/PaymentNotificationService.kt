@@ -138,3 +138,70 @@ data class NotificationSettings(
     val isSoundEnabled: Boolean,
     val isVibrationEnabled: Boolean
 )
+
+/**
+ * Servicio extendido para notificaciones del vendedor
+ */
+class SellerNotificationService(
+    private val authService: org.sysarp.project.service.auth.AuthService
+) {
+    
+    private val notificationApiClient = org.sysarp.project.service.http.NotificationApiClient()
+    
+    /**
+     * Obtener notificaciones del vendedor
+     */
+    suspend fun getSellerNotifications(
+        page: Int = 0,
+        size: Int = 20
+    ): Result<org.sysarp.project.data.SellerNotificationsData> {
+        return try {
+            val token = authService.accessToken.value ?: throw Exception("Token no disponible")
+            
+            Logger.auth("SELLER_NOTIFICATION_SERVICE", "Obteniendo notificaciones del vendedor")
+            
+            val result = notificationApiClient.getSellerNotifications(token, page, size)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("SELLER_NOTIFICATION_SERVICE", "Notificaciones obtenidas exitosamente")
+                    Result.success(response.data!!)
+                },
+                onFailure = { error ->
+                    Logger.auth("SELLER_NOTIFICATION_SERVICE", "Error obteniendo notificaciones: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("SELLER_NOTIFICATION_SERVICE", "Error obteniendo notificaciones: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Marcar notificación como leída
+     */
+    suspend fun markNotificationAsRead(notificationId: Int): Result<org.sysarp.project.data.MarkNotificationReadData> {
+        return try {
+            val token = authService.accessToken.value ?: throw Exception("Token no disponible")
+            
+            Logger.auth("SELLER_NOTIFICATION_SERVICE", "Marcando notificación como leída: $notificationId")
+            
+            val result = notificationApiClient.markNotificationAsRead(notificationId, token)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("SELLER_NOTIFICATION_SERVICE", "Notificación marcada como leída exitosamente")
+                    Result.success(response.data!!)
+                },
+                onFailure = { error ->
+                    Logger.auth("SELLER_NOTIFICATION_SERVICE", "Error marcando notificación como leída: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("SELLER_NOTIFICATION_SERVICE", "Error marcando notificación como leída: ${e.message}")
+            Result.failure(e)
+        }
+    }
+}

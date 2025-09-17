@@ -271,4 +271,37 @@ class SellerService(private val authService: AuthService) {
             Result.failure(e)
         }
     }
+    
+    /**
+     * Obtener estado de conexión del vendedor
+     */
+    suspend fun getSellerConnectionStatus(
+        sellerId: Int,
+        token: String
+    ): Result<org.sysarp.project.data.SellerConnectionStatusData> {
+        return try {
+            Logger.auth("SELLER_SERVICE", "Obteniendo estado de conexión del vendedor: $sellerId")
+            
+            // Usar PaymentApiClient que tiene el método getSellerConnectionStatus
+            val paymentApiClient = org.sysarp.project.service.http.PaymentApiClient(
+                io.ktor.client.HttpClient()
+            )
+            
+            val result = paymentApiClient.getSellerConnectionStatus(sellerId, token)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("SELLER_SERVICE", "Estado de conexión obtenido exitosamente")
+                    Result.success(response.data!!)
+                },
+                onFailure = { error ->
+                    Logger.auth("SELLER_SERVICE", "Error obteniendo estado de conexión: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("SELLER_SERVICE", "Error obteniendo estado de conexión: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

@@ -296,4 +296,54 @@ class AuthService {
     suspend fun sellerLoginByPhone(phone: String, affiliationCode: String): Result<SellerLoginData> {
         return loginSellerByPhone(phone, affiliationCode)
     }
+    
+    /**
+     * Recuperar contraseña
+     */
+    suspend fun forgotPassword(email: String): Result<ForgotPasswordData> {
+        return try {
+            Logger.auth("AUTH_SERVICE", "Solicitando recuperación de contraseña para: $email")
+            
+            val result = authApiClient.forgotPassword(email)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("AUTH_SERVICE", "Solicitud de recuperación enviada exitosamente")
+                    Result.success(response.data!!)
+                },
+                onFailure = { error ->
+                    Logger.auth("AUTH_SERVICE", "Error en recuperación de contraseña: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción en recuperación de contraseña: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Validar código de afiliación
+     */
+    suspend fun validateAffiliationCode(affiliationCode: String): Result<ValidateAffiliationCodeData> {
+        return try {
+            Logger.auth("AUTH_SERVICE", "Validando código de afiliación: $affiliationCode")
+            
+            val result = authApiClient.validateAffiliationCode(affiliationCode)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("AUTH_SERVICE", "Código de afiliación validado exitosamente")
+                    Result.success(response.data!!)
+                },
+                onFailure = { error ->
+                    Logger.auth("AUTH_SERVICE", "Error validando código de afiliación: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción validando código de afiliación: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

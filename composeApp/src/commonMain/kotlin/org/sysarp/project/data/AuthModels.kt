@@ -117,5 +117,49 @@ data class SellerErrorDetails(
     val reason: String
 )
 
+// Modelos para recuperar contraseña
+@Serializable
+data class ForgotPasswordRequest(
+    val email: String
+)
 
+@Serializable
+data class ForgotPasswordResponse(
+    val success: Boolean,
+    val message: String,
+    val data: ForgotPasswordData? = null,
+    val error: Boolean = false
+)
 
+@Serializable
+data class ForgotPasswordData(
+    val email: String,
+    val resetToken: String? = null,
+    val expiresAt: String? = null
+)
+
+// Modelos para validar código de afiliación
+@Serializable
+data class ValidateAffiliationCodeRequest(
+    val affiliationCode: String
+)
+
+@Serializable
+data class ValidateAffiliationCodeResponse(
+    val success: Boolean,
+    val message: String,
+    val data: ValidateAffiliationCodeData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class ValidateAffiliationCodeData(
+    val isValid: Boolean,
+    val affiliationCode: String,
+    val branchId: Int? = null,
+    val branchName: String? = null,
+    val adminId: Int? = null,
+    val adminName: String? = null,
+    val expiresAt: String? = null,
+    val remainingUses: Int? = null
+)

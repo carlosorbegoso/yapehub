@@ -183,3 +183,24 @@ data class ServerErrorResponse(
     val details: ErrorDetails,
     val timestamp: String
 )
+
+// Modelos para estado de conexión del vendedor
+@Serializable
+data class SellerConnectionStatusResponse(
+    val success: Boolean,
+    val message: String,
+    val data: SellerConnectionStatusData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class SellerConnectionStatusData(
+    val sellerId: Int,
+    val sellerName: String,
+    val isConnected: Boolean,
+    val lastSeen: String,
+    val connectionDuration: Long? = null,
+    val totalConnections: Int,
+    val averageSessionDuration: Double? = null,
+    val status: String // "ONLINE", "OFFLINE", "AWAY"
+)

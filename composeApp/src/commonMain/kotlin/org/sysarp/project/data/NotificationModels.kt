@@ -59,3 +59,55 @@ data class PaymentNotification(
     val status: String,
     val timestamp: Long
 )
+
+// Modelos para notificaciones del vendedor
+@Serializable
+data class SellerNotificationsResponse(
+    val success: Boolean,
+    val message: String,
+    val data: SellerNotificationsData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class SellerNotificationsData(
+    val notifications: List<SellerNotification>,
+    val pagination: PaginationInfo,
+    val unreadCount: Int
+)
+
+@Serializable
+data class SellerNotification(
+    val id: Int,
+    val type: String, // "PAYMENT", "SYSTEM", "ALERT"
+    val title: String,
+    val message: String,
+    val isRead: Boolean,
+    val createdAt: String,
+    val readAt: String? = null,
+    val data: NotificationDataPayload? = null
+)
+
+@Serializable
+data class NotificationDataPayload(
+    val paymentId: Int? = null,
+    val amount: Double? = null,
+    val senderName: String? = null,
+    val yapeCode: String? = null
+)
+
+// Modelos para marcar notificación como leída
+@Serializable
+data class MarkNotificationReadResponse(
+    val success: Boolean,
+    val message: String,
+    val data: MarkNotificationReadData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class MarkNotificationReadData(
+    val notificationId: Int,
+    val readAt: String,
+    val unreadCount: Int
+)

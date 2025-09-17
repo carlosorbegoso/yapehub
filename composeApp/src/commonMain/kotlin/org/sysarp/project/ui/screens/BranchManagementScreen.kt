@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,7 @@ import org.sysarp.project.data.BranchesData
 import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.ui.components.branch.BranchCard
 import org.sysarp.project.ui.components.branch.CreateBranchDialog
+import org.sysarp.project.ui.components.branch.EditBranchDialog
 import org.sysarp.project.ui.components.branch.BranchSellersDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,7 +92,7 @@ fun BranchManagementScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
                         )
                     }
@@ -476,6 +478,54 @@ fun BranchManagementScreen(
     }
     
     selectedBranch?.let { branch ->
+        if (showEditDialog) {
+            EditBranchDialog(
+                branch = branch,
+                onDismiss = { showEditDialog = false },
+                onUpdate = { name, code, address, isActive ->
+                    coroutineScope.launch {
+                        branchService.updateBranch(
+                            branchId = branch.branchId,
+                            adminId = adminId,
+                            name = name,
+                            code = code,
+                            address = address,
+                            isActive = isActive,
+                            accessToken = accessToken
+                        ).fold(
+                            onSuccess = { updatedBranch ->
+                                showEditDialog = false
+                                // Actualizar la lista de sucursales
+                                val currentBranchesData = branchesData
+                                if (currentBranchesData != null) {
+                                    branchesData = currentBranchesData.copy(
+                                        branches = currentBranchesData.branches.map { 
+                                            if (it.branchId == updatedBranch.branchId) {
+                                                BranchInfo(
+                                                    branchId = updatedBranch.branchId,
+                                                    name = updatedBranch.name,
+                                                    code = updatedBranch.code,
+                                                    address = updatedBranch.address,
+                                                    isActive = updatedBranch.isActive,
+                                                    createdAt = updatedBranch.createdAt,
+                                                    updatedAt = updatedBranch.updatedAt,
+                                                    sellersCount = updatedBranch.sellersCount // Usar el conteo actualizado
+                                                )
+                                            } else it 
+                                        }
+                                    )
+                                }
+                            },
+                            onFailure = { error ->
+                                println("Error actualizando sucursal: ${error.message}")
+                                showEditDialog = false
+                            }
+                        )
+                    }
+                }
+            )
+        }
+        
         if (showSellersDialog) {
             BranchSellersDialog(
                 branch = branch,

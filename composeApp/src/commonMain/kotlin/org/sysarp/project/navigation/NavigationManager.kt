@@ -26,6 +26,8 @@ sealed class Screen {
     object SellerPayments : Screen()
     object UserManagement : Screen()
     object DeactivationRequest : Screen()
+    object AdminProfile : Screen()
+    object SellerNotifications : Screen()
     data class QRDisplay(val qrCode: org.sysarp.project.service.QRCodeData) : Screen()
 }
 

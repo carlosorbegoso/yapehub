@@ -160,3 +160,118 @@ data class DeactivationRequest(
     val requestedAt: String,
     val processedAt: String? = null
 )
+
+// Modelos para perfil de administrador
+@Serializable
+data class AdminProfileResponse(
+    val success: Boolean,
+    val message: String,
+    val data: AdminProfileData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class AdminProfileData(
+    val userId: Int,
+    val email: String? = null,
+    val businessName: String,
+    val businessType: String? = null,
+    val ruc: String? = null,
+    val phone: String,
+    val address: String,
+    val contactName: String,
+    val isVerified: Boolean,
+    val createdAt: String,
+    val updatedAt: String
+)
+
+@Serializable
+data class UpdateAdminProfileRequest(
+    val businessName: String? = null,
+    val businessType: String? = null,
+    val phone: String? = null,
+    val address: String? = null,
+    val contactName: String? = null
+)
+
+// Modelos para gestión de vendedores con filtros
+@Serializable
+data class SellersWithFiltersResponse(
+    val success: Boolean,
+    val message: String,
+    val data: SellersWithFiltersData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class SellersWithFiltersData(
+    val sellers: List<SellerInfo>,
+    val pagination: PaginationInfo,
+    val filters: FilterInfo
+)
+
+@Serializable
+data class FilterInfo(
+    val totalCount: Int,
+    val activeCount: Int,
+    val inactiveCount: Int,
+    val onlineCount: Int,
+    val offlineCount: Int
+)
+
+// Modelos para actualizar vendedor
+@Serializable
+data class UpdateSellerRequest(
+    val name: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val branchId: Int? = null,
+    val isActive: Boolean? = null
+)
+
+@Serializable
+data class UpdateSellerResponse(
+    val success: Boolean,
+    val message: String,
+    val data: SellerInfo? = null,
+    val error: Boolean = false
+)
+
+// Modelos para eliminar vendedor
+@Serializable
+data class DeleteSellerResponse(
+    val success: Boolean,
+    val message: String,
+    val data: DeleteSellerData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class DeleteSellerData(
+    val sellerId: Int,
+    val sellerName: String,
+    val deletedAt: String
+)
+
+// Modelos para estadísticas de notificaciones
+@Serializable
+data class NotificationStatsResponse(
+    val success: Boolean,
+    val message: String,
+    val data: NotificationStatsData? = null,
+    val error: Boolean = false
+)
+
+@Serializable
+data class NotificationStatsData(
+    val adminId: Int,
+    val totalNotifications: Int,
+    val successfulNotifications: Int,
+    val failedNotifications: Int,
+    val pendingNotifications: Int,
+    val todayNotifications: Int,
+    val weeklyNotifications: Int,
+    val monthlyNotifications: Int,
+    val averageResponseTime: Double,
+    val lastNotificationAt: String? = null
+)
