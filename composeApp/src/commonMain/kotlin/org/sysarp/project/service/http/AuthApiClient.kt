@@ -5,6 +5,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import org.sysarp.project.data.*
+import org.sysarp.project.utils.DeviceUtils
 
 /**
  * Cliente API especializado para autenticación
@@ -23,7 +24,7 @@ class AuthApiClient : BaseApiClient() {
                 setBody(LoginRequest(
                     email = email, 
                     password = password,
-                    deviceFingerprint = "mobile_device_${System.currentTimeMillis()}",
+                    deviceFingerprint = generateDeviceFingerprint(),
                     role = "ADMIN"
                 ))
             }
@@ -176,6 +177,21 @@ class AuthApiClient : BaseApiClient() {
         } catch (e: Exception) {
             logError("AUTH_API", "Error validando código de afiliación: ${e.message}")
             Result.failure(e)
+        }
+    }
+    
+    /**
+     * Genera un fingerprint único del dispositivo
+     * En Android usará identificadores reales, en otras plataformas un fallback
+     */
+    private suspend fun generateDeviceFingerprint(): String {
+        return try {
+            // Intentar usar el fingerprint real del dispositivo
+            DeviceUtils.generateDeviceFingerprint()
+        } catch (e: Exception) {
+            logError("AUTH_API", "Error generando fingerprint real: ${e.message}")
+            // Fallback a fingerprint simple
+            DeviceUtils.generateSimpleFingerprint()
         }
     }
 }

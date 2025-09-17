@@ -7,7 +7,8 @@ package org.sysarp.project.utils
 object Constants {
     
     // URLs
-    const val BASE_URL = "https://ks9ql0l7-8080.brs.devtunnels.ms"
+    const val BASE_URL = "http://10.0.2.2:8080"
+    //const val BASE_URL = "https://ks9ql0l7-8080.brs.devtunnels.ms"
     const val WEBSOCKET_URL = "wss://ks9ql0l7-8080.brs.devtunnels.ms"
     
     // Endpoints

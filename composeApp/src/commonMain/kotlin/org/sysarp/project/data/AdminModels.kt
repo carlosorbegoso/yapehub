@@ -172,7 +172,7 @@ data class AdminProfileResponse(
 
 @Serializable
 data class AdminProfileData(
-    val userId: Int,
+    val id: Int,
     val email: String? = null,
     val businessName: String,
     val businessType: String? = null,
@@ -182,7 +182,16 @@ data class AdminProfileData(
     val contactName: String,
     val isVerified: Boolean,
     val createdAt: String,
-    val updatedAt: String
+    val branches: List<AdminBranchInfo> = emptyList()
+)
+
+@Serializable
+data class AdminBranchInfo(
+    val id: Int,
+    val name: String,
+    val code: String,
+    val address: String,
+    val isActive: Boolean
 )
 
 @Serializable

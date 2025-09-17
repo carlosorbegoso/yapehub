@@ -36,6 +36,7 @@ import org.sysarp.project.ui.screens.SellerNotificationsScreen
 import org.sysarp.project.ui.screens.SellerSpecificPaymentsScreen
 import org.sysarp.project.ui.screens.SettingsScreen
 import org.sysarp.project.ui.screens.SplashScreen
+import org.sysarp.project.ui.components.FloatingDebugOverlay
 import org.sysarp.project.ui.screens.UserManagementScreen
 import org.sysarp.project.viewmodel.YapeViewModel
 
@@ -291,5 +292,12 @@ fun AppContent(
                 }
             )
         }
+        else -> {
+            // Pantalla no encontrada
+            Text("Pantalla no encontrada")
+        }
     }
+    
+    // Overlay flotante de debug (solo en modo desarrollo)
+    FloatingDebugOverlay()
 }

@@ -12,32 +12,52 @@ object DeviceUtils {
     
     /**
      * Genera un fingerprint único del dispositivo
-     * Combina múltiples identificadores para crear un ID único
+     * En Android usará identificadores reales, en otras plataformas un fallback
      */
     suspend fun generateDeviceFingerprint(): String = withContext(Dispatchers.IO) {
         try {
             Logger.auth("DEVICE_UTILS", "Generando device fingerprint...")
             
-            // Componentes del fingerprint
-            val timestamp = Clock.System.now().toEpochMilliseconds()
-            val randomSuffix = (1000..9999).random()
-            
-            // Crear fingerprint basado en características del dispositivo
-            val deviceInfo = buildString {
-                append("yapechamo_") // Prefijo de la app
-                append("${timestamp}_") // Timestamp de creación
-                append("${randomSuffix}_") // Número aleatorio
-                append("mobile_") // Tipo de dispositivo
-                append("${System.currentTimeMillis().hashCode()}") // Hash del tiempo actual
+            // Intentar usar AndroidDeviceUtils si está disponible
+            val fingerprint = try {
+                generateAndroidFingerprint()
+            } catch (e: Exception) {
+                Logger.auth("DEVICE_UTILS", "No es Android o error: ${e.message}, usando fallback")
+                generateFallbackFingerprint()
             }
             
-            Logger.auth("DEVICE_UTILS", "Device fingerprint generado: ${deviceInfo.take(20)}...")
-            return@withContext deviceInfo
+            Logger.auth("DEVICE_UTILS", "Device fingerprint generado: ${fingerprint.take(20)}...")
+            return@withContext fingerprint
             
         } catch (e: Exception) {
             Logger.auth("DEVICE_UTILS", "Error generando device fingerprint: ${e.message}")
             // Fallback a un fingerprint básico
             return@withContext "yapechamo_fallback_${System.currentTimeMillis()}"
+        }
+    }
+    
+    /**
+     * Genera fingerprint específico para Android
+     * Esta función será sobrescrita en androidMain
+     */
+    private suspend fun generateAndroidFingerprint(): String {
+        // En commonMain, siempre lanza excepción para usar fallback
+        throw Exception("Not Android platform")
+    }
+    
+    /**
+     * Genera fingerprint de fallback para plataformas no-Android
+     */
+    private suspend fun generateFallbackFingerprint(): String {
+        val timestamp = Clock.System.now().toEpochMilliseconds()
+        val randomSuffix = (1000..9999).random()
+        
+        return buildString {
+            append("yapechamo_") // Prefijo de la app
+            append("${timestamp}_") // Timestamp de creación
+            append("${randomSuffix}_") // Número aleatorio
+            append("mobile_") // Tipo de dispositivo
+            append("${System.currentTimeMillis().hashCode()}") // Hash del tiempo actual
         }
     }
     

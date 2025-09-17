@@ -118,20 +118,6 @@ fun AdminProfileScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
                     }
-                },
-                actions = {
-                    if (isEditing) {
-                        TextButton(onClick = { isEditing = false }) {
-                            Text("Cancelar")
-                        }
-                        TextButton(onClick = saveProfile) {
-                            Text("Guardar")
-                        }
-                    } else {
-                        IconButton(onClick = { isEditing = true }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Editar")
-                        }
-                    }
                 }
             )
         }
@@ -191,73 +177,119 @@ fun AdminProfileScreen(
                     }
                 }
             } else {
-                // Header con avatar y acciones
+                // Header elegante y unificado
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Avatar
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = RoundedCornerShape(40.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Person,
-                                contentDescription = null,
-                                modifier = Modifier.size(40.dp),
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
-                        
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = profileData?.businessName ?: "Mi Empresa",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Text(
-                                text = profileData?.email ?: "",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                            )
-                        }
-                        
-                        // Botones de acción
+                        // Información principal
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedButton(
-                                onClick = { isEditing = !isEditing },
-                                shape = RoundedCornerShape(12.dp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = if (isEditing) Icons.Filled.Close else Icons.Filled.Edit,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(if (isEditing) "Cancelar" else "Editar")
+                                // Avatar más grande y elegante
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .background(
+                                            brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.primary,
+                                                    MaterialTheme.colorScheme.secondary
+                                                )
+                                            ),
+                                            shape = RoundedCornerShape(16.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Business,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(32.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.width(20.dp))
+                                
+                                Column {
+                                    Text(
+                                        text = profileData?.businessName ?: "Mi Empresa",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = profileData?.businessType ?: "Empresa",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "ID: ${profileData?.id ?: "N/A"}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    )
+                                }
                             }
                             
+                            // Botón QR siempre visible
+                            IconButton(
+                                onClick = { 
+                                    // TODO: Implementar generación de QR
+                                    // onNavigateToQR(qrCodeData)
+                                },
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.QrCode,
+                                    contentDescription = "Mi QR",
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                        
+                        // Barra de acciones unificada
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
                             if (isEditing) {
+                                // Modo edición
+                                Button(
+                                    onClick = { isEditing = false },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Cancelar")
+                                }
+                                
                                 Button(
                                     onClick = saveProfile,
+                                    modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(
@@ -269,234 +301,332 @@ fun AdminProfileScreen(
                                     Text("Guardar")
                                 }
                             } else {
+                                // Modo visualización
                                 Button(
-                                    onClick = { 
-                                        // TODO: Implementar generación de QR
-                                        // onNavigateToQR(qrCodeData)
-                                    },
-                                    shape = RoundedCornerShape(12.dp),
+                                    onClick = { isEditing = true },
+                                    modifier = Modifier.fillMaxWidth(),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondary
-                                    )
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Filled.QrCode,
+                                        imageVector = Icons.Filled.Edit,
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Mi QR")
+                                    Text("Editar Perfil")
                                 }
                             }
                         }
                     }
                 }
                 
-                // Información de la empresa
+                // Información de la empresa - Diseño compacto
                 Card(
                     modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Business,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Información de la Empresa",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        
-                        // Campos de información
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            // Nombre de la empresa
-                            OutlinedTextField(
-                                value = businessName,
-                                onValueChange = { businessName = it },
-                                label = { Text("Nombre de la Empresa") },
-                                enabled = isEditing,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                leadingIcon = { Icon(Icons.Filled.Business, contentDescription = null) }
-                            )
-                            
-                            // Tipo de empresa
-                            OutlinedTextField(
-                                value = businessType,
-                                onValueChange = { businessType = it },
-                                label = { Text("Tipo de Empresa") },
-                                enabled = isEditing,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                leadingIcon = { Icon(Icons.Filled.Category, contentDescription = null) }
-                            )
-                            
-                            // RUC (solo lectura)
-                            OutlinedTextField(
-                                value = profileData?.ruc ?: "",
-                                onValueChange = { },
-                                label = { Text("RUC") },
-                                readOnly = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                leadingIcon = { Icon(Icons.Filled.Badge, contentDescription = null) }
-                            )
-                            
-                            // Teléfono
-                            OutlinedTextField(
-                                value = phone,
-                                onValueChange = { phone = it },
-                                label = { Text("Teléfono") },
-                                enabled = isEditing,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null) }
-                            )
-                            
-                            // Dirección
-                            OutlinedTextField(
-                                value = address,
-                                onValueChange = { address = it },
-                                label = { Text("Dirección") },
-                                enabled = isEditing,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                leadingIcon = { Icon(Icons.Filled.LocationOn, contentDescription = null) }
-                            )
-                            
-                            // Nombre de contacto
-                            OutlinedTextField(
-                                value = contactName,
-                                onValueChange = { contactName = it },
-                                label = { Text("Nombre de Contacto") },
-                                enabled = isEditing,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) }
-                            )
-                        }
-                    }
-                }
-                
-                // Información adicional
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
+                        // Header compacto
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Info,
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Información Adicional",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+                                text = "Información de la Empresa",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                         
+                        // Grid de información compacto
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Estado de verificación
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (profileData?.isVerified == true) 
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.errorContainer
-                                ),
-                                shape = RoundedCornerShape(12.dp)
+                            // Fila 1: Nombre y Tipo
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                InfoField(
+                                    label = "Empresa",
+                                    value = businessName,
+                                    onValueChange = { businessName = it },
+                                    icon = Icons.Filled.Business,
+                                    enabled = isEditing,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                InfoField(
+                                    label = "Tipo",
+                                    value = businessType,
+                                    onValueChange = { businessType = it },
+                                    icon = Icons.Filled.Category,
+                                    enabled = isEditing,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            
+                            // Fila 2: RUC y Teléfono
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                InfoField(
+                                    label = "RUC",
+                                    value = profileData?.ruc ?: "",
+                                    onValueChange = { },
+                                    icon = Icons.Filled.Badge,
+                                    enabled = false,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                InfoField(
+                                    label = "Teléfono",
+                                    value = phone,
+                                    onValueChange = { phone = it },
+                                    icon = Icons.Filled.Phone,
+                                    enabled = isEditing,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            
+                            // Fila 3: Dirección (ancho completo)
+                            InfoField(
+                                label = "Dirección",
+                                value = address,
+                                onValueChange = { address = it },
+                                icon = Icons.Filled.LocationOn,
+                                enabled = isEditing,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            
+                            // Fila 4: Contacto
+                            InfoField(
+                                label = "Contacto",
+                                value = contactName,
+                                onValueChange = { contactName = it },
+                                icon = Icons.Filled.Person,
+                                enabled = isEditing,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+                
+                // Estado y fechas - Diseño compacto
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Estado de verificación compacto
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .background(
+                                            color = if (profileData?.isVerified == true) 
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            else MaterialTheme.colorScheme.errorContainer,
+                                            shape = RoundedCornerShape(8.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = if (profileData?.isVerified == true) 
                                             Icons.Filled.Verified else Icons.Filled.Warning,
                                         contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
                                         tint = if (profileData?.isVerified == true) 
                                             MaterialTheme.colorScheme.onPrimaryContainer 
                                         else MaterialTheme.colorScheme.onErrorContainer
                                     )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        Text(
-                                            text = "Estado de Verificación",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = if (profileData?.isVerified == true) 
-                                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                            else MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
-                                        )
-                                        Text(
-                                            text = if (profileData?.isVerified == true) "Verificado" else "Pendiente",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (profileData?.isVerified == true) 
-                                                MaterialTheme.colorScheme.onPrimaryContainer 
-                                            else MaterialTheme.colorScheme.onErrorContainer
-                                        )
-                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Estado",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = if (profileData?.isVerified == true) "Verificado" else "Pendiente",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
                                 }
                             }
                             
-                            // Fechas
+                            Text(
+                                text = profileData?.createdAt?.substring(0, 10) ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                
+                // Sucursales si están disponibles
+                profileData?.branches?.takeIf { it.isNotEmpty() }?.let { branches ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
-                                    Text(
-                                        text = "Fecha de Creación",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = profileData?.createdAt ?: "",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = "Última Actualización",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = profileData?.updatedAt ?: "",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Filled.Store,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Sucursales (${branches.size})",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            
+                            branches.forEach { branch ->
+                                BranchCard(branch = branch)
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun InfoField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    enabled: Boolean,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        enabled = enabled,
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        leadingIcon = { 
+            Icon(
+                imageVector = icon, 
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            ) 
+        },
+        singleLine = true,
+        colors = OutlinedTextFieldDefaults.colors(
+            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+            disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    )
+}
+
+@Composable
+fun BranchCard(
+    branch: org.sysarp.project.data.AdminBranchInfo
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = branch.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = branch.code,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = branch.address,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (branch.isActive) 
+                        MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.errorContainer
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = if (branch.isActive) "Activa" else "Inactiva",
+                    color = if (branch.isActive) 
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else MaterialTheme.colorScheme.onErrorContainer,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }

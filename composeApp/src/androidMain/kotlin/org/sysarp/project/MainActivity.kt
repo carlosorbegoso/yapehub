@@ -1,13 +1,12 @@
 package org.sysarp.project
 
-// import org.sysarp.project.service.AndroidNotificationCaptureService
-// import org.sysarp.project.service.TimberLogger
-// import org.sysarp.project.service.PermissionChecker
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import org.sysarp.project.ui.theme.YapeHubTheme
 
 class MainActivity : ComponentActivity() {
@@ -23,6 +22,26 @@ class MainActivity : ComponentActivity() {
         // Reinicializar el repositorio ahora que tenemos contexto
         RepositorySingleton.reinitializeRepository()
         
+        // Generar y loggear el device fingerprint real
+        lifecycleScope.launch {
+            try {
+                val fingerprint = org.sysarp.project.utils.AndroidDeviceUtils.generateDeviceFingerprint(this@MainActivity)
+                android.util.Log.d("MainActivity", "🔑 Device fingerprint generado: ${fingerprint.take(20)}...")
+                
+                // También loggear en el sistema de debug
+                org.sysarp.project.ui.components.DebugLogManager.addLog(
+                    org.sysarp.project.ui.components.DebugLog(
+                        timestamp = System.currentTimeMillis(),
+                        type = org.sysarp.project.ui.components.LogType.PERMISSION,
+                        message = "🔑 Device fingerprint generado en MainActivity",
+                        details = "Fingerprint: ${fingerprint.take(20)}... (usando Android ID)"
+                    )
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Error generando fingerprint: ${e.message}")
+            }
+        }
+        
         // Inicializar el manager de lifecycle
         AppLifecycleManager.initialize(application)
         
@@ -34,11 +53,11 @@ class MainActivity : ComponentActivity() {
         }
         
         // Solicitar permisos después de cargar la app
-        // lifecycleScope.launch {
-        //     android.util.Log.d("MainActivity", "Iniciando solicitud automática de permisos...")
-        //     kotlinx.coroutines.delay(500)
-        //     requestAllPermissions(this@MainActivity)
-        // }
+        lifecycleScope.launch {
+            android.util.Log.d("MainActivity", "Iniciando solicitud automática de permisos...")
+            kotlinx.coroutines.delay(500)
+            requestNotificationPermission(this@MainActivity)
+        }
     }
     
     override fun onResume() {
@@ -46,43 +65,28 @@ class MainActivity : ComponentActivity() {
         android.util.Log.d("MainActivity", "App resumed - triggering permission check")
         
         // Verificar permisos cuando la app regresa del foreground
-        // lifecycleScope.launch {
-        //     kotlinx.coroutines.delay(200) // Reducido para respuesta más rápida
-        //     requestAllPermissions(this@MainActivity)
-        // }
+        lifecycleScope.launch {
+            kotlinx.coroutines.delay(200) // Reducido para respuesta más rápida
+            requestNotificationPermission(this@MainActivity)
+        }
     }
     
     companion object {
-        // fun requestAllPermissions(context: android.content.Context) {
-        //     android.util.Log.d("MainActivity", "=== VERIFICANDO PERMISOS ===")
-        //     
-        //     val hasNotificationPermission = PermissionChecker.isNotificationServiceEnabled(context)
-        //     val hasAccessibilityPermission = PermissionChecker.isAccessibilityServiceEnabled(context)
-        //     
-        //     android.util.Log.d("MainActivity", "Estado actual - Notificaciones: $hasNotificationPermission, Accesibilidad: $hasAccessibilityPermission")
-        //     
-        //     // Solo abrir configuración si faltan permisos
-        //     if (!hasNotificationPermission) {
-        //         android.util.Log.d("MainActivity", "❌ Falta permiso de notificaciones - Abriendo configuración...")
-        //         PermissionChecker.requestNotificationPermission(context)
-        //     } else {
-        //         android.util.Log.d("MainActivity", "✅ Permiso de notificaciones ya habilitado")
-        //     }
-        //     
-        //     if (!hasAccessibilityPermission) {
-        //         android.util.Log.d("MainActivity", "❌ Falta permiso de accesibilidad - Abriendo configuración...")
-        //         // Esperar un poco para no abrir ambas configuraciones al mismo tiempo
-        //         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-        //             PermissionChecker.requestAccessibilityPermission(context)
-        //         }, 1500)
-        //     } else {
-        //         android.util.Log.d("MainActivity", "✅ Permiso de accesibilidad ya habilitado")
-        //     }
-        //     
-        //     if (hasNotificationPermission && hasAccessibilityPermission) {
-        //         android.util.Log.d("MainActivity", "🎉 Todos los permisos están habilitados - No se necesita configuración")
-        //     }
-        // }
+        fun requestNotificationPermission(context: android.content.Context) {
+            android.util.Log.d("MainActivity", "=== VERIFICANDO PERMISO DE NOTIFICACIONES ===")
+            
+            val hasNotificationPermission = org.sysarp.project.service.AndroidNotificationCaptureService.isNotificationServiceEnabled(context)
+            
+            android.util.Log.d("MainActivity", "Estado actual - Notificaciones: $hasNotificationPermission")
+            
+            // Solo abrir configuración si falta el permiso
+            if (!hasNotificationPermission) {
+                android.util.Log.d("MainActivity", "❌ Falta permiso de notificaciones - Abriendo configuración...")
+                org.sysarp.project.service.AndroidNotificationCaptureService.requestNotificationPermission(context)
+            } else {
+                android.util.Log.d("MainActivity", "✅ Permiso de notificaciones ya habilitado")
+            }
+        }
     }
 }
 
