@@ -167,7 +167,7 @@ fun DebugLogPanel(
                                 val timestamp = Clock.System.now()
                                 val dateFormatter = TimeZone.currentSystemDefault()
                                 val dateTime = timestamp.toLocalDateTime(dateFormatter)
-                                val fileName = "yapechamo_database_${dateTime.year}${dateTime.monthNumber.toString().padStart(2, '0')}${dateTime.dayOfMonth.toString().padStart(2, '0')}_${dateTime.hour.toString().padStart(2, '0')}${dateTime.minute.toString().padStart(2, '0')}${dateTime.second.toString().padStart(2, '0')}.txt"
+                                val fileName = "yapechamo_transactions_${dateTime.year}${dateTime.monthNumber.toString().padStart(2, '0')}${dateTime.dayOfMonth.toString().padStart(2, '0')}_${dateTime.hour.toString().padStart(2, '0')}${dateTime.minute.toString().padStart(2, '0')}${dateTime.second.toString().padStart(2, '0')}.txt"
                                 onExportDatabase("export_database", fileName)
                             },
                             modifier = Modifier.size(32.dp)

@@ -12,10 +12,10 @@ actual fun exportLogs(logsText: String) {
 /**
  * Implementación específica de iOS para exportar base de datos
  */
-actual fun exportDatabase(databaseText: String, fileName: String) {
+actual fun exportTransactions(transactionsText: String, fileName: String) {
     // En iOS, por ahora solo imprimimos en consola
     println("📤 Exportando base de datos en iOS: $fileName")
-    println(databaseText)
+    println(transactionsText)
 }
 
 /**

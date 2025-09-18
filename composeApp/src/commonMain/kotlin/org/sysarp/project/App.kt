@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import org.sysarp.project.navigation.AppContent
 import org.sysarp.project.navigation.rememberNavigationManager
 import org.sysarp.project.repository.UserProfileRepository
-import org.sysarp.project.repository.YapeTransactionRepository
 import org.sysarp.project.service.SimpleNotificationService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
@@ -36,86 +35,11 @@ fun App() {
     }
 }
 
-// Singleton para el repositorio
-object RepositorySingleton {
-    private var _repository: YapeTransactionRepository? = null
-    
-    fun getRepository(): YapeTransactionRepository {
-        if (_repository == null) {
-            // Crear repositorio real que usa la API
-            _repository = createApiRepository()
-        }
-        return _repository!!
-    }
-    
-    private fun createApiRepository(): YapeTransactionRepository {
-        return object : YapeTransactionRepository {
-            override fun getAllTransactions(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.YapeTransaction>> {
-                return kotlinx.coroutines.flow.flowOf(emptyList())
-            }
-            
-            override fun getTransactionsByBusiness(businessName: String): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.YapeTransaction>> {
-                return kotlinx.coroutines.flow.flowOf(emptyList())
-            }
-            
-            override fun getTransactionsByDateRange(startDate: kotlinx.datetime.Instant, endDate: kotlinx.datetime.Instant): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.YapeTransaction>> {
-                return kotlinx.coroutines.flow.flowOf(emptyList())
-            }
-            
-            override fun getUnprocessedTransactions(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.YapeTransaction>> {
-                return kotlinx.coroutines.flow.flowOf(emptyList())
-            }
-            
-            override suspend fun insertTransaction(transaction: org.sysarp.project.data.YapeTransaction) {
-                // Implementación real - guardar en base de datos local
-                println("💾 [REPOSITORY] Guardando transacción: ${transaction.transactionId}")
-            }
-            
-            override suspend fun updateTransactionProcessed(transactionId: Long) {
-                // Implementación real - actualizar en base de datos local
-                println("✅ [REPOSITORY] Marcando transacción como procesada: $transactionId")
-            }
-            
-            override suspend fun updateTransactionBusiness(transactionId: Long, businessName: String) {
-                // Implementación real - actualizar en base de datos local
-                println("🏢 [REPOSITORY] Actualizando negocio de transacción: $transactionId -> $businessName")
-            }
-            
-            override suspend fun deleteTransaction(transactionId: Long) {
-                // Implementación real - eliminar de base de datos local
-                println("🗑️ [REPOSITORY] Eliminando transacción: $transactionId")
-            }
-            
-            override fun getBusinessReports(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.BusinessReport>> {
-                return kotlinx.coroutines.flow.flowOf(emptyList())
-            }
-            
-            override fun getDailyReports(): kotlinx.coroutines.flow.Flow<List<org.sysarp.project.data.DailyReport>> {
-                return kotlinx.coroutines.flow.flowOf(emptyList())
-            }
-            
-            override fun exportTransactionsToText(): String {
-                return "No hay transacciones disponibles"
-            }
-            
-            override fun exportAllTransactionsToText(): String {
-                return "No hay transacciones disponibles"
-            }
-        }
-    }
-    
-    // Función para reinicializar el repositorio cuando el contexto esté disponible
-    fun reinitializeRepository() {
-        _repository = null // Forzar recreación
-    }
-}
+// RepositorySingleton eliminado - no usamos base de datos local
 
 @Composable
 fun YapeApp() {
-    // CORREGIDO: Asegurar que TODOS usen la misma instancia del repositorio
-    val repository = remember {
-        RepositorySingleton.getRepository()
-    }
+    // Sin base de datos local - eliminado RepositorySingleton
     
     val userProfileRepository = remember {
         UserProfileRepository()
@@ -177,9 +101,9 @@ fun YapeApp() {
         org.sysarp.project.service.notifications.PaymentNotificationService()
     }
     
-    // CORREGIDO: Usar el mismo repositorio singleton
+    // Sin base de datos local, solo usar servicios
     val viewModel = remember {
-        YapeViewModel(repository, notificationService, userProfileRepository)
+        YapeViewModel(notificationService, userProfileRepository)
     }
     
     // Iniciar servicios WebSocket

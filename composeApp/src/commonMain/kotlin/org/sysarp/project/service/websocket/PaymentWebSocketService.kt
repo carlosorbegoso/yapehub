@@ -3,10 +3,8 @@ package org.sysarp.project.service.websocket
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.sysarp.project.data.PaymentNotificationData
-import org.sysarp.project.data.PaymentResultData
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.utils.Logger
-import org.sysarp.project.utils.Constants
 
 /**
  * Servicio WebSocket que maneja la lógica de negocio para notificaciones de pagos
@@ -27,7 +25,6 @@ class PaymentWebSocketService(
     
     // Flujos de notificaciones
     val paymentNotifications: SharedFlow<PaymentNotificationData> = webSocketClient.paymentNotifications
-    val paymentResults: SharedFlow<PaymentResultData> = webSocketClient.paymentResults
     
     /**
      * Inicia el servicio WebSocket con auto-conexión
@@ -82,22 +79,6 @@ class PaymentWebSocketService(
         webSocketClient.disconnect()
     }
     
-    /**
-     * Reconecta manualmente
-     */
-    suspend fun reconnect() {
-        Logger.auth("WEBSOCKET_SERVICE", "Reconexión manual solicitada")
-        
-        val userProfile = authService.userProfile.value
-        val token = authService.accessToken.value
-        
-        if (userProfile?.sellerId != null && !token.isNullOrBlank()) {
-            Logger.auth("WEBSOCKET_SERVICE", "🔄 Reconectando WebSocket para seller: ${userProfile.sellerId}")
-            webSocketClient.connect(userProfile.sellerId.toLong())
-        } else {
-            Logger.auth("WEBSOCKET_SERVICE", "❌ No se puede reconectar: usuario no autenticado")
-        }
-    }
     
     /**
      * Envía mensaje al servidor
@@ -106,26 +87,5 @@ class PaymentWebSocketService(
         webSocketClient.sendMessage(message)
     }
     
-    /**
-     * Obtiene información de conexión
-     */
-    fun getConnectionInfo(): ConnectionInfo {
-        val userProfile = authService.userProfile.value
-        return ConnectionInfo(
-            sellerId = userProfile?.sellerId?.toInt(),
-            isConnected = _isConnected.value,
-            connectionState = _connectionState.value,
-            websocketUrl = Constants.WEBSOCKET_URL
-        )
-    }
 }
 
-/**
- * Información de conexión
- */
-data class ConnectionInfo(
-    val sellerId: Int?,
-    val isConnected: Boolean,
-    val connectionState: WebSocketConnectionState,
-    val websocketUrl: String
-)

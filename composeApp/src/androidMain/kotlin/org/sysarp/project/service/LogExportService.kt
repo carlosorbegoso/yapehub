@@ -152,7 +152,7 @@ object LogExportService {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "YapeHub Database Export")
+                putExtra(Intent.EXTRA_SUBJECT, "YapeHub Transactions Export")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             

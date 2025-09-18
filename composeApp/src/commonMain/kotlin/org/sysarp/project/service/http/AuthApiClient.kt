@@ -15,17 +15,26 @@ class AuthApiClient : BaseApiClient() {
     /**
      * Login de administrador
      */
-    suspend fun adminLogin(email: String, password: String): Result<LoginResponse> {
+    suspend fun adminLogin(
+        email: String, 
+        password: String, 
+        deviceFingerprint: String? = null, 
+        role: String = "ADMIN"
+    ): Result<LoginResponse> {
         return try {
             logInfo("AUTH_API", "Intentando login de admin: $email")
+            
+            // Generar device fingerprint si no se proporciona
+            val fingerprint = deviceFingerprint ?: generateDeviceFingerprint()
+            logInfo("AUTH_API", "Device fingerprint: ${fingerprint.take(20)}...")
             
             val response = client.post("$baseUrl/api/auth/login") {
                 contentType(ContentType.Application.Json)
                 setBody(LoginRequest(
                     email = email, 
                     password = password,
-                    deviceFingerprint = generateDeviceFingerprint(),
-                    role = "ADMIN"
+                    deviceFingerprint = fingerprint,
+                    role = role
                 ))
             }
             
@@ -192,6 +201,131 @@ class AuthApiClient : BaseApiClient() {
             logError("AUTH_API", "Error generando fingerprint real: ${e.message}")
             // Fallback a fingerprint simple
             DeviceUtils.generateSimpleFingerprint()
+        }
+    }
+    
+    /**
+     * Registro de administrador
+     */
+    suspend fun adminRegister(
+        businessName: String,
+        businessType: String,
+        ruc: String,
+        email: String,
+        password: String,
+        phone: String,
+        address: String,
+        contactName: String
+    ): Result<AdminRegistrationResponse> {
+        return try {
+            logInfo("AUTH_API", "Intentando registro de admin: $email")
+            
+            val requestData = AdminRegistrationRequest(
+                businessName = businessName,
+                businessType = businessType,
+                ruc = ruc,
+                email = email,
+                password = password,
+                phone = phone,
+                address = address,
+                contactName = contactName
+            )
+            
+            logInfo("AUTH_API", "Datos de registro: businessName=$businessName, businessType=$businessType, ruc=$ruc, email=$email, phone=$phone, address=$address, contactName=$contactName")
+            
+            val response = client.post("$baseUrl/api/auth/admin/register") {
+                contentType(ContentType.Application.Json)
+                setBody(requestData)
+            }
+            
+            if (response.status.isSuccess()) {
+                val registrationResponse = response.body<AdminRegistrationResponse>()
+                logInfo("AUTH_API", "Registro exitoso para admin: $email")
+                Result.success(registrationResponse)
+            } else {
+                // Intentar parsear el error de validación
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logInfo("AUTH_API", "Error body: $errorBody")
+                    
+                    // Intentar parsear como ValidationErrorResponse
+                    try {
+                        val validationError = kotlinx.serialization.json.Json.decodeFromString<ValidationErrorResponse>(errorBody)
+                        val fieldErrors = validationError.details.validationErrors
+                        
+                        // Construir mensaje de error específico
+                        val specificErrors = fieldErrors.map { (field, error) ->
+                            val fieldName = when {
+                                field.contains("email") -> "Email"
+                                field.contains("password") -> "Contraseña"
+                                field.contains("businessName") -> "Nombre del negocio"
+                                field.contains("businessType") -> "Tipo de negocio"
+                                field.contains("ruc") -> "RUC"
+                                field.contains("phone") -> "Teléfono"
+                                field.contains("address") -> "Dirección"
+                                field.contains("contactName") -> "Nombre de contacto"
+                                else -> field
+                            }
+                            "$fieldName: ${error.message}"
+                        }
+                        
+                        if (specificErrors.isNotEmpty()) {
+                            specificErrors.joinToString("; ")
+                        } else {
+                            validationError.message
+                        }
+                    } catch (e: Exception) {
+                        // Si no se puede parsear como ValidationErrorResponse, usar el mensaje original
+                        errorBody
+                    }
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+                
+                val finalErrorMessage = "Error en registro de admin: ${response.status} - $errorMessage"
+                logError("AUTH_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("AUTH_API", "Error en registro de admin: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Obtener vendedores del administrador con paginación
+     */
+    suspend fun getMySellers(adminId: Int, page: Int = 1, limit: Int = 30, token: String): Result<SellersResponse> {
+        return try {
+            logInfo("AUTH_API", "Obteniendo vendedores del admin: $adminId, página: $page")
+            
+            val response = client.get("$baseUrl/api/admin/sellers/my-sellers") {
+                parameter("adminId", adminId)
+                parameter("page", page)
+                parameter("limit", limit)
+                header("Authorization", "Bearer $token")
+            }
+            
+            if (response.status.isSuccess()) {
+                val sellersResponse = response.body<SellersResponse>()
+                logInfo("AUTH_API", "Vendedores obtenidos exitosamente: ${sellersResponse.data?.sellers?.size ?: 0} vendedores")
+                Result.success(sellersResponse)
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logInfo("AUTH_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+                
+                val finalErrorMessage = "Error obteniendo vendedores: ${response.status} - $errorMessage"
+                logError("AUTH_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("AUTH_API", "Error obteniendo vendedores: ${e.message}")
+            Result.failure(e)
         }
     }
 }

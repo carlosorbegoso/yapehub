@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.sqlDelight)
     alias(libs.plugins.kotlinx.serialization)
 }
 
@@ -30,7 +29,6 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
-            implementation(libs.sqlDelight.driver.android)
             
             // Core Libraries
             implementation(libs.timber)
@@ -71,10 +69,7 @@ kotlin {
             
             // Material Icons - Usando la versión latest por defecto
             implementation(compose.materialIconsExtended)
-            
-            
-            // Database
-            implementation(libs.sqlDelight.runtime)
+
             
             // Kotlinx
             implementation(libs.kotlinx.datetime)
@@ -92,7 +87,6 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
         }
         iosMain.dependencies {
-            implementation(libs.sqlDelight.driver.ios)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -146,11 +140,4 @@ dependencies {
     debugImplementation(compose.uiTooling)
 }
 
-sqldelight {
-    databases {
-        create("YapeDatabase") {
-            packageName.set("org.sysarp.project.database")
-        }
-    }
-}
 

@@ -2,13 +2,6 @@ package org.sysarp.project.data
 
 import kotlinx.serialization.Serializable
 
-// Modelos para dashboard
-@Serializable
-data class DashboardResponse(
-    val success: Boolean,
-    val data: DashboardData? = null
-)
-
 @Serializable
 data class DashboardData(
     val summary: DashboardSummary,

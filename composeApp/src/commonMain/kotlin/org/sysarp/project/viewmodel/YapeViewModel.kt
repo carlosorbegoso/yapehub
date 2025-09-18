@@ -1,8 +1,6 @@
 package org.sysarp.project.viewmodel
 
-// import org.sysarp.project.requestPermissionsAutomatically
-// import org.sysarp.project.checkNotificationPermission
-// import org.sysarp.project.checkAccessibilityPermission
+// Imports de funciones iOS eliminados - no se necesitan para Android
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,20 +11,37 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.data.BusinessReport
 import org.sysarp.project.data.DailyReport
-import org.sysarp.project.data.PendingPayment
+// PendingPayment eliminado - no se utiliza
 import org.sysarp.project.data.TransactionType
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.data.UserRole
 import org.sysarp.project.data.YapeTransaction
 import org.sysarp.project.repository.UserProfileRepository
-import org.sysarp.project.repository.YapeTransactionRepository
-import org.sysarp.project.service.CaptureStatus
 import org.sysarp.project.service.DebugLogger
-import org.sysarp.project.service.PermissionState
+import org.sysarp.project.service.PermissionChecker
 import org.sysarp.project.service.SimpleNotificationService
 
+/**
+ * Estados de permisos para el servicio de notificaciones
+ */
+enum class PermissionState {
+    UNKNOWN,
+    GRANTED,
+    DENIED,
+    NEEDS_SETUP
+}
+
+/**
+ * Estados de captura de notificaciones
+ */
+enum class CaptureStatus {
+    UNKNOWN,
+    ACTIVE,
+    INACTIVE,
+    ERROR
+}
+
 class YapeViewModel(
-    private val repository: YapeTransactionRepository,
     private val notificationService: SimpleNotificationService,
     private val userProfileRepository: UserProfileRepository
 ) : ViewModel() {
@@ -46,17 +61,10 @@ class YapeViewModel(
     private val _dailyReports = MutableStateFlow<List<DailyReport>>(emptyList())
     val dailyReports: StateFlow<List<DailyReport>> = _dailyReports.asStateFlow()
     
-    private val _pendingPayments = MutableStateFlow<List<PendingPayment>>(emptyList())
-    val pendingPayments: StateFlow<List<PendingPayment>> = _pendingPayments.asStateFlow()
-    
-    private val _paymentConfirmations = MutableStateFlow<List<PendingPayment>>(emptyList())
-    val paymentConfirmations: StateFlow<List<PendingPayment>> = _paymentConfirmations.asStateFlow()
+    // Sistema de pagos pendientes eliminado - no se utiliza
     
     private var isObservingRepository = false
-    
-    init {
-        // ViewModel inicializado
-    }
+
     
     fun setCurrentUser(user: UserProfile) {
         _currentUser.value = user
@@ -66,13 +74,12 @@ class YapeViewModel(
             isObservingRepository = true
             viewModelScope.launch {
                 DebugLogger.info("🔍 ViewModel iniciando observación del repositorio...")
-                repository.getAllTransactions().collect { allTransactions ->
-                    DebugLogger.info("🔄 ViewModel recibió ${allTransactions.size} transacciones del repositorio")
-                    _transactions.value = allTransactions
-                    DebugLogger.info("📊 ViewModel actualizado - Transacciones: ${_transactions.value.size}")
-                    updateBusinessReports(allTransactions)
-                    updateDailyReports(allTransactions)
-                }
+                // Sin base de datos local, mantener lista vacía
+                DebugLogger.info("🔄 ViewModel sin base de datos local - usando lista vacía")
+                _transactions.value = emptyList()
+                DebugLogger.info("📊 ViewModel actualizado - Transacciones: ${_transactions.value.size}")
+                updateBusinessReports(emptyList())
+                updateDailyReports(emptyList())
             }
         }
         
@@ -132,67 +139,80 @@ class YapeViewModel(
         _dailyReports.value = reports
     }
     
-    fun startNotificationCapture() {
-        viewModelScope.launch {
-            notificationService.startCapture()
-            _uiState.value = _uiState.value.copy(isCapturing = true)
-        }
-    }
-    
-    fun stopNotificationCapture() {
-        viewModelScope.launch {
-            notificationService.stopCapture()
-            _uiState.value = _uiState.value.copy(isCapturing = false)
-        }
-    }
+    // Métodos de captura eliminados - se manejan directamente en setCurrentUser()
     
     fun addTransaction(transaction: YapeTransaction) {
         viewModelScope.launch {
-            repository.insertTransaction(transaction)
+            // Sin base de datos local, solo agregar a la lista en memoria
+            val currentTransactions = _transactions.value.toMutableList()
+            currentTransactions.add(transaction)
+            _transactions.value = currentTransactions
+            updateBusinessReports(currentTransactions)
+            updateDailyReports(currentTransactions)
         }
     }
     
     fun markTransactionAsProcessed(transactionId: Long) {
         viewModelScope.launch {
-            repository.updateTransactionProcessed(transactionId)
+            // Sin base de datos local, actualizar en memoria
+            val currentTransactions = _transactions.value.toMutableList()
+            val index = currentTransactions.indexOfFirst { it.id == transactionId }
+            if (index != -1) {
+                currentTransactions[index] = currentTransactions[index].copy(isProcessed = true)
+                _transactions.value = currentTransactions
+                updateBusinessReports(currentTransactions)
+                updateDailyReports(currentTransactions)
+            }
         }
     }
     
     fun assignTransactionToBusiness(transactionId: Long, businessName: String) {
         viewModelScope.launch {
-            repository.updateTransactionBusiness(transactionId, businessName)
+            // Sin base de datos local, actualizar en memoria
+            val currentTransactions = _transactions.value.toMutableList()
+            val index = currentTransactions.indexOfFirst { it.id == transactionId }
+            if (index != -1) {
+                currentTransactions[index] = currentTransactions[index].copy(businessName = businessName)
+                _transactions.value = currentTransactions
+                updateBusinessReports(currentTransactions)
+                updateDailyReports(currentTransactions)
+            }
         }
     }
     
     fun deleteTransaction(transactionId: Long) {
         viewModelScope.launch {
-            repository.deleteTransaction(transactionId)
+            // Sin base de datos local, eliminar de memoria
+            val currentTransactions = _transactions.value.toMutableList()
+            currentTransactions.removeAll { it.id == transactionId }
+            _transactions.value = currentTransactions
+            updateBusinessReports(currentTransactions)
+            updateDailyReports(currentTransactions)
         }
     }
     
-    fun getTransactionsForReport(): List<YapeTransaction> {
-        return _transactions.value
-    }
+    // Método getTransactionsForReport() eliminado - no se utiliza
     
-    fun exportDatabaseToText(): String {
+    fun exportTransactionsToText(): String {
         return try {
             val transactions = _transactions.value
-            DebugLogger.info("📤 Exportando base de datos - Transacciones: ${transactions.size}")
+            DebugLogger.info("📤 Exportando transacciones - Total: ${transactions.size}")
             val timestamp = kotlinx.datetime.Clock.System.now()
             val dateFormatter = kotlinx.datetime.TimeZone.currentSystemDefault()
             
             val header = """
 ========================================
-YAPE CHAMO - EXPORTACIÓN DE BASE DE DATOS
+YAPE CHAMO - EXPORTACIÓN DE TRANSACCIONES
 ========================================
 Exportado: ${timestamp.toLocalDateTime(dateFormatter)}
 Total de transacciones: ${transactions.size}
+Nota: Datos en memoria (sin persistencia local)
 ========================================
 
 """
             
             val transactionsText = if (transactions.isEmpty()) {
-                "No hay transacciones en la base de datos SQLite."
+                "No hay transacciones en memoria."
             } else {
                 transactions.mapIndexed { index, transaction ->
                     """
@@ -209,169 +229,25 @@ Total de transacciones: ${transactions.size}
             
             header + transactionsText
         } catch (e: Exception) {
-            "Error: No se pudo exportar la base de datos SQLite - ${e.message}"
+            "Error: No se pudo exportar las transacciones - ${e.message}"
         }
     }
     
-    fun exportCompleteDatabaseToText(): String {
-        return try {
-            val completeDatabaseText = repository.exportAllTransactionsToText()
-            DebugLogger.info("📤 Exportando base de datos COMPLETA")
-            completeDatabaseText
-        } catch (e: Exception) {
-            "Error: No se pudo exportar la base de datos completa - ${e.message}"
-        }
-    }
-
-    fun getDatabaseExportFileName(): String {
-        val timestamp = kotlinx.datetime.Clock.System.now()
-        val dateFormatter = kotlinx.datetime.TimeZone.currentSystemDefault()
-        val dateTime = timestamp.toLocalDateTime(dateFormatter)
-        return "yapechamo_database_${dateTime.year}${dateTime.monthNumber.toString().padStart(2, '0')}${dateTime.dayOfMonth.toString().padStart(2, '0')}_${dateTime.hour.toString().padStart(2, '0')}${dateTime.minute.toString().padStart(2, '0')}${dateTime.second.toString().padStart(2, '0')}.txt"
-    }
+    // Métodos de exportación duplicados y UI eliminados - no se utilizan
     
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-    
-    fun logout() {
-        _currentUser.value = null
-        _transactions.value = emptyList()
-        _businessReports.value = emptyList()
-        _dailyReports.value = emptyList()
-        _pendingPayments.value = emptyList()
-        _paymentConfirmations.value = emptyList()
-        isObservingRepository = false
-    }
-    
-    // Métodos para manejar pagos pendientes
-    fun generatePendingPayments() {
-        viewModelScope.launch {
-            val allTransactions = repository.getAllTransactions().first()
-            val receivedTransactions = allTransactions.filter { it.transactionType == TransactionType.RECEIVED }
-            
-            val pendingPayments = receivedTransactions.map { transaction ->
-                PendingPayment(
-                    id = transaction.id,
-                    transactionId = transaction.transactionId,
-                    amount = transaction.amount,
-                    currency = transaction.currency,
-                    createdAt = transaction.createdAt,
-                    businessName = transaction.businessName ?: "Sin categorizar",
-                    message = transaction.message,
-                    isConfirmed = false,
-                    confirmedBy = null,
-                    securityCode = transaction.securityCode
-                )
-            }
-            
-            _pendingPayments.value = pendingPayments
-        }
-    }
-    
-    fun generatePendingPaymentsWithDelay() {
-        viewModelScope.launch {
-            kotlinx.coroutines.delay(1000)
-            generatePendingPayments()
-        }
-    }
-    
-    fun confirmPayment(pendingPayment: PendingPayment) {
-        viewModelScope.launch {
-            val currentUser = _currentUser.value ?: return@launch
-            
-            // Verificar que el pago no haya sido confirmado por otro vendedor
-            val existingConfirmation = _paymentConfirmations.value.find { 
-                it.transactionId == pendingPayment.transactionId 
-            }
-            
-            if (existingConfirmation != null) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Este pago ya fue confirmado por otro vendedor"
-                )
-                return@launch
-            }
-            
-            // Crear confirmación
-            val confirmation = PendingPayment(
-                id = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
-                transactionId = pendingPayment.transactionId,
-                amount = pendingPayment.amount,
-                currency = pendingPayment.currency,
-                createdAt = kotlinx.datetime.Clock.System.now(),
-                businessName = currentUser.assignedStores.firstOrNull() ?: "Sin tienda",
-                message = "Pago confirmado por ${currentUser.name}",
-                isConfirmed = true,
-                confirmedBy = currentUser.id,
-                securityCode = pendingPayment.securityCode
-            )
-            
-            // Actualizar listas
-            val updatedConfirmations = _paymentConfirmations.value + confirmation
-            _paymentConfirmations.value = updatedConfirmations
-            
-            val updatedPendingPayments = _pendingPayments.value.map { payment ->
-                if (payment.id == pendingPayment.id) {
-                    payment.copy(
-                        isConfirmed = true,
-                        confirmedBy = currentUser.id
-                    )
-                } else {
-                    payment
-                }
-            }
-            _pendingPayments.value = updatedPendingPayments
-            
-            // Marcar transacción como procesada
-            repository.updateTransactionProcessed(pendingPayment.id)
-        }
-    }
-    
-    fun rejectPayment(pendingPayment: PendingPayment) {
-        viewModelScope.launch {
-            val updatedPendingPayments = _pendingPayments.value.filter { 
-                it.id != pendingPayment.id 
-            }
-            _pendingPayments.value = updatedPendingPayments
-        }
-    }
-    
-    fun getPendingPaymentsForVendor(): List<PendingPayment> {
-        val currentUser = _currentUser.value ?: return emptyList()
-        
-        return when (currentUser.role) {
-            UserRole.ADMIN -> _pendingPayments.value
-            UserRole.VENDOR -> {
-                _pendingPayments.value.filter { payment ->
-                    !payment.isConfirmed
-                }
-            }
-        }
-    }
-    
-    fun canVendorConfirmPayment(payment: PendingPayment): Boolean {
-        val currentUser = _currentUser.value ?: return false
-        
-        return when (currentUser.role) {
-            UserRole.ADMIN -> true
-            UserRole.VENDOR -> {
-                payment.businessName in currentUser.assignedStores
-            }
-        }
-    }
+    // Sistema de pagos pendientes eliminado - no se utiliza
     
     private suspend fun requestPermissions() {
-        // requestPermissionsAutomatically() // Temporalmente deshabilitado
+        // Método simplificado para Android - sin funciones iOS
         kotlinx.coroutines.delay(1000)
         checkPermissions()
     }
     
-    private suspend fun checkPermissions() {
+    private fun checkPermissions() {
         try {
-            // val hasNotificationPermission = checkNotificationPermission() // Temporalmente deshabilitado
-            // val hasAccessibilityPermission = checkAccessibilityPermission() // Temporalmente deshabilitado
-            val hasNotificationPermission = false // Temporalmente deshabilitado
-            val hasAccessibilityPermission = false // Temporalmente deshabilitado
+            // Verificación real de permisos usando PermissionChecker
+            val hasNotificationPermission = PermissionChecker.isNotificationServiceEnabled()
+            val hasAccessibilityPermission = PermissionChecker.isAccessibilityServiceEnabled()
             
             DebugLogger.info("Resultados de permisos - Notificaciones: $hasNotificationPermission, Accesibilidad: $hasAccessibilityPermission")
             
@@ -415,40 +291,16 @@ Total de transacciones: ${transactions.size}
     }
     
     private suspend fun checkNotificationPermission(): Boolean {
-        // return org.sysarp.project.checkNotificationPermission() // Temporalmente deshabilitado
-        return false // Temporalmente deshabilitado
+        // Verificación real de permisos usando PermissionChecker
+        return PermissionChecker.isNotificationServiceEnabled()
     }
     
     private suspend fun checkAccessibilityPermission(): Boolean {
-        // return org.sysarp.project.checkAccessibilityPermission() // Temporalmente deshabilitado
-        return false // Temporalmente deshabilitado
+        // Verificación real de permisos usando PermissionChecker
+        return PermissionChecker.isAccessibilityServiceEnabled()
     }
     
-    fun refreshPermissions() {
-        viewModelScope.launch {
-            DebugLogger.info("Manual permission refresh requested")
-            _uiState.value = _uiState.value.copy(
-                permissionState = PermissionState.UNKNOWN,
-                permissionMessage = "🔄 Verificando permisos...",
-                captureStatus = CaptureStatus.UNKNOWN,
-                captureMessage = "Verificando estado..."
-            )
-            kotlinx.coroutines.delay(500)
-            checkPermissions()
-            
-            kotlinx.coroutines.delay(1000)
-            DebugLogger.info("Second verification after delay")
-            checkPermissions()
-        }
-    }
-    
-    fun onAppResumed() {
-        viewModelScope.launch {
-            DebugLogger.info("App resumed - checking permissions automatically")
-            kotlinx.coroutines.delay(500)
-            checkPermissions()
-        }
-    }
+    // Métodos de permisos no utilizados eliminados - AppLifecycleManager maneja esto
     
     fun insertTestTransaction() {
         viewModelScope.launch {
@@ -469,9 +321,9 @@ Total de transacciones: ${transactions.size}
                 securityCode = "123"
             )
 
-            DebugLogger.info("🧪 [TEST] Insertando transacción de prueba...")
-            repository.insertTransaction(testTransaction)
-            DebugLogger.info("✅ [TEST] Transacción de prueba insertada")
+            DebugLogger.info("🧪 [TEST] Agregando transacción de prueba...")
+            addTransaction(testTransaction)
+            DebugLogger.info("✅ [TEST] Transacción de prueba agregada")
 
             kotlinx.coroutines.delay(1000)
             val currentTransactions = _transactions.value
@@ -487,7 +339,7 @@ Total de transacciones: ${transactions.size}
         }
     }
 
-    fun verifyDatabaseIntegrity() {
+    fun verifyTransactionsIntegrity() {
         viewModelScope.launch {
             DebugLogger.info("🔍 [VERIFY] Iniciando verificación integral de base de datos...")
 
@@ -495,17 +347,12 @@ Total de transacciones: ${transactions.size}
                 val viewModelCount = _transactions.value.size
                 DebugLogger.info("📊 [VERIFY] Transacciones en ViewModel: $viewModelCount")
 
-                val repositoryTransactions = repository.getAllTransactions().first()
-                val repositoryCount = repositoryTransactions.size
-                DebugLogger.info("📊 [VERIFY] Transacciones desde repositorio: $repositoryCount")
+                // Sin repositorio de base de datos, solo verificar ViewModel
+                DebugLogger.info("📊 [VERIFY] Transacciones en memoria: $viewModelCount")
+                DebugLogger.info("✅ [VERIFY] Verificación de memoria completada")
 
-                if (viewModelCount == repositoryCount) {
-                    DebugLogger.info("✅ [VERIFY] Coherencia entre ViewModel y Repositorio")
-                } else {
-                    DebugLogger.error("❌ [VERIFY] INCONSISTENCIA: ViewModel=$viewModelCount, Repositorio=$repositoryCount")
-                }
-
-                repositoryTransactions.forEach { transaction ->
+                // Verificar transacciones en memoria
+                _transactions.value.forEach { transaction ->
                     if (transaction.transactionId.isEmpty()) {
                         DebugLogger.error("❌ [VERIFY] Transacción con ID vacío: ${transaction.id}")
                     }

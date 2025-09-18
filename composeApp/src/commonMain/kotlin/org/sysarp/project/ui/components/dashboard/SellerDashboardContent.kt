@@ -116,6 +116,26 @@ fun SellerDashboardContent(
                         onSuccess = { response ->
                             showSuccessMessage = "Pago confirmado exitosamente"
                             pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+                            
+                            // Enviar notificación WebSocket al servidor
+                            try {
+                                val websocketMessage = """
+                                {
+                                    "type": "PAYMENT_CONFIRMED",
+                                    "data": {
+                                        "paymentId": $paymentId,
+                                        "sellerId": $sellerId,
+                                        "status": "CONFIRMED",
+                                        "timestamp": "${System.currentTimeMillis()}",
+                                        "message": "Pago confirmado por el vendedor"
+                                    }
+                                }
+                                """.trimIndent()
+                                webSocketService.sendMessage(websocketMessage)
+                                Logger.auth("DASHBOARD", "📤 Notificación WebSocket enviada: PAYMENT_CONFIRMED")
+                            } catch (e: Exception) {
+                                Logger.auth("DASHBOARD", "❌ Error enviando notificación WebSocket: ${e.message}")
+                            }
                         },
                         onFailure = { error ->
                             showErrorMessage = "Error confirmando pago: ${error.message}"
@@ -143,6 +163,27 @@ fun SellerDashboardContent(
                         onSuccess = { response ->
                             showSuccessMessage = "Pago rechazado exitosamente"
                             pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+                            
+                            // Enviar notificación WebSocket al servidor
+                            try {
+                                val websocketMessage = """
+                                {
+                                    "type": "PAYMENT_REJECTED",
+                                    "data": {
+                                        "paymentId": $paymentId,
+                                        "sellerId": $sellerId,
+                                        "status": "REJECTED",
+                                        "timestamp": "${System.currentTimeMillis()}",
+                                        "message": "Pago rechazado por el vendedor",
+                                        "reason": "Rechazado por el vendedor"
+                                    }
+                                }
+                                """.trimIndent()
+                                webSocketService.sendMessage(websocketMessage)
+                                Logger.auth("DASHBOARD", "📤 Notificación WebSocket enviada: PAYMENT_REJECTED")
+                            } catch (e: Exception) {
+                                Logger.auth("DASHBOARD", "❌ Error enviando notificación WebSocket: ${e.message}")
+                            }
                         },
                         onFailure = { error ->
                             showErrorMessage = "Error rechazando pago: ${error.message}"
@@ -185,6 +226,26 @@ fun SellerDashboardContent(
                                 showSuccessMessage = "Pago confirmado exitosamente"
                                 pendingPayments = pendingPayments.filter { it.paymentId != notification.paymentId }
                                 dismissNotification()
+                                
+                                // Enviar notificación WebSocket al servidor
+                                try {
+                                    val websocketMessage = """
+                                    {
+                                        "type": "PAYMENT_CONFIRMED",
+                                        "data": {
+                                            "paymentId": ${notification.paymentId},
+                                            "sellerId": $sellerId,
+                                            "status": "CONFIRMED",
+                                            "timestamp": "${System.currentTimeMillis()}",
+                                            "message": "Pago confirmado por el vendedor desde notificación"
+                                        }
+                                    }
+                                    """.trimIndent()
+                                    webSocketService.sendMessage(websocketMessage)
+                                    Logger.auth("DASHBOARD", "📤 Notificación WebSocket enviada: PAYMENT_CONFIRMED (desde notificación)")
+                                } catch (e: Exception) {
+                                    Logger.auth("DASHBOARD", "❌ Error enviando notificación WebSocket: ${e.message}")
+                                }
                             },
                             onFailure = { error ->
                                 showErrorMessage = "Error confirmando pago: ${error.message}"
@@ -215,6 +276,27 @@ fun SellerDashboardContent(
                                 showSuccessMessage = "Pago rechazado exitosamente"
                                 pendingPayments = pendingPayments.filter { it.paymentId != notification.paymentId }
                                 dismissNotification()
+                                
+                                // Enviar notificación WebSocket al servidor
+                                try {
+                                    val websocketMessage = """
+                                    {
+                                        "type": "PAYMENT_REJECTED",
+                                        "data": {
+                                            "paymentId": ${notification.paymentId},
+                                            "sellerId": $sellerId,
+                                            "status": "REJECTED",
+                                            "timestamp": "${System.currentTimeMillis()}",
+                                            "message": "Pago rechazado por el vendedor desde notificación",
+                                            "reason": "Rechazado por el vendedor"
+                                        }
+                                    }
+                                    """.trimIndent()
+                                    webSocketService.sendMessage(websocketMessage)
+                                    Logger.auth("DASHBOARD", "📤 Notificación WebSocket enviada: PAYMENT_REJECTED (desde notificación)")
+                                } catch (e: Exception) {
+                                    Logger.auth("DASHBOARD", "❌ Error enviando notificación WebSocket: ${e.message}")
+                                }
                             },
                             onFailure = { error ->
                                 showErrorMessage = "Error rechazando pago: ${error.message}"

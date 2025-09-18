@@ -30,14 +30,6 @@ data class PendingPayment(
 )
 
 @Serializable
-data class ClaimPaymentData(
-    val paymentId: Int,
-    val sellerId: Int,
-    val adminId: Int,
-    val claimedAt: Long? = null
-)
-
-@Serializable
 data class YapePaymentResponse(
     val success: Boolean,
     val message: String,

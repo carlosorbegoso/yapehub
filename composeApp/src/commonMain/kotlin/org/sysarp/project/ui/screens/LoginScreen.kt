@@ -370,11 +370,10 @@ fun LoginScreen(
                                 
                                 // Login real usando la API
                                 coroutineScope.launch {
-                                    authService.login(
+                                    authService.loginAdmin(
                                         email = sanitizedEmail,
-                                        password = sanitizedPassword,
-                                        deviceFingerprint = "H", // Fingerprint fijo por ahora
-                                        role = "ADMIN" // Rol fijo por ahora
+                                        password = sanitizedPassword
+                                        // deviceFingerprint y role se generan automáticamente
                                     ).fold(
                                         onSuccess = { loginData ->
                                             isLoading = false

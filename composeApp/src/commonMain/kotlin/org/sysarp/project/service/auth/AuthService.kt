@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.sysarp.project.data.*
 import org.sysarp.project.data.AuthState
-import org.sysarp.project.service.http.ApiClient
 import org.sysarp.project.service.http.AuthApiClient
 import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.UserProfileFactory
@@ -16,8 +15,8 @@ import org.sysarp.project.utils.UserProfileFactory
  */
 class AuthService {
     
-    private val apiClient = ApiClient()
     private val authApiClient = AuthApiClient()
+    private val tokenManager = TokenManager()
     
     // Estados básicos
     private val _authState = MutableStateFlow(AuthState.LOADING)
@@ -26,14 +25,40 @@ class AuthService {
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
     
-    private val _accessToken = MutableStateFlow<String?>(null)
-    val accessToken: StateFlow<String?> = _accessToken.asStateFlow()
+    // Delegar al TokenManager
+    val accessToken: StateFlow<String?> = tokenManager.accessToken
     
     /**
      * Verificar si la sesión es válida
      */
-    fun isSessionValid(): Boolean {
-        return _accessToken.value != null
+    suspend fun isSessionValid(): Boolean {
+        val accessToken = tokenManager.getAccessToken()
+        
+        // Si no hay token, la sesión no es válida
+        if (accessToken == null) {
+            return false
+        }
+        
+        // Si el token está expirado, intentar refrescarlo
+        if (tokenManager.isTokenExpired()) {
+            Logger.auth("AUTH_SERVICE", "Token expirado, intentando refrescar...")
+            
+            val refreshResult = refreshToken()
+            return refreshResult.isSuccess
+        }
+        
+        // Si el token está próximo a expirar, refrescarlo preventivamente
+        if (shouldRefreshToken()) {
+            Logger.auth("AUTH_SERVICE", "Token próximo a expirar, refrescando preventivamente...")
+            
+            val refreshResult = refreshToken()
+            if (refreshResult.isFailure) {
+                Logger.auth("AUTH_SERVICE", "Error refrescando token preventivamente: ${refreshResult.exceptionOrNull()?.message}")
+                // No fallar la sesión por error en refresh preventivo
+            }
+        }
+        
+        return true
     }
     
     /**
@@ -41,12 +66,18 @@ class AuthService {
      */
     suspend fun loginAdmin(
         email: String,
-        password: String
+        password: String,
+        deviceFingerprint: String? = null,
+        role: String = "ADMIN"
     ): Result<LoginUserData> {
         return try {
             Logger.auth("AUTH_SERVICE", "Iniciando login de admin: $email")
             
-            val apiResponse = apiClient.adminLogin(email, password)
+            // Generar device fingerprint si no se proporciona
+            val fingerprint = deviceFingerprint ?: org.sysarp.project.utils.DeviceUtils.generateDeviceFingerprint()
+            Logger.auth("AUTH_SERVICE", "Device fingerprint: ${fingerprint.take(20)}...")
+            
+            val apiResponse = authApiClient.adminLogin(email, password, fingerprint, role)
             
             apiResponse.fold(
                 onSuccess = { response ->
@@ -69,7 +100,14 @@ class AuthService {
                             businessName = loginData.businessName,
                             isVerified = loginData.isVerified
                         )
-                        _accessToken.value = response.data.accessToken
+                        
+                        // Guardar tokens en TokenManager
+                        tokenManager.saveTokens(
+                            response.data.accessToken,
+                            response.data.refreshToken,
+                            response.data.expiresIn
+                        )
+                        
                         _authState.value = AuthState.AUTHENTICATED
                         
                         Logger.auth("AUTH_SERVICE", "Login exitoso para admin: $email")
@@ -93,83 +131,133 @@ class AuthService {
         }
     }
     
+    
     /**
-     * Login de vendedor por teléfono
+     * Refrescar token usando refresh token
      */
-    suspend fun loginSellerByPhone(
-        phone: String,
-        affiliationCode: String
-    ): Result<SellerLoginData> {
+    suspend fun refreshToken(): Result<Boolean> {
         return try {
-            Logger.auth("AUTH_SERVICE", "Iniciando login de vendedor por teléfono: $phone")
+            val refreshToken = tokenManager.getRefreshToken()
+            if (refreshToken == null) {
+                Logger.auth("AUTH_SERVICE", "No hay refresh token disponible")
+                return Result.failure(Exception("No hay refresh token disponible"))
+            }
             
-            val apiResponse = authApiClient.sellerLoginByPhone(phone, affiliationCode)
+            Logger.auth("AUTH_SERVICE", "Refrescando token...")
+            
+            val apiResponse = authApiClient.refreshToken(refreshToken)
             
             apiResponse.fold(
                 onSuccess = { response ->
                     if (response.success && response.data != null) {
-                        val loginData = response.data
-                        val userData = LoginUserData(
-                            id = loginData.sellerId,
-                            email = loginData.email,
-                            role = "SELLER",
-                            businessId = loginData.branchId,
-                            businessName = loginData.branchName,
-                            isVerified = true,
-                            sellerId = loginData.sellerId
+                        // Actualizar token en TokenManager
+                        tokenManager.updateAccessToken(
+                            response.data.accessToken,
+                            response.data.expiresIn
                         )
                         
-                        _userProfile.value = UserProfileFactory.createSellerProfile(
-                            id = loginData.sellerId,
-                            name = loginData.sellerName,
-                            email = loginData.email,
-                            role = "SELLER",
-                            branchId = loginData.branchId,
-                            branchName = loginData.branchName,
-                            branchCode = loginData.branchCode,
-                            isVerified = true,
-                            sellerId = loginData.sellerId,
-                            affiliationCode = loginData.affiliationCode
-                        )
-                        _accessToken.value = loginData.accessToken
-                        _authState.value = AuthState.AUTHENTICATED
-                        
-                        Logger.auth("AUTH_SERVICE", "Login exitoso para vendedor: $phone")
-                        Result.success(loginData)
+                        Logger.auth("AUTH_SERVICE", "Token refrescado exitosamente")
+                        Result.success(true)
                     } else {
-                        Logger.auth("AUTH_SERVICE", "Error en login de vendedor: ${response.message}")
-                        _authState.value = AuthState.UNAUTHENTICATED
+                        Logger.auth("AUTH_SERVICE", "Error refrescando token: ${response.message}")
                         Result.failure(Exception(response.message))
                     }
                 },
                 onFailure = { error ->
-                    Logger.auth("AUTH_SERVICE", "Error en login de vendedor: ${error.message}")
-                    _authState.value = AuthState.UNAUTHENTICATED
+                    Logger.auth("AUTH_SERVICE", "Error refrescando token: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción en login de vendedor: ${e.message}")
-            _authState.value = AuthState.UNAUTHENTICATED
+            Logger.auth("AUTH_SERVICE", "Excepción refrescando token: ${e.message}")
             Result.failure(e)
         }
+    }
+    
+    /**
+     * Verificar si el token necesita ser refrescado
+     */
+    fun shouldRefreshToken(): Boolean {
+        return tokenManager.isTokenNearExpiry()
     }
     
     /**
      * Logout
      */
     suspend fun logout(): Result<Unit> {
-        _accessToken.value = null
-        _userProfile.value = null
-        _authState.value = AuthState.UNAUTHENTICATED
-        return Result.success(Unit)
+        return try {
+            val accessToken = tokenManager.getAccessToken()
+            
+            // Intentar cerrar sesión en el servidor si hay token
+            if (accessToken != null) {
+                Logger.auth("AUTH_SERVICE", "Cerrando sesión en el servidor...")
+                val apiResponse = authApiClient.logout(accessToken)
+                
+                apiResponse.fold(
+                    onSuccess = { response ->
+                        Logger.auth("AUTH_SERVICE", "Sesión cerrada exitosamente en el servidor")
+                    },
+                    onFailure = { error ->
+                        Logger.auth("AUTH_SERVICE", "Error cerrando sesión en el servidor: ${error.message}")
+                        // Continuar con logout local aunque falle el servidor
+                    }
+                )
+            }
+            
+            // Limpiar datos locales
+            tokenManager.clearTokens()
+            _userProfile.value = null
+            _authState.value = AuthState.UNAUTHENTICATED
+            
+            Logger.auth("AUTH_SERVICE", "Usuario ha cerrado sesión localmente")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción en logout: ${e.message}")
+            
+            // Limpiar datos locales aunque haya error
+            tokenManager.clearTokens()
+            _userProfile.value = null
+            _authState.value = AuthState.UNAUTHENTICATED
+            
+            Result.failure(e)
+        }
     }
     
     /**
      * Actualizar actividad del usuario
      */
     fun updateActivity() {
-        // TODO: Implementar cuando sea necesario
+        // Actualizar timestamp de última actividad en TokenManager
+        tokenManager.getAccessToken() // Esto actualiza automáticamente lastActivityTime
+        Logger.auth("AUTH_SERVICE", "Actividad del usuario actualizada")
+    }
+    
+    /**
+     * Verificar y refrescar token si es necesario
+     * Este método debe ser llamado periódicamente para mantener la sesión activa
+     */
+    suspend fun checkAndRefreshTokenIfNeeded(): Boolean {
+        return try {
+            // Solo refrescar si es necesario
+            if (shouldRefreshToken()) {
+                Logger.auth("AUTH_SERVICE", "Token necesita refresh, refrescando...")
+                val refreshResult = refreshToken()
+                
+                if (refreshResult.isSuccess) {
+                    Logger.auth("AUTH_SERVICE", "Token refrescado exitosamente en verificación periódica")
+                    true
+                } else {
+                    Logger.auth("AUTH_SERVICE", "Error refrescando token en verificación periódica: ${refreshResult.exceptionOrNull()?.message}")
+                    false
+                }
+            } else {
+                Logger.auth("AUTH_SERVICE", "Token no necesita refresh")
+                true
+            }
+        } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción en verificación periódica de token: ${e.message}")
+            false
+        }
     }
     
     /**
@@ -205,7 +293,8 @@ class AuthService {
      * Establecer token de acceso (para uso interno)
      */
     fun setAccessToken(token: String) {
-        _accessToken.value = token
+        // Actualizar solo el access token en TokenManager
+        tokenManager.updateAccessToken(token, 3600) // 1 hora por defecto
     }
     
     /**
@@ -231,7 +320,7 @@ class AuthService {
         return try {
             Logger.auth("AUTH_SERVICE", "Iniciando registro de admin: $email")
             
-            val apiResponse = apiClient.adminRegister(
+            val apiResponse = authApiClient.adminRegister(
                 businessName = businessName,
                 businessType = businessType,
                 ruc = ruc,
@@ -263,7 +352,14 @@ class AuthService {
                             businessName = loginData.businessName,
                             isVerified = loginData.isVerified
                         )
-                        _accessToken.value = response.data.accessToken
+                        
+                        // Guardar tokens en TokenManager
+                        tokenManager.saveTokens(
+                            response.data.accessToken,
+                            response.data.refreshToken,
+                            response.data.expiresIn
+                        )
+                        
                         _authState.value = AuthState.AUTHENTICATED
                         
                         Logger.auth("AUTH_SERVICE", "Registro exitoso para admin: $email")
@@ -287,15 +383,7 @@ class AuthService {
         }
     }
     
-    // Métodos de compatibilidad para las pantallas existentes
     
-    suspend fun login(email: String, password: String, deviceFingerprint: String, role: String): Result<LoginUserData> {
-        return loginAdmin(email, password)
-    }
-    
-    suspend fun sellerLoginByPhone(phone: String, affiliationCode: String): Result<SellerLoginData> {
-        return loginSellerByPhone(phone, affiliationCode)
-    }
     
     /**
      * Recuperar contraseña
@@ -322,28 +410,4 @@ class AuthService {
         }
     }
     
-    /**
-     * Validar código de afiliación
-     */
-    suspend fun validateAffiliationCode(affiliationCode: String): Result<ValidateAffiliationCodeData> {
-        return try {
-            Logger.auth("AUTH_SERVICE", "Validando código de afiliación: $affiliationCode")
-            
-            val result = authApiClient.validateAffiliationCode(affiliationCode)
-            
-            result.fold(
-                onSuccess = { response ->
-                    Logger.auth("AUTH_SERVICE", "Código de afiliación validado exitosamente")
-                    Result.success(response.data!!)
-                },
-                onFailure = { error ->
-                    Logger.auth("AUTH_SERVICE", "Error validando código de afiliación: ${error.message}")
-                    Result.failure(error)
-                }
-            )
-        } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción validando código de afiliación: ${e.message}")
-            Result.failure(e)
-        }
-    }
 }

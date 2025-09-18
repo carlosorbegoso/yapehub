@@ -38,20 +38,6 @@ data class MySeller(
     val affiliationDate: String?
 )
 
-@Serializable
-data class MySellersResponse(
-    val success: Boolean,
-    val message: String,
-    val data: MySellersData? = null,
-    val error: Boolean = false
-)
-
-@Serializable
-data class MySellersData(
-    val sellers: List<MySeller>,
-    val pagination: PaginationData
-)
-
 // Modelos para actualización de vendedores (movidos a AdminModels.kt)
 
 @Serializable

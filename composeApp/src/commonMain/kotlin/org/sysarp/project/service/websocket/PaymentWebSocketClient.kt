@@ -238,19 +238,18 @@ class PaymentWebSocketClient(
      */
     suspend fun sendMessage(message: String) {
         try {
-            Logger.auth("WEBSOCKET", "📤 Mensaje enviado: $message")
+            val session = webSocketSession
+            if (session != null && _connectionState.value == WebSocketConnectionState.CONNECTED) {
+                session.send(Frame.Text(message))
+                Logger.auth("WEBSOCKET", "📤 Mensaje enviado: $message")
+            } else {
+                Logger.auth("WEBSOCKET", "❌ No se puede enviar mensaje: WebSocket no conectado")
+            }
         } catch (e: Exception) {
             Logger.auth("WEBSOCKET", "❌ Error enviando mensaje: ${e.message}")
         }
     }
     
-    /**
-     * Limpia recursos
-     */
-    fun cleanup() {
-        disconnect()
-        httpClient.close()
-    }
 }
 
 /**

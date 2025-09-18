@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
@@ -71,10 +72,33 @@ fun SellerDashboardScreen(
         }
     }
     
+    // Verificación periódica de tokens (cada 2 minutos)
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(120_000) // 2 minutos
+            try {
+                val refreshSuccess = authService.checkAndRefreshTokenIfNeeded()
+                if (!refreshSuccess) {
+                    println("⏰ [SELLER_DASHBOARD] Error en refresh periódico, verificando sesión...")
+                    if (!authService.isSessionValid()) {
+                        println("⏰ [SELLER_DASHBOARD] Sesión inválida después de refresh fallido, cerrando sesión...")
+                        authService.logout()
+                        onLogout()
+                        break
+                    }
+                }
+            } catch (e: Exception) {
+                println("⏰ [SELLER_DASHBOARD] Error en verificación periódica: ${e.message}")
+            }
+        }
+    }
+    
     Scaffold(
         topBar = {
             SellerDashboardTopBar(
                 newPaymentsCount = newPaymentsCount,
+                authService = authService,
+                coroutineScope = coroutineScope,
                 onNotificationsClick = { 
                     newPaymentsCount = 0
                 },

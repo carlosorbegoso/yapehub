@@ -1,18 +1,14 @@
 package org.sysarp.project.service.http
 
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.http.content.*
 import kotlinx.serialization.json.Json
 import org.sysarp.project.data.AffiliationCodeData
-import org.sysarp.project.data.AffiliationCodeRequest
 import org.sysarp.project.data.AffiliationCodeResponse
-import org.sysarp.project.utils.Constants
 
 class AffiliationApiClient : BaseApiClient() {
     

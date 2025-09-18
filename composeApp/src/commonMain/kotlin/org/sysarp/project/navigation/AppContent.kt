@@ -110,6 +110,12 @@ fun AppContent(
             LoginScreen(
                 authService = authService,
                 onLoginSuccess = { role ->
+                    // Establecer el usuario en el ViewModel después del login exitoso
+                    val userProfile = authService.userProfile.value
+                    if (userProfile != null) {
+                        viewModel.setCurrentUser(userProfile)
+                    }
+                    
                     // Navegar al dashboard correspondiente basado en el rol
                     when (role) {
                         "ADMIN" -> navigationManager.navigateToAdminDashboard()
@@ -143,7 +149,14 @@ fun AppContent(
                 sellerService = sellerService,
                 authService = authService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
-                onSuccess = { navigationManager.navigateToSellerDashboard() },
+                onSuccess = { 
+                    // Establecer el usuario en el ViewModel después del login exitoso de seller
+                    val userProfile = authService.userProfile.value
+                    if (userProfile != null) {
+                        viewModel.setCurrentUser(userProfile)
+                    }
+                    navigationManager.navigateToSellerDashboard() 
+                },
                 onNavigateToQRScanner = { navigationManager.navigateTo(Screen.QRScanner) }
             )
         }
@@ -152,7 +165,14 @@ fun AppContent(
                 sellerService = sellerService,
                 authService = authService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
-                onSuccess = { navigationManager.navigateToSellerDashboard() },
+                onSuccess = { 
+                    // Establecer el usuario en el ViewModel después del registro exitoso de seller
+                    val userProfile = authService.userProfile.value
+                    if (userProfile != null) {
+                        viewModel.setCurrentUser(userProfile)
+                    }
+                    navigationManager.navigateToSellerDashboard() 
+                },
                 onNavigateToQRScanner = { navigationManager.navigateTo(Screen.QRScanner) }
             )
         }

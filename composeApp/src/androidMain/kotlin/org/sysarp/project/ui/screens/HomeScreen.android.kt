@@ -21,11 +21,11 @@ actual fun exportLogs(logsText: String) {
 /**
  * Implementación específica de Android para exportar base de datos
  */
-actual fun exportDatabase(databaseText: String, fileName: String) {
+actual fun exportTransactions(transactionsText: String, fileName: String) {
     val context = ContextProvider.getContext()
     if (context != null) {
         CoroutineScope(Dispatchers.Main).launch {
-            LogExportService.shareLogsAsFile(context, databaseText, fileName)
+            LogExportService.shareLogsAsFile(context, transactionsText, fileName)
         }
     }
 }

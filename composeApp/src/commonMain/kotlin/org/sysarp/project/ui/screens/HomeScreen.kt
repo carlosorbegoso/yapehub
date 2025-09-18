@@ -62,6 +62,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.datetime.Clock
 import org.sysarp.project.data.TransactionType
+import org.sysarp.project.data.UserRole
+import org.sysarp.project.viewmodel.PermissionState
 import org.sysarp.project.ui.components.DebugLogPanel
 import org.sysarp.project.ui.components.ModernCard
 import org.sysarp.project.ui.components.TransactionCard
@@ -191,11 +193,11 @@ fun HomeScreen(
                                     val isCapturing = uiState.isCapturing
                                     val pulseAlpha by animateFloatAsState(
                                         targetValue = when {
-                                            uiState.permissionState == org.sysarp.project.service.PermissionState.GRANTED && uiState.isCapturing -> 
+                                            uiState.permissionState == PermissionState.GRANTED && uiState.isCapturing ->
                                                 1f // Parpadea fuerte cuando está capturando
-                                            uiState.permissionState == org.sysarp.project.service.PermissionState.NEEDS_SETUP -> 
+                                            uiState.permissionState == PermissionState.NEEDS_SETUP ->
                                                 0.8f // Parpadea suave cuando necesita configuración
-                                            uiState.permissionState == org.sysarp.project.service.PermissionState.DENIED -> 
+                                            uiState.permissionState == PermissionState.DENIED ->
                                                 0.9f // Parpadea fuerte cuando no tiene permisos
                                             else -> 
                                                 0.5f // Opaco cuando está desconocido
@@ -203,11 +205,11 @@ fun HomeScreen(
                                         animationSpec = infiniteRepeatable(
                                             animation = tween(
                                                 durationMillis = when {
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.GRANTED && uiState.isCapturing -> 
+                                                    uiState.permissionState == PermissionState.GRANTED && uiState.isCapturing ->
                                                         800 // Parpadea rápido cuando está capturando
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.NEEDS_SETUP -> 
+                                                    uiState.permissionState == PermissionState.NEEDS_SETUP ->
                                                         1500 // Parpadea lento cuando necesita configuración
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.DENIED -> 
+                                                    uiState.permissionState == PermissionState.DENIED ->
                                                         600 // Parpadea muy rápido cuando no tiene permisos
                                                     else -> 
                                                         2000 // Parpadea muy lento cuando está desconocido
@@ -225,11 +227,11 @@ fun HomeScreen(
                                             .clip(CircleShape)
                                             .background(
                                                 when {
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.GRANTED && uiState.isCapturing -> 
+                                                    uiState.permissionState == PermissionState.GRANTED && uiState.isCapturing ->
                                                         Color(0xFF4CAF50) // Verde cuando está capturando
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.NEEDS_SETUP -> 
+                                                    uiState.permissionState == PermissionState.NEEDS_SETUP ->
                                                         Color(0xFFFFC107) // Amarillo cuando necesita configuración
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.DENIED -> 
+                                                    uiState.permissionState == PermissionState.DENIED ->
                                                         Color(0xFFF44336) // Rojo cuando no tiene permisos
                                                     else -> 
                                                         Color(0xFF9E9E9E) // Gris cuando está desconocido
@@ -237,11 +239,11 @@ fun HomeScreen(
                                             )
                                             .alpha(
                                                 when {
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.GRANTED && uiState.isCapturing -> 
+                                                    uiState.permissionState == PermissionState.GRANTED && uiState.isCapturing ->
                                                         pulseAlpha // Parpadea cuando está capturando
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.NEEDS_SETUP -> 
+                                                    uiState.permissionState == PermissionState.NEEDS_SETUP ->
                                                         0.7f + (pulseAlpha * 0.3f) // Parpadea suave cuando necesita configuración
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.DENIED -> 
+                                                    uiState.permissionState == PermissionState.DENIED ->
                                                         0.8f + (pulseAlpha * 0.2f) // Parpadea fuerte cuando no tiene permisos
                                                     else -> 
                                                         0.5f // Opaco cuando está desconocido
@@ -249,22 +251,22 @@ fun HomeScreen(
                                             )
                                             .shadow(
                                                 elevation = when {
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.GRANTED && uiState.isCapturing -> 
+                                                    uiState.permissionState == PermissionState.GRANTED && uiState.isCapturing ->
                                                         8.dp // Sombra fuerte cuando está capturando
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.NEEDS_SETUP -> 
+                                                    uiState.permissionState == PermissionState.NEEDS_SETUP ->
                                                         4.dp // Sombra media cuando necesita configuración
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.DENIED -> 
+                                                    uiState.permissionState == PermissionState.DENIED ->
                                                         6.dp // Sombra fuerte cuando no tiene permisos
                                                     else -> 
                                                         2.dp // Sombra suave cuando está desconocido
                                                 },
                                                 shape = CircleShape,
                                                 ambientColor = when {
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.GRANTED && uiState.isCapturing -> 
+                                                    uiState.permissionState == PermissionState.GRANTED && uiState.isCapturing ->
                                                         Color(0xFF4CAF50).copy(alpha = 0.3f) // Sombra verde
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.NEEDS_SETUP -> 
+                                                    uiState.permissionState == PermissionState.NEEDS_SETUP ->
                                                         Color(0xFFFFC107).copy(alpha = 0.3f) // Sombra amarilla
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.DENIED -> 
+                                                    uiState.permissionState == PermissionState.DENIED ->
                                                         Color(0xFFF44336).copy(alpha = 0.3f) // Sombra roja
                                                     else -> 
                                                         Color(0xFF9E9E9E).copy(alpha = 0.3f) // Sombra gris
@@ -276,30 +278,30 @@ fun HomeScreen(
                                     
                                     Text(
                                         text = when {
-                                            currentUser?.role == org.sysarp.project.data.UserRole.ADMIN -> {
+                                            currentUser?.role == UserRole.ADMIN -> {
                                                 when {
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.GRANTED && uiState.isCapturing -> 
+                                                    uiState.permissionState == PermissionState.GRANTED && uiState.isCapturing ->
                                                         "✅ Capturando notificaciones de Yape"
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.NEEDS_SETUP -> 
+                                                    uiState.permissionState == PermissionState.NEEDS_SETUP ->
                                                         "⚠️ Configuración necesaria"
-                                                    uiState.permissionState == org.sysarp.project.service.PermissionState.DENIED -> 
+                                                    uiState.permissionState == PermissionState.DENIED ->
                                                         "❌ Permisos denegados"
                                                     else -> 
                                                         "🔄 Verificando permisos..."
                                                 }
                                             }
-                                            currentUser?.role == org.sysarp.project.data.UserRole.VENDOR -> 
+                                            currentUser?.role == UserRole.VENDOR ->
                                                 "👥 Esperando confirmaciones de pago"
                                             else -> 
                                                 "👤 Selecciona tu perfil"
                                         },
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = when {
-                                            uiState.permissionState == org.sysarp.project.service.PermissionState.GRANTED && uiState.isCapturing -> 
+                                            uiState.permissionState == PermissionState.GRANTED && uiState.isCapturing ->
                                                 Color(0xFF4CAF50) // Verde cuando está capturando
-                                            uiState.permissionState == org.sysarp.project.service.PermissionState.NEEDS_SETUP -> 
+                                            uiState.permissionState == PermissionState.NEEDS_SETUP ->
                                                 Color(0xFFFFC107) // Amarillo cuando necesita configuración
-                                            uiState.permissionState == org.sysarp.project.service.PermissionState.DENIED -> 
+                                            uiState.permissionState == PermissionState.DENIED ->
                                                 Color(0xFFF44336) // Rojo cuando no tiene permisos
                                             else -> 
                                                 MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f) // Blanco por defecto
@@ -314,9 +316,9 @@ fun HomeScreen(
                                         text = uiState.permissionMessage,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = when (uiState.permissionState) {
-                                            org.sysarp.project.service.PermissionState.GRANTED -> MaterialTheme.colorScheme.tertiary
-                                            org.sysarp.project.service.PermissionState.DENIED -> MaterialTheme.colorScheme.error
-                                            org.sysarp.project.service.PermissionState.NEEDS_SETUP -> MaterialTheme.colorScheme.secondary
+                                            PermissionState.GRANTED -> MaterialTheme.colorScheme.tertiary
+                                            PermissionState.DENIED -> MaterialTheme.colorScheme.error
+                                            PermissionState.NEEDS_SETUP -> MaterialTheme.colorScheme.secondary
                                             else -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                                         }
                                     )
@@ -573,7 +575,7 @@ fun HomeScreen(
                             Button(
                                 onClick = {
                                     // Ejecutar verificación de integridad
-                                    viewModel.verifyDatabaseIntegrity()
+                                    viewModel.verifyTransactionsIntegrity()
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = ButtonDefaults.buttonColors(
@@ -616,9 +618,9 @@ fun HomeScreen(
                 exportLogs(logsText)
             },
             onExportDatabase = { _, fileName ->
-                // Exportar base de datos a texto plano con nombre específico
-                val databaseText = viewModel.exportDatabaseToText()
-                exportDatabase(databaseText, fileName)
+                // Exportar transacciones a texto plano con nombre específico
+                val transactionsText = viewModel.exportTransactionsToText()
+                exportTransactions(transactionsText, fileName)
             },
             modifier = Modifier.align(Alignment.BottomEnd)
         )
@@ -628,4 +630,4 @@ fun HomeScreen(
 // Funciones específicas de plataforma
 expect fun exportLogs(logsText: String)
 
-expect fun exportDatabase(databaseText: String, fileName: String)
+expect fun exportTransactions(transactionsText: String, fileName: String)

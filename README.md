@@ -85,7 +85,7 @@ YapeHub es una aplicación móvil desarrollada en Kotlin Multiplatform que te ay
 ### Tecnologías Utilizadas
 - **Kotlin Multiplatform**: Código compartido entre Android e iOS
 - **Jetpack Compose**: Interfaz de usuario moderna
-- **SQLDelight**: Base de datos local
+- **Sin base de datos local**: Solo datos en memoria
 - **Kotlinx Serialization**: Serialización de datos
 - **Kotlinx Coroutines**: Programación asíncrona
 
@@ -96,12 +96,12 @@ composeApp/
 │   ├── commonMain/
 │   │   ├── kotlin/
 │   │   │   ├── data/           # Modelos de datos
-│   │   │   ├── database/       # Esquema de base de datos
+│   │   │   ├── data/           # Modelos de datos
 │   │   │   ├── repository/     # Repositorio de datos
 │   │   │   ├── service/        # Servicios de captura
 │   │   │   ├── ui/            # Interfaz de usuario
 │   │   │   └── viewmodel/     # ViewModels
-│   │   └── sqldelight/        # Archivos SQL
+│   │   └── data/              # Modelos de datos
 │   ├── androidMain/           # Implementación Android
 │   └── iosMain/              # Implementación iOS
 ```

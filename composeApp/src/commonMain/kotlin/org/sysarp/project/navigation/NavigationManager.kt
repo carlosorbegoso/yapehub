@@ -49,12 +49,7 @@ class NavigationManager {
             _currentScreen.value = _navigationStack.removeLastOrNull() ?: Screen.AdminDashboard
         }
     }
-    
-    fun navigateToMain() {
-        _navigationStack.clear()
-        _currentScreen.value = Screen.AdminDashboard
-    }
-    
+
     fun navigateToProfileSelection() {
         _navigationStack.clear()
         _currentScreen.value = Screen.ProfileSelection
@@ -91,14 +86,7 @@ class NavigationManager {
     fun navigateToSellerDashboard() {
         _currentScreen.value = Screen.SellerDashboard
     }
-    
-    fun navigateToSellerManagement() {
-        _currentScreen.value = Screen.SellerManagement
-    }
-    
-    fun navigateToAnalytics() {
-        _currentScreen.value = Screen.Analytics
-    }
+
     
     fun navigateToQRDisplay(qrCode: org.sysarp.project.service.QRCodeData) {
         navigateTo(Screen.QRDisplay(qrCode))
@@ -119,11 +107,7 @@ class NavigationManager {
     fun navigateToDeactivationRequest() {
         _currentScreen.value = Screen.DeactivationRequest
     }
-    
-    fun navigateToSellerPayments() {
-        _currentScreen.value = Screen.SellerPayments
-    }
-    
+
 }
 
 @Composable

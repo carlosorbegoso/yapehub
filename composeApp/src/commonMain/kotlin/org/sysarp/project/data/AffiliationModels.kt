@@ -3,15 +3,6 @@ package org.sysarp.project.data
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AffiliationCodeRequest(
-    val adminId: Int,
-    val branchId: Int,
-    val expirationHours: Int,
-    val maxUses: Int,
-    val notes: String
-)
-
-@Serializable
 data class AffiliationCodeResponse(
     val success: Boolean,
     val message: String,
@@ -26,11 +17,6 @@ data class AffiliationCodeData(
     val maxUses: Int,
     val remainingUses: Int,
     val branchId: Int
-)
-
-@Serializable
-data class GenerateQRRequest(
-    val affiliationCode: String
 )
 
 @Serializable

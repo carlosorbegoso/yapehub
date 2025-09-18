@@ -59,11 +59,13 @@ import androidx.compose.ui.unit.sp
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
+import org.sysarp.project.data.AdminStatsData
 import org.sysarp.project.data.AffiliationCodeData
 import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
 import androidx.compose.runtime.*
 import org.sysarp.project.data.DeactivationRequest
 import org.sysarp.project.data.QuickSummaryData
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 
@@ -90,7 +92,29 @@ fun AdminDashboardScreen(
         authService.updateActivity()
         if (!authService.isSessionValid()) {
             println("⏰ [DASHBOARD] Sesión expirada, cerrando sesión...")
+            authService.logout()
             onLogout()
+        }
+    }
+    
+    // Verificación periódica de tokens (cada 2 minutos)
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(120_000) // 2 minutos
+            try {
+                val refreshSuccess = authService.checkAndRefreshTokenIfNeeded()
+                if (!refreshSuccess) {
+                    println("⏰ [DASHBOARD] Error en refresh periódico, verificando sesión...")
+                    if (!authService.isSessionValid()) {
+                        println("⏰ [DASHBOARD] Sesión inválida después de refresh fallido, cerrando sesión...")
+                        authService.logout()
+                        onLogout()
+                        break
+                    }
+                }
+            } catch (e: Exception) {
+                println("⏰ [DASHBOARD] Error en verificación periódica: ${e.message}")
+            }
         }
     }
     val userProfile by authService.userProfile.collectAsState()
@@ -215,7 +239,12 @@ fun AdminDashboardScreen(
                             contentDescription = "Configuración"
                         )
                     }
-                    IconButton(onClick = onLogout) {
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            authService.logout()
+                            onLogout()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.Filled.Logout,
                             contentDescription = "Cerrar sesión"

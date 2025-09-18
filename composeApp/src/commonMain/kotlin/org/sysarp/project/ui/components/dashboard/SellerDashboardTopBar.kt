@@ -24,6 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.sysarp.project.service.auth.AuthService
 
 /**
  * Barra superior del dashboard del vendedor con notificaciones y acciones
@@ -32,6 +35,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SellerDashboardTopBar(
     newPaymentsCount: Int,
+    authService: AuthService,
+    coroutineScope: CoroutineScope,
     onNotificationsClick: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -79,7 +84,12 @@ fun SellerDashboardTopBar(
                     contentDescription = "Configuración"
                 )
             }
-            IconButton(onClick = onLogout) {
+            IconButton(onClick = {
+                coroutineScope.launch {
+                    authService.logout()
+                    onLogout()
+                }
+            }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Logout,
                     contentDescription = "Cerrar Sesión"
