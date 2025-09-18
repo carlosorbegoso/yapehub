@@ -29,7 +29,7 @@ import org.sysarp.project.service.auth.AuthService
 fun AdminProfileScreen(
     authService: AuthService,
     onNavigateBack: () -> Unit,
-    onNavigateToQR: (org.sysarp.project.service.QRCodeData) -> Unit = {}
+    onNavigateToQR: (org.sysarp.project.data.QRCodeData) -> Unit = {}
 ) {
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()

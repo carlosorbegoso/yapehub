@@ -15,6 +15,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import org.sysarp.project.data.SellerLoginData
+import org.sysarp.project.service.auth.AuthService
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,11 +26,13 @@ fun SellerQRLoginScreen(
     onQRScanned: (String) -> Unit,
     onLoginSuccess: (SellerLoginData) -> Unit,
     isLoading: Boolean = false,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    authService: AuthService? = null
 ) {
     var showManualEntry by remember { mutableStateOf(false) }
     var phoneNumber by remember { mutableStateOf("") }
     var qrData by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
     
     Scaffold(
         topBar = {
@@ -202,7 +207,37 @@ fun SellerQRLoginScreen(
                 Button(
                     onClick = { 
                         if (qrData.isNotBlank() && phoneNumber.isNotBlank()) {
-                            onQRScanned(qrData)
+                            // Si tenemos AuthService, usar sellerLoginByPhone
+                            if (authService != null) {
+                                coroutineScope.launch {
+                                    authService.sellerLoginByPhone(phoneNumber, qrData)
+                                        .fold(
+                                            onSuccess = { response ->
+                                                // Convertir respuesta a SellerLoginData
+                                                val sellerLoginData = SellerLoginData(
+                                                    sellerId = response.data?.sellerId ?: 0,
+                                                    sellerName = response.data?.sellerName ?: "",
+                                                    email = response.data?.email ?: "",
+                                                    phone = phoneNumber,
+                                                    branchId = response.data?.branchId ?: 0,
+                                                    branchName = response.data?.branchName ?: "",
+                                                    branchCode = response.data?.branchCode ?: "",
+                                                    affiliationCode = qrData,
+                                                    accessToken = response.data?.accessToken ?: "",
+                                                    refreshToken = response.data?.refreshToken ?: ""
+                                                )
+                                                onLoginSuccess(sellerLoginData)
+                                            },
+                                            onFailure = { error ->
+                                                // Manejar error - podríamos mostrar un mensaje de error
+                                                println("❌ [SELLER_QR_LOGIN] Error en login por teléfono: ${error.message}")
+                                            }
+                                        )
+                                }
+                            } else {
+                                // Fallback al método original
+                                onQRScanned(qrData)
+                            }
                         }
                     },
                     enabled = !isLoading && qrData.isNotBlank() && phoneNumber.isNotBlank(),

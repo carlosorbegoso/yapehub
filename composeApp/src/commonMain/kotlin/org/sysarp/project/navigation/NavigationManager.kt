@@ -29,7 +29,7 @@ sealed class Screen {
     object AdminProfile : Screen()
     object SellerNotifications : Screen()
     object QRScanner : Screen()
-    data class QRDisplay(val qrCode: org.sysarp.project.service.QRCodeData) : Screen()
+    data class QRDisplay(val qrCode: org.sysarp.project.data.QRCodeData) : Screen()
     data class SellerSpecificPayments(val sellerId: Int, val sellerName: String) : Screen()
 }
 
@@ -88,7 +88,7 @@ class NavigationManager {
     }
 
     
-    fun navigateToQRDisplay(qrCode: org.sysarp.project.service.QRCodeData) {
+    fun navigateToQRDisplay(qrCode: org.sysarp.project.data.QRCodeData) {
         navigateTo(Screen.QRDisplay(qrCode))
     }
     

@@ -20,8 +20,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import org.sysarp.project.data.UserProfile
-import org.sysarp.project.service.QRCodeData
-import org.sysarp.project.service.QRService
+import org.sysarp.project.data.QRCodeData
+import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.admin.AdminService
 import org.sysarp.project.service.http.AdminProfileApiClient
