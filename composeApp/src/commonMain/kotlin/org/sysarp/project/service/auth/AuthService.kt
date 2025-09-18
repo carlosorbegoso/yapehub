@@ -409,5 +409,90 @@ class AuthService {
             Result.failure(e)
         }
     }
+
+    /**
+     * Login de vendedor por teléfono y código de afiliación
+     */
+    suspend fun sellerLoginByPhone(
+        phone: String,
+        affiliationCode: String
+    ): Result<org.sysarp.project.data.SellerLoginByPhoneResponse> {
+        return try {
+            Logger.auth("AUTH_SERVICE", "Intentando login de vendedor por teléfono: $phone")
+            
+            val result = authApiClient.sellerLoginByPhone(phone, affiliationCode)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("AUTH_SERVICE", "Login de vendedor exitoso por teléfono: $phone")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("AUTH_SERVICE", "Error en login de vendedor por teléfono: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción en login de vendedor por teléfono: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Validar código de afiliación
+     */
+    suspend fun validateAffiliationCode(
+        affiliationCode: String
+    ): Result<org.sysarp.project.data.ValidateAffiliationCodeResponse> {
+        return try {
+            Logger.auth("AUTH_SERVICE", "Validando código de afiliación: ${affiliationCode.take(10)}...")
+            
+            val result = authApiClient.validateAffiliationCode(affiliationCode)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("AUTH_SERVICE", "Código de afiliación validado exitosamente")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("AUTH_SERVICE", "Error validando código de afiliación: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción validando código de afiliación: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Obtener vendedores del administrador
+     */
+    suspend fun getMySellers(
+        adminId: Int,
+        page: Int = 1,
+        limit: Int = 30,
+        token: String
+    ): Result<org.sysarp.project.data.SellersResponse> {
+        return try {
+            Logger.auth("AUTH_SERVICE", "Obteniendo vendedores del admin: $adminId, página: $page")
+            
+            val result = authApiClient.getMySellers(adminId, page, limit, token)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("AUTH_SERVICE", "Vendedores obtenidos: ${response.data?.sellers?.size ?: 0} vendedores")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("AUTH_SERVICE", "Error obteniendo vendedores: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "Excepción obteniendo vendedores: ${e.message}")
+            Result.failure(e)
+        }
+    }
     
 }

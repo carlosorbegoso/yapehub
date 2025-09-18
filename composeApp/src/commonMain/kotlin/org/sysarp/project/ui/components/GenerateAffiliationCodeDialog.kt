@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import org.sysarp.project.data.AffiliationCodeData
 import org.sysarp.project.data.BranchInfo
+import org.sysarp.project.service.auth.AuthService
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,9 +43,14 @@ fun GenerateAffiliationCodeDialog(
     errorMessage: String? = null,
     onGenerateQR: ((String) -> Unit)? = null,
     isLoadingQR: Boolean = false,
-    qrError: String? = null
+    qrError: String? = null,
+    authService: AuthService? = null
 ) {
     if (isVisible) {
+        val coroutineScope = rememberCoroutineScope()
+        var isValidating by remember { mutableStateOf(false) }
+        var validationResult by remember { mutableStateOf<String?>(null) }
+        
         Dialog(onDismissRequest = onDismiss) {
             Card(
                 modifier = Modifier
@@ -399,6 +407,69 @@ fun GenerateAffiliationCodeDialog(
                                                 color = MaterialTheme.colorScheme.primary,
                                                 fontWeight = FontWeight.Medium
                                             )
+                                        }
+                                        
+                                        // Botón para validar código
+                                        if (authService != null) {
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            
+                                            OutlinedButton(
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        isValidating = true
+                                                        validationResult = null
+                                                        
+                                                        authService.validateAffiliationCode(generatedCode.affiliationCode)
+                                                            .fold(
+                                                                onSuccess = { response ->
+                                                                    validationResult = "✅ Código válido: ${response.data?.isValid ?: "Código de afiliación válido"}"
+                                                                    isValidating = false
+                                                                },
+                                                                onFailure = { error ->
+                                                                    validationResult = "❌ Error validando código: ${error.message}"
+                                                                    isValidating = false
+                                                                }
+                                                            )
+                                                    }
+                                                },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = RoundedCornerShape(12.dp),
+                                                enabled = !isValidating
+                                            ) {
+                                                if (isValidating) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(16.dp),
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                }
+                                                Icon(
+                                                    imageVector = Icons.Filled.Verified,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = if (isValidating) "Validando..." else "Validar Código",
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                            
+                                            // Resultado de validación
+                                            if (validationResult != null) {
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Text(
+                                                    text = validationResult!!,
+                                                    fontSize = 12.sp,
+                                                    color = if (validationResult!!.startsWith("✅")) 
+                                                        MaterialTheme.colorScheme.primary 
+                                                    else 
+                                                        MaterialTheme.colorScheme.error,
+                                                    fontWeight = FontWeight.Medium,
+                                                    textAlign = TextAlign.Center,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                )
+                                            }
                                         }
                                         
                                         // Botón para generar QR

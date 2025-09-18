@@ -92,7 +92,7 @@ fun FloatingDebugOverlay() {
             .fillMaxSize()
             .zIndex(1000f)
     ) {
-        // Botón toggle en esquina superior derecha
+        // Botón toggle en esquina inferior derecha
         AnimatedVisibility(
             visible = isVisible,
             enter = slideInHorizontally(
@@ -103,7 +103,7 @@ fun FloatingDebugOverlay() {
                 targetOffsetX = { it },
                 animationSpec = tween(300)
             ),
-            modifier = Modifier.align(Alignment.TopEnd)
+            modifier = Modifier.align(Alignment.BottomEnd)
         ) {
             FloatingActionButton(
                 onClick = { 
@@ -111,14 +111,14 @@ fun FloatingDebugOverlay() {
                 },
                 modifier = Modifier
                     .padding(16.dp)
-                    .size(56.dp),
+                    .size(40.dp), // Botón más pequeño
                 containerColor = MaterialTheme.colorScheme.error,
                 contentColor = MaterialTheme.colorScheme.onError
             ) {
                 Icon(
                     imageVector = if (isExpanded) Icons.Filled.Close else Icons.Filled.BugReport,
                     contentDescription = if (isExpanded) "Cerrar Debug" else "Abrir Debug",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(18.dp) // Icono más pequeño
                 )
             }
         }
@@ -127,21 +127,20 @@ fun FloatingDebugOverlay() {
         AnimatedVisibility(
             visible = isExpanded,
             enter = slideInVertically(
-                initialOffsetY = { -it },
+                initialOffsetY = { it },
                 animationSpec = tween(500)
             ) + fadeIn(animationSpec = tween(500)),
             exit = slideOutVertically(
-                targetOffsetY = { -it },
+                targetOffsetY = { it },
                 animationSpec = tween(500)
             ) + fadeOut(animationSpec = tween(500)),
-            modifier = Modifier.align(Alignment.TopCenter)
+            modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             DebugTerminal(
                 logs = logs,
                 onClearLogs = { DebugLogManager.clearLogs() },
                 onExportLogs = { 
                     // TODO: Implementar exportación real
-                    val exportedLogs = DebugLogManager.exportLogs()
                     // Por ahora solo simulamos
                 },
                 onClose = { isExpanded = false }

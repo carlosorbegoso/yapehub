@@ -62,6 +62,19 @@ fun SellerDashboardScreen(
         
         if (sellerId != null && accessToken != null) {
             webSocketService.startAutoConnect()
+            
+            // Verificar estado de conexión del vendedor
+            paymentService.getSellerConnectionStatus(
+                sellerId = sellerId.toInt(),
+                token = accessToken
+            ).fold(
+                onSuccess = { response ->
+                    println("🔗 [SELLER_DASHBOARD] Estado de conexión: ${response.data?.isConnected}")
+                },
+                onFailure = { error ->
+                    println("❌ [SELLER_DASHBOARD] Error verificando conexión: ${error.message}")
+                }
+            )
         }
     }
     

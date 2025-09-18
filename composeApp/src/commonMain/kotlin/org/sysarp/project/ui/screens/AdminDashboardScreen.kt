@@ -186,6 +186,20 @@ fun AdminDashboardScreen(
                     isLoadingStats = false
                 }
             )
+            
+            // También cargar estadísticas completas del admin
+            statsService.getAdminStatsSummary(
+                adminId = userProfile!!.adminId!!.toInt(),
+                token = accessToken!!
+            ).fold(
+                onSuccess = { response ->
+                    // TODO: Usar response.data para mostrar estadísticas adicionales
+                    println("📊 [ADMIN_DASHBOARD] Estadísticas completas del admin cargadas")
+                },
+                onFailure = { error ->
+                    println("❌ [ADMIN_DASHBOARD] Error cargando estadísticas completas: ${error.message}")
+                }
+            )
         }
     }
     
@@ -728,7 +742,8 @@ fun AdminDashboardScreen(
             }
         },
         isLoadingQR = isLoadingQR,
-        qrError = qrError
+        qrError = qrError,
+        authService = authService
     )
     
     // Diálogo para mostrar QR generado

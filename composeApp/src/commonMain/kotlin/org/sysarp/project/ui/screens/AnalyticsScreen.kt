@@ -64,6 +64,22 @@ fun AnalyticsScreen(
                     println("🔍 [ANALYTICS] Error cargando analytics: ${error.message}")
                 }
             )
+            
+            // También cargar estadísticas completas del admin
+            statsService.getAdminStats(
+                adminId = userProfile!!.adminId!!.toInt(),
+                startDate = null, // Sin filtro de fecha para obtener todas las estadísticas
+                endDate = null,
+                token = accessToken!!
+            ).fold(
+                onSuccess = { response ->
+                    println("📊 [ANALYTICS] Estadísticas completas del admin cargadas exitosamente")
+                    // TODO: Usar response.data para mostrar estadísticas adicionales en la UI
+                },
+                onFailure = { error ->
+                    println("❌ [ANALYTICS] Error cargando estadísticas completas: ${error.message}")
+                }
+            )
         }
     }
     

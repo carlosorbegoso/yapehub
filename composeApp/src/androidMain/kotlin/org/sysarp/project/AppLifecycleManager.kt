@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import timber.log.Timber
+import org.sysarp.project.service.AndroidNotificationCaptureService
+import org.sysarp.project.ui.components.DebugLogManager
+import org.sysarp.project.ui.components.DebugLog
+import org.sysarp.project.ui.components.LogType
 
 object AppLifecycleManager : DefaultLifecycleObserver {
     private val _appResumed = MutableSharedFlow<Unit>()
@@ -42,7 +46,7 @@ object AppLifecycleManager : DefaultLifecycleObserver {
             Timber.tag("AppLifecycleManager").d("🔍 Verificando permisos de notificaciones...")
             
             // 1. Verificar si el servicio de notificaciones está habilitado
-            val hasNotificationPermission = org.sysarp.project.service.AndroidNotificationCaptureService.isNotificationServiceEnabled(context)
+            val hasNotificationPermission = AndroidNotificationCaptureService.isNotificationServiceEnabled(context)
             
             if (hasNotificationPermission) {
                 Timber.tag("AppLifecycleManager").d("✅ Permisos de notificaciones habilitados")
@@ -57,10 +61,10 @@ object AppLifecycleManager : DefaultLifecycleObserver {
                 Timber.tag("AppLifecycleManager").w("❌ Permisos de notificaciones NO habilitados")
                 
                 // Enviar log de debug
-                org.sysarp.project.ui.components.DebugLogManager.addLog(
-                    org.sysarp.project.ui.components.DebugLog(
+                DebugLogManager.addLog(
+                    DebugLog(
                         timestamp = System.currentTimeMillis(),
-                        type = org.sysarp.project.ui.components.LogType.PERMISSION,
+                        type = LogType.PERMISSION,
                         message = "❌ Permisos de notificaciones no habilitados",
                         details = "El usuario necesita habilitar el servicio de notificaciones"
                     )
@@ -85,10 +89,10 @@ object AppLifecycleManager : DefaultLifecycleObserver {
             Timber.tag("AppLifecycleManager").d("🧹 Notificaciones de la app limpiadas")
             
             // Enviar log de debug
-            org.sysarp.project.ui.components.DebugLogManager.addLog(
-                org.sysarp.project.ui.components.DebugLog(
+            DebugLogManager.addLog(
+                DebugLog(
                     timestamp = System.currentTimeMillis(),
-                    type = org.sysarp.project.ui.components.LogType.PERMISSION,
+                    type = LogType.PERMISSION,
                     message = "🧹 Notificaciones limpiadas",
                     details = "Se limpiaron las notificaciones antiguas de la app"
                 )
@@ -106,29 +110,25 @@ object AppLifecycleManager : DefaultLifecycleObserver {
         try {
             // Verificar si el servicio está registrado en el manifest
             val packageManager = context.packageManager
-            val serviceInfo = packageManager.getServiceInfo(
-                android.content.ComponentName(context, org.sysarp.project.service.AndroidNotificationCaptureService::class.java),
+            packageManager.getServiceInfo(
+                android.content.ComponentName(context, AndroidNotificationCaptureService::class.java),
                 0
             )
             
-            if (serviceInfo != null) {
-                Timber.tag("AppLifecycleManager").d("✅ Servicio de notificaciones registrado correctamente")
-                
-                // Enviar log de debug
-                org.sysarp.project.ui.components.DebugLogManager.addLog(
-                    org.sysarp.project.ui.components.DebugLog(
-                        timestamp = System.currentTimeMillis(),
-                        type = org.sysarp.project.ui.components.LogType.PERMISSION,
-                        message = "✅ Servicio de notificaciones funcionando",
-                        details = "El servicio está registrado y funcionando correctamente"
-                    )
+            Timber.tag("AppLifecycleManager").d("✅ Servicio de notificaciones registrado correctamente")
+            
+            // Enviar log de debug
+            DebugLogManager.addLog(
+                DebugLog(
+                    timestamp = System.currentTimeMillis(),
+                    type = LogType.PERMISSION,
+                    message = "✅ Servicio de notificaciones funcionando",
+                    details = "El servicio está registrado y funcionando correctamente"
                 )
-            } else {
-                Timber.tag("AppLifecycleManager").w("⚠️ Servicio de notificaciones no encontrado")
-            }
+            )
             
         } catch (e: Exception) {
-            Timber.tag("AppLifecycleManager").e("❌ Error verificando servicio: ${e.message}")
+            Timber.tag("AppLifecycleManager").w("⚠️ Servicio de notificaciones no encontrado: ${e.message}")
         }
     }
 }

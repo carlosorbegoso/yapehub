@@ -116,6 +116,34 @@ class PaymentService(
     }
 
     /**
+     * Obtener estado de conexión de un vendedor
+     */
+    suspend fun getSellerConnectionStatus(
+        sellerId: Int,
+        token: String
+    ): Result<org.sysarp.project.data.SellerConnectionStatusResponse> {
+        return try {
+            Logger.auth("PAYMENT_SERVICE", "Obteniendo estado de conexión del vendedor: $sellerId")
+
+            val result = paymentApiClient.getSellerConnectionStatus(sellerId, token)
+
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("PAYMENT_SERVICE", "Estado de conexión obtenido: ${response.data?.isConnected}")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("PAYMENT_SERVICE", "Error obteniendo estado de conexión: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("PAYMENT_SERVICE", "Error obteniendo estado de conexión: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Obtener pagos pendientes de un vendedor específico (para administradores)
      */
     suspend fun getSellerPendingPaymentsForAdmin(

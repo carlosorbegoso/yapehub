@@ -61,4 +61,72 @@ class NotificationService(
         }
     }
 
+    /**
+     * Obtener notificaciones de un vendedor
+     */
+    suspend fun getSellerNotifications(
+        sellerId: Int,
+        page: Int = 0,
+        limit: Int = 20
+    ): Result<org.sysarp.project.data.SellerNotificationsResponse> {
+        return try {
+            Logger.auth("NOTIFICATION_SERVICE", "Obteniendo notificaciones del vendedor: $sellerId, página: $page")
+            
+            val token = authService.accessToken.value
+            if (token.isNullOrBlank()) {
+                Logger.auth("NOTIFICATION_SERVICE", "❌ No hay token de autenticación disponible")
+                return Result.failure(Exception("Token de autenticación no disponible"))
+            }
+            
+            val result = notificationApiClient.getSellerNotifications(token, sellerId, page, limit)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("NOTIFICATION_SERVICE", "✅ Notificaciones obtenidas: ${response.data?.notifications?.size ?: 0} notificaciones")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("NOTIFICATION_SERVICE", "❌ Error obteniendo notificaciones: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("NOTIFICATION_SERVICE", "💥 Excepción obteniendo notificaciones: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Marcar notificación como leída
+     */
+    suspend fun markNotificationAsRead(
+        notificationId: Int
+    ): Result<org.sysarp.project.data.MarkNotificationReadResponse> {
+        return try {
+            Logger.auth("NOTIFICATION_SERVICE", "Marcando notificación como leída: $notificationId")
+            
+            val token = authService.accessToken.value
+            if (token.isNullOrBlank()) {
+                Logger.auth("NOTIFICATION_SERVICE", "❌ No hay token de autenticación disponible")
+                return Result.failure(Exception("Token de autenticación no disponible"))
+            }
+            
+            val result = notificationApiClient.markNotificationAsRead(notificationId, token)
+            
+            result.fold(
+                onSuccess = { response ->
+                    Logger.auth("NOTIFICATION_SERVICE", "✅ Notificación marcada como leída exitosamente")
+                    Result.success(response)
+                },
+                onFailure = { error ->
+                    Logger.auth("NOTIFICATION_SERVICE", "❌ Error marcando notificación como leída: ${error.message}")
+                    Result.failure(error)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("NOTIFICATION_SERVICE", "💥 Excepción marcando notificación como leída: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
 }

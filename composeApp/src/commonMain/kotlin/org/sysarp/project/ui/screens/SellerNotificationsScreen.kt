@@ -19,7 +19,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.SellerNotification
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.service.notifications.SellerNotificationService
+import org.sysarp.project.service.NotificationService
+import org.sysarp.project.service.http.NotificationApiClient
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -33,7 +34,12 @@ fun SellerNotificationsScreen(
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()
     
-    val notificationService = remember { SellerNotificationService(authService) }
+    val notificationService = remember { 
+        NotificationService(
+            NotificationApiClient(),
+            authService
+        )
+    }
     val coroutineScope = rememberCoroutineScope()
     
     // Estados
@@ -55,16 +61,21 @@ fun SellerNotificationsScreen(
     // Manejar la carga de notificaciones
     LaunchedEffect(isLoading, currentPage) {
         if (isLoading && accessToken != null) {
-            notificationService.getSellerNotifications(currentPage, 20)
+            notificationService.getSellerNotifications(
+                userProfile?.sellerId?.toInt() ?: 0,
+                currentPage,
+                20
+            )
                 .fold(
-                    onSuccess = { data ->
+                    onSuccess = { response ->
+                        val data = response.data
                         if (currentPage == 0) {
-                            notifications = data.notifications
+                            notifications = data?.notifications ?: emptyList()
                         } else {
-                            notifications = notifications + data.notifications
+                            notifications = notifications + (data?.notifications ?: emptyList())
                         }
-                        unreadCount = data.unreadCount
-                        hasMorePages = data.pagination.currentPage < data.pagination.totalPages - 1
+                        unreadCount = data?.unreadCount ?: 0
+                        hasMorePages = (data?.pagination?.currentPage ?: 0) < (data?.pagination?.totalPages ?: 1) - 1
                         isLoading = false
                     },
                     onFailure = { error ->
@@ -85,16 +96,17 @@ fun SellerNotificationsScreen(
         coroutineScope.launch {
             notificationService.markNotificationAsRead(notificationId)
                 .fold(
-                    onSuccess = { data ->
+                    onSuccess = { response ->
+                        val data = response.data
                         // Actualizar la notificación localmente
                         notifications = notifications.map { notification ->
                             if (notification.id == notificationId) {
-                                notification.copy(isRead = true, readAt = data.readAt)
+                                notification.copy(isRead = true, readAt = data?.readAt)
                             } else {
                                 notification
                             }
                         }
-                        unreadCount = data.unreadCount
+                        unreadCount = data?.unreadCount ?: unreadCount
                     },
                     onFailure = { error ->
                         errorMessage = "Error marcando como leída: ${error.message}"
