@@ -2,7 +2,6 @@ package org.sysarp.project.service.http
 
 import io.ktor.client.call.body
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import org.sysarp.project.data.*
 
@@ -49,37 +48,7 @@ class NotificationApiClient : BaseApiClient() {
             Result.failure(e)
         }
     }
-    
-    /**
-     * Obtener notificaciones pendientes
-     */
-    suspend fun getPendingNotifications(
-        sellerId: Int,
-        accessToken: String
-    ): Result<ApiResponse<List<PaymentNotification>>> {
-        return try {
-            logInfo("NOTIFICATION_API", "Obteniendo notificaciones pendientes para vendedor: $sellerId")
-            
-            val response = client.get("$baseUrl/api/notifications/pending") {
-                header("Authorization", "Bearer $accessToken")
-                parameter("sellerId", sellerId)
-            }
-            
-            if (response.status.isSuccess()) {
-                val notificationsResponse = response.body<ApiResponse<List<PaymentNotification>>>()
-                logInfo("NOTIFICATION_API", "Notificaciones pendientes obtenidas exitosamente")
-                Result.success(notificationsResponse)
-            } else {
-                val errorMessage = "Error obteniendo notificaciones pendientes: ${response.status}"
-                logError("NOTIFICATION_API", errorMessage)
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: Exception) {
-            logError("NOTIFICATION_API", "Error obteniendo notificaciones pendientes: ${e.message}")
-            Result.failure(e)
-        }
-    }
-    
+
     /**
      * Listar notificaciones del vendedor
      */

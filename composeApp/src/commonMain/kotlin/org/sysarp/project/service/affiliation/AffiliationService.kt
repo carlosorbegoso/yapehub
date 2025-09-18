@@ -1,11 +1,11 @@
 package org.sysarp.project.service.affiliation
 
-import org.sysarp.project.data.AffiliationCodeData
-import org.sysarp.project.service.http.AffiliationApiClient
+import org.sysarp.project.data.GenerateAffiliationCodeResponse
+import org.sysarp.project.service.http.AffiliationCodeApiClient
 
 class AffiliationService {
     
-    private val affiliationApiClient = AffiliationApiClient()
+    private val affiliationCodeApiClient = AffiliationCodeApiClient()
     
     suspend fun generateAffiliationCode(
         adminId: Int,
@@ -14,12 +14,12 @@ class AffiliationService {
         maxUses: Int,
         notes: String,
         accessToken: String
-    ): Result<AffiliationCodeData> {
+    ): Result<GenerateAffiliationCodeResponse> {
         return try {
             println("🚀 [AFFILIATION_SERVICE] Iniciando generación de código de afiliación")
             println("📋 [AFFILIATION_SERVICE] Parámetros: adminId=$adminId, branchId=$branchId, expirationHours=$expirationHours, maxUses=$maxUses, notes='$notes'")
             
-            val result = affiliationApiClient.generateAffiliationCode(
+            val result = affiliationCodeApiClient.generateAffiliationCode(
                 adminId = adminId,
                 branchId = branchId,
                 expirationHours = expirationHours,
@@ -29,7 +29,7 @@ class AffiliationService {
             )
             
             result.onSuccess { affiliationData ->
-                println("✅ [AFFILIATION_SERVICE] Código generado exitosamente: ${affiliationData.affiliationCode}")
+                println("✅ [AFFILIATION_SERVICE] Código generado exitosamente: ${affiliationData.data?.affiliationCode}")
             }.onFailure { error ->
                 println("❌ [AFFILIATION_SERVICE] Error generando código: ${error.message}")
             }

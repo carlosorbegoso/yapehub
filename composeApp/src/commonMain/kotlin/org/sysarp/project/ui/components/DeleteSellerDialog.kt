@@ -11,14 +11,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.service.SellerService
+import org.sysarp.project.service.admin.AdminService
 
 @Composable
 fun DeleteSellerDialog(
     seller: org.sysarp.project.data.MySeller,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit, // "pause" o "delete"
-    sellerService: SellerService,
+    adminService: AdminService,
     authService: AuthService
 ) {
     var selectedAction by remember { mutableStateOf("pause") }

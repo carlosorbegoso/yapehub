@@ -18,7 +18,10 @@ import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.AdminProfileData
 import org.sysarp.project.data.UpdateAdminProfileRequest
 import org.sysarp.project.service.admin.AdminService
-import org.sysarp.project.service.http.AdminApiClient
+import org.sysarp.project.service.http.AdminProfileApiClient
+import org.sysarp.project.service.http.AdminSellerApiClient
+import org.sysarp.project.service.http.SellerManagementApiClient
+import org.sysarp.project.service.http.AdminStatsApiClient
 import org.sysarp.project.service.auth.AuthService
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +34,14 @@ fun AdminProfileScreen(
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()
     
-    val adminService = remember { AdminService(AdminApiClient()) }
+    val adminService = remember { 
+        AdminService(
+            AdminProfileApiClient(),
+            AdminSellerApiClient(),
+            SellerManagementApiClient(),
+            AdminStatsApiClient()
+        )
+    }
     
     // Estados
     var profileData by remember { mutableStateOf<AdminProfileData?>(null) }

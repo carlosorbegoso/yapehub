@@ -11,14 +11,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.service.SellerService
+import org.sysarp.project.service.admin.AdminService
 
 @Composable
 fun EditSellerDialog(
     seller: org.sysarp.project.data.MySeller,
     onDismiss: () -> Unit,
     onSave: (org.sysarp.project.data.MySeller) -> Unit,
-    sellerService: SellerService,
+    adminService: AdminService,
     authService: AuthService
 ) {
     var name by remember { mutableStateOf(seller.name) }
@@ -105,7 +105,7 @@ fun EditSellerDialog(
                             isLoading = true
                             errorMessage = ""
                             
-                            sellerService.updateSeller(
+                            adminService.updateSeller(
                                 sellerId = seller.sellerId,
                                 adminId = profile.adminId!!.toInt(),
                                 name = name,

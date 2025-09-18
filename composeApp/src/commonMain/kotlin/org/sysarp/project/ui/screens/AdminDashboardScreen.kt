@@ -61,6 +61,7 @@ import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.data.AdminStatsData
 import org.sysarp.project.data.AffiliationCodeData
+import org.sysarp.project.data.GenerateAffiliationCodeResponse
 import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
 import androidx.compose.runtime.*
 import org.sysarp.project.data.DeactivationRequest
@@ -134,7 +135,7 @@ fun AdminDashboardScreen(
     // Estado para códigos de afiliación
     var showAffiliationDialog by remember { mutableStateOf(false) }
     var isLoadingAffiliation by remember { mutableStateOf(false) }
-    var generatedAffiliationCode by remember { mutableStateOf<AffiliationCodeData?>(null) }
+    var generatedAffiliationCode by remember { mutableStateOf<GenerateAffiliationCodeResponse?>(null) }
     var affiliationError by remember { mutableStateOf<String?>(null) }
     
     // Estados para QR
@@ -699,7 +700,7 @@ fun AdminDashboardScreen(
         },
         branches = branches,
         isLoading = isLoadingAffiliation,
-        generatedCode = generatedAffiliationCode,
+        generatedCode = generatedAffiliationCode?.data,
         errorMessage = affiliationError,
         onGenerateQR = { affiliationCode ->
             if (accessToken != null) {

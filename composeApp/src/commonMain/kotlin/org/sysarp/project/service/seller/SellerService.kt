@@ -1,7 +1,9 @@
 package org.sysarp.project.service
 
 import org.sysarp.project.data.*
-import org.sysarp.project.service.http.SellerApiClient
+import org.sysarp.project.service.http.SellerManagementApiClient
+import org.sysarp.project.service.http.SellerAuthApiClient
+import org.sysarp.project.service.http.SellerRegistrationApiClient
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.utils.Logger
 
@@ -10,7 +12,9 @@ import org.sysarp.project.utils.Logger
  */
 class SellerService(private val authService: AuthService) {
     
-    private val sellerApiClient = SellerApiClient()
+    private val sellerManagementApiClient = SellerManagementApiClient()
+    private val sellerAuthApiClient = SellerAuthApiClient()
+    private val sellerRegistrationApiClient = SellerRegistrationApiClient()
     
     /**
      * Registrar vendedor con código de afiliación
@@ -23,7 +27,7 @@ class SellerService(private val authService: AuthService) {
         return try {
             Logger.auth("SELLER_SERVICE", "Iniciando registro de vendedor: $sellerName")
             
-            val result = sellerApiClient.registerSeller(
+            val result = sellerRegistrationApiClient.registerSeller(
                 affiliationCode = affiliationCode,
                 sellerName = sellerName,
                 phone = phone
@@ -53,7 +57,7 @@ class SellerService(private val authService: AuthService) {
         return try {
             Logger.auth("SELLER_SERVICE", "Obteniendo vendedores del admin: $adminId, página: $page")
 
-            val result = sellerApiClient.getMySellers(adminId, page, limit, token)
+            val result = sellerManagementApiClient.getMySellers(adminId, page, limit, token)
 
             result.fold(
                 onSuccess = { response ->
@@ -82,7 +86,7 @@ class SellerService(private val authService: AuthService) {
         return try {
             Logger.auth("SELLER_SERVICE", "Actualizando vendedor: $sellerId")
 
-            val result = sellerApiClient.updateSeller(sellerId, adminId, name, phone, isActive, token)
+            val result = sellerManagementApiClient.updateSeller(sellerId, adminId, name, phone, isActive, token)
 
             result.fold(
                 onSuccess = { updatedSeller ->
@@ -109,7 +113,7 @@ class SellerService(private val authService: AuthService) {
         return try {
             Logger.auth("SELLER_SERVICE", "Eliminando/pausando vendedor: $sellerId con acción: $action")
 
-            val result = sellerApiClient.deleteSeller(sellerId, adminId, action, token)
+            val result = sellerManagementApiClient.deleteSeller(sellerId, adminId, action, token)
 
             result.fold(
                 onSuccess = { success ->
@@ -135,7 +139,7 @@ class SellerService(private val authService: AuthService) {
         return try {
             Logger.auth("SELLER_SERVICE", "Iniciando login de vendedor por teléfono: $phone con código: $affiliationCode")
             
-            val result = sellerApiClient.loginSellerByPhone(phone, affiliationCode)
+            val result = sellerAuthApiClient.loginSellerByPhone(phone, affiliationCode)
             
             result.fold(
                 onSuccess = { response ->
@@ -232,7 +236,7 @@ class SellerService(private val authService: AuthService) {
         return try {
             Logger.auth("SELLER_SERVICE", "Obteniendo vendedores conectados para admin: $adminId")
             
-            val result = sellerApiClient.getConnectedSellers(
+            val result = sellerManagementApiClient.getConnectedSellers(
                 adminId = adminId,
                 accessToken = token
             )

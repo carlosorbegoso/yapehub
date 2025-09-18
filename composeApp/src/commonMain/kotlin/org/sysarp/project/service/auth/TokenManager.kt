@@ -3,7 +3,6 @@ package org.sysarp.project.service.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.sysarp.project.utils.Logger
 
 /**
  * Gestor especializado para tokens de autenticación
@@ -18,10 +17,7 @@ class TokenManager {
     val refreshToken: StateFlow<String?> = _refreshToken.asStateFlow()
     
     private val _sessionExpiryTime = MutableStateFlow<Long?>(null)
-    val sessionExpiryTime: StateFlow<Long?> = _sessionExpiryTime.asStateFlow()
-    
     private val _lastActivityTime = MutableStateFlow<Long?>(null)
-    val lastActivityTime: StateFlow<Long?> = _lastActivityTime.asStateFlow()
     
     /**
      * Guarda los tokens de autenticación
@@ -31,17 +27,12 @@ class TokenManager {
         refreshToken: String,
         expiresInSeconds: Int
     ) {
-        Logger.auth("TOKEN_MANAGER", "Guardando tokens de autenticación")
-        
         _accessToken.value = accessToken
         _refreshToken.value = refreshToken
         
         val expiryTime = System.currentTimeMillis() + (expiresInSeconds * 1000L)
         _sessionExpiryTime.value = expiryTime
         _lastActivityTime.value = System.currentTimeMillis()
-        
-        Logger.success("TOKEN_MANAGER", "Tokens guardados exitosamente")
-        Logger.debug("TOKEN_MANAGER", "Expira en: ${expiryTime - System.currentTimeMillis()}ms")
     }
     
     /**
@@ -85,28 +76,20 @@ class TokenManager {
      * Limpia todos los tokens
      */
     fun clearTokens() {
-        Logger.auth("TOKEN_MANAGER", "Limpiando tokens de autenticación")
-        
         _accessToken.value = null
         _refreshToken.value = null
         _sessionExpiryTime.value = null
         _lastActivityTime.value = null
-        
-        Logger.success("TOKEN_MANAGER", "Tokens limpiados exitosamente")
     }
     
     /**
      * Actualiza el token de acceso
      */
     fun updateAccessToken(newAccessToken: String, expiresInSeconds: Int) {
-        Logger.auth("TOKEN_MANAGER", "Actualizando token de acceso")
-        
         _accessToken.value = newAccessToken
         
         val expiryTime = System.currentTimeMillis() + (expiresInSeconds * 1000L)
         _sessionExpiryTime.value = expiryTime
         _lastActivityTime.value = System.currentTimeMillis()
-        
-        Logger.success("TOKEN_MANAGER", "Token de acceso actualizado")
     }
 }

@@ -222,7 +222,6 @@ fun AppContent(
         is Screen.SellerManagement -> {
             SellerManagementScreen(
                 authService = authService,
-                sellerService = sellerService,
                 onNavigateBack = { navigationManager.navigateBack() },
                 onNavigateToQR = { qrCode -> navigationManager.navigateToQRDisplay(qrCode) },
                 onNavigateToSellerPayments = { sellerId, sellerName -> 

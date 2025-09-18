@@ -23,7 +23,11 @@ import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.QRCodeData
 import org.sysarp.project.service.QRService
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.service.SellerService
+import org.sysarp.project.service.admin.AdminService
+import org.sysarp.project.service.http.AdminProfileApiClient
+import org.sysarp.project.service.http.AdminSellerApiClient
+import org.sysarp.project.service.http.SellerManagementApiClient
+import org.sysarp.project.service.http.AdminStatsApiClient
 import org.sysarp.project.ui.components.EditSellerDialog
 import org.sysarp.project.ui.components.DeleteSellerDialog
 import org.sysarp.project.data.MySeller
@@ -32,7 +36,6 @@ import org.sysarp.project.data.MySeller
 @Composable
 fun SellerManagementScreen(
     authService: AuthService,
-    sellerService: SellerService,
     onNavigateBack: () -> Unit,
     onNavigateToQR: (QRCodeData) -> Unit = {},
     onNavigateToSellerPayments: (Int, String) -> Unit = { _, _ -> }
@@ -40,6 +43,16 @@ fun SellerManagementScreen(
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    
+    // AdminService para gestión de vendedores
+    val adminService = remember { 
+        AdminService(
+            AdminProfileApiClient(),
+            AdminSellerApiClient(),
+            SellerManagementApiClient(),
+            AdminStatsApiClient()
+        )
+    }
     
     // Estados para vendedores
     var sellers by remember { mutableStateOf<List<MySeller>>(emptyList()) }
@@ -65,7 +78,7 @@ fun SellerManagementScreen(
             isLoadingSellers = true
             sellersError = ""
             
-            sellerService.getMySellers(
+            adminService.getMySellers(
                 adminId = userProfile!!.adminId!!.toInt(),
                 page = currentPage,
                 limit = 20,
@@ -402,7 +415,7 @@ fun SellerManagementScreen(
                             coroutineScope.launch {
                                 val profile = userProfile
                                 if (profile?.adminId != null && accessToken != null) {
-                                    sellerService.updateSeller(
+                                    adminService.updateSeller(
                                         sellerId = seller.sellerId,
                                         adminId = profile.adminId!!.toInt(),
                                         name = null,
@@ -492,7 +505,7 @@ fun SellerManagementScreen(
                 showEditSellerDialog = false
                 selectedSeller = null
             },
-            sellerService = sellerService,
+            adminService = adminService,
             authService = authService
         )
         
@@ -506,7 +519,7 @@ fun SellerManagementScreen(
                 coroutineScope.launch {
                     val profile = userProfile
                     if (profile?.adminId != null && accessToken != null) {
-                        sellerService.deleteSeller(
+                        adminService.deleteSeller(
                             sellerId = seller.sellerId,
                             adminId = profile.adminId?.toInt() ?: return@launch,
                             action = action,
@@ -528,7 +541,7 @@ fun SellerManagementScreen(
                     }
                 }
             },
-            sellerService = sellerService,
+            adminService = adminService,
             authService = authService
         )
     }

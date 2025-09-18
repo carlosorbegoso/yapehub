@@ -1,10 +1,6 @@
 package org.sysarp.project.service
 
-import org.sysarp.project.data.YapeNotification
 import org.sysarp.project.data.YapeNotificationApiResponse
-import org.sysarp.project.data.YapeNotificationData
-import org.sysarp.project.data.YapeNotificationResponse
-import org.sysarp.project.data.YapePaymentResponse
 import org.sysarp.project.service.http.NotificationApiClient
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.utils.Logger
@@ -64,48 +60,5 @@ class NotificationService(
             Result.failure(e)
         }
     }
-    
-    /**
-     * Procesar Yape como pago
-     */
-    suspend fun processYapeAsPayment(
-        adminId: Int,
-        yapeNotification: YapeNotification
-    ): Result<YapePaymentResponse> {
-        return try {
-            // TODO: Implementar lógica de procesamiento
-            val response = YapePaymentResponse(
-                success = true,
-                message = "Pago procesado exitosamente",
-                data = null
-            )
-            Result.success(response)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
-    /**
-     * Test de notificación Yape
-     */
-    suspend fun testYapeNotification(
-        amount: Double,
-        currency: String,
-        sellerId: Int,
-        sender: String,
-        transactionId: String,
-        status: String,
-        timestamp: Long
-    ): Result<YapeNotificationResponse> {
-        return try {
-            val response = YapeNotificationResponse(
-                success = true,
-                message = "Test de notificación exitoso",
-                data = null
-            )
-            Result.success(response)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+
 }

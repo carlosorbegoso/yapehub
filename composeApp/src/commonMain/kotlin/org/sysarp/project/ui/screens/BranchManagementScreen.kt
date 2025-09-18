@@ -43,6 +43,9 @@ fun BranchManagementScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedBranch by remember { mutableStateOf<BranchInfo?>(null) }
     var showSellersDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showDetailsDialog by remember { mutableStateOf(false) }
+    var branchDetails by remember { mutableStateOf<org.sysarp.project.data.BranchData?>(null) }
     var currentPage by remember { mutableStateOf(0) }
     var filterStatus by remember { mutableStateOf<String?>(null) }
     var showFilters by remember { mutableStateOf(false) }
@@ -402,6 +405,30 @@ fun BranchManagementScreen(
                         onToggleStatus = {
                             selectedBranch = branch
                             // Implementar toggle de estado
+                        },
+                        onDelete = {
+                            selectedBranch = branch
+                            showDeleteDialog = true
+                        },
+                        onViewDetails = {
+                            selectedBranch = branch
+                            coroutineScope.launch {
+                                branchService.getBranchDetails(
+                                    branchId = branch.branchId,
+                                    adminId = adminId,
+                                    accessToken = accessToken
+                                ).fold(
+                                    onSuccess = { details ->
+                                        branchDetails = details
+                                        showDetailsDialog = true
+                                        println("✅ [BRANCH_MANAGEMENT] Detalles de sucursal cargados")
+                                    },
+                                    onFailure = { error ->
+                                        errorMessage = "Error cargando detalles: ${error.message}"
+                                        println("❌ [BRANCH_MANAGEMENT] Error cargando detalles: ${error.message}")
+                                    }
+                                )
+                            }
                         }
                     )
                 }
@@ -544,6 +571,99 @@ fun BranchManagementScreen(
             )
         }
     }
+    
+    // Diálogo de confirmación de eliminación
+    selectedBranch?.let { branch ->
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = {
+                    Text("Eliminar Sucursal")
+                },
+                text = {
+                    Text("¿Estás seguro de que deseas eliminar la sucursal \"${branch.name}\"? Esta acción no se puede deshacer.")
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                branchService.deleteBranch(
+                                    branchId = branch.branchId,
+                                    adminId = adminId,
+                                    accessToken = accessToken
+                                ).fold(
+                                    onSuccess = { success ->
+                                        if (success) {
+                                            showDeleteDialog = false
+                                            // Recargar la lista de sucursales
+                                            currentPage = 0
+                                            println("✅ [BRANCH_MANAGEMENT] Sucursal eliminada exitosamente")
+                                        } else {
+                                            errorMessage = "Error al eliminar la sucursal"
+                                            showDeleteDialog = false
+                                        }
+                                    },
+                                    onFailure = { error ->
+                                        errorMessage = "Error al eliminar la sucursal: ${error.message}"
+                                        showDeleteDialog = false
+                                        println("❌ [BRANCH_MANAGEMENT] Error eliminando sucursal: ${error.message}")
+                                    }
+                                )
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Eliminar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDeleteDialog = false }
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
+    }
+    
+    // Diálogo de detalles de sucursal
+    branchDetails?.let { details ->
+        if (showDetailsDialog) {
+            AlertDialog(
+                onDismissRequest = { showDetailsDialog = false },
+                title = {
+                    Text("Detalles de la Sucursal")
+                },
+                text = {
+                    Column {
+                        Text("Nombre: ${details.name}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Código: ${details.code}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Dirección: ${details.address}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Estado: ${if (details.isActive) "Activa" else "Inactiva"}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Vendedores: ${details.sellersCount}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Creada: ${details.createdAt}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Actualizada: ${details.updatedAt}")
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = { showDetailsDialog = false }
+                    ) {
+                        Text("Cerrar")
+                    }
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -609,7 +729,9 @@ fun BranchCardV2(
     branch: BranchInfo,
     onEdit: () -> Unit,
     onViewSellers: () -> Unit,
-    onToggleStatus: () -> Unit
+    onToggleStatus: () -> Unit,
+    onDelete: () -> Unit,
+    onViewDetails: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -658,12 +780,18 @@ fun BranchCardV2(
                 Spacer(modifier = Modifier.width(16.dp))
                 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = branch.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    TextButton(
+                        onClick = onViewDetails,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = branch.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     
                     Text(
                         text = "Código: ${branch.code}",
@@ -765,6 +893,26 @@ fun BranchCardV2(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Vendedores", fontSize = 12.sp)
                 }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Botón Eliminar
+            OutlinedButton(
+                onClick = onDelete,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Eliminar Sucursal", fontSize = 12.sp)
             }
         }
     }
