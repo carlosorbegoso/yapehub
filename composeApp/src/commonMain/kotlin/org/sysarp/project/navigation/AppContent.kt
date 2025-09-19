@@ -308,7 +308,8 @@ fun AppContent(
                 onLoginSuccess = {
                     // Navegar al dashboard del vendedor después del login exitoso
                     navigationManager.navigateToSellerDashboard()
-                }
+                },
+                authService = authService
             )
         }
         else -> {

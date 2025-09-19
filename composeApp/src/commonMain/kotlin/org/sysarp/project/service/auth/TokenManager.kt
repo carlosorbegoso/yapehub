@@ -3,6 +3,7 @@ package org.sysarp.project.service.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.datetime.Clock
 
 /**
  * Gestor especializado para tokens de autenticación
@@ -32,7 +33,8 @@ class TokenManager {
         
         val expiryTime = System.currentTimeMillis() + (expiresInSeconds * 1000L)
         _sessionExpiryTime.value = expiryTime
-        _lastActivityTime.value = System.currentTimeMillis()
+        _lastActivityTime.value = Clock.System.now().toEpochMilliseconds()
+
     }
     
     /**

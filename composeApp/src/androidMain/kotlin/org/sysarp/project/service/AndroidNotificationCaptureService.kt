@@ -68,8 +68,12 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         
         // Inicializar AuthService con contexto disponible
         try {
-            authService = org.sysarp.project.service.auth.AuthService()
-            Timber.tag("NotificationCapture").d("✅ AuthService inicializado")
+            authService = org.sysarp.project.service.auth.AuthService.getInstance()
+            Timber.tag("NotificationCapture").d("✅ AuthService singleton inicializado")
+            
+            // Verificar si hay token disponible
+            val currentToken = authService?.accessToken?.value
+            Timber.tag("NotificationCapture").d("🔑 Token disponible: ${if (currentToken != null) "SÍ (${currentToken.take(20)}...)" else "NO"}")
             
             // Inicializar NotificationService con dependencias reales
             val notificationApiClient = org.sysarp.project.service.http.NotificationApiClient()
@@ -116,6 +120,10 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             .d("🗑️ Notificación removida: ${sbn.packageName} - ${sbn.id}")
     }
     
+    /**
+     * Procesa notificaciones de Yape
+     * Solo envía notificaciones de aplicaciones de Yape para evitar errores 400 del servidor
+     */
     private suspend fun processNotification(sbn: StatusBarNotification) {
         try {
             Timber.tag("NotificationCapture").d("🔍 Procesando notificación: ${sbn.packageName}")
@@ -130,6 +138,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 )
             )
             
+            // TEMPORAL: Restaurar validación de Yape para evitar errores 400 del servidor
             if (isYapePackage(sbn.packageName)) {
                 val notificationText = extractNotificationText(sbn)
                 Timber.tag("NotificationCapture")
@@ -174,6 +183,20 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     
     private suspend fun processYapeNotification(sbn: StatusBarNotification, notificationText: String?) {
         try {
+            // VALIDACIÓN DE SEGURIDAD: Verificar que realmente sea Yape
+            if (!isYapePackage(sbn.packageName)) {
+                Timber.tag("NotificationCapture").w("🚫 SEGURIDAD: Intento de procesar notificación no-Yape bloqueado: ${sbn.packageName}")
+                DebugLogManager.addLog(
+                    DebugLog(
+                        timestamp = System.currentTimeMillis(),
+                        type = LogType.ERROR,
+                        message = "🚫 SEGURIDAD: Bloqueado",
+                        details = "Intento de procesar notificación no-Yape: ${sbn.packageName}"
+                    )
+                )
+                return
+            }
+            
             Timber.tag("NotificationCapture")
                 .d("🔍 Procesando notificación de Yape: $notificationText")
             
@@ -271,6 +294,9 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         }
     }
     
+    /**
+     * Verificar si el package es de Yape
+     */
     private fun isYapePackage(packageName: String): Boolean {
         val yapePackages = listOf(
             "com.bcp.innovacxion.yapeapp",
@@ -304,7 +330,13 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
      */
     private suspend fun sendNotificationWithRetry(notificationRequest: YapeNotificationRequest, attempt: Int) {
         try {
+            // VALIDACIÓN DE SEGURIDAD: Verificar que el adminId sea válido (no sea fallback)
+            if (notificationRequest.adminId == 605) {
+                Timber.tag("NotificationCapture").w("⚠️ Usando adminId fallback (605) - verificar autenticación")
+            }
+            
             Timber.tag("NotificationCapture").d("🚀 Enviando a API (intento ${attempt + 1}/$maxRetries)...")
+            Timber.tag("NotificationCapture").d("🔒 SEGURIDAD: Solo datos de Yape autorizados")
             
             // Enviar log de envío a API
             DebugLogManager.addLog(
@@ -312,7 +344,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                     timestamp = System.currentTimeMillis(),
                     type = LogType.API,
                     message = "🚀 Enviando a API (intento ${attempt + 1})",
-                    details = "POST /api/notifications/yape-notifications"
+                    details = "POST /api/notifications/yape-notifications - Solo Yape autorizado"
                 )
             )
             

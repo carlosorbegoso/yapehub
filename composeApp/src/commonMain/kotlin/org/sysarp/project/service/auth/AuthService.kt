@@ -12,8 +12,21 @@ import org.sysarp.project.utils.UserProfileFactory
 /**
  * Servicio de autenticación simplificado
  * Solo maneja autenticación básica
+ * 
+ * TEMPORAL: Convertido a Singleton para compartir estado entre App y NotificationService
  */
 class AuthService {
+    
+    companion object {
+        @Volatile
+        private var INSTANCE: AuthService? = null
+        
+        fun getInstance(): AuthService {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: AuthService().also { INSTANCE = it }
+            }
+        }
+    }
     
     private val authApiClient = AuthApiClient()
     private val tokenManager = TokenManager()
@@ -297,6 +310,7 @@ class AuthService {
         tokenManager.updateAccessToken(token, 3600) // 1 hora por defecto
     }
     
+    
     /**
      * Establecer estado de autenticación (para uso interno)
      */
@@ -416,7 +430,7 @@ class AuthService {
     suspend fun sellerLoginByPhone(
         phone: String,
         affiliationCode: String
-    ): Result<org.sysarp.project.data.SellerLoginByPhoneResponse> {
+    ): Result<SellerLoginByPhoneResponse> {
         return try {
             Logger.auth("AUTH_SERVICE", "Intentando login de vendedor por teléfono: $phone")
             
@@ -443,7 +457,7 @@ class AuthService {
      */
     suspend fun validateAffiliationCode(
         affiliationCode: String
-    ): Result<org.sysarp.project.data.ValidateAffiliationCodeResponse> {
+    ): Result<ValidateAffiliationCodeResponse> {
         return try {
             Logger.auth("AUTH_SERVICE", "Validando código de afiliación: ${affiliationCode.take(10)}...")
             

@@ -62,7 +62,7 @@ fun YapeApp() {
     }
     
     val authService = remember {
-        AuthService()
+        AuthService.getInstance()
     }
     
     val sellerService = remember {
