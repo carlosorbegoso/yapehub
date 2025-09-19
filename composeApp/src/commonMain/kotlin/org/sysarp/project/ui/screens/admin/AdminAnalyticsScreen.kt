@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
@@ -61,11 +63,20 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.data.AnalyticsData
+import org.sysarp.project.data.AnalyticsConfigs
+import org.sysarp.project.data.FinancialAnalysisData
+import org.sysarp.project.data.PaymentTransparencyData
+import org.sysarp.project.data.FinancialAnalysisParams
+import org.sysarp.project.data.PaymentTransparencyParams
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.components.admin.ResponsiveChartRow
 import org.sysarp.project.ui.components.admin.SectionFiltersDialog
 import org.sysarp.project.ui.components.admin.ChartItem
+import org.sysarp.project.ui.components.analytics.AnalyticsFilterDialog
+import org.sysarp.project.ui.components.financial.FinancialAnalysisCard
+import org.sysarp.project.ui.components.financial.PaymentTransparencyCard
+import org.sysarp.project.ui.components.financial.FinancialFilterDialog
 import org.sysarp.project.ui.components.charts.DailySalesBarChart
 import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.components.charts.SalesTrendLineChart
@@ -101,6 +112,12 @@ fun AdminAnalyticsScreen(
     var analyticsData by remember { mutableStateOf<AnalyticsData?>(null) }
     var isLoadingAnalytics by remember { mutableStateOf(false) }
     var analyticsError by remember { mutableStateOf("") }
+    
+    // Estados para datos financieros
+    var financialData by remember { mutableStateOf<FinancialAnalysisData?>(null) }
+    var transparencyData by remember { mutableStateOf<PaymentTransparencyData?>(null) }
+    var isLoadingFinancial by remember { mutableStateOf(false) }
+    var financialError by remember { mutableStateOf("") }
     var selectedPeriod by remember { mutableStateOf("📅 7 días") }
     var showPeriodMenu by remember { mutableStateOf(false) }
     
@@ -110,29 +127,31 @@ fun AdminAnalyticsScreen(
     var showPredictiveCharts by remember { mutableStateOf(true) }
     var showAdditionalMetrics by remember { mutableStateOf(true) }
     var showFiltersDialog by remember { mutableStateOf(false) }
+    var showAdvancedFiltersDialog by remember { mutableStateOf(false) }
+    var showFinancialFiltersDialog by remember { mutableStateOf(false) }
     
     // Cargar datos de analytics con filtros de fecha
     val loadAnalytics: (String?, String?) -> Unit = { startDate, endDate ->
         coroutineScope.launch {
             val adminId = userProfile?.adminId?.toIntOrNull()
             if (adminId != null && accessToken != null) {
-                isLoadingAnalytics = true
-                analyticsError = ""
-                
-                statsService.getAnalytics(
+            isLoadingAnalytics = true
+            analyticsError = ""
+            
+                statsService.getDetailedAnalytics(
                     adminId = adminId,
                     startDate = startDate ?: Clock.System.now().minus(7.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
                     endDate = endDate ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
-                    token = accessToken!!
-                ).fold(
-                    onSuccess = { response ->
+                token = accessToken!!
+            ).fold(
+                onSuccess = { response ->
                         analyticsData = response.data
-                        isLoadingAnalytics = false
+                    isLoadingAnalytics = false
                         Logger.auth("ADMIN_ANALYTICS", "📊 Analytics del admin cargados: ${response.data.overview.totalSales}")
-                    },
-                    onFailure = { error ->
-                        analyticsError = error.message ?: "Error cargando analytics"
-                        isLoadingAnalytics = false
+                },
+                onFailure = { error ->
+                    analyticsError = error.message ?: "Error cargando analytics"
+                    isLoadingAnalytics = false
                         Logger.auth("ADMIN_ANALYTICS", "❌ Error cargando analytics: ${error.message}")
                     }
                 )
@@ -215,7 +234,7 @@ fun AdminAnalyticsScreen(
                                 onClick = { showFiltersDialog = true },
                                 modifier = Modifier.size(40.dp)
                             ) {
-                                Icon(
+                        Icon(
                                     imageVector = Icons.Filled.FilterList,
                                     contentDescription = "Filtros",
                                     modifier = Modifier.size(20.dp),
@@ -228,9 +247,35 @@ fun AdminAnalyticsScreen(
                                 onClick = { showPeriodMenu = true },
                                 modifier = Modifier.size(40.dp)
                             ) {
-                                Icon(
+                        Icon(
                                     imageVector = Icons.Filled.CalendarToday,
                                     contentDescription = "Seleccionar período",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            // Botón de filtros avanzados
+                            IconButton(
+                                onClick = { showAdvancedFiltersDialog = true },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                        Icon(
+                                    imageVector = Icons.Filled.Settings,
+                                    contentDescription = "Filtros Avanzados",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            // Botón de filtros financieros
+                            IconButton(
+                                onClick = { showFinancialFiltersDialog = true },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.AttachMoney,
+                                    contentDescription = "Filtros Financieros",
                                     modifier = Modifier.size(20.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
@@ -259,37 +304,37 @@ fun AdminAnalyticsScreen(
             
             // Estado inicial - Sin datos cargados
             if (!isLoadingAnalytics && analyticsData == null && analyticsError.isEmpty()) {
-                item {
-                    Card(
+            item {
+                Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
+                    colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
+                    ),
                         shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Column(
+                ) {
+                    Column(
                             modifier = Modifier.padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Icon(
+                    ) {
+                        Icon(
                                 imageVector = Icons.Filled.CalendarToday,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
+                        )
+                        Text(
                                 text = "Selecciona un período para ver los analytics del sistema",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
                                 text = "Usa el botón 'Seleccionar' arriba para elegir un período o rango de fechas personalizado",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
+                            textAlign = TextAlign.Center
+                        )
                         }
                     }
                 }
@@ -299,7 +344,7 @@ fun AdminAnalyticsScreen(
             if (isLoadingAnalytics) {
                 item {
                     Box(
-                        modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
@@ -308,8 +353,8 @@ fun AdminAnalyticsScreen(
                         ) {
                             CircularProgressIndicator(
                                 color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
+                                    )
+                                    Text(
                                 text = "Cargando analytics del sistema...",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -333,15 +378,15 @@ fun AdminAnalyticsScreen(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
+                                    Text(
                                 text = "Error cargando analytics",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Text(
+                                    )
+                                    Text(
                                 text = analyticsError,
-                                style = MaterialTheme.typography.bodyMedium,
+                                        style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
                             Button(
@@ -356,11 +401,11 @@ fun AdminAnalyticsScreen(
                                 )
                             ) {
                                 Text("Reintentar")
+                                }
                             }
                         }
                     }
                 }
-            }
             
             // Analytics data - Diseño compacto y responsivo
             analyticsData?.let { data ->
@@ -371,8 +416,8 @@ fun AdminAnalyticsScreen(
                 
                 // Sección de gráficos básicos - Layout horizontal para pantallas grandes
                 if (showBasicCharts) {
-                    item {
-                        AnimatedVisibility(
+                item {
+                    AnimatedVisibility(
                             visible = true,
                             enter = slideInVertically(
                                 initialOffsetY = { it / 2 },
@@ -405,8 +450,8 @@ fun AdminAnalyticsScreen(
 
                 // Sección de gráficos avanzados - Layout horizontal optimizado
                 if (showAdvancedCharts) {
-                    item {
-                        AnimatedVisibility(
+                item {
+                    AnimatedVisibility(
                             visible = true,
                             enter = slideInVertically(
                                 initialOffsetY = { it / 2 },
@@ -439,8 +484,8 @@ fun AdminAnalyticsScreen(
 
                 // Sección de análisis predictivo - Layout horizontal optimizado
                 if (showPredictiveCharts) {
-                    item {
-                        AnimatedVisibility(
+                item {
+                    AnimatedVisibility(
                             visible = true,
                             enter = slideInVertically(
                                 initialOffsetY = { it / 2 },
@@ -474,13 +519,13 @@ fun AdminAnalyticsScreen(
                 if (showAdditionalMetrics) {
                     item {
                         AdditionalMetricsCard(data = data.overview)
-                    }
                 }
-                
-                // Top vendedores
+            }
+            
+            // Top vendedores
                 val topSellers = data.topSellers
                 if (topSellers?.isNotEmpty() == true) {
-                    item {
+                item {
                         TopSellersSection(topSellers = topSellers)
                     }
                 }
@@ -498,23 +543,23 @@ fun AdminAnalyticsScreen(
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Text(
+                    Text(
                                     text = "🏢 Branch Analytics",
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Bold,
                                     color = Color.Black,
-                                    modifier = Modifier.padding(horizontal = 16.dp)
-                                )
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
                                 
                                 BranchAnalyticsSection(branchAnalytics = branchAnalytics)
                             }
                         }
                     }
                 }
-
+                
                 // Sección de Seller Management - Nueva funcionalidad administrativa
                 data.sellerManagement?.let { sellerManagement ->
-                    item {
+                item {
                         AnimatedVisibility(
                             visible = true,
                             enter = slideInVertically(
@@ -522,7 +567,7 @@ fun AdminAnalyticsScreen(
                                 animationSpec = tween(1400, easing = EaseOutCubic)
                             ) + fadeIn(animationSpec = tween(1400))
                         ) {
-                            Column(
+                    Column(
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Text(
@@ -541,7 +586,7 @@ fun AdminAnalyticsScreen(
 
                 // Sección de System Metrics - Nueva funcionalidad administrativa
                 data.systemMetrics?.let { systemMetrics ->
-                    item {
+                item {
                         AnimatedVisibility(
                             visible = true,
                             enter = slideInVertically(
@@ -552,23 +597,23 @@ fun AdminAnalyticsScreen(
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Text(
+                    Text(
                                     text = "⚙️ System Metrics",
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Bold,
                                     color = Color.Black,
-                                    modifier = Modifier.padding(horizontal = 16.dp)
-                                )
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
                                 
                                 SystemMetricsSection(systemMetrics = systemMetrics)
                             }
                         }
                     }
                 }
-
+                
                 // Sección de Administrative Insights - Nueva funcionalidad administrativa
                 data.administrativeInsights?.let { adminInsights ->
-                    item {
+                item {
                         AnimatedVisibility(
                             visible = true,
                             enter = slideInVertically(
@@ -576,7 +621,7 @@ fun AdminAnalyticsScreen(
                                 animationSpec = tween(1800, easing = EaseOutCubic)
                             ) + fadeIn(animationSpec = tween(1800))
                         ) {
-                            Column(
+                    Column(
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Text(
@@ -622,7 +667,7 @@ fun AdminAnalyticsScreen(
 
                 // Sección de Compliance & Security - Nueva funcionalidad administrativa
                 data.complianceAndSecurity?.let { complianceSecurity ->
-                    item {
+            item {
                         AnimatedVisibility(
                             visible = true,
                             enter = slideInVertically(
@@ -646,6 +691,60 @@ fun AdminAnalyticsScreen(
                         }
                     }
                 }
+                
+                // Sección de Análisis Financiero - Nueva funcionalidad
+                financialData?.let { financial ->
+                    item {
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = slideInVertically(
+                                initialOffsetY = { it / 2 },
+                                animationSpec = tween(2200, easing = EaseOutCubic)
+                            ) + fadeIn(animationSpec = tween(2200))
+                        ) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Text(
+                                    text = "💰 Análisis Financiero",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                                
+                                FinancialAnalysisCard(data = financial)
+                            }
+                        }
+                    }
+                }
+                
+                // Sección de Transparencia de Pagos - Nueva funcionalidad
+                transparencyData?.let { transparency ->
+            item {
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = slideInVertically(
+                                initialOffsetY = { it / 2 },
+                                animationSpec = tween(2200, easing = EaseOutCubic)
+                            ) + fadeIn(animationSpec = tween(2200))
+                        ) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Text(
+                                    text = "🔍 Transparencia de Pagos",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                                
+                                PaymentTransparencyCard(data = transparency)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -662,6 +761,120 @@ fun AdminAnalyticsScreen(
             onDismiss = { showFiltersDialog = false }
         )
     }
+    
+    // Diálogo de filtros avanzados de analytics
+    if (showAdvancedFiltersDialog) {
+        AnalyticsFilterDialog(
+            isVisible = showAdvancedFiltersDialog,
+            onDismiss = { showAdvancedFiltersDialog = false },
+            onApply = { params ->
+                showAdvancedFiltersDialog = false
+                // Recargar analytics con los nuevos parámetros
+                val adminId = userProfile?.adminId?.toIntOrNull()
+                if (adminId != null && accessToken != null) {
+                    coroutineScope.launch {
+                        isLoadingAnalytics = true
+                        analyticsError = ""
+                        
+                        statsService.getAnalytics(
+                            adminId = adminId,
+                            startDate = null, // Usar fechas por defecto
+                            endDate = null,
+                            include = params.include,
+                            period = params.period,
+                            metric = params.metric,
+                            confidence = params.confidence,
+                            days = params.days,
+                            token = accessToken!!
+                        ).fold(
+                            onSuccess = { response ->
+                                analyticsData = response.data
+                                isLoadingAnalytics = false
+                                Logger.auth("ADMIN_ANALYTICS", "📊 Analytics avanzados cargados: ${response.data.overview.totalSales}")
+                            },
+                            onFailure = { error ->
+                                analyticsError = error.message ?: "Error cargando analytics avanzados"
+                                isLoadingAnalytics = false
+                                Logger.auth("ADMIN_ANALYTICS", "❌ Error cargando analytics avanzados: ${error.message}")
+                            }
+                        )
+                    }
+                }
+            }
+        )
+    }
+    
+    // Diálogo de filtros financieros
+    if (showFinancialFiltersDialog) {
+        FinancialFilterDialog(
+            isVisible = showFinancialFiltersDialog,
+            onDismiss = { showFinancialFiltersDialog = false },
+            onApplyFinancial = { params ->
+                showFinancialFiltersDialog = false
+                // Cargar análisis financiero con los nuevos parámetros
+                val adminId = userProfile?.adminId?.toIntOrNull()
+                if (adminId != null && accessToken != null) {
+                    coroutineScope.launch {
+                        isLoadingFinancial = true
+                        financialError = ""
+                        
+                        statsService.getFinancialAnalysis(
+                            adminId = adminId,
+                            startDate = null, // Usar fechas por defecto
+                            endDate = null,
+                            include = params.include,
+                            currency = params.currency,
+                            taxRate = params.taxRate,
+                            token = accessToken!!
+                        ).fold(
+                            onSuccess = { response ->
+                                financialData = response.data
+                                isLoadingFinancial = false
+                                Logger.auth("ADMIN_FINANCIAL", "💰 Análisis financiero cargado: ${response.data.totalRevenue}")
+                            },
+                            onFailure = { error ->
+                                financialError = error.message ?: "Error cargando análisis financiero"
+                                isLoadingFinancial = false
+                                Logger.auth("ADMIN_FINANCIAL", "❌ Error cargando análisis financiero: ${error.message}")
+                            }
+                        )
+                    }
+                }
+            },
+            onApplyTransparency = { params ->
+                showFinancialFiltersDialog = false
+                // Cargar transparencia de pagos con los nuevos parámetros
+                val adminId = userProfile?.adminId?.toIntOrNull()
+                if (adminId != null && accessToken != null) {
+                    coroutineScope.launch {
+                        isLoadingFinancial = true
+                        financialError = ""
+                        
+                        statsService.getPaymentTransparency(
+                            adminId = adminId,
+                            startDate = null, // Usar fechas por defecto
+                            endDate = null,
+                            includeFees = params.includeFees,
+                            includeTaxes = params.includeTaxes,
+                            includeCommissions = params.includeCommissions,
+                            token = accessToken!!
+                        ).fold(
+                            onSuccess = { response ->
+                                transparencyData = response.data
+                                isLoadingFinancial = false
+                                Logger.auth("ADMIN_TRANSPARENCY", "🔍 Transparencia cargada: ${response.data.transparencyScore}")
+                            },
+                            onFailure = { error ->
+                                financialError = error.message ?: "Error cargando transparencia"
+                                isLoadingFinancial = false
+                                Logger.auth("ADMIN_TRANSPARENCY", "❌ Error cargando transparencia: ${error.message}")
+                            }
+                        )
+                    }
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -673,21 +886,21 @@ private fun PrimaryMetricsSection(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Métrica principal destacada - Total Ventas con layout optimizado
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            verticalAlignment = Alignment.CenterVertically
+        ) {
                 // Lado izquierdo: Información principal
                 Column(
                     horizontalAlignment = Alignment.Start,
@@ -768,7 +981,7 @@ private fun PrimaryMetricsSection(
 private fun AdditionalMetricsCard(
     data: org.sysarp.project.data.AnalyticsOverview
 ) {
-    Card(
+            Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
@@ -918,7 +1131,7 @@ private fun BranchAnalyticsSection(
         // Performance de sucursales
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
+                colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
             shape = RoundedCornerShape(16.dp),
@@ -988,7 +1201,7 @@ private fun BranchPerformanceCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(
+                Text(
                         text = branch.branchName,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
@@ -996,11 +1209,11 @@ private fun BranchPerformanceCard(
                     )
                     Text(
                         text = branch.branchCode,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = if (branch.performanceScore > 70) 
@@ -1009,7 +1222,7 @@ private fun BranchPerformanceCard(
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(
+                Text(
                         text = "${branch.performanceScore.toInt()}%",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
@@ -1069,9 +1282,9 @@ private fun BranchComparisonCard(
             Text(
                 text = "🏆 Mejor",
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             Text(
                 text = comparison.topPerformingBranch.branchName,
                 style = MaterialTheme.typography.bodyMedium,
@@ -1089,7 +1302,7 @@ private fun BranchComparisonCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
+                Text(
                 text = "📊 Promedio",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
@@ -1104,9 +1317,9 @@ private fun BranchComparisonCard(
                 text = formatCurrency(comparison.averageBranchPerformance.sales),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -1141,10 +1354,10 @@ private fun SellerManagementSection(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Overview de vendedores
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
             ),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -1501,12 +1714,12 @@ private fun ManagementAlertCard(
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
+    ) {
+        Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            verticalAlignment = Alignment.CenterVertically
+        ) {
                 Text(
                     text = alert.message,
                     style = MaterialTheme.typography.titleSmall,
@@ -1542,7 +1755,7 @@ private fun ManagementAlertCard(
                 }
             }
             
-            Text(
+                Text(
                 text = alert.recommendation,
                 style = MaterialTheme.typography.bodyMedium,
                 color = when (alert.severity) {
@@ -1627,10 +1840,10 @@ private fun FinancialOverviewSection(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
+            Text(
                     text = "📊 Análisis de Costos",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 

@@ -3,6 +3,7 @@ package org.sysarp.project.ui.components.dashboard
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import org.sysarp.project.service.stats.StatsService
+import org.sysarp.project.data.AnalyticsConfigs
 import org.sysarp.project.utils.Logger
 
 /**
@@ -92,7 +93,7 @@ class SellerStatsManager(
     ) {
         try {
             Logger.auth("STATS_MANAGER", "Cargando analytics detallados para vendedor $sellerId con fechas: $startDate - $endDate")
-            val response = statsService.getSellerAnalytics(
+            val response = statsService.getSellerQuickAnalytics(
                 sellerId = sellerId.toInt(),
                 startDate = startDate,
                 endDate = endDate,
@@ -111,6 +112,42 @@ class SellerStatsManager(
             )
         } catch (e: Exception) {
             Logger.auth("STATS_MANAGER", "Excepción al cargar analytics con filtros: ${e.message}")
+            onError("Error de conexión: ${e.message}")
+        }
+    }
+
+    /**
+     * Cargar analytics de rendimiento del vendedor
+     */
+    suspend fun loadSellerPerformanceAnalytics(
+        accessToken: String,
+        sellerId: Long,
+        startDate: String?,
+        endDate: String?,
+        onSuccess: (org.sysarp.project.data.AnalyticsResponse) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        try {
+            Logger.auth("STATS_MANAGER", "Cargando analytics de rendimiento para vendedor $sellerId")
+            val response = statsService.getSellerPerformanceAnalytics(
+                sellerId = sellerId.toInt(),
+                startDate = startDate,
+                endDate = endDate,
+                token = accessToken
+            )
+            
+            response.fold(
+                onSuccess = { result ->
+                    Logger.auth("STATS_MANAGER", "Analytics de rendimiento cargados exitosamente")
+                    onSuccess(result)
+                },
+                onFailure = { error ->
+                    Logger.auth("STATS_MANAGER", "Error al cargar analytics de rendimiento: ${error.message}")
+                    onError(error.message ?: "Error al cargar analytics de rendimiento")
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("STATS_MANAGER", "Excepción al cargar analytics de rendimiento: ${e.message}")
             onError("Error de conexión: ${e.message}")
         }
     }

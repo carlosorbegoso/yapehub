@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.TrendingDown
@@ -66,6 +67,8 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.data.AnalyticsOverview
+import org.sysarp.project.data.SellerFinancialAnalysisData
+import org.sysarp.project.data.SellerFinancialAnalysisParams
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.components.charts.DailySalesBarChart
@@ -76,6 +79,8 @@ import org.sysarp.project.ui.components.charts.HourlySalesChart
 import org.sysarp.project.ui.components.charts.GoalsProgressChart
 import org.sysarp.project.ui.components.charts.AchievementsChart
 import org.sysarp.project.ui.components.charts.PredictionsChart
+import org.sysarp.project.ui.components.financial.SellerFinancialAnalysisCard
+import org.sysarp.project.ui.components.financial.SellerFinancialFilterDialog
 import org.sysarp.project.ui.components.charts.SalesDistributionChart
 import org.sysarp.project.ui.components.charts.ComparisonsChart
 import org.sysarp.project.ui.components.charts.SpecificDateSelector
@@ -110,6 +115,12 @@ fun SellerAnalyticsScreen(
     var analyticsError by remember { mutableStateOf("") }
     var selectedPeriod by remember { mutableStateOf("📅 7 días") }
     var showPeriodMenu by remember { mutableStateOf(false) }
+    
+    // Estados para datos financieros
+    var sellerFinancialData by remember { mutableStateOf<SellerFinancialAnalysisData?>(null) }
+    var isLoadingFinancial by remember { mutableStateOf(false) }
+    var financialError by remember { mutableStateOf("") }
+    var showFinancialFiltersDialog by remember { mutableStateOf(false) }
     
     // Estado para filtros de sección
     var showBasicCharts by remember { mutableStateOf(true) }
@@ -243,6 +254,19 @@ fun SellerAnalyticsScreen(
                                 Icon(
                                     imageVector = Icons.Filled.CalendarToday,
                                     contentDescription = "Seleccionar período",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            // Botón de análisis financiero
+                            IconButton(
+                                onClick = { showFinancialFiltersDialog = true },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.AttachMoney,
+                                    contentDescription = "Análisis Financiero",
                                     modifier = Modifier.size(20.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
@@ -489,6 +513,33 @@ fun SellerAnalyticsScreen(
                         AdditionalMetricsCard(data = data.overview)
                     }
                 }
+                
+                // Sección de Análisis Financiero - Nueva funcionalidad
+                sellerFinancialData?.let { financial ->
+                    item {
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = slideInVertically(
+                                initialOffsetY = { it / 2 },
+                                animationSpec = tween(2200, easing = EaseOutCubic)
+                            ) + fadeIn(animationSpec = tween(2200))
+                        ) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Text(
+                                    text = "💰 Análisis Financiero",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                                
+                                SellerFinancialAnalysisCard(data = financial)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -507,6 +558,46 @@ fun SellerAnalyticsScreen(
             onShowPredictiveChartsChange = { showPredictiveCharts = it },
             onShowAdditionalMetricsChange = { showAdditionalMetrics = it },
             onDismiss = { showFiltersDialog = false }
+        )
+    }
+    
+    // Diálogo de filtros financieros
+    if (showFinancialFiltersDialog) {
+        SellerFinancialFilterDialog(
+            isVisible = showFinancialFiltersDialog,
+            onDismiss = { showFinancialFiltersDialog = false },
+            onApply = { params ->
+                showFinancialFiltersDialog = false
+                // Cargar análisis financiero con los nuevos parámetros
+                val sellerId = userProfile?.sellerId?.toIntOrNull()
+                if (sellerId != null && accessToken != null) {
+                    coroutineScope.launch {
+                        isLoadingFinancial = true
+                        financialError = ""
+                        
+                        statsService.getSellerFinancialAnalysis(
+                            sellerId = sellerId,
+                            startDate = null, // Usar fechas por defecto
+                            endDate = null,
+                            include = params.include,
+                            currency = params.currency,
+                            commissionRate = params.commissionRate,
+                            token = accessToken!!
+                        ).fold(
+                            onSuccess = { response ->
+                                sellerFinancialData = response.data
+                                isLoadingFinancial = false
+                                Logger.auth("SELLER_FINANCIAL", "💰 Análisis financiero cargado: ${response.data.netEarnings}")
+                            },
+                            onFailure = { error ->
+                                financialError = error.message ?: "Error cargando análisis financiero"
+                                isLoadingFinancial = false
+                                Logger.auth("SELLER_FINANCIAL", "❌ Error cargando análisis financiero: ${error.message}")
+                            }
+                        )
+                    }
+                }
+            }
         )
     }
 }
