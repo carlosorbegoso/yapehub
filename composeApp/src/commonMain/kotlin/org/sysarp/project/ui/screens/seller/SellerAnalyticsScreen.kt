@@ -237,178 +237,237 @@ fun SellerAnalyticsScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // Botón de filtros
+                            // Botón de filtros simplificado (solo icono)
                             OutlinedButton(
                                 onClick = { showFiltersDialog = true },
                                 colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.secondary,
+                                    contentColor = MaterialTheme.colorScheme.primary,
                                     containerColor = MaterialTheme.colorScheme.surface
                                 ),
-                                modifier = Modifier.height(40.dp),
+                                modifier = Modifier.size(40.dp),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.FilterList,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text("Filtros", style = MaterialTheme.typography.bodyMedium)
-                                }
+                                Icon(
+                                    imageVector = Icons.Filled.FilterList,
+                                    contentDescription = "Filtros",
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                             
-                            // Botón de selección de período
+                            // Botón de calendario profesional (solo icono)
                             OutlinedButton(
                                 onClick = { showPeriodMenu = true },
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = MaterialTheme.colorScheme.primary,
                                     containerColor = MaterialTheme.colorScheme.surface
                                 ),
-                                modifier = Modifier.height(40.dp),
+                                modifier = Modifier.size(40.dp),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.CalendarToday,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text("Seleccionar", style = MaterialTheme.typography.bodyMedium)
-                                }
+                                Icon(
+                                    imageVector = Icons.Filled.CalendarToday,
+                                    contentDescription = "Seleccionar período",
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
                         
-                        // Menú de filtros conectado al botón
+                        // Calendario avanzado y profesional
                         DropdownMenu(
                             expanded = showPeriodMenu,
                             onDismissRequest = { showPeriodMenu = false },
-                            modifier = Modifier.background(Color.White)
+                            modifier = Modifier
+                                .background(Color.White)
+                                .padding(8.dp),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
+                            // Título del calendario
+                            Text(
+                                text = "📅 Seleccionar Período",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black,
+                                modifier = Modifier.padding(16.dp, 12.dp, 16.dp, 8.dp)
+                            )
+                            
                             // Opciones rápidas (períodos predefinidos) - Layout horizontal compacto
                             Row(
-                                modifier = Modifier.padding(12.dp),
+                                modifier = Modifier.padding(horizontal = 16.dp),
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
                                 periodOptions.filter { it.second > 0 }.take(4).forEach { (period, days) ->
-                                    Box(
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .background(
-                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                                shape = RoundedCornerShape(12.dp)
-                                            )
-                                            .clickable {
-                                                selectedPeriod = period
-                                                showPeriodMenu = false
-                                                // Calcular fechas basadas en el período seleccionado
-                                                val now = Clock.System.now()
-                                                val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                                val startDate = now.minus(days.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                                loadAnalytics(startDate, endDate)
-                                            },
-                                        contentAlignment = Alignment.Center
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(50.dp)
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                                    shape = RoundedCornerShape(16.dp)
+                                                )
+                                                .clickable {
+                                                    selectedPeriod = period
+                                                    showPeriodMenu = false
+                                                    // Calcular fechas basadas en el período seleccionado
+                                                    val now = Clock.System.now()
+                                                    val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                                    val startDate = now.minus(days.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                                    loadAnalytics(startDate, endDate)
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = period,
+                                                fontSize = 22.sp,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
                                         Text(
-                                            text = period,
-                                            fontSize = 20.sp,
-                                            color = MaterialTheme.colorScheme.primary
+                                            text = when (period) {
+                                                "🕐" -> "Hoy"
+                                                "📅" -> "7 días"
+                                                "📆" -> "30 días"
+                                                "🗓️" -> "3 meses"
+                                                else -> ""
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.Gray,
+                                            fontSize = 10.sp
                                         )
                                     }
                                 }
                             }
                             
-                            // Segunda fila para más opciones
+                            // Más opciones
                             Row(
-                                modifier = Modifier.padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceEvenly
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.Center
                             ) {
                                 periodOptions.filter { it.second > 0 }.drop(4).forEach { (period, days) ->
-                                    Box(
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .background(
-                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                                shape = RoundedCornerShape(12.dp)
-                                            )
-                                            .clickable {
-                                                selectedPeriod = period
-                                                showPeriodMenu = false
-                                                // Calcular fechas basadas en el período seleccionado
-                                                val now = Clock.System.now()
-                                                val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                                val startDate = now.minus(days.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                                loadAnalytics(startDate, endDate)
-                                            },
-                                        contentAlignment = Alignment.Center
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(50.dp)
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                                    shape = RoundedCornerShape(16.dp)
+                                                )
+                                                .clickable {
+                                                    selectedPeriod = period
+                                                    showPeriodMenu = false
+                                                    // Calcular fechas basadas en el período seleccionado
+                                                    val now = Clock.System.now()
+                                                    val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                                    val startDate = now.minus(days.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                                    loadAnalytics(startDate, endDate)
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = period,
+                                                fontSize = 22.sp,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
                                         Text(
-                                            text = period,
-                                            fontSize = 20.sp,
-                                            color = MaterialTheme.colorScheme.primary
+                                            text = "1 año",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.Gray,
+                                            fontSize = 10.sp
                                         )
                                     }
                                 }
                             }
                             
-                            // Separador visual
+                            // Separador visual elegante
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(1.dp)
-                                    .background(Color.Gray.copy(alpha = 0.3f))
+                                    .background(Color.Gray.copy(alpha = 0.2f))
+                                    .padding(horizontal = 16.dp)
                             )
                             
-                            // Opciones avanzadas (calendario) - Layout horizontal
+                            // Opciones avanzadas del calendario
+                            Text(
+                                text = "Opciones Avanzadas",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(16.dp, 8.dp, 16.dp, 4.dp)
+                            )
+                            
                             Row(
-                                modifier = Modifier.padding(12.dp),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
                                 // Rango personalizado
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .background(
-                                            color = Color(0xFF4CAF50).copy(alpha = 0.1f),
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                        .clickable {
-                                            selectedPeriod = "⚙️ Rango personalizado"
-                                            showPeriodMenu = false
-                                            showDateRangeSelector = true
-                                        },
-                                    contentAlignment = Alignment.Center
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(50.dp)
+                                            .background(
+                                                color = Color(0xFF4CAF50).copy(alpha = 0.1f),
+                                                shape = RoundedCornerShape(16.dp)
+                                            )
+                                            .clickable {
+                                                selectedPeriod = "⚙️ Rango personalizado"
+                                                showPeriodMenu = false
+                                                showDateRangeSelector = true
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "⚙️",
+                                            fontSize = 22.sp,
+                                            color = Color(0xFF4CAF50)
+                                        )
+                                    }
                                     Text(
-                                        text = "⚙️",
-                                        fontSize = 20.sp,
-                                        color = Color(0xFF4CAF50)
+                                        text = "Rango",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray,
+                                        fontSize = 10.sp
                                     )
                                 }
                                 
                                 // Día específico
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .background(
-                                            color = Color(0xFF2196F3).copy(alpha = 0.1f),
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                        .clickable {
-                                            selectedPeriod = "🎯 Día específico"
-                                            showPeriodMenu = false
-                                            showSpecificDateSelector = true
-                                        },
-                                    contentAlignment = Alignment.Center
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(50.dp)
+                                            .background(
+                                                color = Color(0xFF2196F3).copy(alpha = 0.1f),
+                                                shape = RoundedCornerShape(16.dp)
+                                            )
+                                            .clickable {
+                                                selectedPeriod = "🎯 Día específico"
+                                                showPeriodMenu = false
+                                                showSpecificDateSelector = true
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "🎯",
+                                            fontSize = 22.sp,
+                                            color = Color(0xFF2196F3)
+                                        )
+                                    }
                                     Text(
-                                        text = "🎯",
-                                        fontSize = 20.sp,
-                                        color = Color(0xFF2196F3)
+                                        text = "Día",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray,
+                                        fontSize = 10.sp
                                     )
                                 }
                             }
