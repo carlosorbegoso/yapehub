@@ -144,7 +144,14 @@ data class AnalyticsData(
     val sellerAchievements: SellerAchievementsData? = null,
     val sellerInsights: SellerInsightsData? = null,
     val sellerForecasting: SellerForecastingData? = null,
-    val sellerAnalytics: SellerAnalyticsData? = null
+    val sellerAnalytics: SellerAnalyticsData? = null,
+    // Nuevos datos administrativos
+    val branchAnalytics: BranchAnalyticsData? = null,
+    val sellerManagement: SellerManagementData? = null,
+    val systemMetrics: SystemMetricsData? = null,
+    val administrativeInsights: AdministrativeInsightsData? = null,
+    val financialOverview: FinancialOverviewData? = null,
+    val complianceAndSecurity: ComplianceAndSecurityData? = null
 )
 
 @Serializable
@@ -347,4 +354,212 @@ data class PerformanceIndicatorsData(
     val transactionVelocity: Double,
     val efficiencyIndex: Double,
     val consistencyIndex: Double
+)
+
+// Nuevos modelos para Analytics Administrativos
+@Serializable
+data class BranchAnalyticsData(
+    val branchPerformance: List<BranchPerformanceData>,
+    val branchComparison: BranchComparisonData
+)
+
+@Serializable
+data class BranchPerformanceData(
+    val branchId: Int,
+    val branchName: String,
+    val branchCode: String,
+    val totalSales: Double,
+    val totalTransactions: Int,
+    val activeSellers: Int,
+    val inactiveSellers: Int,
+    val averageSalesPerSeller: Double,
+    val performanceScore: Double,
+    val growthRate: Double,
+    val lastActivity: String
+)
+
+@Serializable
+data class BranchComparisonData(
+    val topPerformingBranch: BranchSummaryData,
+    val lowestPerformingBranch: BranchSummaryData,
+    val averageBranchPerformance: BranchAverageData
+)
+
+@Serializable
+data class BranchSummaryData(
+    val branchId: Int,
+    val branchName: String,
+    val sales: Double,
+    val growth: Double
+)
+
+@Serializable
+data class BranchAverageData(
+    val sales: Double,
+    val transactions: Int,
+    val sellers: Int
+)
+
+@Serializable
+data class SellerManagementData(
+    val sellerOverview: SellerOverviewData,
+    val sellerPerformanceDistribution: SellerPerformanceDistributionData,
+    val sellerActivity: SellerActivityData
+)
+
+@Serializable
+data class SellerOverviewData(
+    val totalSellers: Int,
+    val activeSellers: Int,
+    val inactiveSellers: Int,
+    val newSellersThisMonth: Int,
+    val sellersWithZeroSales: Int,
+    val topPerformers: Int,
+    val underPerformers: Int
+)
+
+@Serializable
+data class SellerPerformanceDistributionData(
+    val excellent: Int,
+    val good: Int,
+    val average: Int,
+    val poor: Int
+)
+
+@Serializable
+data class SellerActivityData(
+    val dailyActiveSellers: Int,
+    val weeklyActiveSellers: Int,
+    val monthlyActiveSellers: Int,
+    val averageSessionDuration: Double,
+    val averageTransactionsPerSeller: Double
+)
+
+@Serializable
+data class SystemMetricsData(
+    val overallSystemHealth: OverallSystemHealthData,
+    val paymentSystemMetrics: PaymentSystemMetricsData,
+    val userEngagement: UserEngagementData
+)
+
+@Serializable
+data class OverallSystemHealthData(
+    val totalSystemSales: Double,
+    val totalSystemTransactions: Int,
+    val systemUptime: Double,
+    val averageResponseTime: Double,
+    val errorRate: Double,
+    val activeUsers: Int
+)
+
+@Serializable
+data class PaymentSystemMetricsData(
+    val totalPaymentsProcessed: Int,
+    val pendingPayments: Int,
+    val confirmedPayments: Int,
+    val rejectedPayments: Int,
+    val averageConfirmationTime: Double,
+    val paymentSuccessRate: Double
+)
+
+@Serializable
+data class UserEngagementData(
+    val dailyActiveUsers: Int,
+    val weeklyActiveUsers: Int,
+    val monthlyActiveUsers: Int,
+    val averageSessionDuration: Double,
+    val featureUsage: FeatureUsageData
+)
+
+@Serializable
+data class FeatureUsageData(
+    val qrScanner: Double,
+    val paymentManagement: Double,
+    val analytics: Double,
+    val notifications: Double
+)
+
+@Serializable
+data class AdministrativeInsightsData(
+    val managementAlerts: List<ManagementAlertData>,
+    val recommendations: List<String>,
+    val growthOpportunities: GrowthOpportunitiesData
+)
+
+@Serializable
+data class ManagementAlertData(
+    val type: String,
+    val severity: String,
+    val message: String,
+    val affectedBranch: String,
+    val affectedSellers: List<String>,
+    val recommendation: String
+)
+
+@Serializable
+data class GrowthOpportunitiesData(
+    val potentialNewBranches: Int,
+    val marketExpansion: String,
+    val sellerRecruitment: Int,
+    val revenueProjection: Double
+)
+
+@Serializable
+data class FinancialOverviewData(
+    val revenueBreakdown: RevenueBreakdownData,
+    val costAnalysis: CostAnalysisData
+)
+
+@Serializable
+data class RevenueBreakdownData(
+    val totalRevenue: Double,
+    val revenueByBranch: List<RevenueByBranchData>,
+    val revenueGrowth: RevenueGrowthData
+)
+
+@Serializable
+data class RevenueByBranchData(
+    val branchId: Int,
+    val branchName: String,
+    val revenue: Double,
+    val percentage: Double
+)
+
+@Serializable
+data class RevenueGrowthData(
+    val daily: Double,
+    val weekly: Double,
+    val monthly: Double,
+    val yearly: Double
+)
+
+@Serializable
+data class CostAnalysisData(
+    val operationalCosts: Double,
+    val sellerCommissions: Double,
+    val systemMaintenance: Double,
+    val netProfit: Double,
+    val profitMargin: Double
+)
+
+@Serializable
+data class ComplianceAndSecurityData(
+    val securityMetrics: SecurityMetricsData,
+    val complianceStatus: ComplianceStatusData
+)
+
+@Serializable
+data class SecurityMetricsData(
+    val failedLoginAttempts: Int,
+    val suspiciousActivities: Int,
+    val dataBreaches: Int,
+    val securityScore: Double
+)
+
+@Serializable
+data class ComplianceStatusData(
+    val dataProtection: String,
+    val auditTrail: String,
+    val backupStatus: String,
+    val lastAudit: String
 )

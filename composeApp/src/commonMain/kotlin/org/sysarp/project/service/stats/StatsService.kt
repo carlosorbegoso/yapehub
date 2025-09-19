@@ -13,12 +13,14 @@ class StatsService(
     
     suspend fun getAdminStatsSummary(
         adminId: Int,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<AdminStatsResponse> {
         return try {
             Logger.auth("STATS_SERVICE", "Obteniendo resumen de estadísticas del admin: $adminId")
 
-            val result = statsApiClient.getAdminStatsSummary(adminId, token)
+            val result = statsApiClient.getAdminStatsSummary(adminId, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->
@@ -36,66 +38,18 @@ class StatsService(
         }
     }
 
-    suspend fun getAdminStats(
-        adminId: Int,
-        startDate: String? = null,
-        endDate: String? = null,
-        token: String
-    ): Result<AdminStatsResponse> {
-        return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo estadísticas completas del admin: $adminId")
 
-            val result = statsApiClient.getAdminStats(adminId, startDate ?: "", endDate ?: "", token)
-
-            result.fold(
-                onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Estadísticas de admin obtenidas exitosamente")
-                    Result.success(response)
-                },
-                onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo estadísticas de admin: ${error.message}")
-                    Result.failure(error)
-                }
-            )
-        } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo estadísticas de admin: ${e.message}")
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getSellerStats(
-        sellerId: Int,
-        token: String
-    ): Result<SellerStatsResponse> {
-        return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo estadísticas del vendedor: $sellerId")
-
-            val result = statsApiClient.getSellerStats(sellerId, token)
-
-            result.fold(
-                onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Estadísticas de vendedor obtenidas exitosamente")
-                    Result.success(response)
-                },
-                onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo estadísticas de vendedor: ${error.message}")
-                    Result.failure(error)
-                }
-            )
-        } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo estadísticas de vendedor: ${e.message}")
-            Result.failure(e)
-        }
-    }
 
     suspend fun getSellerStatsSummary(
         sellerId: Int,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<SellerStatsResponse> {
         return try {
             Logger.auth("STATS_SERVICE", "Obteniendo resumen de estadísticas del vendedor: $sellerId")
 
-            val result = statsApiClient.getSellerStatsSummary(sellerId, token)
+            val result = statsApiClient.getSellerStatsSummary(sellerId, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->
@@ -113,29 +67,30 @@ class StatsService(
         }
     }
 
-    suspend fun getQuickSummary(
+
+    suspend fun getAdminDashboard(
         adminId: Int,
         startDate: String? = null,
         endDate: String? = null,
         token: String
     ): Result<QuickSummaryResponse> {
         return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo resumen rápido para admin: $adminId")
+            Logger.auth("STATS_SERVICE", "Obteniendo dashboard para admin: $adminId")
 
-            val result = statsApiClient.getQuickSummary(adminId, startDate, endDate, token)
+            val result = statsApiClient.getAdminDashboard(adminId, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Resumen rápido obtenido exitosamente")
+                    Logger.auth("STATS_SERVICE", "Dashboard de admin obtenido exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo resumen rápido: ${error.message}")
+                    Logger.auth("STATS_SERVICE", "Error obteniendo dashboard de admin: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo resumen rápido: ${e.message}")
+            Logger.auth("STATS_SERVICE", "Error obteniendo dashboard de admin: ${e.message}")
             Result.failure(e)
         }
     }

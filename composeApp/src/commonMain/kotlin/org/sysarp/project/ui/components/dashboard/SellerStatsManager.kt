@@ -23,7 +23,7 @@ class SellerStatsManager(
     ) {
         try {
             Logger.auth("STATS_MANAGER", "Cargando estadísticas para vendedor $sellerId")
-            val response = statsService.getSellerStatsSummary(sellerId.toInt(), accessToken)
+            val response = statsService.getSellerStatsSummary(sellerId.toInt(), null, null, accessToken)
             
             response.fold(
                 onSuccess = { result ->

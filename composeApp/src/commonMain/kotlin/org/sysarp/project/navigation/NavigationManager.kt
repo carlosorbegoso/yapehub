@@ -21,7 +21,6 @@ sealed class Screen {
     object BranchManagement : Screen()
     object Analytics : Screen()
     object SellerAnalytics : Screen()
-    object Reports : Screen()
     object Settings : Screen()
     object PendingPayments : Screen()
     object SellerPayments : Screen()

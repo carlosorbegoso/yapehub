@@ -72,33 +72,7 @@ import org.sysarp.project.ui.screens.common.exportLogs
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatRelativeTime
 import org.sysarp.project.utils.formatTimeOnly
-import org.sysarp.project.ui.components.charts.DailySalesBarChart
 import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
-import org.sysarp.project.ui.components.charts.SalesTrendLineChart
-import org.sysarp.project.ui.components.charts.HourlySalesChart
-import org.sysarp.project.ui.components.charts.SalesDistributionChart
-import org.sysarp.project.ui.components.charts.ComparisonsChart
-import org.sysarp.project.ui.components.charts.AchievementsChart
-import org.sysarp.project.ui.components.charts.PredictionsChart
-import org.sysarp.project.ui.components.calendar.SmartCalendar
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.fadeOut
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.IconButton
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.CalendarToday
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.minus
-import kotlinx.datetime.plus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -182,21 +156,6 @@ fun AdminDashboardScreen(
     var branches by remember { mutableStateOf<List<org.sysarp.project.data.BranchInfo>>(emptyList()) }
     var isLoadingBranches by remember { mutableStateOf(false) }
     
-    // Estado para analytics del admin
-    var adminAnalyticsData by remember { mutableStateOf<org.sysarp.project.data.AnalyticsData?>(null) }
-    var isLoadingAnalytics by remember { mutableStateOf(false) }
-    var analyticsError by remember { mutableStateOf("") }
-    
-    // Estado para filtros de fecha
-    var showDateFilter by remember { mutableStateOf(false) }
-    var selectedStartDate by remember { mutableStateOf<LocalDate?>(null) }
-    var selectedEndDate by remember { mutableStateOf<LocalDate?>(null) }
-    
-    // Estado para filtros de sección
-    var showBasicCharts by remember { mutableStateOf(true) }
-    var showAdvancedCharts by remember { mutableStateOf(true) }
-    var showPredictiveCharts by remember { mutableStateOf(true) }
-    var showFiltersDialog by remember { mutableStateOf(false) }
     
     // Cargar sucursales cuando se abre el diálogo
     LaunchedEffect(showAffiliationDialog, userProfile?.adminId, accessToken) {
@@ -223,7 +182,7 @@ fun AdminDashboardScreen(
             isLoadingStats = true
             statsError = ""
             
-            statsService.getQuickSummary(
+            statsService.getAdminDashboard(
                 adminId = userProfile!!.adminId!!.toInt(),
                 token = accessToken!!
             ).fold(
@@ -262,39 +221,6 @@ fun AdminDashboardScreen(
         }
     }
     
-    // Cargar analytics del admin
-    LaunchedEffect(userProfile?.adminId, accessToken, selectedStartDate, selectedEndDate) {
-        if (userProfile?.adminId != null && accessToken != null) {
-            isLoadingAnalytics = true
-            analyticsError = ""
-            
-            // Usar fechas seleccionadas o por defecto (últimos 7 días)
-            val startDate = selectedStartDate ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.minus(7, DateTimeUnit.DAY)
-            val endDate = selectedEndDate ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-            
-            statsService.getAnalytics(
-                adminId = userProfile!!.adminId!!.toInt(),
-                startDate = startDate.toString(),
-                endDate = endDate.toString(),
-                token = accessToken!!
-            ).fold(
-                onSuccess = { response ->
-                    adminAnalyticsData = response.data
-                    isLoadingAnalytics = false
-                    println("📊 [ADMIN_DASHBOARD] Analytics del admin cargados")
-                    println("📊 [ADMIN_DASHBOARD] Ventas totales: ${response.data.overview.totalSales}")
-                    println("📊 [ADMIN_DASHBOARD] Transacciones: ${response.data.overview.totalTransactions}")
-                    println("📊 [ADMIN_DASHBOARD] Ventas diarias: ${response.data.dailySales.size} días")
-                    println("📊 [ADMIN_DASHBOARD] Ventas por hora: ${response.data.hourlySales?.size ?: 0} horas")
-                },
-                onFailure = { error ->
-                    analyticsError = error.message ?: "Error cargando analytics"
-                    isLoadingAnalytics = false
-                    println("❌ [ADMIN_DASHBOARD] Error cargando analytics: ${error.message}")
-                }
-            )
-        }
-    }
     
     // Cargar vendedores conectados
     LaunchedEffect(userProfile?.adminId, accessToken) {
@@ -351,22 +277,6 @@ fun AdminDashboardScreen(
                         iconColor = MaterialTheme.colorScheme.error
                     )
                 ),
-                actions = {
-                    IconButton(onClick = { showFiltersDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.FilterList,
-                            contentDescription = "Filtros",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { showDateFilter = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.CalendarToday,
-                            contentDescription = "Calendario",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
                 showMenu = true
             )
         }
@@ -421,10 +331,10 @@ fun AdminDashboardScreen(
                 }
             }
             
-            // Estadísticas rápidas
+            // Resumen rápido
             item {
                 Text(
-                    text = "Estadísticas del Día",
+                    text = "📊 Resumen",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 16.dp)
@@ -513,11 +423,12 @@ fun AdminDashboardScreen(
                 }
             }
             
-            // Estadísticas adicionales del período
-            if (adminStatsData != null && !isLoadingAdminStats) {
+            
+            // Gráfico de estado de pagos
+            if (quickSummaryData != null) {
                 item {
                     Text(
-                        text = "Estadísticas del Período",
+                        text = "📊 Estado de Pagos",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 16.dp)
@@ -530,248 +441,31 @@ fun AdminDashboardScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Column(
                             modifier = Modifier.padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Información del período
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Período:",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "${adminStatsData!!.period.startDate} - ${adminStatsData!!.period.endDate}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Text(
+                                text = "Estado de Pagos",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                             
-                            // Estadísticas de pagos
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Pagos Confirmados:",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            PerformanceMetricsPieChart(
+                                performanceMetrics = org.sysarp.project.data.PerformanceMetricsData(
+                                    confirmedPayments = quickSummaryData!!.confirmedPayments,
+                                    rejectedPayments = quickSummaryData!!.rejectedPayments,
+                                    pendingPayments = quickSummaryData!!.pendingPayments,
+                                    averageConfirmationTime = quickSummaryData!!.averageConfirmationTime,
+                                    claimRate = quickSummaryData!!.claimRate,
+                                    rejectionRate = 0.0 // Calcular si es necesario
                                 )
-                                Text(
-                                    text = "${adminStatsData!!.summary.confirmedPayments}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Pagos Rechazados:",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "${adminStatsData!!.summary.rejectedPayments}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-                            
-                            // Estadísticas de vendedores
-                            if (adminStatsData!!.sellerStats.isNotEmpty()) {
-                                Text(
-                                    text = "Top Vendedores:",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                
-                                adminStatsData!!.sellerStats.take(3).forEach { seller ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            text = seller.sellerName,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = formatCurrency(seller.totalSales),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.Medium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Analytics visuales del admin
-            if (adminAnalyticsData != null && !isLoadingAnalytics) {
-                item {
-                    Text(
-                        text = "📊 Analytics Visuales",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                }
-                
-                // Sección de gráficos básicos
-                if (showBasicCharts) {
-                    item {
-                        AnimatedVisibility(
-                            visible = showBasicCharts,
-                            enter = slideInVertically() + fadeIn(),
-                            exit = slideOutVertically() + fadeOut()
-                        ) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(20.dp),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    Text(
-                                        text = "📊 Gráficos Principales",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    
-                                    // Gráficos básicos en layout responsivo
-                                    ResponsiveChartRow(
-                                        charts = listOf(
-                                            ChartItem("Ventas Diarias", { 
-                                                DailySalesBarChart(dailySales = adminAnalyticsData!!.dailySales) 
-                                            }),
-                                            ChartItem("Métricas de Rendimiento", { 
-                                                PerformanceMetricsPieChart(performanceMetrics = adminAnalyticsData!!.performanceMetrics) 
-                                            }),
-                                            ChartItem("Tendencias", { 
-                                                SalesTrendLineChart(dailySales = adminAnalyticsData!!.dailySales) 
-                                            })
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // Sección de gráficos avanzados
-                if (showAdvancedCharts) {
-                    item {
-                        AnimatedVisibility(
-                            visible = showAdvancedCharts,
-                            enter = slideInVertically() + fadeIn(),
-                            exit = slideOutVertically() + fadeOut()
-                        ) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(20.dp),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    Text(
-                                        text = "🎯 Análisis Avanzado",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    
-                                    // Gráficos avanzados en layout responsivo
-                                    ResponsiveChartRow(
-                                        charts = listOf(
-                                            ChartItem("Ventas por Hora", { 
-                                                HourlySalesChart(hourlySales = adminAnalyticsData!!.hourlySales ?: emptyList()) 
-                                            }),
-                                            ChartItem("Distribución", { 
-                                                SalesDistributionChart(salesDistribution = adminAnalyticsData!!.sellerAnalytics?.salesDistribution) 
-                                            }),
-                                            ChartItem("Logros y Badges", { 
-                                                AchievementsChart(sellerAchievements = adminAnalyticsData!!.sellerAchievements) 
-                                            })
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // Sección de análisis predictivo
-                if (showPredictiveCharts) {
-                    item {
-                        AnimatedVisibility(
-                            visible = showPredictiveCharts,
-                            enter = slideInVertically() + fadeIn(),
-                            exit = slideOutVertically() + fadeOut()
-                        ) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(20.dp),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    Text(
-                                        text = "🔮 Análisis Predictivo",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    
-                                    // Gráficos de análisis avanzado en layout responsivo
-                                    ResponsiveChartRow(
-                                        charts = listOf(
-                                            ChartItem("Predicciones", { 
-                                                PredictionsChart(sellerForecasting = adminAnalyticsData!!.sellerForecasting) 
-                                            }),
-                                            ChartItem("Comparaciones", { 
-                                                ComparisonsChart(sellerComparisons = adminAnalyticsData!!.sellerComparisons) 
-                                            })
-                                        )
-                                    )
-                                }
-                            }
+                            )
                         }
                     }
                 }
@@ -1162,29 +856,6 @@ fun AdminDashboardScreen(
         )
     }
     
-    // Diálogo de filtros de sección
-    if (showFiltersDialog) {
-        SectionFiltersDialog(
-            showBasicCharts = showBasicCharts,
-            showAdvancedCharts = showAdvancedCharts,
-            showPredictiveCharts = showPredictiveCharts,
-            onShowBasicChartsChange = { showBasicCharts = it },
-            onShowAdvancedChartsChange = { showAdvancedCharts = it },
-            onShowPredictiveChartsChange = { showPredictiveCharts = it },
-            onDismiss = { showFiltersDialog = false }
-        )
-    }
-    
-    // Diálogo de calendario para filtros de fecha
-    SmartCalendar(
-        expanded = showDateFilter,
-        onDismiss = { showDateFilter = false },
-        onDateRangeSelected = { startDate, endDate ->
-            selectedStartDate = startDate
-            selectedEndDate = endDate
-            showDateFilter = false
-        }
-    )
 }
 
 @Composable

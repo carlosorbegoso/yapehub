@@ -20,14 +20,13 @@ import org.sysarp.project.ui.screens.admin.AdminProfileScreen
 import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
 import org.sysarp.project.ui.screens.admin.BranchManagementScreen
 import org.sysarp.project.ui.screens.admin.UserManagementScreen
-import org.sysarp.project.ui.screens.common.AnalyticsScreen
+import org.sysarp.project.ui.screens.admin.AdminAnalyticsScreen
 import org.sysarp.project.ui.screens.common.DeactivationRequestScreen
 import org.sysarp.project.ui.screens.common.ForgotPasswordScreen
 import org.sysarp.project.ui.screens.common.LoginScreen
 import org.sysarp.project.ui.screens.common.ProfileSelectionScreen
 import org.sysarp.project.ui.screens.common.QRDisplayScreen
 import org.sysarp.project.ui.screens.common.QRScannerScreen
-import org.sysarp.project.ui.screens.common.ReportsScreen
 import org.sysarp.project.ui.screens.common.SettingsScreen
 import org.sysarp.project.ui.screens.common.SplashScreen
 import org.sysarp.project.ui.screens.seller.SellerAnalyticsScreen
@@ -60,12 +59,6 @@ fun AppContent(
         is Screen.Splash -> {
             SplashScreen(
                 onSplashFinished = navigationManager::onSplashFinished
-            )
-        }
-        is Screen.Reports -> {
-            ReportsScreen(
-                viewModel = viewModel,
-                onNavigateBack = navigationManager::navigateBack
             )
         }
         is Screen.Settings -> {
@@ -238,10 +231,9 @@ fun AppContent(
             }
         }
         is Screen.Analytics -> {
-            AnalyticsScreen(
+            AdminAnalyticsScreen(
                 authService = authService,
                 statsService = statsService,
-                viewModel = viewModel,
                 onNavigateBack = { navigationManager.navigateBack() }
             )
         }

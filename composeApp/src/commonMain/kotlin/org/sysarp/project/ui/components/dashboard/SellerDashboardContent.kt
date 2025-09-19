@@ -96,7 +96,7 @@ fun SellerDashboardContent(
                     )
                     
                     // Cargar estadísticas del vendedor
-                    val statsResult = statsService.getSellerStatsSummary(sellerId, accessToken)
+                    val statsResult = statsService.getSellerStatsSummary(sellerId, null, null, accessToken)
                     statsResult.fold(
                         onSuccess = { response ->
                             sellerStats = response.data

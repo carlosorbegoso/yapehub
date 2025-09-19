@@ -17,6 +17,8 @@ class StatsApiClient : BaseApiClient() {
 
     suspend fun getAdminStatsSummary(
         adminId: Int,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<AdminStatsResponse> {
         return try {
@@ -24,6 +26,8 @@ class StatsApiClient : BaseApiClient() {
 
             val response = client.get("$baseUrl/api/stats/admin/summary") {
                 parameter("adminId", adminId)
+                startDate?.let { parameter("startDate", it) }
+                endDate?.let { parameter("endDate", it) }
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }
@@ -59,99 +63,12 @@ class StatsApiClient : BaseApiClient() {
         }
     }
 
-    suspend fun getAdminStats(
-        adminId: Int,
-        startDate: String,
-        endDate: String,
-        token: String
-    ): Result<AdminStatsResponse> {
-        return try {
-            logInfo("STATS_API", "Obteniendo estadísticas del admin: $adminId desde $startDate hasta $endDate")
 
-            val response = client.get("$baseUrl/api/stats/admin") {
-                parameter("adminId", adminId)
-                parameter("startDate", startDate)
-                parameter("endDate", endDate)
-                header("Authorization", "Bearer $token")
-                header("accept", "application/json")
-            }
-
-            if (response.status.value in 200..299) {
-                try {
-                    // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
-                    val responseBody = response.body<String>()
-                    logInfo("STATS_API", "Respuesta del servidor: $responseBody")
-                    val adminStatsResponse = kotlinx.serialization.json.Json.decodeFromString<AdminStatsResponse>(responseBody)
-                    logInfo("STATS_API", "Estadísticas de admin obtenidas exitosamente")
-                    Result.success(adminStatsResponse)
-                } catch (e: Exception) {
-                    logError("STATS_API", "Error deserializando respuesta: ${e.message}")
-                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
-                }
-            } else {
-                val errorMessage = try {
-                    val errorBody = response.body<String>()
-                    logError("STATS_API", "Error body: $errorBody")
-                    errorBody
-                } catch (e: Exception) {
-                    "Error desconocido: ${e.message}"
-                }
-
-                val finalErrorMessage = "Error obteniendo estadísticas de admin: ${response.status} - $errorMessage"
-                logError("STATS_API", finalErrorMessage)
-                Result.failure(Exception(finalErrorMessage))
-            }
-        } catch (e: Exception) {
-            logError("STATS_API", "Error obteniendo estadísticas de admin: ${e.message}")
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getSellerStats(
-        sellerId: Int,
-        token: String
-    ): Result<SellerStatsResponse> {
-        return try {
-            logInfo("STATS_API", "Obteniendo estadísticas del vendedor: $sellerId")
-
-            val response = client.get("$baseUrl/api/stats/seller") {
-                parameter("sellerId", sellerId)
-                header("Authorization", "Bearer $token")
-                header("accept", "application/json")
-            }
-
-            if (response.status.value in 200..299) {
-                try {
-                    val responseBody = response.body<String>()
-                    logInfo("STATS_API", "Respuesta del servidor: $responseBody")
-                    val sellerStatsResponse = kotlinx.serialization.json.Json.decodeFromString<SellerStatsResponse>(responseBody)
-                    logInfo("STATS_API", "Estadísticas de vendedor obtenidas exitosamente")
-                    Result.success(sellerStatsResponse)
-                } catch (e: Exception) {
-                    logError("STATS_API", "Error deserializando respuesta: ${e.message}")
-                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
-                }
-            } else {
-                val errorMessage = try {
-                    val errorBody = response.body<String>()
-                    logError("STATS_API", "Error body: $errorBody")
-                    errorBody
-                } catch (e: Exception) {
-                    "Error desconocido: ${e.message}"
-                }
-
-                val finalErrorMessage = "Error obteniendo estadísticas de vendedor: ${response.status} - $errorMessage"
-                logError("STATS_API", finalErrorMessage)
-                Result.failure(Exception(finalErrorMessage))
-            }
-        } catch (e: Exception) {
-            logError("STATS_API", "Error obteniendo estadísticas de vendedor: ${e.message}")
-            Result.failure(e)
-        }
-    }
 
     suspend fun getSellerStatsSummary(
         sellerId: Int,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<SellerStatsResponse> {
         return try {
@@ -159,6 +76,8 @@ class StatsApiClient : BaseApiClient() {
 
             val response = client.get("$baseUrl/api/stats/seller/summary") {
                 parameter("sellerId", sellerId)
+                startDate?.let { parameter("startDate", it) }
+                endDate?.let { parameter("endDate", it) }
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }
@@ -194,16 +113,17 @@ class StatsApiClient : BaseApiClient() {
         }
     }
 
-    suspend fun getQuickSummary(
+
+    suspend fun getAdminDashboard(
         adminId: Int,
         startDate: String? = null,
         endDate: String? = null,
         token: String
     ): Result<QuickSummaryResponse> {
         return try {
-            logInfo("STATS_API", "Obteniendo resumen rápido para admin: $adminId")
+            logInfo("STATS_API", "Obteniendo dashboard para admin: $adminId")
 
-            val response = client.get("$baseUrl/api/stats/quick-summary") {
+            val response = client.get("$baseUrl/api/stats/admin/dashboard") {
                 parameter("adminId", adminId)
                 startDate?.let { parameter("startDate", it) }
                 endDate?.let { parameter("endDate", it) }
@@ -216,9 +136,9 @@ class StatsApiClient : BaseApiClient() {
                     // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
                     val responseBody = response.body<String>()
                     logInfo("STATS_API", "Respuesta raw: $responseBody")
-                    val quickSummaryResponse = Json.decodeFromString<QuickSummaryResponse>(responseBody)
-                    logInfo("STATS_API", "Resumen rápido obtenido exitosamente")
-                    Result.success(quickSummaryResponse)
+                    val dashboardResponse = Json.decodeFromString<QuickSummaryResponse>(responseBody)
+                    logInfo("STATS_API", "Dashboard de admin obtenido exitosamente")
+                    Result.success(dashboardResponse)
                 } catch (e: Exception) {
                     logError("STATS_API", "Error deserializando respuesta: ${e.message}")
                     Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
@@ -232,12 +152,12 @@ class StatsApiClient : BaseApiClient() {
                     "Error desconocido: ${e.message}"
                 }
 
-                val finalErrorMessage = "Error obteniendo resumen rápido: ${response.status} - $errorMessage"
+                val finalErrorMessage = "Error obteniendo dashboard de admin: ${response.status} - $errorMessage"
                 logError("STATS_API", finalErrorMessage)
                 Result.failure(Exception(finalErrorMessage))
             }
         } catch (e: Exception) {
-            logError("STATS_API", "Error obteniendo resumen rápido: ${e.message}")
+            logError("STATS_API", "Error obteniendo dashboard de admin: ${e.message}")
             Result.failure(e)
         }
     }
@@ -251,7 +171,7 @@ class StatsApiClient : BaseApiClient() {
         return try {
             logInfo("STATS_API", "Obteniendo analytics completos para admin: $adminId")
 
-            val response = client.get("$baseUrl/api/stats/analytics") {
+            val response = client.get("$baseUrl/api/stats/admin/analytics") {
                 parameter("adminId", adminId)
                 startDate?.let { parameter("startDate", it) }
                 endDate?.let { parameter("endDate", it) }

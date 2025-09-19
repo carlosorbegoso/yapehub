@@ -45,8 +45,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import org.sysarp.project.ui.components.topbar.TopBarComponent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -133,21 +132,13 @@ fun BranchManagementScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        "Gestión de Sucursales",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
+            TopBarComponent(
+                title = "Gestión de Sucursales",
+                subtitle = "Administra tus sucursales y equipos",
+                onNavigateBack = onBackClick,
+                onRefresh = {
+                    // Recargar datos de sucursales
+                    currentPage = 0
                 },
                 actions = {
                     IconButton(onClick = { showFilters = !showFilters }) {
@@ -163,10 +154,7 @@ fun BranchManagementScreen(
                             contentDescription = "Crear sucursal"
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                }
             )
         }
     ) { paddingValues ->
