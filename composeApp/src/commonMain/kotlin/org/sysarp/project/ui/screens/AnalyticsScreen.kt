@@ -25,6 +25,7 @@ import org.sysarp.project.utils.formatCurrencyNoDecimals
 import org.sysarp.project.utils.formatPercentage
 import org.sysarp.project.utils.formatOneDecimalWithUnit
 import org.sysarp.project.viewmodel.YapeViewModel
+import org.sysarp.project.ui.components.topbar.TopBarComponent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,25 +87,10 @@ fun AnalyticsScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        "Analytics y Reportes",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+            TopBarComponent(
+                title = "Analytics y Reportes",
+                subtitle = "Análisis y estadísticas del sistema",
+                onNavigateBack = onNavigateBack
             )
         }
     ) { paddingValues ->

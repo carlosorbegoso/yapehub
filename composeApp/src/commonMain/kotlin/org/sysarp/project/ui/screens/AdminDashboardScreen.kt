@@ -43,8 +43,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import org.sysarp.project.ui.components.topbar.TopBarComponent
+import org.sysarp.project.ui.components.topbar.TopBarMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -243,48 +243,38 @@ fun AdminDashboardScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        "Dashboard Admin",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+            TopBarComponent(
+                title = "Dashboard Admin",
+                subtitle = "Panel de administración",
+                menuItems = listOf(
+                    TopBarMenuItem(
+                        title = "Generar código de afiliación",
+                        icon = Icons.Filled.QrCode,
+                        onClick = { showAffiliationDialog = true }
+                    ),
+                    TopBarMenuItem(
+                        title = "Mi Perfil",
+                        icon = Icons.Filled.Person,
+                        onClick = onNavigateToProfile
+                    ),
+                    TopBarMenuItem(
+                        title = "Configuración",
+                        icon = Icons.Filled.Settings,
+                        onClick = onNavigateToSettings
+                    ),
+                    TopBarMenuItem(
+                        title = "Cerrar sesión",
+                        icon = Icons.Filled.Logout,
+                        onClick = {
+                            coroutineScope.launch {
+                                authService.logout()
+                                onLogout()
+                            }
+                        },
+                        iconColor = MaterialTheme.colorScheme.error
                     )
-                },
-                actions = {
-                    IconButton(onClick = { showAffiliationDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.QrCode,
-                            contentDescription = "Generar código de afiliación"
-                        )
-                    }
-                    IconButton(onClick = onNavigateToProfile) {
-                        Icon(
-                            imageVector = Icons.Filled.Person,
-                            contentDescription = "Mi Perfil"
-                        )
-                    }
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = "Configuración"
-                        )
-                    }
-                    IconButton(onClick = {
-                        coroutineScope.launch {
-                            authService.logout()
-                            onLogout()
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Logout,
-                            contentDescription = "Cerrar sesión"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                ),
+                showMenu = true
             )
         }
     ) { paddingValues ->
