@@ -39,6 +39,12 @@ class DashboardAutoRefreshService(
     private var onSellerDashboardRefresh: (() -> Unit)? = null
     private var onAdminDashboardRefresh: (() -> Unit)? = null
     
+    // Control de throttling para evitar refrescos excesivos
+    private var lastNotificationTime = 0L
+    private val minTimeBetweenNotifications = 5000L // 5 segundos mínimo entre notificaciones
+    private var lastPeriodicRefreshTime = 0L
+    private val minTimeBetweenPeriodicRefresh = 120_000L // 2 minutos mínimo entre refrescos periódicos
+    
     /**
      * Inicia el servicio de actualización automática
      */
@@ -58,10 +64,10 @@ class DashboardAutoRefreshService(
             }
         }
         
-        // Actualización periódica cada 30 segundos
+        // Actualización periódica cada 2 minutos (reducido de 30 segundos)
         refreshJob = coroutineScope.launch {
             while (true) {
-                delay(30_000) // 30 segundos
+                delay(120_000) // 2 minutos en lugar de 30 segundos
                 if (_isAutoRefreshEnabled.value) {
                     performPeriodicRefresh()
                 }
@@ -105,7 +111,16 @@ class DashboardAutoRefreshService(
      * Maneja las notificaciones de pago del WebSocket
      */
     private suspend fun handlePaymentNotification(notification: PaymentNotificationData) {
+        val currentTime = System.currentTimeMillis()
+        
+        // Throttling: solo procesar si han pasado al menos 5 segundos desde la última notificación
+        if (currentTime - lastNotificationTime < minTimeBetweenNotifications) {
+            Logger.auth("DASHBOARD_REFRESH", "⏳ Throttling: ignorando notificación (muy reciente)")
+            return
+        }
+        
         Logger.auth("DASHBOARD_REFRESH", "📨 Notificación de pago recibida: ${notification.status}")
+        lastNotificationTime = currentTime
         
         when (notification.status) {
             "CONFIRMED", "REJECTED", "PENDING" -> {
@@ -122,7 +137,16 @@ class DashboardAutoRefreshService(
      * Realiza una actualización periódica
      */
     private suspend fun performPeriodicRefresh() {
+        val currentTime = System.currentTimeMillis()
+        
+        // Throttling: solo procesar si han pasado al menos 2 minutos desde la última actualización periódica
+        if (currentTime - lastPeriodicRefreshTime < minTimeBetweenPeriodicRefresh) {
+            Logger.auth("DASHBOARD_REFRESH", "⏳ Throttling: ignorando actualización periódica (muy reciente)")
+            return
+        }
+        
         Logger.auth("DASHBOARD_REFRESH", "⏰ Actualización periódica")
+        lastPeriodicRefreshTime = currentTime
         performRefresh("periodic")
     }
     

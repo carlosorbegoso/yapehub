@@ -29,8 +29,11 @@ sealed class Screen {
     object AdminProfile : Screen()
     object SellerNotifications : Screen()
     object QRScanner : Screen()
+    object BillingDashboard : Screen()
+    object Subscriptions : Screen()
     data class QRDisplay(val qrCode: org.sysarp.project.data.QRCodeData) : Screen()
     data class SellerSpecificPayments(val sellerId: Int, val sellerName: String) : Screen()
+    data class PaymentDialog(val paymentCode: org.sysarp.project.data.PaymentCode) : Screen()
 }
 
 class NavigationManager {
@@ -106,6 +109,18 @@ class NavigationManager {
     
     fun navigateToDeactivationRequest() {
         _currentScreen.value = Screen.DeactivationRequest
+    }
+    
+    fun navigateToBillingDashboard() {
+        navigateTo(Screen.BillingDashboard)
+    }
+    
+    fun navigateToSubscriptions() {
+        navigateTo(Screen.Subscriptions)
+    }
+    
+    fun navigateToPaymentDialog(paymentCode: org.sysarp.project.data.PaymentCode) {
+        navigateTo(Screen.PaymentDialog(paymentCode))
     }
 
 }

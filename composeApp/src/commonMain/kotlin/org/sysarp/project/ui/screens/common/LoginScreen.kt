@@ -1,6 +1,7 @@
 package org.sysarp.project.ui.screens.common
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -28,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,6 +46,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,12 +63,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.CredentialStorageService
 import org.sysarp.project.utils.SuccessHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     authService: AuthService,
+    credentialStorageService: CredentialStorageService,
     onLoginSuccess: (String) -> Unit, // Ahora recibe el rol
     onBackPressed: () -> Unit,
     onForgotPassword: () -> Unit
@@ -72,11 +78,27 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var rememberPassword by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Cargar credenciales guardadas al inicializar
+    LaunchedEffect(Unit) {
+        try {
+            val savedCredentials = credentialStorageService.getSavedCredentials()
+            if (savedCredentials != null && credentialStorageService.areCredentialsValid()) {
+                email = savedCredentials.email
+                password = savedCredentials.password
+                rememberPassword = true
+                successMessage = "Credenciales cargadas automáticamente"
+            }
+        } catch (e: Exception) {
+            // Error silencioso al cargar credenciales
+        }
+    }
     
     // Mostrar mensaje de éxito
     SuccessHandler.ShowSuccessMessage(
@@ -336,6 +358,52 @@ fun LoginScreen(
                         )
                     }
                     
+                    // Checkbox para recordar contraseña
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = rememberPassword,
+                                onCheckedChange = { rememberPassword = it },
+                                enabled = !isLoading
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Recordar contraseña",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.clickable { rememberPassword = !rememberPassword }
+                            )
+                        }
+                        
+                        // Botón para limpiar credenciales guardadas
+                        TextButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    val cleared = credentialStorageService.clearCredentials()
+                                    if (cleared) {
+                                        email = ""
+                                        password = ""
+                                        rememberPassword = false
+                                        successMessage = "Credenciales eliminadas"
+                                    }
+                                }
+                            },
+                            enabled = !isLoading
+                        ) {
+                            Text(
+                                text = "Limpiar",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    
                     // Mensaje de error
                     if (errorMessage.isNotEmpty()) {
                         Card(
@@ -378,6 +446,22 @@ fun LoginScreen(
                                         onSuccess = { loginData ->
                                             isLoading = false
                                             successMessage = SuccessHandler.Messages.LOGIN_SUCCESS
+                                            
+                                            // Guardar credenciales si el usuario marcó "Recordar contraseña"
+                                            if (rememberPassword) {
+                                                coroutineScope.launch {
+                                                    val saved = credentialStorageService.saveCredentials(sanitizedEmail, sanitizedPassword)
+                                                    if (saved) {
+                                                        successMessage = "Credenciales guardadas exitosamente"
+                                                    }
+                                                }
+                                            } else {
+                                                // Eliminar credenciales si el usuario desmarcó la opción
+                                                coroutineScope.launch {
+                                                    credentialStorageService.clearCredentials()
+                                                }
+                                            }
+                                            
                                             onLoginSuccess(loginData.role)
                                         },
                                         onFailure = { error ->

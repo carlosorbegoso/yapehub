@@ -36,10 +36,12 @@ class PaymentWebSocketClient(
     private val _paymentResults = MutableSharedFlow<PaymentResultData>()
     val paymentResults: SharedFlow<PaymentResultData> = _paymentResults.asSharedFlow()
     
-    // Configuración de reconexión
+    // Configuración de reconexión optimizada
     private var reconnectAttempts = 0
-    private val maxReconnectAttempts = 5
+    private val maxReconnectAttempts = 3 // Reducido de 5 a 3 intentos
     private var currentSellerId: Long? = null
+    private var lastReconnectTime = 0L
+    private val minTimeBetweenReconnects = 30000L // 30 segundos mínimo entre reconexiones
     
     /**
      * Conecta al WebSocket del vendedor
@@ -170,13 +172,13 @@ class PaymentWebSocketClient(
     }
     
     /**
-     * Inicia heartbeat para mantener conexión activa
+     * Inicia heartbeat para mantener conexión activa (optimizado)
      */
     private fun startHeartbeat() {
         heartbeatJob?.cancel()
         heartbeatJob = CoroutineScope(Dispatchers.IO).launch {
             while (_connectionState.value == WebSocketConnectionState.CONNECTED) {
-                delay(30000) // Heartbeat cada 30 segundos
+                delay(60000) // Heartbeat cada 60 segundos (aumentado de 30 segundos)
                 
                 try {
                     Logger.auth("WEBSOCKET", "💓 Heartbeat WebSocket - Conexión activa")
@@ -191,10 +193,18 @@ class PaymentWebSocketClient(
     }
     
     /**
-     * Programa reconexión automática
+     * Programa reconexión automática con throttling
      */
     private fun scheduleReconnect() {
         if (reconnectJob?.isActive == true) return
+        
+        val currentTime = System.currentTimeMillis()
+        
+        // Throttling: solo reconectar si han pasado al menos 30 segundos desde la última reconexión
+        if (currentTime - lastReconnectTime < minTimeBetweenReconnects) {
+            Logger.auth("WEBSOCKET", "⏳ Throttling: ignorando reconexión (muy reciente)")
+            return
+        }
         
         reconnectJob = CoroutineScope(Dispatchers.IO).launch {
             reconnectAttempts++
@@ -205,13 +215,14 @@ class PaymentWebSocketClient(
                 return@launch
             }
             
-            val delaySeconds = minOf(reconnectAttempts * 5, 30) // 5, 10, 15, 20, 30 segundos
+            val delaySeconds = minOf(reconnectAttempts * 10, 60) // 10, 20, 30 segundos (aumentado)
             Logger.auth("WEBSOCKET", "🔄 Programando reconexión en $delaySeconds segundos (intento $reconnectAttempts/$maxReconnectAttempts)")
             
             delay(delaySeconds * 1000L)
             
             currentSellerId?.let { sellerId ->
                 Logger.auth("WEBSOCKET", "🔄 Intentando reconexión automática...")
+                lastReconnectTime = System.currentTimeMillis()
                 connect(sellerId)
             }
         }

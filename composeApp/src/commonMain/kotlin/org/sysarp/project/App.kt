@@ -19,8 +19,11 @@ import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.service.http.PaymentApiClient
 import org.sysarp.project.service.http.StatsApiClient
+import org.sysarp.project.service.http.billing.BillingApiClient
+import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.stats.StatsService
+import org.sysarp.project.service.CredentialStorageService
 import org.sysarp.project.ui.theme.YapeHubTheme
 import org.sysarp.project.viewmodel.YapeViewModel
 
@@ -98,6 +101,15 @@ fun YapeApp() {
         org.sysarp.project.service.websocket.PaymentWebSocketService(authService)
     }
     
+    val billingService = remember {
+        val billingApiClient = BillingApiClient()
+        BillingService(billingApiClient, authService)
+    }
+    
+    val credentialStorageService = remember {
+        CredentialStorageService()
+    }
+    
     val paymentNotificationService = remember {
         org.sysarp.project.service.notifications.PaymentNotificationService()
     }
@@ -133,6 +145,8 @@ fun YapeApp() {
         qrService = qrService,
         branchService = branchService,
         webSocketService = webSocketService,
+        billingService = billingService,
+        credentialStorageService = credentialStorageService,
         viewModel = viewModel,
         userProfileRepository = userProfileRepository
     )

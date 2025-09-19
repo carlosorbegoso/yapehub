@@ -13,6 +13,8 @@ import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.service.billing.BillingService
+import org.sysarp.project.service.CredentialStorageService
 import org.sysarp.project.ui.components.FloatingDebugOverlay
 import org.sysarp.project.ui.screens.admin.AdminDashboardScreen
 import org.sysarp.project.ui.screens.admin.AdminPaymentsScreen
@@ -35,6 +37,9 @@ import org.sysarp.project.ui.screens.seller.SellerNotificationsScreen
 import org.sysarp.project.ui.screens.seller.SellerPaymentsScreen
 import org.sysarp.project.ui.screens.seller.SellerSpecificPaymentsScreen
 import org.sysarp.project.ui.screens.seller.SellerUnifiedScreen
+import org.sysarp.project.ui.screens.billing.BillingDashboardScreen
+import org.sysarp.project.ui.screens.billing.SubscriptionScreen
+import org.sysarp.project.ui.screens.billing.PaymentDialog
 import org.sysarp.project.viewmodel.YapeViewModel
 
 @Composable
@@ -49,7 +54,9 @@ fun AppContent(
     affiliationService: AffiliationService,
     qrService: QRService,
     branchService: BranchService,
-    webSocketService: PaymentWebSocketService
+    webSocketService: PaymentWebSocketService,
+    billingService: BillingService,
+    credentialStorageService: CredentialStorageService
 ) {
     val currentScreen by navigationManager.currentScreen.collectAsState()
     
@@ -98,6 +105,7 @@ fun AppContent(
         is Screen.Login -> {
             LoginScreen(
                 authService = authService,
+                credentialStorageService = credentialStorageService,
                 onLoginSuccess = { role ->
                     // Establecer el usuario en el ViewModel después del login exitoso
                     val userProfile = authService.userProfile.value
@@ -195,6 +203,7 @@ fun AppContent(
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
                 onNavigateToDeactivationRequests = { navigationManager.navigateToDeactivationRequest() },
                 onNavigateToProfile = { navigationManager.navigateTo(Screen.AdminProfile) },
+                onNavigateToBilling = { navigationManager.navigateToBillingDashboard() },
                 onLogout = { navigationManager.navigateToProfileSelection() }
             )
         }
@@ -299,6 +308,35 @@ fun AppContent(
                     navigationManager.navigateToSellerDashboard()
                 },
                 authService = authService
+            )
+        }
+        is Screen.BillingDashboard -> {
+            BillingDashboardScreen(
+                billingService = billingService,
+                onNavigateBack = navigationManager::navigateBack,
+                onNavigateToSubscriptions = navigationManager::navigateToSubscriptions,
+                onNavigateToPayment = { paymentCode ->
+                    navigationManager.navigateToPaymentDialog(paymentCode)
+                }
+            )
+        }
+        is Screen.Subscriptions -> {
+            SubscriptionScreen(
+                billingService = billingService,
+                onNavigateBack = navigationManager::navigateBack,
+                onNavigateToPayment = { paymentCode ->
+                    navigationManager.navigateToPaymentDialog(paymentCode)
+                }
+            )
+        }
+        is Screen.PaymentDialog -> {
+            PaymentDialog(
+                paymentCode = (currentScreen as Screen.PaymentDialog).paymentCode,
+                billingService = billingService,
+                onDismiss = navigationManager::navigateBack,
+                onPaymentCompleted = {
+                    navigationManager.navigateBack()
+                }
             )
         }
         else -> {

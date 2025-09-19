@@ -63,12 +63,12 @@ class PaymentWebSocketService(
                 _isConnected.value = state == WebSocketConnectionState.CONNECTED
                 Logger.auth("WEBSOCKET_SERVICE", "Estado de conexión: $state")
                 
-                // Reconexión automática si se desconecta (con límite de intentos)
+                // Reconexión automática si se desconecta (con límite de intentos y throttling)
                 if (state == WebSocketConnectionState.DISCONNECTED) {
                     val userProfile = authService.userProfile.value
                     val token = authService.accessToken.value
                     if (userProfile?.sellerId != null && !token.isNullOrBlank()) {
-                        delay(3000) // Esperar 3 segundos antes de reconectar
+                        delay(10000) // Esperar 10 segundos antes de reconectar (aumentado de 3 segundos)
                         Logger.auth("WEBSOCKET_SERVICE", "🔄 Intentando reconexión automática...")
                         webSocketClient.connect(userProfile.sellerId.toLong())
                     }

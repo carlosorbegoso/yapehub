@@ -93,6 +93,7 @@ fun AdminDashboardScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequests: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToBilling: () -> Unit,
     onLogout: () -> Unit
 ) {
     // Verificar sesión al entrar a la pantalla
@@ -618,6 +619,13 @@ fun AdminDashboardScreen(
                         subtitle = "Ajustes del sistema y perfil",
                         icon = Icons.Filled.Settings,
                         onClick = onNavigateToSettings
+                    )
+                    
+                    ActionCard(
+                        title = "Facturación",
+                        subtitle = "Gestión de suscripciones y tokens",
+                        icon = Icons.Filled.AttachMoney,
+                        onClick = onNavigateToBilling
                     )
                 }
             }
