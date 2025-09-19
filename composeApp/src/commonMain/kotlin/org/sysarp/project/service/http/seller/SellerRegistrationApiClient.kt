@@ -1,10 +1,14 @@
 package org.sysarp.project.service.http
 
 import io.ktor.client.call.body
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import org.sysarp.project.data.*
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import org.sysarp.project.data.ApiError
+import org.sysarp.project.data.SellerRegistrationRequest
+import org.sysarp.project.data.SellerRegistrationResponse
 
 /**
  * Cliente API especializado para registro de vendedores

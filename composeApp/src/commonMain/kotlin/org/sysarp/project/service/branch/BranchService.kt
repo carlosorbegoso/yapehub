@@ -1,6 +1,8 @@
 package org.sysarp.project.service.branch
 
-import org.sysarp.project.data.*
+import org.sysarp.project.data.BranchData
+import org.sysarp.project.data.BranchSellersData
+import org.sysarp.project.data.BranchesData
 import org.sysarp.project.service.http.BranchApiClient
 
 class BranchService {

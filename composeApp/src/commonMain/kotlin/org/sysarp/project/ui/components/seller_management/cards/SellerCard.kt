@@ -1,9 +1,6 @@
 package org.sysarp.project.ui.components.seller_management.cards
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -167,7 +164,7 @@ fun SellerCard(
                 
                 SimpleStatChip(
                     icon = Icons.Filled.CheckCircle,
-                    value = "S/ ${String.format("%.0f", seller.totalAmount)}",
+                    value = "S/ ${"%.0f".format(seller.totalAmount)}",
                     label = "Total",
                     modifier = Modifier.weight(1f)
                 )

@@ -3,12 +3,36 @@ package org.sysarp.project.ui.components.branch
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.Update
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.sysarp.project.data.BranchInfo
+import org.sysarp.project.utils.formatShortDate
 
 @Composable
 fun BranchCard(
@@ -182,14 +207,14 @@ fun BranchCard(
                 
                 StatChip(
                     icon = Icons.Filled.CalendarToday,
-                    value = formatDate(branch.createdAt),
+                    value = formatShortDate(branch.createdAt),
                     label = "Creada",
                     modifier = Modifier.weight(1f)
                 )
                 
                 StatChip(
                     icon = Icons.Filled.Update,
-                    value = formatDate(branch.updatedAt),
+                    value = formatShortDate(branch.updatedAt),
                     label = "Actualizada",
                     modifier = Modifier.weight(1f)
                 )
@@ -307,12 +332,3 @@ fun StatChip(
     }
 }
 
-private fun formatDate(dateString: String): String {
-    return try {
-        val date = java.time.LocalDateTime.parse(dateString.substringBefore("."))
-        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM")
-        date.format(formatter)
-    } catch (e: Exception) {
-        "N/A"
-    }
-}

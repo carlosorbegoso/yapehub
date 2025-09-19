@@ -15,15 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.sysarp.project.data.AdminStatsData
+import org.sysarp.project.data.AnalyticsData
 import org.sysarp.project.data.UserRole
 import org.sysarp.project.data.YapeTransaction
-import org.sysarp.project.data.AnalyticsData
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
+import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.viewmodel.YapeViewModel
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -208,31 +206,31 @@ fun AnalyticsScreen(
                         listOf(
                             AnalyticsStat(
                                 title = "Total Vendido",
-                                value = "S/ ${String.format("%.2f", data.overview.totalSales)}",
+                                value = formatCurrency(data.overview.totalSales),
                                 icon = Icons.Filled.AttachMoney,
                                 color = MaterialTheme.colorScheme.primary,
-                                trend = "+${String.format("%.1f", data.overview.salesGrowth)}%"
+                                trend = "+${"%.1f".format(data.overview.salesGrowth)}%"
                             ),
                             AnalyticsStat(
                                 title = "Transacciones",
                                 value = "${data.overview.totalTransactions}",
                                 icon = Icons.Filled.Receipt,
                                 color = MaterialTheme.colorScheme.secondary,
-                                trend = "+${String.format("%.1f", data.overview.transactionGrowth)}%"
+                                trend = "+${"%.1f".format(data.overview.transactionGrowth)}%"
                             ),
                             AnalyticsStat(
                                 title = "Promedio",
-                                value = "S/ ${String.format("%.2f", data.overview.averageTransactionValue)}",
+                                value = formatCurrency(data.overview.averageTransactionValue),
                                 icon = Icons.Filled.TrendingUp,
                                 color = MaterialTheme.colorScheme.tertiary,
-                                trend = "+${String.format("%.1f", data.overview.averageGrowth)}%"
+                                trend = "+${"%.1f".format(data.overview.averageGrowth)}%"
                             ),
                             AnalyticsStat(
                                 title = "Confirmados",
                                 value = "${data.performanceMetrics.confirmedPayments}",
                                 icon = Icons.Filled.CheckCircle,
                                 color = MaterialTheme.colorScheme.primary,
-                                trend = "+${String.format("%.1f", data.performanceMetrics.claimRate)}%"
+                                trend = "+${"%.1f".format(data.performanceMetrics.claimRate)}%"
                             )
                         )
                     } ?: emptyList()
@@ -322,7 +320,7 @@ fun AnalyticsScreen(
                                         )
                                         
                                         Text(
-                                            text = "S/ ${String.format("%.0f", day.amount)}",
+                                            text = "S/ ${"%.0f".format(day.amount)}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -365,7 +363,7 @@ fun AnalyticsScreen(
                                     rank = index + 1,
                                     sellerName = seller.sellerName,
                                     branchName = seller.branchName,
-                                    totalSales = "S/ ${String.format("%.2f", seller.totalSales)}",
+                                    totalSales = formatCurrency(seller.totalSales),
                                     totalTransactions = seller.transactionCount
                                 )
                             }
@@ -410,21 +408,21 @@ fun AnalyticsScreen(
                     if (performanceMetrics != null) {
                         PerformanceMetricCard(
                             title = "Tiempo Promedio de Confirmación",
-                            value = "${String.format("%.1f", performanceMetrics.averageConfirmationTime)} min",
+                            value = "${"%.1f".format(performanceMetrics.averageConfirmationTime)} min",
                             icon = Icons.Filled.Schedule,
                             color = MaterialTheme.colorScheme.primary
                         )
                         
                         PerformanceMetricCard(
                             title = "Tasa de Confirmación",
-                            value = "${String.format("%.1f", performanceMetrics.claimRate)}%",
+                            value = "${"%.1f".format(performanceMetrics.claimRate)}%",
                             icon = Icons.Filled.CheckCircle,
                             color = MaterialTheme.colorScheme.secondary
                         )
                         
                         PerformanceMetricCard(
                             title = "Tasa de Rechazo",
-                            value = "${String.format("%.1f", performanceMetrics.rejectionRate)}%",
+                            value = "${"%.1f".format(performanceMetrics.rejectionRate)}%",
                             icon = Icons.Filled.Cancel,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -653,9 +651,9 @@ private fun getAnalyticsStats(transactions: List<YapeTransaction>): List<Analyti
     val totalCount = transactions.size
     
     return listOf(
-        AnalyticsStat("Total Vendido", "S/ ${String.format("%.2f", totalAmount)}", Icons.Filled.AttachMoney, MaterialTheme.colorScheme.primary, "+12.5%"),
+        AnalyticsStat("Total Vendido", formatCurrency(totalAmount), Icons.Filled.AttachMoney, MaterialTheme.colorScheme.primary, "+12.5%"),
         AnalyticsStat("Transacciones", "$totalCount", Icons.Filled.Receipt, MaterialTheme.colorScheme.secondary, "+8.2%"),
-        AnalyticsStat("Promedio", "S/ ${String.format("%.2f", if (totalCount > 0) totalAmount / totalCount else 0.0)}", Icons.Filled.TrendingUp, MaterialTheme.colorScheme.tertiary, "+3.1%"),
+        AnalyticsStat("Promedio", "S/ ${"%.2f".format(if (totalCount > 0) totalAmount / totalCount else 0.0)}", Icons.Filled.TrendingUp, MaterialTheme.colorScheme.tertiary, "+3.1%"),
         AnalyticsStat("Confirmados", "${(totalCount * 0.94).toInt()}", Icons.Filled.CheckCircle, MaterialTheme.colorScheme.primary, "+1.8%")
     )
 }

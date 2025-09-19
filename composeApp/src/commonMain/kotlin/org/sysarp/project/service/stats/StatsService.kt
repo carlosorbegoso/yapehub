@@ -1,9 +1,9 @@
 package org.sysarp.project.service.stats
 
 import org.sysarp.project.data.AdminStatsResponse
-import org.sysarp.project.data.SellerStatsResponse
-import org.sysarp.project.data.QuickSummaryResponse
 import org.sysarp.project.data.AnalyticsResponse
+import org.sysarp.project.data.QuickSummaryResponse
+import org.sysarp.project.data.SellerStatsResponse
 import org.sysarp.project.service.http.StatsApiClient
 import org.sysarp.project.utils.Logger
 

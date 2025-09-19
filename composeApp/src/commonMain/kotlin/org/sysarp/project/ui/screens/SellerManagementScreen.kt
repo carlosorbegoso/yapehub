@@ -18,19 +18,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
-import org.sysarp.project.data.UserProfile
+import org.sysarp.project.data.MySeller
 import org.sysarp.project.data.QRCodeData
-import org.sysarp.project.service.qr.QRService
-import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.admin.AdminService
+import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.AdminProfileApiClient
 import org.sysarp.project.service.http.AdminSellerApiClient
-import org.sysarp.project.service.http.SellerManagementApiClient
 import org.sysarp.project.service.http.AdminStatsApiClient
-import org.sysarp.project.ui.components.EditSellerDialog
+import org.sysarp.project.service.http.SellerManagementApiClient
 import org.sysarp.project.ui.components.DeleteSellerDialog
-import org.sysarp.project.data.MySeller
+import org.sysarp.project.ui.components.EditSellerDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -730,7 +727,7 @@ fun SellerCardV2(
                 
                 SellerMetricItem(
                     label = "Total",
-                    value = "S/ ${String.format("%.0f", seller.totalAmount)}",
+                    value = "S/ ${"%.0f".format(seller.totalAmount)}",
                     icon = Icons.Filled.CheckCircle
                 )
                 

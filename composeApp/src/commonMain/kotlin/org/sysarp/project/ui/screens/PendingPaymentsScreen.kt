@@ -1,6 +1,5 @@
 package org.sysarp.project.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,9 +18,10 @@ import kotlinx.coroutines.launch
 import org.sysarp.project.data.MySeller
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.utils.extractShortYapeCode
+import org.sysarp.project.utils.formatCurrency
 import java.text.SimpleDateFormat
 import java.util.*
-import org.sysarp.project.utils.extractShortYapeCode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,7 +146,7 @@ fun PendingPaymentsScreen(
                         val currentPageAmount = pendingPayments.sumOf { it.amount }
                         
                         PaymentStatItem("En esta página", pendingPayments.size.toString(), Icons.Filled.Schedule)
-                        PaymentStatItem("Monto página", "S/ ${String.format("%.2f", currentPageAmount)}", Icons.Filled.AttachMoney)
+                        PaymentStatItem("Monto página", formatCurrency(currentPageAmount), Icons.Filled.AttachMoney)
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -397,7 +397,7 @@ fun PendingPaymentCard(payment: org.sysarp.project.data.SellerPendingPayment) {
                 Column(modifier = Modifier.weight(1f)) {
                     // Monto
                     Text(
-                        text = "S/ ${String.format("%.2f", payment.amount)}",
+                        text = formatCurrency(payment.amount),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary

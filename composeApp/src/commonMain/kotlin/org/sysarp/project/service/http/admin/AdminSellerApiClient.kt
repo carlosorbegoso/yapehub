@@ -1,10 +1,17 @@
 package org.sysarp.project.service.http
 
 import io.ktor.client.call.body
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import org.sysarp.project.data.*
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
+import io.ktor.client.request.put
+import io.ktor.client.request.setBody
+import io.ktor.http.isSuccess
+import org.sysarp.project.data.DeleteSellerResponse
+import org.sysarp.project.data.SellersWithFiltersResponse
+import org.sysarp.project.data.UpdateSellerRequest
+import org.sysarp.project.data.UpdateSellerResponse
 
 /**
  * Cliente API especializado para gestión de vendedores por administrador

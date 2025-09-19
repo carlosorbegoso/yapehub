@@ -1,11 +1,17 @@
 package org.sysarp.project.service.admin
 
-import org.sysarp.project.data.*
+import org.sysarp.project.data.AdminProfileData
+import org.sysarp.project.data.DeleteSellerResponse
+import org.sysarp.project.data.NotificationStatsData
+import org.sysarp.project.data.SellersResponse
+import org.sysarp.project.data.SellersWithFiltersResponse
+import org.sysarp.project.data.UpdateAdminProfileRequest
+import org.sysarp.project.data.UpdateSellerRequest
+import org.sysarp.project.data.UpdateSellerResponse
 import org.sysarp.project.service.http.AdminProfileApiClient
 import org.sysarp.project.service.http.AdminSellerApiClient
 import org.sysarp.project.service.http.AdminStatsApiClient
 import org.sysarp.project.service.http.SellerManagementApiClient
-
 import org.sysarp.project.utils.Logger
 
 class AdminService(

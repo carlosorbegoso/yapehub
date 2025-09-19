@@ -1,10 +1,29 @@
 package org.sysarp.project.service.http
 
 import io.ktor.client.call.body
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import org.sysarp.project.data.*
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import org.sysarp.project.data.AdminRegistrationRequest
+import org.sysarp.project.data.AdminRegistrationResponse
+import org.sysarp.project.data.ForgotPasswordRequest
+import org.sysarp.project.data.ForgotPasswordResponse
+import org.sysarp.project.data.LoginRequest
+import org.sysarp.project.data.LoginResponse
+import org.sysarp.project.data.LogoutRequest
+import org.sysarp.project.data.LogoutResponse
+import org.sysarp.project.data.RefreshTokenRequest
+import org.sysarp.project.data.RefreshTokenResponse
+import org.sysarp.project.data.SellerLoginByPhoneResponse
+import org.sysarp.project.data.SellersResponse
+import org.sysarp.project.data.ValidateAffiliationCodeRequest
+import org.sysarp.project.data.ValidateAffiliationCodeResponse
+import org.sysarp.project.data.ValidationErrorResponse
 import org.sysarp.project.utils.DeviceUtils
 
 /**

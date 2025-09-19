@@ -1,14 +1,14 @@
 package org.sysarp.project.service.http
 
-import io.ktor.client.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.Constants
+import org.sysarp.project.utils.Logger
 
 /**
  * Cliente HTTP base con configuración común para todos los servicios

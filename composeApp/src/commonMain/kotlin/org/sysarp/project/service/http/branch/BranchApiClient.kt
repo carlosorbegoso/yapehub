@@ -1,13 +1,25 @@
 package org.sysarp.project.service.http
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.put
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
+import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
-import org.sysarp.project.data.*
-import org.sysarp.project.utils.Constants
+import org.sysarp.project.data.BranchData
+import org.sysarp.project.data.BranchResponse
+import org.sysarp.project.data.BranchSellersData
+import org.sysarp.project.data.BranchSellersResponse
+import org.sysarp.project.data.BranchesData
+import org.sysarp.project.data.BranchesResponse
+import org.sysarp.project.data.CreateBranchRequest
+import org.sysarp.project.data.UpdateBranchRequest
 
 class BranchApiClient : BaseApiClient() {
     

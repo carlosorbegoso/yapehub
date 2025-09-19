@@ -1,10 +1,8 @@
 package org.sysarp.project.ui.components.seller_dashboard.sections
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.ui.components.PaymentNotificationCard
 import org.sysarp.project.utils.Logger

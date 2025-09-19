@@ -1,7 +1,6 @@
 package org.sysarp.project.ui.screens
 
-import androidx.compose.runtime.*
-import org.sysarp.project.data.SellerLoginData
+import androidx.compose.runtime.Composable
 import org.sysarp.project.service.auth.AuthService
 
 @Composable

@@ -1,14 +1,26 @@
 package org.sysarp.project.service.http
 
-import io.ktor.client.*
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.plugins.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
+import io.ktor.client.request.put
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
-import org.sysarp.project.data.*
+import org.sysarp.project.data.ConnectedSellersResponse
+import org.sysarp.project.data.MySeller
+import org.sysarp.project.data.SellersResponse
+import org.sysarp.project.data.SellersStatusResponse
+import org.sysarp.project.data.UpdateSellerResponse
 
 /**
  * Cliente API especializado para gestión básica de vendedores

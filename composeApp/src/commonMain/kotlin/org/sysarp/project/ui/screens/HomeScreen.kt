@@ -63,11 +63,11 @@ import androidx.compose.ui.unit.sp
 import kotlinx.datetime.Clock
 import org.sysarp.project.data.TransactionType
 import org.sysarp.project.data.UserRole
-import org.sysarp.project.viewmodel.PermissionState
 import org.sysarp.project.ui.components.DebugLogPanel
 import org.sysarp.project.ui.components.ModernCard
 import org.sysarp.project.ui.components.TransactionCard
 import org.sysarp.project.ui.components.TransactionStatsCard
+import org.sysarp.project.viewmodel.PermissionState
 import org.sysarp.project.viewmodel.YapeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,9 +1,18 @@
 package org.sysarp.project.service.http
 
 import io.ktor.client.call.body
-import io.ktor.client.request.*
-import io.ktor.http.*
-import org.sysarp.project.data.*
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import org.sysarp.project.data.MarkNotificationReadResponse
+import org.sysarp.project.data.SellerNotificationsResponse
+import org.sysarp.project.data.YapeNotificationApiResponse
+import org.sysarp.project.data.YapeNotificationRequest
 
 /**
  * Cliente API especializado para notificaciones

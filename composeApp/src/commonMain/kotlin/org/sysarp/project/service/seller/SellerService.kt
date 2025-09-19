@@ -1,10 +1,14 @@
 package org.sysarp.project.service
 
-import org.sysarp.project.data.*
-import org.sysarp.project.service.http.SellerManagementApiClient
-import org.sysarp.project.service.http.SellerAuthApiClient
-import org.sysarp.project.service.http.SellerRegistrationApiClient
+import org.sysarp.project.data.AuthState
+import org.sysarp.project.data.ConnectedSellersResponse
+import org.sysarp.project.data.LoginUserData
+import org.sysarp.project.data.MySeller
+import org.sysarp.project.data.SellerRegistrationResponse
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.http.SellerAuthApiClient
+import org.sysarp.project.service.http.SellerManagementApiClient
+import org.sysarp.project.service.http.SellerRegistrationApiClient
 import org.sysarp.project.utils.Logger
 
 /**

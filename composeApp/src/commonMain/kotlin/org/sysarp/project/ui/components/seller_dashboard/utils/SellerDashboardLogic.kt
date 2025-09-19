@@ -56,6 +56,6 @@ object SellerDashboardLogic {
      */
     fun getSuccessMessage(amount: Double, isConfirmed: Boolean): String {
         val action = if (isConfirmed) "✅ Pago confirmado exitosamente" else "❌ Pago rechazado exitosamente"
-        return "$action - S/ ${String.format("%.2f", amount)}"
+        return "$action - S/ ${"%.2f".format(amount)}"
     }
 }

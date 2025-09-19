@@ -1,17 +1,16 @@
 package org.sysarp.project.viewmodel
 
 // Imports de funciones iOS eliminados - no se necesitan para Android
+// PendingPayment eliminado - no se utiliza
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.data.BusinessReport
 import org.sysarp.project.data.DailyReport
-// PendingPayment eliminado - no se utiliza
 import org.sysarp.project.data.TransactionType
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.data.UserRole

@@ -3,7 +3,6 @@ package org.sysarp.project.utils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import org.sysarp.project.utils.Logger
 
 /**
  * Utilidades para obtener información única del dispositivo

@@ -15,12 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import org.sysarp.project.data.MySeller
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.utils.extractShortYapeCode
+import org.sysarp.project.utils.formatCurrency
 import java.text.SimpleDateFormat
 import java.util.*
-import org.sysarp.project.utils.extractShortYapeCode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -320,7 +320,7 @@ fun PendingPaymentsContent(
                 val totalAmount = payments.sumOf { it.amount }
                 
                 PaymentStatItem("Pendientes", payments.size.toString(), Icons.Filled.Schedule)
-                PaymentStatItem("Total", "S/ ${String.format("%.2f", totalAmount)}", Icons.Filled.AttachMoney)
+                PaymentStatItem("Total", formatCurrency(totalAmount), Icons.Filled.AttachMoney)
             }
         }
 
@@ -442,7 +442,7 @@ fun ConfirmedPaymentsContent(
                 val totalAmount = payments.sumOf { it.amount }
                 
                 PaymentStatItem("Confirmados", payments.size.toString(), Icons.Filled.CheckCircle)
-                PaymentStatItem("Total", "S/ ${String.format("%.2f", totalAmount)}", Icons.Filled.AttachMoney)
+                PaymentStatItem("Total", formatCurrency(totalAmount), Icons.Filled.AttachMoney)
             }
         }
 
@@ -527,7 +527,7 @@ fun ConfirmedPaymentCard(
             ) {
                 PaymentInfoRow(
                     label = "Monto",
-                    value = "S/ ${String.format("%.2f", payment.amount)}",
+                    value = formatCurrency(payment.amount),
                     icon = Icons.Filled.AttachMoney
                 )
                 
@@ -613,7 +613,7 @@ fun PendingPaymentCardWithActions(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "S/ ${String.format("%.2f", payment.amount)}",
+                    text = formatCurrency(payment.amount),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary

@@ -1,7 +1,6 @@
 package org.sysarp.project.ui.components.seller_dashboard.cards
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.ui.components.seller_dashboard.utils.SellerInfoRow
 import org.sysarp.project.utils.extractShortYapeCode
+import org.sysarp.project.utils.formatCurrency
 
 /**
  * Tarjeta de pago pendiente del vendedor
@@ -102,7 +103,7 @@ fun SellerPaymentCard(
             ) {
                 SellerInfoRow(
                     label = "Monto",
-                    value = "S/ ${String.format("%.2f", payment.amount)}",
+                    value = formatCurrency(payment.amount),
                     icon = Icons.Filled.CheckCircle
                 )
                 

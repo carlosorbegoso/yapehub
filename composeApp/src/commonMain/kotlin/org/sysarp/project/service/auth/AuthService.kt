@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.sysarp.project.data.*
-import org.sysarp.project.data.AuthState
 import org.sysarp.project.service.http.AuthApiClient
 import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.UserProfileFactory

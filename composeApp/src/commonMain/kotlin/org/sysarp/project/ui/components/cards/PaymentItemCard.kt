@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
@@ -35,14 +34,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.utils.extractShortYapeCode
-import java.text.SimpleDateFormat
-import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
+import org.sysarp.project.utils.formatCurrency
+import org.sysarp.project.utils.formatTimestamp
 
 /**
  * Tarjeta profesional para mostrar un pago pendiente individual
@@ -131,7 +127,7 @@ fun PaymentItemCard(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "S/ ${String.format("%.2f", payment.amount)}",
+                            text = formatCurrency(payment.amount),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -253,23 +249,3 @@ fun PaymentItemCard(
 /**
  * Formatea el timestamp en una fecha legible
  */
-private fun formatTimestamp(timestamp: String): String {
-    return try {
-        // Intentar parsear como ISO timestamp
-        val instant = java.time.Instant.parse(timestamp)
-        val localDateTime = instant.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime()
-        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
-        localDateTime.format(formatter)
-    } catch (e: Exception) {
-        // Si falla, intentar parsear como Long (timestamp en milisegundos)
-        try {
-            val timestampLong = timestamp.toLong()
-            val date = Date(timestampLong)
-            val formatter = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            formatter.format(date)
-        } catch (e2: Exception) {
-            // Si todo falla, mostrar el timestamp original
-            timestamp
-        }
-    }
-}

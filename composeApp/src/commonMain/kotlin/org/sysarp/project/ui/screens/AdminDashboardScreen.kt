@@ -18,21 +18,20 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.PauseCircle
-import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,24 +49,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.service.SellerService
-import org.sysarp.project.service.affiliation.AffiliationService
-
-import org.sysarp.project.data.GenerateAffiliationCodeResponse
-import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
-import androidx.compose.runtime.*
-import org.sysarp.project.data.DeactivationRequest
-import org.sysarp.project.data.QuickSummaryData
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
+import org.sysarp.project.data.DeactivationRequest
+import org.sysarp.project.data.GenerateAffiliationCodeResponse
+import org.sysarp.project.data.QuickSummaryData
+import org.sysarp.project.service.SellerService
+import org.sysarp.project.service.affiliation.AffiliationService
+import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
+import org.sysarp.project.utils.formatCurrency
+import org.sysarp.project.utils.formatRelativeTime
+import org.sysarp.project.utils.formatTimeOnly
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,6 +128,11 @@ fun AdminDashboardScreen(
     var quickSummaryData by remember { mutableStateOf<QuickSummaryData?>(null) }
     var isLoadingStats by remember { mutableStateOf(false) }
     var statsError by remember { mutableStateOf("") }
+    
+    // Estado para estadísticas completas del admin
+    var adminStatsData by remember { mutableStateOf<org.sysarp.project.data.AdminStatsData?>(null) }
+    var isLoadingAdminStats by remember { mutableStateOf(false) }
+    var adminStatsError by remember { mutableStateOf("") }
     
     // Estado para vendedores conectados
     var connectedSellersData by remember { mutableStateOf<org.sysarp.project.data.ConnectedSellersData?>(null) }
@@ -187,15 +195,24 @@ fun AdminDashboardScreen(
             )
             
             // También cargar estadísticas completas del admin
+            isLoadingAdminStats = true
+            adminStatsError = ""
+            
             statsService.getAdminStatsSummary(
                 adminId = userProfile!!.adminId!!.toInt(),
                 token = accessToken!!
             ).fold(
                 onSuccess = { response ->
-                    // TODO: Usar response.data para mostrar estadísticas adicionales
+                    adminStatsData = response.data
+                    isLoadingAdminStats = false
                     println("📊 [ADMIN_DASHBOARD] Estadísticas completas del admin cargadas")
+                    println("📊 [ADMIN_DASHBOARD] Período: ${response.data.period.startDate} - ${response.data.period.endDate}")
+                    println("📊 [ADMIN_DASHBOARD] Estadísticas diarias: ${response.data.dailyStats.size} días")
+                    println("📊 [ADMIN_DASHBOARD] Estadísticas de vendedores: ${response.data.sellerStats.size} vendedores")
                 },
                 onFailure = { error ->
+                    adminStatsError = error.message ?: "Error cargando estadísticas completas"
+                    isLoadingAdminStats = false
                     println("❌ [ADMIN_DASHBOARD] Error cargando estadísticas completas: ${error.message}")
                 }
             )
@@ -372,7 +389,7 @@ fun AdminDashboardScreen(
                         listOf(
                             QuickStat(
                                 title = "Total Vendido",
-                                value = "S/ ${String.format("%.2f", data.totalSales)}",
+                                value = formatCurrency(data.totalSales),
                                 icon = Icons.Filled.AttachMoney,
                                 color = MaterialTheme.colorScheme.primary
                             ),
@@ -384,8 +401,8 @@ fun AdminDashboardScreen(
                             ),
                             QuickStat(
                                 title = "Promedio",
-                                value = "S/ ${String.format("%.2f", data.averageTransactionValue)}",
-                                icon = Icons.Filled.TrendingUp,
+                                value = formatCurrency(data.averageTransactionValue),
+                                icon = Icons.AutoMirrored.Filled.TrendingUp,
                                 color = MaterialTheme.colorScheme.tertiary
                             ),
                             QuickStat(
@@ -408,6 +425,117 @@ fun AdminDashboardScreen(
                                 icon = stat.icon,
                                 color = stat.color
                             )
+                        }
+                    }
+                }
+            }
+            
+            // Estadísticas adicionales del período
+            if (adminStatsData != null && !isLoadingAdminStats) {
+                item {
+                    Text(
+                        text = "Estadísticas del Período",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+                
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Información del período
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Período:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${adminStatsData!!.period.startDate} - ${adminStatsData!!.period.endDate}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            // Estadísticas de pagos
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Pagos Confirmados:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${adminStatsData!!.summary.confirmedPayments}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Pagos Rechazados:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${adminStatsData!!.summary.rejectedPayments}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            
+                            // Estadísticas de vendedores
+                            if (adminStatsData!!.sellerStats.isNotEmpty()) {
+                                Text(
+                                    text = "Top Vendedores:",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                adminStatsData!!.sellerStats.take(3).forEach { seller ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = seller.sellerName,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = formatCurrency(seller.totalSales),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -588,7 +716,7 @@ fun AdminDashboardScreen(
                             ) {
                                 ConnectionStatItem("Conectados", sellersData.totalConnected.toString(), Icons.Filled.CheckCircle)
                                 ConnectionStatItem("Total", sellersData.connectedSellers.size.toString(), Icons.Filled.People)
-                                ConnectionStatItem("Última actualización", formatTimestamp(sellersData.timestamp), Icons.Filled.Schedule)
+                                ConnectionStatItem("Última actualización", formatTimeOnly(sellersData.timestamp), Icons.Filled.Schedule)
                             }
                         }
                         
@@ -755,10 +883,48 @@ fun AdminDashboardScreen(
                 qrError = null
             },
             onShareQR = { 
-                // TODO: Implementar compartir QR
+                // Implementar compartir QR
+                if (generatedQRCode != null) {
+                    val qrData = generatedQRCode!!
+                    val shareText = buildString {
+                        appendLine("🔗 Código QR de Afiliación - YapeHub")
+                        appendLine()
+                        appendLine("📱 Código de Afiliación: ${qrData.affiliationCode}")
+                        appendLine("🏢 Sucursal: ${qrData.branchName}")
+                        appendLine("👤 Administrador: ${qrData.adminName}")
+                        appendLine("⏰ Válido hasta: ${qrData.expiresAt}")
+                        appendLine("🔢 Usos restantes: ${qrData.remainingUses}/${qrData.maxUses}")
+                        appendLine()
+                        appendLine("📲 Escanea este QR para afiliarte como vendedor")
+                        appendLine("💡 Generado con YapeHub")
+                    }
+                    
+                    // Usar el servicio de compartir existente
+                    exportLogs(shareText)
+                    
+                    println("📤 [ADMIN_DASHBOARD] QR compartido exitosamente")
+                }
             },
             onInvalidateQR = { 
-                // TODO: Implementar invalidar QR
+                // Implementar invalidar QR
+                if (generatedQRCode != null) {
+                    val qrData = generatedQRCode!!
+                    
+                    // Mostrar confirmación de invalidación
+                    println("🚫 [ADMIN_DASHBOARD] Invalidando QR: ${qrData.affiliationCode}")
+                    println("📱 [ADMIN_DASHBOARD] Código de afiliación: ${qrData.affiliationCode}")
+                    println("🏢 [ADMIN_DASHBOARD] Sucursal: ${qrData.branchName}")
+                    println("⏰ [ADMIN_DASHBOARD] Expiraba: ${qrData.expiresAt}")
+                    println("🔢 [ADMIN_DASHBOARD] Usos restantes: ${qrData.remainingUses}/${qrData.maxUses}")
+                    
+                    // TODO: En el futuro, aquí se podría implementar una llamada al servidor
+                    // para invalidar el código de afiliación en la base de datos
+                    // Por ahora, solo cerramos el diálogo y limpiamos el estado
+                    
+                    println("✅ [ADMIN_DASHBOARD] QR invalidado localmente (pendiente implementación del servidor)")
+                }
+                
+                // Cerrar diálogo y limpiar estado
                 showQRDialog = false
                 generatedQRCode = null
                 qrError = null
@@ -1063,7 +1229,7 @@ fun ConnectedSellerCard(
                 )
                 
                 Text(
-                    text = if (sellerInfo.isConnected) "En línea" else "Última vez: ${formatLastSeen(sellerInfo.lastSeen)}",
+                    text = if (sellerInfo.isConnected) "En línea" else "Última vez: ${formatRelativeTime(sellerInfo.lastSeen)}",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (sellerInfo.isConnected) 
@@ -1075,32 +1241,4 @@ fun ConnectedSellerCard(
     }
 }
 
-private fun formatLastSeen(lastSeen: String): String {
-    return try {
-        // Formatear la fecha para mostrar de manera más amigable
-        val date = java.time.Instant.parse(lastSeen)
-        val now = java.time.Instant.now()
-        val duration = java.time.Duration.between(date, now)
-        
-        when {
-            duration.toMinutes() < 1 -> "hace menos de 1 min"
-            duration.toMinutes() < 60 -> "hace ${duration.toMinutes()} min"
-            duration.toHours() < 24 -> "hace ${duration.toHours()} h"
-            else -> "hace ${duration.toDays()} días"
-        }
-    } catch (e: Exception) {
-        "desconocido"
-    }
-}
 
-private fun formatTimestamp(timestamp: String): String {
-    return try {
-        // Formatear timestamp para mostrar hora de actualización
-        val date = java.time.Instant.parse(timestamp)
-        val localTime = java.time.LocalDateTime.ofInstant(date, java.time.ZoneId.systemDefault())
-        val formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
-        localTime.format(formatter)
-    } catch (e: Exception) {
-        "N/A"
-    }
-}

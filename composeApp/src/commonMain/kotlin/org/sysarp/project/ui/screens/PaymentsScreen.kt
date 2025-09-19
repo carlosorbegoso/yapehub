@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.viewmodel.YapeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,7 +92,7 @@ fun PaymentsScreen(
                 ) {
                     StatItem("Pendientes", "${getPendingCount(transactions)}", Icons.Filled.Schedule, MaterialTheme.colorScheme.error)
                     StatItem("Confirmados", "${getConfirmedCount(transactions)}", Icons.Filled.CheckCircle, MaterialTheme.colorScheme.primary)
-                    StatItem("Total", "S/ ${String.format("%.2f", getTotalAmount(transactions))}", Icons.Filled.AttachMoney, MaterialTheme.colorScheme.secondary)
+                    StatItem("Total", "S/ ${"%.2f".format(getTotalAmount(transactions))}", Icons.Filled.AttachMoney, MaterialTheme.colorScheme.secondary)
                 }
             }
             
@@ -279,7 +280,7 @@ fun TransactionCard(
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "S/ ${String.format("%.2f", transaction.amount)}",
+                        text = formatCurrency(transaction.amount),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface

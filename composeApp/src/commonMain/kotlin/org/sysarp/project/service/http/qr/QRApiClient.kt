@@ -1,17 +1,27 @@
 package org.sysarp.project.service.http
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.plugins.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
+import io.ktor.http.isSuccess
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.sysarp.project.data.*
-import org.sysarp.project.utils.Constants
+import org.sysarp.project.data.GenerateQRResponse
+import org.sysarp.project.data.QRCodeData
+import org.sysarp.project.data.QrLoginRequest
+import org.sysarp.project.data.QrLoginResponse
+import org.sysarp.project.data.SellerLoginData
+import org.sysarp.project.data.ValidateAffiliationCodeData
+import org.sysarp.project.data.ValidateAffiliationCodeRequest
+import org.sysarp.project.data.ValidateAffiliationCodeResponse
 
 class QRApiClient : BaseApiClient() {
     
