@@ -43,17 +43,18 @@ fun ComparisonsChart(
         return
     }
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(20.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Título y resumen
             ChartHeader(
@@ -124,7 +125,7 @@ private fun DrawScope.drawComparisonBars(
     val maxBarHeight = canvasSize.height * 0.7f
     val centerY = canvasSize.height / 2
 
-    comparisons.forEachIndexed { index, (label, data, color) ->
+    comparisons.forEachIndexed { index, (_, data, color) ->
         val x = index * barWidth + barWidth / 2
         val barHeight = if (maxValue > 0) {
             (abs(data.percentageChange) / maxValue * maxBarHeight * animationProgress).toFloat()
@@ -201,43 +202,55 @@ private fun ComparisonItem(
     val color = if (isPositive) Color(0xFF4CAF50) else Color(0xFFF44336)
     val trendIcon = if (isPositive) "📈" else "📉"
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.05f)
-        ),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = color.copy(alpha = 0.05f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(16.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = icon,
-                    fontSize = 16.sp
-                )
+                // Icono con fondo circular suave
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(
+                            color = color.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(18.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = icon,
+                        fontSize = 18.sp
+                    )
+                }
+                
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Black
+                    color = Color.Black,
+                    fontWeight = FontWeight.Medium
                 )
             }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Column(
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         text = formatCurrency(comparison.salesChange),
@@ -248,13 +261,26 @@ private fun ComparisonItem(
                     Text(
                         text = formatPercentage(comparison.percentageChange),
                         style = MaterialTheme.typography.bodySmall,
-                        color = color
+                        color = color,
+                        fontWeight = FontWeight.Medium
                     )
                 }
-                Text(
-                    text = trendIcon,
-                    fontSize = 16.sp
-                )
+                
+                // Icono de tendencia con fondo circular
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(
+                            color = color.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(16.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = trendIcon,
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
     }
@@ -288,18 +314,19 @@ private fun EmptyChartCard(
     subtitle: String,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(24.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 text = title,

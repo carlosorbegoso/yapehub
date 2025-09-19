@@ -117,14 +117,14 @@ private fun StreakItem(
             modifier = Modifier
                 .size(50.dp)
                 .background(
-                    color = color.copy(alpha = 0.1f),
+                    color = color.copy(alpha = 0.15f),
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = icon,
-                fontSize = 20.sp
+                fontSize = 22.sp
             )
         }
         
@@ -142,7 +142,7 @@ private fun StreakItem(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
-                fontSize = 10.sp
+                fontSize = 11.sp
             )
         }
     }
@@ -186,39 +186,50 @@ private fun BadgeItem(
         )
     }
 
-    Card(
+    Box(
         modifier = Modifier
             .width(120.dp)
-            .height(100.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (badge.earned) Color(0xFF4CAF50).copy(alpha = 0.1f) else Color.Gray.copy(alpha = 0.1f)
-        ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .height(100.dp)
+            .background(
+                color = if (badge.earned) Color(0xFF4CAF50).copy(alpha = 0.05f) else Color.Gray.copy(alpha = 0.05f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(12.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = badge.icon,
-                fontSize = 24.sp
-            )
+            // Icono con fondo circular suave
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = if (badge.earned) Color(0xFF4CAF50).copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = badge.icon,
+                    fontSize = 20.sp
+                )
+            }
+            
             Text(
                 text = badge.name,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = if (badge.earned) Color(0xFF4CAF50) else Color.Gray,
-                fontSize = 10.sp
+                fontSize = 11.sp
             )
+            
             Text(
                 text = badge.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
-                fontSize = 8.sp,
+                fontSize = 9.sp,
                 maxLines = 2
             )
         }
@@ -254,33 +265,43 @@ private fun MilestonesSection(
 private fun MilestoneItem(
     milestone: MilestoneData
 ) {
-    Card(
+    Box(
         modifier = Modifier
             .width(100.dp)
-            .height(80.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (milestone.achieved) Color(0xFF2196F3).copy(alpha = 0.1f) else Color.Gray.copy(alpha = 0.1f)
-        ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .height(80.dp)
+            .background(
+                color = if (milestone.achieved) Color(0xFF2196F3).copy(alpha = 0.05f) else Color.Gray.copy(alpha = 0.05f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(10.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = if (milestone.achieved) "✅" else "⏳",
-                fontSize = 20.sp
-            )
+            // Icono con fondo circular suave
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(
+                        color = if (milestone.achieved) Color(0xFF2196F3).copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (milestone.achieved) "✅" else "⏳",
+                    fontSize = 16.sp
+                )
+            }
+            
             Text(
                 text = milestone.type.replace("_", " ").uppercase(),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = if (milestone.achieved) Color(0xFF2196F3) else Color.Gray,
-                fontSize = 9.sp,
+                fontSize = 10.sp,
                 maxLines = 2
             )
         }

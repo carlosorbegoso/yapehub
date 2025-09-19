@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.utils.formatDateOnly
@@ -66,7 +65,7 @@ fun DateRangeSelector(
             containerColor = Color.White
         ),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
     ) {
         Column(
             modifier = Modifier
@@ -74,41 +73,20 @@ fun DateRangeSelector(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Título mejorado
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(10.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.CalendarToday,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Column {
-                    Text(
-                        text = "📅 Seleccionar Rango de Fechas",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = "Elige el período que deseas analizar",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
-                    )
-                }
-            }
+            // Título simplificado
+            Text(
+                text = "📅 Seleccionar Rango de Fechas",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+            
+            // Instrucciones simplificadas
+            Text(
+                text = "Selecciona fechas de inicio y fin para el análisis",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
             
             // Selectores de fecha
             Row(
@@ -150,8 +128,7 @@ fun DateRangeSelector(
                             )
                             Text(
                                 text = startDate?.let { 
-                                    val dateString = Instant.fromEpochMilliseconds(it)
-                                        .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                    val dateString = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                                     formatDateOnly(dateString)
                                 } ?: "Seleccionar fecha",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -196,8 +173,7 @@ fun DateRangeSelector(
                             )
                             Text(
                                 text = endDate?.let { 
-                                    val dateString = Instant.fromEpochMilliseconds(it)
-                                        .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                    val dateString = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                                     formatDateOnly(dateString)
                                 } ?: "Seleccionar fecha",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -210,10 +186,8 @@ fun DateRangeSelector(
             
             // Validación de fechas
             if (startDate != null && endDate != null) {
-                val startDateString = Instant.fromEpochMilliseconds(startDate!!)
-                    .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                val endDateString = Instant.fromEpochMilliseconds(endDate!!)
-                    .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                val startDateString = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                val endDateString = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                 
                 if (startDateString > endDateString) {
                     Text(
@@ -233,12 +207,10 @@ fun DateRangeSelector(
                 Button(
                     onClick = {
                         val startDateString = startDate?.let { 
-                            Instant.fromEpochMilliseconds(it)
-                                .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                            Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                         }
                         val endDateString = endDate?.let { 
-                            Instant.fromEpochMilliseconds(it)
-                                .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                            Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                         }
                         
                         // Validar que la fecha de inicio sea anterior a la de fin
@@ -254,10 +226,8 @@ fun DateRangeSelector(
                     shape = RoundedCornerShape(12.dp),
                     enabled = startDate != null && endDate != null && 
                              startDate != null && endDate != null &&
-                             Instant.fromEpochMilliseconds(startDate!!)
-                                 .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString() <=
-                             Instant.fromEpochMilliseconds(endDate!!)
-                                 .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                             Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString() <=
+                             Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Event,
@@ -265,9 +235,9 @@ fun DateRangeSelector(
                         modifier = Modifier.size(18.dp)
                     )
                     Text(
-                        text = "✅ Aplicar Filtro",
+                        text = "✅ Aplicar",
                         modifier = Modifier.padding(start = 8.dp),
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Bold
                     )
                 }
                 
@@ -284,8 +254,8 @@ fun DateRangeSelector(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "🗑️ Limpiar",
-                        fontWeight = FontWeight.Medium
+                        text = "❌ Cancelar",
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

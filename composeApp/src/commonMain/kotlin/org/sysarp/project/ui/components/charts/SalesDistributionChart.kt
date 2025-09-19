@@ -4,11 +4,15 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,8 +28,11 @@ import org.sysarp.project.data.SalesDistributionData
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatPercentage
 import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Gráfico de distribución de ventas por tiempo del día y día de la semana
@@ -64,7 +71,13 @@ fun SalesDistributionChart(
             )
 
             // Gráfico circular de distribución
-            DistributionPieChart(salesDistribution = salesDistribution)
+            DistributionPieChart(
+                salesDistribution = salesDistribution,
+                onSegmentSelected = { segment ->
+                    // Por ahora solo log, se puede implementar el diálogo más tarde
+                    println("Segmento seleccionado: $segment")
+                }
+            )
 
             // Estadísticas detalladas
             DistributionStats(salesDistribution = salesDistribution)
@@ -74,7 +87,8 @@ fun SalesDistributionChart(
 
 @Composable
 private fun DistributionPieChart(
-    salesDistribution: SalesDistributionData
+    salesDistribution: SalesDistributionData,
+    onSegmentSelected: (String) -> Unit
 ) {
     val animationProgress = remember { Animatable(0f) }
     
@@ -97,7 +111,42 @@ private fun DistributionPieChart(
         )
 
         Canvas(
-            modifier = Modifier.size(200.dp)
+            modifier = Modifier
+                .size(200.dp)
+                .pointerInput(salesDistribution) {
+                    detectTapGestures { offset ->
+                        val centerX = size.width / 2
+                        val centerY = size.height / 2
+                        val radius = minOf(centerX, centerY) - 20f
+                        
+                        // Calcular distancia desde el centro
+                        val distance = kotlin.math.sqrt(
+                            (offset.x - centerX).toDouble().pow(2) + 
+                            (offset.y - centerY).toDouble().pow(2)
+                        ).toFloat()
+                        
+                        if (distance <= radius) {
+                            // Calcular ángulo del tap
+                            val angle = kotlin.math.atan2(
+                                (offset.y - centerY).toDouble(),
+                                (offset.x - centerX).toDouble()
+                            ) * 180 / kotlin.math.PI
+                            
+                            val normalizedAngle = (angle + 90 + 360) % 360
+                            
+                            val total = salesDistribution.morning + salesDistribution.afternoon + salesDistribution.evening
+                            val morningAngle = (salesDistribution.morning / total * 360f)
+                            val afternoonAngle = (salesDistribution.afternoon / total * 360f)
+                            
+                            val segment = when {
+                                normalizedAngle <= morningAngle -> "morning"
+                                normalizedAngle <= morningAngle + afternoonAngle -> "afternoon"
+                                else -> "evening"
+                            }
+                            onSegmentSelected(segment)
+                        }
+                    }
+                }
         ) {
             drawDistributionPie(
                 salesDistribution = salesDistribution,
@@ -324,3 +373,5 @@ private fun EmptyChartCard(
         }
     }
 }
+
+
