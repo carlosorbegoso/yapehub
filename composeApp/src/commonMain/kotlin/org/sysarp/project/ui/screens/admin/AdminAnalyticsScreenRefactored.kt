@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.seller
+package org.sysarp.project.ui.screens.admin
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,12 +14,12 @@ import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.components.topbar.TopBarComponent
 
 /**
- * Pantalla de analytics detallados para el vendedor - Refactorizada
- * Muestra gráficos, métricas y tendencias de rendimiento
+ * Pantalla de analytics detallados para el administrador - Refactorizada
+ * Muestra gráficos, métricas y tendencias de rendimiento administrativo
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SellerAnalyticsScreen(
+fun AdminAnalyticsScreen(
     authService: AuthService,
     statsService: StatsService,
     onNavigateBack: () -> Unit
@@ -30,11 +30,11 @@ fun SellerAnalyticsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     
     // Estado del componente
-    val state = rememberSellerAnalyticsState()
+    val state = rememberAdminAnalyticsState()
     
     // Data loader
     val dataLoader = remember(authService, statsService, coroutineScope) {
-        SellerAnalyticsDataLoader(authService, statsService, coroutineScope)
+        AdminAnalyticsDataLoader(authService, statsService, coroutineScope)
     }
     
     // Cargar datos por defecto al iniciar
@@ -51,7 +51,7 @@ fun SellerAnalyticsScreen(
     Scaffold(
         topBar = {
             TopBarComponent(
-                title = "📊 Analytics",
+                title = "📊 Analytics Administrativos",
                 onNavigateBack = onNavigateBack
             )
         },
@@ -67,7 +67,7 @@ fun SellerAnalyticsScreen(
         ) {
             // Controles de filtros y calendario
             item {
-                SellerAnalyticsControls(
+                AdminAnalyticsControls(
                     state = state,
                     onPeriodChange = { state.selectedPeriod = it },
                     onLoadAnalytics = { startDate, endDate ->
@@ -80,6 +80,7 @@ fun SellerAnalyticsScreen(
                     },
                     onShowFiltersDialog = { state.showFiltersDialog = true },
                     onShowFinancialFiltersDialog = { state.showFinancialFiltersDialog = true },
+                    onShowTransparencyFiltersDialog = { state.showTransparencyFiltersDialog = true },
                     onShowPeriodMenu = { state.showPeriodMenu = true }
                 )
             }
@@ -87,7 +88,7 @@ fun SellerAnalyticsScreen(
             // Estado vacío
             if (state.analyticsData == null && !state.isLoadingAnalytics && state.analyticsError.isEmpty()) {
                 item {
-                    SellerAnalyticsEmptyState(
+                    AdminAnalyticsEmptyState(
                         onLoadDefaultAnalytics = {
                             dataLoader.loadDefaultAnalytics(
                                 onLoadingChange = { state.isLoadingAnalytics = it },
@@ -102,14 +103,14 @@ fun SellerAnalyticsScreen(
             // Estado de carga
             if (state.isLoadingAnalytics) {
                 item {
-                    SellerAnalyticsLoadingState()
+                    AdminAnalyticsLoadingState()
                 }
             }
             
             // Estado de error
             if (state.analyticsError.isNotEmpty()) {
                 item {
-                    SellerAnalyticsErrorState(
+                    AdminAnalyticsErrorState(
                         error = state.analyticsError,
                         onRetry = {
                             dataLoader.loadDefaultAnalytics(
@@ -125,9 +126,10 @@ fun SellerAnalyticsScreen(
             // Secciones de analytics
             state.analyticsData?.let { analyticsData ->
                 item {
-                    SellerAnalyticsSections(
+                    AdminAnalyticsSections(
                         analyticsData = analyticsData,
-                        sellerFinancialData = state.sellerFinancialData,
+                        financialData = state.financialData,
+                        transparencyData = state.transparencyData,
                         showBasicCharts = state.showBasicCharts,
                         showAdvancedCharts = state.showAdvancedCharts,
                         showPredictiveCharts = state.showPredictiveCharts,
@@ -138,19 +140,22 @@ fun SellerAnalyticsScreen(
         }
         
         // Dialogs
-        SellerAnalyticsDialogs(
+        AdminAnalyticsDialogs(
             state = state,
             authService = authService,
             statsService = statsService,
             coroutineScope = coroutineScope,
             onDismissFiltersDialog = { state.showFiltersDialog = false },
             onDismissFinancialDialog = { state.showFinancialFiltersDialog = false },
+            onDismissTransparencyDialog = { state.showTransparencyFiltersDialog = false },
             onShowBasicChartsChange = { state.showBasicCharts = it },
             onShowAdvancedChartsChange = { state.showAdvancedCharts = it },
             onShowPredictiveChartsChange = { state.showPredictiveCharts = it },
             onShowAdditionalMetricsChange = { state.showAdditionalMetrics = it },
-            onFinancialDataLoaded = { state.sellerFinancialData = it },
-            onFinancialError = { state.financialError = it }
+            onFinancialDataLoaded = { state.financialData = it },
+            onFinancialError = { state.financialError = it },
+            onTransparencyDataLoaded = { state.transparencyData = it },
+            onTransparencyError = { state.transparencyError = it }
         )
     }
 }
