@@ -77,6 +77,7 @@ import org.sysarp.project.ui.components.charts.PredictionsChart
 import org.sysarp.project.ui.components.charts.SalesDistributionChart
 import org.sysarp.project.ui.components.charts.ComparisonsChart
 import org.sysarp.project.ui.components.charts.SpecificDateSelector
+import org.sysarp.project.ui.components.calendar.SmartCalendar
 import org.sysarp.project.ui.components.dashboard.rememberSellerStatsManager
 import org.sysarp.project.ui.components.topbar.TopBarComponent
 import org.sysarp.project.ui.components.topbar.TopBarMenuItem
@@ -84,6 +85,7 @@ import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatPercentage
 import kotlin.time.Duration.Companion.days
+
 
 /**
  * Pantalla de analytics detallados para el vendedor
@@ -105,7 +107,7 @@ fun SellerAnalyticsScreen(
     var analyticsData by remember { mutableStateOf<org.sysarp.project.data.AnalyticsData?>(null) }
     var isLoadingAnalytics by remember { mutableStateOf(false) }
     var analyticsError by remember { mutableStateOf("") }
-    var selectedPeriod by remember { mutableStateOf("📅 Seleccionar período") }
+    var selectedPeriod by remember { mutableStateOf("📅 7 días") }
     var showPeriodMenu by remember { mutableStateOf(false) }
     var showDateRangeSelector by remember { mutableStateOf(false) }
     var showSpecificDateSelector by remember { mutableStateOf(false) }
@@ -164,7 +166,7 @@ fun SellerAnalyticsScreen(
         val now = Clock.System.now()
         val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
         val startDate = now.minus(7.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-        selectedPeriod = "📈 Últimos 7 días"
+        selectedPeriod = "📅 7 días"
         loadAnalytics(startDate, endDate)
     }
     
@@ -230,6 +232,13 @@ fun SellerAnalyticsScreen(
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
+                                // Mostrar fechas específicas del período
+                                Text(
+                                    text = getPeriodDateRange(selectedPeriod),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
                             }
                         }
                         
@@ -272,206 +281,32 @@ fun SellerAnalyticsScreen(
                             }
                         }
                         
-                        // Calendario avanzado y profesional
-                        DropdownMenu(
+                        // Calendario inteligente reutilizable
+                        SmartCalendar(
+                            selectedPeriod = selectedPeriod,
+                            onPeriodSelected = { period ->
+                                selectedPeriod = period
+                                showPeriodMenu = false
+                                // Calcular fechas basadas en el período seleccionado
+                                val now = Clock.System.now()
+                                val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                val days = periodOptions.find { it.first == period }?.second ?: 7
+                                val startDate = now.minus(days.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                loadAnalytics(startDate, endDate)
+                            },
+                            onCustomRangeSelected = {
+                                selectedPeriod = "⚙️ Rango personalizado"
+                                showPeriodMenu = false
+                                showDateRangeSelector = true
+                            },
+                            onSpecificDateSelected = {
+                                selectedPeriod = "🎯 Día específico"
+                                showPeriodMenu = false
+                                showSpecificDateSelector = true
+                            },
                             expanded = showPeriodMenu,
-                            onDismissRequest = { showPeriodMenu = false },
-                            modifier = Modifier
-                                .background(Color.White)
-                                .padding(8.dp),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            // Título del calendario
-                            Text(
-                                text = "📅 Seleccionar Período",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black,
-                                modifier = Modifier.padding(16.dp, 12.dp, 16.dp, 8.dp)
-                            )
-                            
-                            // Opciones rápidas (períodos predefinidos) - Layout horizontal compacto
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                periodOptions.filter { it.second > 0 }.take(4).forEach { (period, days) ->
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(50.dp)
-                                                .background(
-                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                                    shape = RoundedCornerShape(16.dp)
-                                                )
-                                                .clickable {
-                                                    selectedPeriod = period
-                                                    showPeriodMenu = false
-                                                    // Calcular fechas basadas en el período seleccionado
-                                                    val now = Clock.System.now()
-                                                    val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                                    val startDate = now.minus(days.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                                    loadAnalytics(startDate, endDate)
-                                                },
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = period,
-                                                fontSize = 22.sp,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                        Text(
-                                            text = when (period) {
-                                                "🕐" -> "Hoy"
-                                                "📅" -> "7 días"
-                                                "📆" -> "30 días"
-                                                "🗓️" -> "3 meses"
-                                                else -> ""
-                                            },
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Color.Gray,
-                                            fontSize = 10.sp
-                                        )
-                                    }
-                                }
-                            }
-                            
-                            // Más opciones
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                periodOptions.filter { it.second > 0 }.drop(4).forEach { (period, days) ->
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(50.dp)
-                                                .background(
-                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                                    shape = RoundedCornerShape(16.dp)
-                                                )
-                                                .clickable {
-                                                    selectedPeriod = period
-                                                    showPeriodMenu = false
-                                                    // Calcular fechas basadas en el período seleccionado
-                                                    val now = Clock.System.now()
-                                                    val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                                    val startDate = now.minus(days.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                                    loadAnalytics(startDate, endDate)
-                                                },
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = period,
-                                                fontSize = 22.sp,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                        Text(
-                                            text = "1 año",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Color.Gray,
-                                            fontSize = 10.sp
-                                        )
-                                    }
-                                }
-                            }
-                            
-                            // Separador visual elegante
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(Color.Gray.copy(alpha = 0.2f))
-                                    .padding(horizontal = 16.dp)
-                            )
-                            
-                            // Opciones avanzadas del calendario
-                            Text(
-                                text = "Opciones Avanzadas",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray,
-                                modifier = Modifier.padding(16.dp, 8.dp, 16.dp, 4.dp)
-                            )
-                            
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                // Rango personalizado
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(50.dp)
-                                            .background(
-                                                color = Color(0xFF4CAF50).copy(alpha = 0.1f),
-                                                shape = RoundedCornerShape(16.dp)
-                                            )
-                                            .clickable {
-                                                selectedPeriod = "⚙️ Rango personalizado"
-                                                showPeriodMenu = false
-                                                showDateRangeSelector = true
-                                            },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "⚙️",
-                                            fontSize = 22.sp,
-                                            color = Color(0xFF4CAF50)
-                                        )
-                                    }
-                                    Text(
-                                        text = "Rango",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color.Gray,
-                                        fontSize = 10.sp
-                                    )
-                                }
-                                
-                                // Día específico
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(50.dp)
-                                            .background(
-                                                color = Color(0xFF2196F3).copy(alpha = 0.1f),
-                                                shape = RoundedCornerShape(16.dp)
-                                            )
-                                            .clickable {
-                                                selectedPeriod = "🎯 Día específico"
-                                                showPeriodMenu = false
-                                                showSpecificDateSelector = true
-                                            },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "🎯",
-                                            fontSize = 22.sp,
-                                            color = Color(0xFF2196F3)
-                                        )
-                                    }
-                                    Text(
-                                        text = "Día",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color.Gray,
-                                        fontSize = 10.sp
-                                    )
-                                }
-                            }
-                        }
+                            onDismiss = { showPeriodMenu = false }
+                        )
                     }
                 }
             }
