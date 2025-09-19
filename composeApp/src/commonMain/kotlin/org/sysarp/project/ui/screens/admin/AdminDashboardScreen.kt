@@ -64,7 +64,9 @@ import org.sysarp.project.data.QuickSummaryData
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
+import org.sysarp.project.ui.components.dashboard.DashboardAutoRefreshHandler
 import org.sysarp.project.ui.components.topbar.TopBarComponent
 import org.sysarp.project.ui.components.topbar.TopBarMenuItem
 import org.sysarp.project.ui.screens.common.ServerQRDisplayScreen
@@ -72,6 +74,7 @@ import org.sysarp.project.ui.screens.common.exportLogs
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatRelativeTime
 import org.sysarp.project.utils.formatTimeOnly
+import org.sysarp.project.utils.Logger
 import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,6 +86,7 @@ fun AdminDashboardScreen(
     affiliationService: AffiliationService,
     qrService: org.sysarp.project.service.qr.QRService,
     branchService: org.sysarp.project.service.branch.BranchService,
+    webSocketService: PaymentWebSocketService,
     onNavigateToBranchManagement: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
@@ -125,6 +129,7 @@ fun AdminDashboardScreen(
     val accessToken by authService.accessToken.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     
+    
     // Estado para las estadísticas rápidas
     var quickSummaryData by remember { mutableStateOf<QuickSummaryData?>(null) }
     var isLoadingStats by remember { mutableStateOf(false) }
@@ -143,6 +148,51 @@ fun AdminDashboardScreen(
     // Estado para códigos de afiliación
     var showAffiliationDialog by remember { mutableStateOf(false) }
     var isLoadingAffiliation by remember { mutableStateOf(false) }
+    
+    // Función para refrescar las estadísticas del admin
+    val refreshAdminStats: () -> Unit = {
+        coroutineScope.launch {
+            if (userProfile?.adminId != null && accessToken != null) {
+                Logger.auth("ADMIN_DASHBOARD", "🔄 Actualizando estadísticas del admin")
+                
+                // Recargar estadísticas rápidas
+                statsService.getAdminDashboard(
+                    adminId = userProfile!!.adminId!!.toInt(),
+                    token = accessToken!!
+                ).fold(
+                    onSuccess = { response ->
+                        quickSummaryData = response.data
+                        Logger.auth("ADMIN_DASHBOARD", "✅ Estadísticas rápidas actualizadas")
+                    },
+                    onFailure = { error ->
+                        Logger.auth("ADMIN_DASHBOARD", "❌ Error actualizando estadísticas rápidas: ${error.message}")
+                    }
+                )
+                
+                // Recargar estadísticas completas
+                statsService.getAdminStatsSummary(
+                    adminId = userProfile!!.adminId!!.toInt(),
+                    token = accessToken!!
+                ).fold(
+                    onSuccess = { response ->
+                        adminStatsData = response.data
+                        Logger.auth("ADMIN_DASHBOARD", "✅ Estadísticas completas actualizadas")
+                    },
+                    onFailure = { error ->
+                        Logger.auth("ADMIN_DASHBOARD", "❌ Error actualizando estadísticas completas: ${error.message}")
+                    }
+                )
+            }
+        }
+    }
+    
+    // Integrar actualización automática
+    DashboardAutoRefreshHandler(
+        authService = authService,
+        statsService = statsService,
+        webSocketService = webSocketService,
+        onRefreshAdminDashboard = refreshAdminStats
+    )
     var generatedAffiliationCode by remember { mutableStateOf<GenerateAffiliationCodeResponse?>(null) }
     var affiliationError by remember { mutableStateOf<String?>(null) }
     

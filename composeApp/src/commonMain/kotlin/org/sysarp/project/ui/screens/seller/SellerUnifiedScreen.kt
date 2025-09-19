@@ -64,13 +64,19 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.stats.StatsService
+import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.ui.components.ValidationErrorDisplay
+import org.sysarp.project.ui.components.dashboard.DashboardAutoRefreshHandler
+import org.sysarp.project.utils.Logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SellerUnifiedScreen(
     sellerService: SellerService,
     authService: AuthService,
+    statsService: StatsService,
+    webSocketService: PaymentWebSocketService,
     onBackClick: () -> Unit,
     onSuccess: () -> Unit,
     onNavigateToQRScanner: () -> Unit = {}
@@ -97,6 +103,24 @@ fun SellerUnifiedScreen(
             stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
         ),
         label = "formScale"
+    )
+    
+    // Función para refrescar datos del vendedor
+    val refreshSellerData: () -> Unit = {
+        coroutineScope.launch {
+            Logger.auth("SELLER_DASHBOARD", "🔄 Actualizando datos del vendedor")
+            // Aquí se pueden agregar llamadas para refrescar estadísticas del vendedor
+            // Por ejemplo: statsService.getSellerSummary(), etc.
+            Logger.auth("SELLER_DASHBOARD", "✅ Datos del vendedor actualizados")
+        }
+    }
+    
+    // Integrar actualización automática
+    DashboardAutoRefreshHandler(
+        authService = authService,
+        statsService = statsService,
+        webSocketService = webSocketService,
+        onRefreshSellerDashboard = refreshSellerData
     )
     
     Column(

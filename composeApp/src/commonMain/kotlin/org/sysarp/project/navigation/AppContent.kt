@@ -137,6 +137,8 @@ fun AppContent(
             SellerUnifiedScreen(
                 sellerService = sellerService,
                 authService = authService,
+                statsService = statsService,
+                webSocketService = webSocketService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
                 onSuccess = { 
                     // Establecer el usuario en el ViewModel después del login exitoso de seller
@@ -153,6 +155,8 @@ fun AppContent(
             SellerUnifiedScreen(
                 sellerService = sellerService,
                 authService = authService,
+                statsService = statsService,
+                webSocketService = webSocketService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
                 onSuccess = { 
                     // Establecer el usuario en el ViewModel después del registro exitoso de seller
@@ -169,6 +173,8 @@ fun AppContent(
             SellerUnifiedScreen(
                 sellerService = sellerService,
                 authService = authService,
+                statsService = statsService,
+                webSocketService = webSocketService,
                 onBackClick = { navigationManager.navigateBackToProfileSelection() },
                 onSuccess = { navigationManager.navigateToSellerDashboard() },
                 onNavigateToQRScanner = { navigationManager.navigateTo(Screen.QRScanner) }
@@ -182,6 +188,7 @@ fun AppContent(
                 affiliationService = affiliationService,
                 qrService = qrService,
                 branchService = branchService,
+                webSocketService = webSocketService,
                 onNavigateToBranchManagement = { navigationManager.navigateTo(Screen.BranchManagement) },
                 onNavigateToAnalytics = { navigationManager.navigateTo(Screen.Analytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.PendingPayments) },
