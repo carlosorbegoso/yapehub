@@ -78,6 +78,42 @@ class SellerStatsManager(
             onError("Error de conexión: ${e.message}")
         }
     }
+
+    /**
+     * Cargar analytics detallados con filtros de fecha específicos
+     */
+    suspend fun loadSellerAnalyticsWithDates(
+        accessToken: String,
+        sellerId: Long,
+        startDate: String?,
+        endDate: String?,
+        onSuccess: (org.sysarp.project.data.AnalyticsResponse) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        try {
+            Logger.auth("STATS_MANAGER", "Cargando analytics detallados para vendedor $sellerId con fechas: $startDate - $endDate")
+            val response = statsService.getSellerAnalytics(
+                sellerId = sellerId.toInt(),
+                startDate = startDate,
+                endDate = endDate,
+                token = accessToken
+            )
+            
+            response.fold(
+                onSuccess = { result ->
+                    Logger.auth("STATS_MANAGER", "Analytics detallados con filtros cargados exitosamente")
+                    onSuccess(result)
+                },
+                onFailure = { error ->
+                    Logger.auth("STATS_MANAGER", "Error al cargar analytics con filtros: ${error.message}")
+                    onError(error.message ?: "Error al cargar analytics")
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("STATS_MANAGER", "Excepción al cargar analytics con filtros: ${e.message}")
+            onError("Error de conexión: ${e.message}")
+        }
+    }
 }
 
 /**
