@@ -36,6 +36,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -67,7 +68,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.components.charts.DailySalesBarChart
-import org.sysarp.project.ui.components.charts.DateRangeSelector
+import org.sysarp.project.ui.components.calendar.SmartCalendar
 import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.components.charts.SalesTrendLineChart
 import org.sysarp.project.ui.components.charts.HourlySalesChart
@@ -77,7 +78,6 @@ import org.sysarp.project.ui.components.charts.PredictionsChart
 import org.sysarp.project.ui.components.charts.SalesDistributionChart
 import org.sysarp.project.ui.components.charts.ComparisonsChart
 import org.sysarp.project.ui.components.charts.SpecificDateSelector
-import org.sysarp.project.ui.components.calendar.SmartCalendar
 import org.sysarp.project.ui.components.dashboard.rememberSellerStatsManager
 import org.sysarp.project.ui.components.topbar.TopBarComponent
 import org.sysarp.project.ui.components.topbar.TopBarMenuItem
@@ -109,8 +109,6 @@ fun SellerAnalyticsScreen(
     var analyticsError by remember { mutableStateOf("") }
     var selectedPeriod by remember { mutableStateOf("📅 7 días") }
     var showPeriodMenu by remember { mutableStateOf(false) }
-    var showDateRangeSelector by remember { mutableStateOf(false) }
-    var showSpecificDateSelector by remember { mutableStateOf(false) }
     
     // Estado para filtros de sección
     var showBasicCharts by remember { mutableStateOf(true) }
@@ -119,16 +117,7 @@ fun SellerAnalyticsScreen(
     var showAdditionalMetrics by remember { mutableStateOf(true) }
     var showFiltersDialog by remember { mutableStateOf(false) }
     
-    // Opciones de período específicas para analytics
-    val periodOptions = listOf(
-        "🕐" to 1,      // Hoy
-        "📅" to 7,      // Última semana  
-        "📆" to 30,     // Último mes
-        "🗓️" to 90,     // Últimos 3 meses
-        "📊" to 365,    // Último año
-        "🎯" to -2,     // Día específico
-        "⚙️" to -1      // Rango personalizado
-    )
+    
     
     // Manager de estadísticas
     val statsManager = rememberSellerStatsManager(statsService)
@@ -213,13 +202,6 @@ fun SellerAnalyticsScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.CalendarToday,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.size(12.dp))
                             Column {
                                 Text(
                                     text = "Período de análisis",
@@ -228,16 +210,9 @@ fun SellerAnalyticsScreen(
                                 )
                                 Text(
                                     text = selectedPeriod,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                // Mostrar fechas específicas del período
-                                Text(
-                                    text = getPeriodDateRange(selectedPeriod),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Medium
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
@@ -246,37 +221,29 @@ fun SellerAnalyticsScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // Botón de filtros
-                            // Botón de filtros simplificado (solo icono)
-                            OutlinedButton(
+                            // Botón de filtros con icono centrado
+                            IconButton(
                                 onClick = { showFiltersDialog = true },
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.primary,
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                ),
-                                modifier = Modifier.size(40.dp),
-                                shape = RoundedCornerShape(8.dp)
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.FilterList,
                                     contentDescription = "Filtros",
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                             }
                             
-                            // Botón de calendario profesional (solo icono)
-                            OutlinedButton(
+                            // Botón de calendario profesional con icono centrado
+                            IconButton(
                                 onClick = { showPeriodMenu = true },
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.primary,
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                ),
-                                modifier = Modifier.size(40.dp),
-                                shape = RoundedCornerShape(8.dp)
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.CalendarToday,
                                     contentDescription = "Seleccionar período",
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
@@ -287,22 +254,12 @@ fun SellerAnalyticsScreen(
                             onPeriodSelected = { period ->
                                 selectedPeriod = period
                                 showPeriodMenu = false
-                                // Calcular fechas basadas en el período seleccionado
+                                // El calendario inteligente ya maneja las fechas directamente
+                                // Solo recargamos con el período por defecto (7 días)
                                 val now = Clock.System.now()
                                 val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                val days = periodOptions.find { it.first == period }?.second ?: 7
-                                val startDate = now.minus(days.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                val startDate = now.minus(7.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                                 loadAnalytics(startDate, endDate)
-                            },
-                            onCustomRangeSelected = {
-                                selectedPeriod = "⚙️ Rango personalizado"
-                                showPeriodMenu = false
-                                showDateRangeSelector = true
-                            },
-                            onSpecificDateSelected = {
-                                selectedPeriod = "🎯 Día específico"
-                                showPeriodMenu = false
-                                showSpecificDateSelector = true
                             },
                             expanded = showPeriodMenu,
                             onDismiss = { showPeriodMenu = false }
@@ -536,45 +493,6 @@ fun SellerAnalyticsScreen(
     }
     
     // Selectores de fechas con calendario - Posicionados en el centro con fondo semitransparente
-    if (showDateRangeSelector || showSpecificDateSelector) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)
-                )
-                .clickable { 
-                    showDateRangeSelector = false
-                    showSpecificDateSelector = false
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            // Selectores de fechas con calendario
-            if (showDateRangeSelector) {
-                DateRangeSelector(
-                    onDateRangeSelected = { startDate, endDate ->
-                        showDateRangeSelector = false
-                        if (startDate != null && endDate != null) {
-                            loadAnalytics(startDate, endDate)
-                            selectedPeriod = "⚙️ Rango personalizado"
-                        }
-                    }
-                )
-            }
-            
-            if (showSpecificDateSelector) {
-                SpecificDateSelector(
-                    onDateSelected = { date: String? ->
-                        showSpecificDateSelector = false
-                        if (date != null) {
-                            loadAnalytics(date, date)
-                            selectedPeriod = "🎯 Día específico"
-                        }
-                    }
-                )
-            }
-        }
-    }
     
     // Diálogo de filtros de sección
     if (showFiltersDialog) {
@@ -968,4 +886,5 @@ private fun FilterItem(
         )
     }
 }
+
 

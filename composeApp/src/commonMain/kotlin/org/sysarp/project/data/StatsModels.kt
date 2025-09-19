@@ -221,8 +221,8 @@ data class SellerGoalsData(
 
 @Serializable
 data class SellerPerformanceData(
-    val bestDay: String,
-    val worstDay: String,
+    val bestDay: String? = null,
+    val worstDay: String? = null,
     val averageDailySales: Double,
     val consistencyScore: Double,
     val peakPerformanceHours: List<String>,

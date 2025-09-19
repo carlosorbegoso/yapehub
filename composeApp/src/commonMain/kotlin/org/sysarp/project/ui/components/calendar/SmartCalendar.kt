@@ -1,254 +1,359 @@
 package org.sysarp.project.ui.components.calendar
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
 /**
- * Componente de calendario inteligente y reutilizable
- * Permite selección rápida de períodos predefinidos y opciones avanzadas
+ * Componente de calendario inteligente y elegante
+ * Permite selección visual directa de rangos de fechas con navegación por meses
  */
 @Composable
 fun SmartCalendar(
     selectedPeriod: String,
     onPeriodSelected: (String) -> Unit,
-    onCustomRangeSelected: () -> Unit,
-    onSpecificDateSelected: () -> Unit,
     expanded: Boolean,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    onDismiss: () -> Unit
 ) {
-    // Opciones de período específicas para analytics
-    val periodOptions = listOf(
-        "🕐 Hoy" to 1,      // Hoy
-        "📅 7 días" to 7,      // Última semana  
-        "📆 30 días" to 30,     // Último mes
-        "🗓️ 3 meses" to 90,     // Últimos 3 meses
-        "📊 1 año" to 365,    // Último año
-        "🎯" to -2,     // Día específico
-        "⚙️" to -1      // Rango personalizado
-    )
+    var selectedStartDate by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedEndDate by remember { mutableStateOf<LocalDate?>(null) }
+    var currentMonth by remember { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
     
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss,
-        modifier = modifier
-            .background(Color.White)
-            .padding(8.dp),
-        shape = RoundedCornerShape(16.dp)
+    AnimatedVisibility(
+        visible = expanded,
+        enter = scaleIn(
+            animationSpec = tween(300),
+            initialScale = 0.8f
+        ) + fadeIn(animationSpec = tween(300)),
+        exit = scaleOut(
+            animationSpec = tween(200),
+            targetScale = 0.8f
+        ) + fadeOut(animationSpec = tween(200))
     ) {
-        // Título del calendario con período actual
+        Dialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
+        ) {
+            // Calendario visual directo como diálogo - sin contenedores extra
+            VisualCalendarSection(
+                currentMonth = currentMonth,
+                onMonthChange = { currentMonth = it },
+                selectedStartDate = selectedStartDate,
+                selectedEndDate = selectedEndDate,
+                onDateSelected = { date ->
+                    when {
+                        selectedStartDate == null -> {
+                            selectedStartDate = date
+                            selectedEndDate = null
+                        }
+                        selectedEndDate == null -> {
+                            if (date >= selectedStartDate!!) {
+                                selectedEndDate = date
+                            } else {
+                                selectedStartDate = date
+                                selectedEndDate = null
+                            }
+                        }
+                        else -> {
+                            selectedStartDate = date
+                            selectedEndDate = null
+                        }
+                    }
+                },
+                onApplyRange = {
+                    // Permitir aplicar con una sola fecha o con rango
+                    if (selectedStartDate != null) {
+                        val periodText = if (selectedEndDate != null) {
+                            "${selectedStartDate!!} - ${selectedEndDate!!}"
+                        } else {
+                            selectedStartDate!!.toString()
+                        }
+                        onPeriodSelected(periodText)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun VisualCalendarSection(
+    currentMonth: LocalDate,
+    onMonthChange: (LocalDate) -> Unit,
+    selectedStartDate: LocalDate?,
+    selectedEndDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
+    onApplyRange: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
         Column(
-            modifier = Modifier.padding(16.dp, 12.dp, 16.dp, 8.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "📅 Calendario Inteligente",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+            // Header del mes
+            MonthHeader(
+                currentMonth = currentMonth,
+                onMonthChange = onMonthChange
             )
-            Text(
-                text = "Período actual: ${getPeriodDateRange(selectedPeriod)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium
-            )
-        }
-        
-        // Opciones rápidas (períodos predefinidos) - Layout horizontal compacto
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            periodOptions.filter { it.second > 0 }.take(4).forEach { (period, _) ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .background(
-                                color = if (selectedPeriod == period) 
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                else 
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            .clickable {
-                                onPeriodSelected(period)
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = period,
-                            fontSize = 22.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Text(
-                        text = when (period) {
-                            "🕐 Hoy" -> "Hoy"
-                            "📅 7 días" -> "7 días"
-                            "📆 30 días" -> "30 días"
-                            "🗓️ 3 meses" -> "3 meses"
-                            else -> ""
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray,
-                        fontSize = 10.sp
-                    )
-                }
-            }
-        }
-        
-        // Más opciones
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            periodOptions.filter { it.second > 0 }.drop(4).forEach { (period, _) ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .background(
-                                color = if (selectedPeriod == period) 
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                else 
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            .clickable {
-                                onPeriodSelected(period)
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = period,
-                            fontSize = 22.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Text(
-                        text = "1 año",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray,
-                        fontSize = 10.sp
-                    )
-                }
-            }
-        }
-        
-        // Separador visual elegante
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(Color.Gray.copy(alpha = 0.2f))
-                .padding(horizontal = 16.dp)
-        )
-        
-        // Opciones avanzadas del calendario
-        Text(
-            text = "Selección Avanzada",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray,
-            modifier = Modifier.padding(16.dp, 8.dp, 16.dp, 4.dp)
-        )
-        
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            // Rango personalizado
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .background(
-                            color = Color(0xFF4CAF50).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .clickable {
-                            onCustomRangeSelected()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "⚙️",
-                        fontSize = 22.sp,
-                        color = Color(0xFF4CAF50)
-                    )
-                }
-                Text(
-                    text = "Rango",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                    fontSize = 10.sp
-                )
-            }
             
-            // Día específico
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            // Calendario visual
+            VisualCalendarGrid(
+                currentMonth = currentMonth,
+                selectedStartDate = selectedStartDate,
+                selectedEndDate = selectedEndDate,
+                onDateSelected = onDateSelected
+            )
+            
+            // Botón aplicar - se activa con una fecha o con rango
+            AnimatedVisibility(
+                visible = selectedStartDate != null,
+                enter = slideInVertically(
+                    animationSpec = tween(300),
+                    initialOffsetY = { it }
+                ) + fadeIn(animationSpec = tween(300)),
+                exit = slideOutVertically(
+                    animationSpec = tween(200),
+                    targetOffsetY = { it }
+                ) + fadeOut(animationSpec = tween(200))
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .background(
-                            color = Color(0xFF2196F3).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .clickable {
-                            onSpecificDateSelected()
-                        },
-                    contentAlignment = Alignment.Center
+                Button(
+                    onClick = onApplyRange,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(
-                        text = "🎯",
-                        fontSize = 22.sp,
-                        color = Color(0xFF2196F3)
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (selectedEndDate != null) "Aplicar Rango" else "Aplicar Fecha")
                 }
-                Text(
-                    text = "Día",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                    fontSize = 10.sp
-                )
             }
         }
     }
 }
+
+@Composable
+private fun MonthHeader(
+    currentMonth: LocalDate,
+    onMonthChange: (LocalDate) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { onMonthChange(currentMonth.minus(1, DateTimeUnit.MONTH)) }
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Mes anterior",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+        
+        Text(
+            text = "${currentMonth.monthNumber}/${currentMonth.year}",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
+        
+        IconButton(
+            onClick = { onMonthChange(currentMonth.plus(1, DateTimeUnit.MONTH)) }
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "Mes siguiente",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+private fun VisualCalendarGrid(
+    currentMonth: LocalDate,
+    selectedStartDate: LocalDate?,
+    selectedEndDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val firstDayOfMonth = LocalDate(currentMonth.year, currentMonth.monthNumber, 1)
+    val lastDayOfMonth = currentMonth.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.ordinal
+    val daysInMonth = lastDayOfMonth.dayOfMonth
+    
+    Column {
+        // Días de la semana
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            listOf("L", "M", "X", "J", "V", "S", "D").forEach { day ->
+                Text(
+                    text = day,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray,
+                    modifier = Modifier.size(32.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Días del mes
+        var dayCounter = 1
+        repeat(6) { week ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                repeat(7) { dayOfWeek ->
+                    if (week == 0 && dayOfWeek < firstDayOfWeek) {
+                        // Espacios vacíos antes del primer día del mes
+                        Spacer(modifier = Modifier.size(32.dp))
+                    } else if (dayCounter <= daysInMonth) {
+                        val date = LocalDate(currentMonth.year, currentMonth.monthNumber, dayCounter)
+                        val isSelected = date == selectedStartDate || date == selectedEndDate
+                        val isInRange = selectedStartDate != null && selectedEndDate != null && 
+                                       date > selectedStartDate && date < selectedEndDate
+                        val isToday = date == today
+                        
+                        CalendarDay(
+                            day = dayCounter.toString(),
+                            isSelected = isSelected,
+                            isInRange = isInRange,
+                            isToday = isToday,
+                            onClick = { onDateSelected(date) }
+                        )
+                        dayCounter++
+                    } else {
+                        Spacer(modifier = Modifier.size(32.dp))
+                    }
+                }
+            }
+            if (week < 5) Spacer(modifier = Modifier.height(4.dp))
+        }
+    }
+}
+
+@Composable
+private fun CalendarDay(
+    day: String,
+    isSelected: Boolean,
+    isInRange: Boolean,
+    isToday: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary
+        isInRange -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+        isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+        else -> Color.Transparent
+    }
+    
+    val textColor = when {
+        isSelected -> Color.White
+        isToday -> MaterialTheme.colorScheme.primary
+        else -> Color.Black
+    }
+    
+    // Animación de escala para la selección
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.1f else 1f,
+        animationSpec = tween(200),
+        label = "dayScale"
+    )
+    
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .scale(scale)
+            .background(
+                backgroundColor,
+                CircleShape
+            )
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = day,
+            style = MaterialTheme.typography.bodySmall,
+            color = textColor,
+            fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}
+
 
 /**
  * Función para obtener el rango de fechas del período seleccionado
@@ -280,6 +385,12 @@ private fun getPeriodDateRange(period: String): String {
         }
         "⚙️ Rango personalizado" -> "Selecciona fechas específicas"
         "🎯 Día específico" -> "Selecciona un día específico"
-        else -> "Período no definido"
+        else -> {
+            if (period.contains(" - ")) {
+                "Rango: $period"
+            } else {
+                "Período no definido"
+            }
+        }
     }
 }
