@@ -13,13 +13,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.service.notifications.PaymentNotificationService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.ui.components.dashboard.SellerDashboardContent
 import org.sysarp.project.ui.components.dashboard.SellerDashboardTopBar
-import org.sysarp.project.ui.components.dashboard.rememberSellerPaymentManager
-import org.sysarp.project.ui.components.dashboard.rememberSellerStatsManager
 
 /**
  * Pantalla principal del dashboard del vendedor
@@ -31,14 +28,11 @@ fun SellerDashboardScreen(
     paymentService: PaymentService,
     statsService: org.sysarp.project.service.stats.StatsService,
     webSocketService: PaymentWebSocketService,
-    notificationService: PaymentNotificationService,
-    onNavigateToHistory: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequest: () -> Unit,
     onNavigateToNotifications: () -> Unit,
-    onNavigateToQRScanner: () -> Unit,
-    onNavigateToAnalytics: () -> Unit,
     onLogout: () -> Unit
 ) {
     val userProfile by authService.userProfile.collectAsState()
@@ -47,13 +41,7 @@ fun SellerDashboardScreen(
     // Estados de notificaciones
     var newPaymentsCount by remember { mutableStateOf(0) }
     
-    // Estados de WebSocket
-    val isConnected by webSocketService.isConnected.collectAsState()
-    val connectionState by webSocketService.connectionState.collectAsState()
-    
-    // Managers para manejar la lógica de negocio
-    val paymentManager = rememberSellerPaymentManager(paymentService, authService)
-    val statsManager = rememberSellerStatsManager(statsService)
+    // Estados de WebSocket (solo los que se usan)
     
     // Iniciar WebSocket cuando el componente se monta
     LaunchedEffect(userProfile?.sellerId, authService.accessToken.value) {
@@ -80,7 +68,7 @@ fun SellerDashboardScreen(
     
     // Escuchar notificaciones de WebSocket
     LaunchedEffect(Unit) {
-        webSocketService.paymentNotifications.collect { notification ->
+        webSocketService.paymentNotifications.collect { _ ->
             newPaymentsCount++
         }
     }
@@ -115,25 +103,23 @@ fun SellerDashboardScreen(
                 onNotificationsClick = { 
                     newPaymentsCount = 0
                 },
-                onNavigateToHistory = onNavigateToHistory,
+                onNavigateToAnalytics = onNavigateToAnalytics,
                 onNavigateToSettings = onNavigateToSettings,
                 onLogout = onLogout
             )
         }
-    ) { paddingValues ->
+    ) { _ ->
         SellerDashboardContent(
             accessToken = authService.accessToken.value ?: "",
             userProfile = userProfile,
             paymentService = paymentService,
             statsService = statsService,
             webSocketService = webSocketService,
-            onNavigateToHistory = onNavigateToHistory,
+            onNavigateToAnalytics = onNavigateToAnalytics,
             onNavigateToPendingPayments = onNavigateToPendingPayments,
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
             onNavigateToNotifications = onNavigateToNotifications,
-            onNavigateToQRScanner = onNavigateToQRScanner,
-            onNavigateToAnalytics = onNavigateToAnalytics,
             modifier = Modifier.fillMaxSize()
         )
     }

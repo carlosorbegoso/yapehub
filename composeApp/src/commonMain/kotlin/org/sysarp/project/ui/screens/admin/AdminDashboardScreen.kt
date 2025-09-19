@@ -72,6 +72,33 @@ import org.sysarp.project.ui.screens.common.exportLogs
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatRelativeTime
 import org.sysarp.project.utils.formatTimeOnly
+import org.sysarp.project.ui.components.charts.DailySalesBarChart
+import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
+import org.sysarp.project.ui.components.charts.SalesTrendLineChart
+import org.sysarp.project.ui.components.charts.HourlySalesChart
+import org.sysarp.project.ui.components.charts.SalesDistributionChart
+import org.sysarp.project.ui.components.charts.ComparisonsChart
+import org.sysarp.project.ui.components.charts.AchievementsChart
+import org.sysarp.project.ui.components.charts.PredictionsChart
+import org.sysarp.project.ui.components.calendar.SmartCalendar
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.CalendarToday
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +109,6 @@ fun AdminDashboardScreen(
     affiliationService: AffiliationService,
     qrService: org.sysarp.project.service.qr.QRService,
     branchService: org.sysarp.project.service.branch.BranchService,
-    onNavigateToSellerManagement: () -> Unit,
     onNavigateToBranchManagement: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
@@ -156,6 +182,22 @@ fun AdminDashboardScreen(
     var branches by remember { mutableStateOf<List<org.sysarp.project.data.BranchInfo>>(emptyList()) }
     var isLoadingBranches by remember { mutableStateOf(false) }
     
+    // Estado para analytics del admin
+    var adminAnalyticsData by remember { mutableStateOf<org.sysarp.project.data.AnalyticsData?>(null) }
+    var isLoadingAnalytics by remember { mutableStateOf(false) }
+    var analyticsError by remember { mutableStateOf("") }
+    
+    // Estado para filtros de fecha
+    var showDateFilter by remember { mutableStateOf(false) }
+    var selectedStartDate by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedEndDate by remember { mutableStateOf<LocalDate?>(null) }
+    
+    // Estado para filtros de sección
+    var showBasicCharts by remember { mutableStateOf(true) }
+    var showAdvancedCharts by remember { mutableStateOf(true) }
+    var showPredictiveCharts by remember { mutableStateOf(true) }
+    var showFiltersDialog by remember { mutableStateOf(false) }
+    
     // Cargar sucursales cuando se abre el diálogo
     LaunchedEffect(showAffiliationDialog, userProfile?.adminId, accessToken) {
         if (showAffiliationDialog && userProfile?.adminId != null && accessToken != null) {
@@ -220,6 +262,40 @@ fun AdminDashboardScreen(
         }
     }
     
+    // Cargar analytics del admin
+    LaunchedEffect(userProfile?.adminId, accessToken, selectedStartDate, selectedEndDate) {
+        if (userProfile?.adminId != null && accessToken != null) {
+            isLoadingAnalytics = true
+            analyticsError = ""
+            
+            // Usar fechas seleccionadas o por defecto (últimos 7 días)
+            val startDate = selectedStartDate ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.minus(7, DateTimeUnit.DAY)
+            val endDate = selectedEndDate ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            
+            statsService.getAnalytics(
+                adminId = userProfile!!.adminId!!.toInt(),
+                startDate = startDate.toString(),
+                endDate = endDate.toString(),
+                token = accessToken!!
+            ).fold(
+                onSuccess = { response ->
+                    adminAnalyticsData = response.data
+                    isLoadingAnalytics = false
+                    println("📊 [ADMIN_DASHBOARD] Analytics del admin cargados")
+                    println("📊 [ADMIN_DASHBOARD] Ventas totales: ${response.data.overview.totalSales}")
+                    println("📊 [ADMIN_DASHBOARD] Transacciones: ${response.data.overview.totalTransactions}")
+                    println("📊 [ADMIN_DASHBOARD] Ventas diarias: ${response.data.dailySales.size} días")
+                    println("📊 [ADMIN_DASHBOARD] Ventas por hora: ${response.data.hourlySales?.size ?: 0} horas")
+                },
+                onFailure = { error ->
+                    analyticsError = error.message ?: "Error cargando analytics"
+                    isLoadingAnalytics = false
+                    println("❌ [ADMIN_DASHBOARD] Error cargando analytics: ${error.message}")
+                }
+            )
+        }
+    }
+    
     // Cargar vendedores conectados
     LaunchedEffect(userProfile?.adminId, accessToken) {
         if (userProfile?.adminId != null && accessToken != null) {
@@ -275,6 +351,22 @@ fun AdminDashboardScreen(
                         iconColor = MaterialTheme.colorScheme.error
                     )
                 ),
+                actions = {
+                    IconButton(onClick = { showFiltersDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.FilterList,
+                            contentDescription = "Filtros",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = { showDateFilter = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.CalendarToday,
+                            contentDescription = "Calendario",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
                 showMenu = true
             )
         }
@@ -532,6 +624,159 @@ fun AdminDashboardScreen(
                 }
             }
             
+            // Analytics visuales del admin
+            if (adminAnalyticsData != null && !isLoadingAnalytics) {
+                item {
+                    Text(
+                        text = "📊 Analytics Visuales",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+                
+                // Sección de gráficos básicos
+                if (showBasicCharts) {
+                    item {
+                        AnimatedVisibility(
+                            visible = showBasicCharts,
+                            enter = slideInVertically() + fadeIn(),
+                            exit = slideOutVertically() + fadeOut()
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Text(
+                                        text = "📊 Gráficos Principales",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    
+                                    // Gráficos básicos en layout responsivo
+                                    ResponsiveChartRow(
+                                        charts = listOf(
+                                            ChartItem("Ventas Diarias", { 
+                                                DailySalesBarChart(dailySales = adminAnalyticsData!!.dailySales) 
+                                            }),
+                                            ChartItem("Métricas de Rendimiento", { 
+                                                PerformanceMetricsPieChart(performanceMetrics = adminAnalyticsData!!.performanceMetrics) 
+                                            }),
+                                            ChartItem("Tendencias", { 
+                                                SalesTrendLineChart(dailySales = adminAnalyticsData!!.dailySales) 
+                                            })
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Sección de gráficos avanzados
+                if (showAdvancedCharts) {
+                    item {
+                        AnimatedVisibility(
+                            visible = showAdvancedCharts,
+                            enter = slideInVertically() + fadeIn(),
+                            exit = slideOutVertically() + fadeOut()
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Text(
+                                        text = "🎯 Análisis Avanzado",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    
+                                    // Gráficos avanzados en layout responsivo
+                                    ResponsiveChartRow(
+                                        charts = listOf(
+                                            ChartItem("Ventas por Hora", { 
+                                                HourlySalesChart(hourlySales = adminAnalyticsData!!.hourlySales ?: emptyList()) 
+                                            }),
+                                            ChartItem("Distribución", { 
+                                                SalesDistributionChart(salesDistribution = adminAnalyticsData!!.sellerAnalytics?.salesDistribution) 
+                                            }),
+                                            ChartItem("Logros y Badges", { 
+                                                AchievementsChart(sellerAchievements = adminAnalyticsData!!.sellerAchievements) 
+                                            })
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Sección de análisis predictivo
+                if (showPredictiveCharts) {
+                    item {
+                        AnimatedVisibility(
+                            visible = showPredictiveCharts,
+                            enter = slideInVertically() + fadeIn(),
+                            exit = slideOutVertically() + fadeOut()
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Text(
+                                        text = "🔮 Análisis Predictivo",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    
+                                    // Gráficos de análisis avanzado en layout responsivo
+                                    ResponsiveChartRow(
+                                        charts = listOf(
+                                            ChartItem("Predicciones", { 
+                                                PredictionsChart(sellerForecasting = adminAnalyticsData!!.sellerForecasting) 
+                                            }),
+                                            ChartItem("Comparaciones", { 
+                                                ComparisonsChart(sellerComparisons = adminAnalyticsData!!.sellerComparisons) 
+                                            })
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
             // Solicitudes de baja pendientes
             item {
                 var pendingRequests by remember { mutableStateOf<List<DeactivationRequest>>(emptyList()) }
@@ -602,12 +847,6 @@ fun AdminDashboardScreen(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    ActionCard(
-                        title = "Gestionar Vendedores",
-                        subtitle = "Agregar, editar y generar códigos QR",
-                        icon = Icons.Filled.People,
-                        onClick = onNavigateToSellerManagement
-                    )
                     
                     ActionCard(
                         title = "Gestionar Sucursales",
@@ -922,6 +1161,30 @@ fun AdminDashboardScreen(
             }
         )
     }
+    
+    // Diálogo de filtros de sección
+    if (showFiltersDialog) {
+        SectionFiltersDialog(
+            showBasicCharts = showBasicCharts,
+            showAdvancedCharts = showAdvancedCharts,
+            showPredictiveCharts = showPredictiveCharts,
+            onShowBasicChartsChange = { showBasicCharts = it },
+            onShowAdvancedChartsChange = { showAdvancedCharts = it },
+            onShowPredictiveChartsChange = { showPredictiveCharts = it },
+            onDismiss = { showFiltersDialog = false }
+        )
+    }
+    
+    // Diálogo de calendario para filtros de fecha
+    SmartCalendar(
+        expanded = showDateFilter,
+        onDismiss = { showDateFilter = false },
+        onDateRangeSelected = { startDate, endDate ->
+            selectedStartDate = startDate
+            selectedEndDate = endDate
+            showDateFilter = false
+        }
+    )
 }
 
 @Composable
@@ -1025,107 +1288,11 @@ fun ActionCard(
     }
 }
 
-@Composable
-fun SellerStatusCard(
-    sellerName: String,
-    branchName: String,
-    isOnline: Boolean,
-    lastSeen: String,
-    totalPayments: Int
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Indicador de estado
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(
-                        color = if (isOnline) 
-                            MaterialTheme.colorScheme.primary 
-                        else MaterialTheme.colorScheme.outline,
-                        shape = androidx.compose.foundation.shape.CircleShape
-                    )
-            )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = sellerName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                
-                Text(
-                    text = branchName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Text(
-                    text = if (isOnline) "En línea" else "Última vez: $lastSeen",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isOnline) 
-                        MaterialTheme.colorScheme.primary 
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            Text(
-                text = "$totalPayments pagos",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-// Datos de ejemplo
-@Composable
-private fun getQuickStats(): List<QuickStat> {
-    return listOf(
-        QuickStat("Pagos Hoy", "S/ 1,250", Icons.Filled.Payment, MaterialTheme.colorScheme.primary),
-        QuickStat("Vendedores", "5", Icons.Filled.People, MaterialTheme.colorScheme.secondary),
-        QuickStat("Confirmados", "23", Icons.Filled.CheckCircle, MaterialTheme.colorScheme.tertiary),
-        QuickStat("Pendientes", "2", Icons.Filled.Schedule, MaterialTheme.colorScheme.error)
-    )
-}
-
-@Composable
-private fun getConnectedSellers(): List<SellerInfo> {
-    return listOf(
-        SellerInfo("María González", "Sucursal Norte", true, "", 45),
-        SellerInfo("Carlos López", "Sucursal Sur", true, "", 32),
-        SellerInfo("Ana Martínez", "Sucursal Centro", false, "hace 5 min", 28),
-        SellerInfo("Luis Rodríguez", "Sucursal Este", true, "", 19)
-    )
-}
-
 data class QuickStat(
     val title: String,
     val value: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val color: androidx.compose.ui.graphics.Color
-)
-
-data class SellerInfo(
-    val name: String,
-    val branch: String,
-    val isOnline: Boolean,
-    val lastSeen: String,
-    val totalPayments: Int
 )
 
 @Composable

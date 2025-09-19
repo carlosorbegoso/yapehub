@@ -34,12 +34,11 @@ fun SellerActionsSection(
     pendingPayments: List<SellerPendingPayment>,
     showAllPayments: Boolean,
     onToggleShowAllPayments: (Boolean) -> Unit,
-    onNavigateToHistory: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequest: () -> Unit,
     onNavigateToNotifications: () -> Unit,
-    onNavigateToQRScanner: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Botón "Ver más pagos" si hay más de 2 pagos
@@ -148,11 +147,10 @@ fun SellerActionsSection(
     
     // Botones de navegación principales
     SellerDashboardActions(
-        onNavigateToHistory = onNavigateToHistory,
+        onNavigateToAnalytics = onNavigateToAnalytics,
         onNavigateToPendingPayments = onNavigateToPendingPayments,
         onNavigateToSettings = onNavigateToSettings,
         onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
-        onNavigateToNotifications = onNavigateToNotifications,
-        onNavigateToQRScanner = onNavigateToQRScanner
+        onNavigateToNotifications = onNavigateToNotifications
     )
 }

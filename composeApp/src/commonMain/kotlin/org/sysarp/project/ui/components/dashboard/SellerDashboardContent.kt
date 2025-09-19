@@ -46,13 +46,11 @@ fun SellerDashboardContent(
     paymentService: org.sysarp.project.service.payment.PaymentService,
     statsService: org.sysarp.project.service.stats.StatsService,
     webSocketService: org.sysarp.project.service.websocket.PaymentWebSocketService,
-    onNavigateToHistory: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequest: () -> Unit,
     onNavigateToNotifications: () -> Unit,
-    onNavigateToQRScanner: () -> Unit,
-    onNavigateToAnalytics: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -398,8 +396,7 @@ fun SellerDashboardContent(
             SellerStatsSection(
                 confirmedPaymentsCount = sellerStats?.summary?.confirmedPayments ?: 0,
                 totalAmountCollected = sellerStats?.summary?.totalSales ?: 0.0,
-                isLoadingStats = sellerStats == null,
-                onViewAnalytics = onNavigateToAnalytics
+                isLoadingStats = sellerStats == null
             )
             
             // Sección de pagos pendientes (header, búsqueda, filtros)
@@ -430,12 +427,11 @@ fun SellerDashboardContent(
                 pendingPayments = pendingPayments,
                 showAllPayments = showAllPayments,
                 onToggleShowAllPayments = { showAllPayments = it },
-                onNavigateToHistory = onNavigateToHistory,
+                onNavigateToAnalytics = onNavigateToAnalytics,
                 onNavigateToPendingPayments = onNavigateToPendingPayments,
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
-                onNavigateToNotifications = onNavigateToNotifications,
-                onNavigateToQRScanner = onNavigateToQRScanner
+                onNavigateToNotifications = onNavigateToNotifications
             )
         }
     }

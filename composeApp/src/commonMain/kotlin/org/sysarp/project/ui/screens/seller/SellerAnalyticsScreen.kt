@@ -65,6 +65,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.sysarp.project.data.AnalyticsOverview
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.components.charts.DailySalesBarChart
@@ -512,7 +513,7 @@ fun SellerAnalyticsScreen(
 
 @Composable
 private fun PrimaryMetricsSection(
-    data: org.sysarp.project.data.AnalyticsOverview
+    data: AnalyticsOverview
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -612,7 +613,7 @@ private fun PrimaryMetricsSection(
 
 @Composable
 private fun AdditionalMetricsCard(
-    data: org.sysarp.project.data.AnalyticsOverview
+    data: AnalyticsOverview
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),

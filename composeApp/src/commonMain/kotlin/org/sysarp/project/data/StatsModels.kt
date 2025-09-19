@@ -285,8 +285,8 @@ data class BadgeData(
 
 @Serializable
 data class SellerInsightsData(
-    val peakPerformanceDay: String,
-    val peakPerformanceHour: String,
+    val peakPerformanceDay: String? = null,
+    val peakPerformanceHour: String? = null,
     val averageTransactionValue: Double,
     val customerRetentionRate: Double,
     val repeatCustomerRate: Double,

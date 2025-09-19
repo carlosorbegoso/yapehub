@@ -12,10 +12,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payment
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,12 +33,11 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun SellerDashboardActions(
-    onNavigateToHistory: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequest: () -> Unit,
     onNavigateToNotifications: () -> Unit,
-    onNavigateToQRScanner: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -55,10 +53,10 @@ fun SellerDashboardActions(
                 
         // Botones de acción siguiendo el estilo ActionCard del admin
         ActionCard(
-            title = "Ver Historial",
-            subtitle = "Revisar transacciones completadas",
-            icon = Icons.Filled.History,
-            onClick = onNavigateToHistory
+            title = "Analytics",
+            subtitle = "Ver estadísticas detalladas y métricas de rendimiento",
+            icon = Icons.Filled.Analytics,
+            onClick = onNavigateToAnalytics
         )
         
         ActionCard(
@@ -73,13 +71,6 @@ fun SellerDashboardActions(
             subtitle = "Ver todas las notificaciones recibidas",
             icon = Icons.Filled.Notifications,
             onClick = onNavigateToNotifications
-        )
-        
-        ActionCard(
-            title = "Escanear QR",
-            subtitle = "Escanea códigos QR de afiliación",
-            icon = Icons.Filled.QrCodeScanner,
-            onClick = onNavigateToQRScanner
         )
         
         ActionCard(

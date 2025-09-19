@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
@@ -34,7 +34,7 @@ fun SellerDashboardTopBar(
     authService: AuthService,
     coroutineScope: CoroutineScope,
     onNotificationsClick: () -> Unit,
-    onNavigateToHistory: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
@@ -68,10 +68,10 @@ fun SellerDashboardTopBar(
                 }
             }
             
-            IconButton(onClick = onNavigateToHistory) {
+            IconButton(onClick = onNavigateToAnalytics) {
                 Icon(
-                    imageVector = Icons.Filled.History,
-                    contentDescription = "Historial"
+                    imageVector = Icons.Filled.Analytics,
+                    contentDescription = "Analytics"
                 )
             }
             IconButton(onClick = onNavigateToSettings) {

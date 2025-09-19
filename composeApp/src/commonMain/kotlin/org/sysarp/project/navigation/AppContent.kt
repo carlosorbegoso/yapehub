@@ -32,7 +32,6 @@ import org.sysarp.project.ui.screens.common.SettingsScreen
 import org.sysarp.project.ui.screens.common.SplashScreen
 import org.sysarp.project.ui.screens.seller.SellerAnalyticsScreen
 import org.sysarp.project.ui.screens.seller.SellerDashboardScreen
-import org.sysarp.project.ui.screens.seller.SellerManagementScreen
 import org.sysarp.project.ui.screens.seller.SellerNotificationsScreen
 import org.sysarp.project.ui.screens.seller.SellerPaymentsScreen
 import org.sysarp.project.ui.screens.seller.SellerSpecificPaymentsScreen
@@ -192,7 +191,6 @@ fun AppContent(
                 affiliationService = affiliationService,
                 qrService = qrService,
                 branchService = branchService,
-                onNavigateToSellerManagement = { navigationManager.navigateTo(Screen.SellerManagement) },
                 onNavigateToBranchManagement = { navigationManager.navigateTo(Screen.BranchManagement) },
                 onNavigateToAnalytics = { navigationManager.navigateTo(Screen.Analytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.PendingPayments) },
@@ -208,14 +206,11 @@ fun AppContent(
                 paymentService = paymentService,
                 statsService = statsService,
                 webSocketService = webSocketService,
-                notificationService = paymentNotificationService,
-                onNavigateToHistory = { navigationManager.navigateTo(Screen.Analytics) },
+                onNavigateToAnalytics = { navigationManager.navigateTo(Screen.SellerAnalytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.SellerPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
                 onNavigateToDeactivationRequest = { navigationManager.navigateToDeactivationRequest() },
                 onNavigateToNotifications = { navigationManager.navigateTo(Screen.SellerNotifications) },
-                onNavigateToQRScanner = { navigationManager.navigateTo(Screen.QRScanner) },
-                onNavigateToAnalytics = { navigationManager.navigateTo(Screen.SellerAnalytics) },
                 onLogout = { navigationManager.navigateToProfileSelection() }
             )
         }
@@ -224,16 +219,6 @@ fun AppContent(
                 authService = authService,
                 statsService = statsService,
                 onNavigateBack = { navigationManager.navigateBack() }
-            )
-        }
-        is Screen.SellerManagement -> {
-            SellerManagementScreen(
-                authService = authService,
-                onNavigateBack = { navigationManager.navigateBack() },
-                onNavigateToQR = { qrCode -> navigationManager.navigateToQRDisplay(qrCode) },
-                onNavigateToSellerPayments = { sellerId, sellerName -> 
-                    navigationManager.navigateToSellerSpecificPayments(sellerId, sellerName) 
-                }
             )
         }
         is Screen.BranchManagement -> {
