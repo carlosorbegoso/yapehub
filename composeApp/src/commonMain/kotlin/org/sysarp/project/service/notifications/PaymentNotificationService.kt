@@ -9,6 +9,13 @@ import org.sysarp.project.utils.Logger
 class PaymentNotificationService {
     // Clase vacía - funcionalidades movidas a SellerNotificationService
     // Mantenida para compatibilidad con código existente
+    
+    /**
+     * Constructor por defecto para evitar errores de NoClassDefFoundError
+     */
+    init {
+        Logger.auth("PAYMENT_NOTIFICATION_SERVICE", "PaymentNotificationService inicializado")
+    }
 }
 
 /**
