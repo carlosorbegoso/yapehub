@@ -1,19 +1,22 @@
 package org.sysarp.project.ui.components.charts
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
@@ -31,11 +34,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import org.sysarp.project.data.DailySalesData
 import org.sysarp.project.utils.formatCurrency
 
@@ -54,6 +58,8 @@ fun DailySalesBarChart(
     showStats: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    var selectedDay by remember { mutableStateOf<DailySalesData?>(null) }
+    var showDetailsDialog by remember { mutableStateOf(false) }
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -120,7 +126,17 @@ fun DailySalesBarChart(
                     .padding(16.dp)
             ) {
                 Canvas(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(chartData) {
+                            detectTapGestures { offset ->
+                                val barWidth = size.width / chartData.size * 0.75f
+                                val spacing = size.width / chartData.size * 0.25f
+                                val tappedIndex = ((offset.x - spacing/2) / (barWidth + spacing)).toInt().coerceIn(0, chartData.size - 1)
+                                selectedDay = chartData[tappedIndex]
+                                showDetailsDialog = true
+                            }
+                        }
                 ) {
                     val canvasWidth = size.width
                     val canvasHeight = size.height
@@ -243,5 +259,160 @@ fun DailySalesBarChart(
                 }
             }
         }
+    }
+    
+    // Diálogo de detalles del día seleccionado
+    selectedDay?.let { dayData ->
+        if (showDetailsDialog) {
+            DayDetailsDialog(
+                dayData = dayData,
+                onDismiss = { showDetailsDialog = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun DayDetailsDialog(
+    dayData: DailySalesData,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Icono y título
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Analytics,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+                
+                Text(
+                    text = "📊 Detalles del Día",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                
+                Text(
+                    text = "Información detallada de ventas",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+                
+                // Información detallada
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DetailRow(
+                        label = "Fecha",
+                        value = dayData.date,
+                        icon = "📅"
+                    )
+                    
+                    DetailRow(
+                        label = "Día de la semana",
+                        value = dayData.dayName,
+                        icon = "📆"
+                    )
+                    
+                    DetailRow(
+                        label = "Ventas totales",
+                        value = formatCurrency(dayData.sales),
+                        icon = "💰"
+                    )
+                    
+                    DetailRow(
+                        label = "Número de transacciones",
+                        value = "${dayData.transactions}",
+                        icon = "🛒"
+                    )
+                    
+                    if (dayData.transactions > 0) {
+                        DetailRow(
+                            label = "Promedio por transacción",
+                            value = formatCurrency(dayData.sales / dayData.transactions),
+                            icon = "📈"
+                        )
+                    }
+                }
+                
+                // Botón de cerrar
+                androidx.compose.material3.Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Cerrar",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailRow(
+    label: String,
+    value: String,
+    icon: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = icon,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+        
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black
+        )
     }
 }

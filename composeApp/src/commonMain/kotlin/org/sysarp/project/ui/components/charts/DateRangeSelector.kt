@@ -63,10 +63,10 @@ fun DateRangeSelector(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = Color.White
         ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Column(
             modifier = Modifier
@@ -74,23 +74,40 @@ fun DateRangeSelector(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Título
+            // Título mejorado
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.DateRange,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    text = "Seleccionar Rango de Fechas",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(10.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CalendarToday,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Column {
+                    Text(
+                        text = "📅 Seleccionar Rango de Fechas",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "Elige el período que deseas analizar",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                }
             }
             
             // Selectores de fecha
@@ -98,67 +115,95 @@ fun DateRangeSelector(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Fecha de inicio
+                // Fecha de inicio mejorada
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Fecha de inicio",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "📅 Fecha de inicio",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
                     )
-                    OutlinedButton(
-                        onClick = { showStartDatePicker = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showStartDatePicker = true },
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.CalendarToday,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = startDate?.let { 
-                                val dateString = Instant.fromEpochMilliseconds(it)
-                                    .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                formatDateOnly(dateString)
-                            } ?: "Seleccionar",
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CalendarToday,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = startDate?.let { 
+                                    val dateString = Instant.fromEpochMilliseconds(it)
+                                        .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                    formatDateOnly(dateString)
+                                } ?: "Seleccionar fecha",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (startDate != null) Color.Black else Color.Gray
+                            )
+                        }
                     }
                 }
                 
-                // Fecha de fin
+                // Fecha de fin mejorada
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Fecha de fin",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "📅 Fecha de fin",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
                     )
-                    OutlinedButton(
-                        onClick = { showEndDatePicker = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showEndDatePicker = true },
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.CalendarToday,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = endDate?.let { 
-                                val dateString = Instant.fromEpochMilliseconds(it)
-                                    .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                                formatDateOnly(dateString)
-                            } ?: "Seleccionar",
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CalendarToday,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = endDate?.let { 
+                                    val dateString = Instant.fromEpochMilliseconds(it)
+                                        .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                                    formatDateOnly(dateString)
+                                } ?: "Seleccionar fecha",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (endDate != null) Color.Black else Color.Gray
+                            )
+                        }
                     }
                 }
             }
@@ -180,10 +225,10 @@ fun DateRangeSelector(
                 }
             }
             
-            // Botones de acción
+            // Botones de acción mejorados
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
                     onClick = {
@@ -202,6 +247,11 @@ fun DateRangeSelector(
                         }
                     },
                     modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp),
                     enabled = startDate != null && endDate != null && 
                              startDate != null && endDate != null &&
                              Instant.fromEpochMilliseconds(startDate!!)
@@ -212,11 +262,12 @@ fun DateRangeSelector(
                     Icon(
                         imageVector = Icons.Filled.Event,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Text(
-                        text = "Aplicar Filtro",
-                        modifier = Modifier.padding(start = 8.dp)
+                        text = "✅ Aplicar Filtro",
+                        modifier = Modifier.padding(start = 8.dp),
+                        fontWeight = FontWeight.Medium
                     )
                 }
                 
@@ -226,9 +277,16 @@ fun DateRangeSelector(
                         endDate = null
                         onDateRangeSelected(null, null)
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.Gray
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Limpiar")
+                    Text(
+                        text = "🗑️ Limpiar",
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
@@ -295,162 +353,3 @@ fun DateRangeSelector(
     }
 }
 
-/**
- * Componente para seleccionar un día específico
- * 
- * @param onDateSelected Callback cuando se selecciona una fecha específica
- * @param modifier Modificador para el componente
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SpecificDateSelector(
-    onDateSelected: (date: String?) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var showDatePicker by remember { mutableStateOf(false) }
-    var selectedDate by remember { mutableStateOf<Long?>(null) }
-    
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Título
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CalendarToday,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    text = "Seleccionar Día Específico",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            
-            // Selector de fecha
-            OutlinedButton(
-                onClick = { showDatePicker = true },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CalendarToday,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                    Text(
-                        text = selectedDate?.let { 
-                            val dateString = Instant.fromEpochMilliseconds(it)
-                                .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                            formatDateOnly(dateString)
-                        } ?: "Seleccionar fecha",
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
-            
-            // Información adicional
-            if (selectedDate != null) {
-                val selectedDateString = Instant.fromEpochMilliseconds(selectedDate!!)
-                    .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                
-                Text(
-                    text = if (selectedDateString == today) {
-                        "📅 Día seleccionado: Hoy"
-                    } else {
-                        "📅 Día seleccionado: ${formatDateOnly(Instant.fromEpochMilliseconds(selectedDate!!).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString())}"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-            }
-            
-            // Botones de acción
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = {
-                        selectedDate?.let { date ->
-                            val dateString = Instant.fromEpochMilliseconds(date)
-                                .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                            onDateSelected(dateString)
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = selectedDate != null
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Event,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = "Aplicar Filtro",
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-                
-                OutlinedButton(
-                    onClick = {
-                        selectedDate = null
-                        onDateSelected(null)
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Limpiar")
-                }
-            }
-        }
-    }
-    
-    // DatePicker
-    if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate
-        )
-        
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedDate = datePickerState.selectedDateMillis
-                        showDatePicker = false
-                    }
-                ) {
-                    Text("Confirmar")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDatePicker = false }
-                ) {
-                    Text("Cancelar")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
-}

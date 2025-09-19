@@ -39,12 +39,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import org.sysarp.project.ui.components.topbar.TopBarComponent
-import org.sysarp.project.ui.components.topbar.TopBarMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -68,7 +65,8 @@ import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
-import org.sysarp.project.ui.screens.common.HomeScreen
+import org.sysarp.project.ui.components.topbar.TopBarComponent
+import org.sysarp.project.ui.components.topbar.TopBarMenuItem
 import org.sysarp.project.ui.screens.common.ServerQRDisplayScreen
 import org.sysarp.project.ui.screens.common.exportLogs
 import org.sysarp.project.utils.formatCurrency

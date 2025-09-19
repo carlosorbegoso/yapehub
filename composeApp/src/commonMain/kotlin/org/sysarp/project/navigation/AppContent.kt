@@ -18,8 +18,9 @@ import org.sysarp.project.ui.screens.admin.AdminDashboardScreen
 import org.sysarp.project.ui.screens.admin.AdminPaymentsScreen
 import org.sysarp.project.ui.screens.admin.AdminProfileScreen
 import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
-import org.sysarp.project.ui.screens.common.AnalyticsScreen
 import org.sysarp.project.ui.screens.admin.BranchManagementScreen
+import org.sysarp.project.ui.screens.admin.UserManagementScreen
+import org.sysarp.project.ui.screens.common.AnalyticsScreen
 import org.sysarp.project.ui.screens.common.DeactivationRequestScreen
 import org.sysarp.project.ui.screens.common.ForgotPasswordScreen
 import org.sysarp.project.ui.screens.common.LoginScreen
@@ -27,16 +28,15 @@ import org.sysarp.project.ui.screens.common.ProfileSelectionScreen
 import org.sysarp.project.ui.screens.common.QRDisplayScreen
 import org.sysarp.project.ui.screens.common.QRScannerScreen
 import org.sysarp.project.ui.screens.common.ReportsScreen
+import org.sysarp.project.ui.screens.common.SettingsScreen
+import org.sysarp.project.ui.screens.common.SplashScreen
 import org.sysarp.project.ui.screens.seller.SellerAnalyticsScreen
 import org.sysarp.project.ui.screens.seller.SellerDashboardScreen
-import org.sysarp.project.ui.screens.admin.SellerManagementScreen
+import org.sysarp.project.ui.screens.seller.SellerManagementScreen
 import org.sysarp.project.ui.screens.seller.SellerNotificationsScreen
 import org.sysarp.project.ui.screens.seller.SellerPaymentsScreen
 import org.sysarp.project.ui.screens.seller.SellerSpecificPaymentsScreen
 import org.sysarp.project.ui.screens.seller.SellerUnifiedScreen
-import org.sysarp.project.ui.screens.common.SettingsScreen
-import org.sysarp.project.ui.screens.common.SplashScreen
-import org.sysarp.project.ui.screens.admin.UserManagementScreen
 import org.sysarp.project.viewmodel.YapeViewModel
 
 @Composable

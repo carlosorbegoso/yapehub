@@ -8,12 +8,12 @@ import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import timber.log.Timber
-import org.sysarp.project.service.AndroidNotificationCaptureService
-import org.sysarp.project.ui.components.DebugLogManager
-import org.sysarp.project.ui.components.DebugLog
-import org.sysarp.project.ui.components.LogType
 import kotlinx.datetime.Clock
+import org.sysarp.project.service.AndroidNotificationCaptureService
+import org.sysarp.project.ui.components.DebugLog
+import org.sysarp.project.ui.components.DebugLogManager
+import org.sysarp.project.ui.components.LogType
+import timber.log.Timber
 
 object AppLifecycleManager : DefaultLifecycleObserver {
     private val _appResumed = MutableSharedFlow<Unit>()

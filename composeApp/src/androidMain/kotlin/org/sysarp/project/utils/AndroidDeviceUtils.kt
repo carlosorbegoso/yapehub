@@ -4,12 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
-import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
 import timber.log.Timber
 import java.security.MessageDigest
-import kotlinx.datetime.Clock
 
 /**
  * Utilidades Android-específicas para obtener identificadores únicos del dispositivo

@@ -13,16 +13,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import org.sysarp.project.data.ServiceStatus
 import org.sysarp.project.data.YapeNotificationRequest
+import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.ui.components.DebugLog
+import org.sysarp.project.ui.components.DebugLogManager
+import org.sysarp.project.ui.components.LogType
 import org.sysarp.project.utils.AndroidDeviceUtils
 import org.sysarp.project.utils.EncryptionUtils
-import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.ui.components.DebugLogManager
-import org.sysarp.project.ui.components.DebugLog
-import org.sysarp.project.ui.components.LogType
 import timber.log.Timber
-import kotlinx.datetime.Clock
 
 class AndroidNotificationCaptureService : NotificationListenerService() {
     

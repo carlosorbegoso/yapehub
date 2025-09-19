@@ -55,10 +55,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.utils.extractShortYapeCode
 import org.sysarp.project.utils.formatCurrency
-import kotlinx.coroutines.delay
 
 /**
  * Tarjeta de notificación de pago mejorada con diseño moderno
