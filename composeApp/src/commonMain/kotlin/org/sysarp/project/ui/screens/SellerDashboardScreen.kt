@@ -38,6 +38,7 @@ fun SellerDashboardScreen(
     onNavigateToDeactivationRequest: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToQRScanner: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
     onLogout: () -> Unit
 ) {
     val userProfile by authService.userProfile.collectAsState()
@@ -132,6 +133,7 @@ fun SellerDashboardScreen(
             onNavigateToDeactivationRequest = onNavigateToDeactivationRequest,
             onNavigateToNotifications = onNavigateToNotifications,
             onNavigateToQRScanner = onNavigateToQRScanner,
+            onNavigateToAnalytics = onNavigateToAnalytics,
             modifier = Modifier.fillMaxSize()
         )
     }

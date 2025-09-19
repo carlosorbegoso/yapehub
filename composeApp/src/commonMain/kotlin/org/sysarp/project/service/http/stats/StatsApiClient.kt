@@ -107,6 +107,49 @@ class StatsApiClient : BaseApiClient() {
         }
     }
 
+    suspend fun getSellerStats(
+        sellerId: Int,
+        token: String
+    ): Result<SellerStatsResponse> {
+        return try {
+            logInfo("STATS_API", "Obteniendo estadísticas del vendedor: $sellerId")
+
+            val response = client.get("$baseUrl/api/stats/seller") {
+                parameter("sellerId", sellerId)
+                header("Authorization", "Bearer $token")
+                header("accept", "application/json")
+            }
+
+            if (response.status.value in 200..299) {
+                try {
+                    val responseBody = response.body<String>()
+                    logInfo("STATS_API", "Respuesta del servidor: $responseBody")
+                    val sellerStatsResponse = kotlinx.serialization.json.Json.decodeFromString<SellerStatsResponse>(responseBody)
+                    logInfo("STATS_API", "Estadísticas de vendedor obtenidas exitosamente")
+                    Result.success(sellerStatsResponse)
+                } catch (e: Exception) {
+                    logError("STATS_API", "Error deserializando respuesta: ${e.message}")
+                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
+                }
+            } else {
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("STATS_API", "Error body: $errorBody")
+                    errorBody
+                } catch (e: Exception) {
+                    "Error desconocido: ${e.message}"
+                }
+
+                val finalErrorMessage = "Error obteniendo estadísticas de vendedor: ${response.status} - $errorMessage"
+                logError("STATS_API", finalErrorMessage)
+                Result.failure(Exception(finalErrorMessage))
+            }
+        } catch (e: Exception) {
+            logError("STATS_API", "Error obteniendo estadísticas de vendedor: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
     suspend fun getSellerStatsSummary(
         sellerId: Int,
         token: String

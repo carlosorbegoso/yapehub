@@ -52,6 +52,7 @@ fun SellerDashboardContent(
     onNavigateToDeactivationRequest: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToQRScanner: () -> Unit,
+    onNavigateToAnalytics: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -397,7 +398,8 @@ fun SellerDashboardContent(
             SellerStatsSection(
                 confirmedPaymentsCount = sellerStats?.summary?.confirmedPayments ?: 0,
                 totalAmountCollected = sellerStats?.summary?.totalSales ?: 0.0,
-                isLoadingStats = sellerStats == null
+                isLoadingStats = sellerStats == null,
+                onViewAnalytics = onNavigateToAnalytics
             )
             
             // Sección de pagos pendientes (header, búsqueda, filtros)

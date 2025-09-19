@@ -27,6 +27,7 @@ import org.sysarp.project.ui.screens.ProfileSelectionScreen
 import org.sysarp.project.ui.screens.QRDisplayScreen
 import org.sysarp.project.ui.screens.QRScannerScreen
 import org.sysarp.project.ui.screens.ReportsScreen
+import org.sysarp.project.ui.screens.SellerAnalyticsScreen
 import org.sysarp.project.ui.screens.SellerDashboardScreen
 import org.sysarp.project.ui.screens.SellerManagementScreen
 import org.sysarp.project.ui.screens.SellerNotificationsScreen
@@ -214,7 +215,15 @@ fun AppContent(
                 onNavigateToDeactivationRequest = { navigationManager.navigateToDeactivationRequest() },
                 onNavigateToNotifications = { navigationManager.navigateTo(Screen.SellerNotifications) },
                 onNavigateToQRScanner = { navigationManager.navigateTo(Screen.QRScanner) },
+                onNavigateToAnalytics = { navigationManager.navigateTo(Screen.SellerAnalytics) },
                 onLogout = { navigationManager.navigateToProfileSelection() }
+            )
+        }
+        is Screen.SellerAnalytics -> {
+            SellerAnalyticsScreen(
+                authService = authService,
+                statsService = statsService,
+                onNavigateBack = { navigationManager.navigateBack() }
             )
         }
         is Screen.SellerManagement -> {
