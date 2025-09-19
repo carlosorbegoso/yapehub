@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WifiOff
@@ -30,69 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.serialization.json.Json
 import org.sysarp.project.data.ApiError
-
-/**
- * Componente reutilizable para mostrar errores de manera amigable
- */
-@Composable
-fun ErrorDisplay(
-    errorMessage: String,
-    modifier: Modifier = Modifier,
-    showIcon: Boolean = true,
-    isValidationError: Boolean = true
-) {
-    if (errorMessage.isNotEmpty()) {
-        Card(
-            modifier = modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer
-            ),
-            shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (showIcon) {
-                    Icon(
-                        imageVector = Icons.Filled.Error,
-                        contentDescription = "Error",
-                        tint = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                }
-                
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Error de validación",
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    Spacer(modifier = Modifier.height(4.dp))
-                    
-                    Text(
-                        text = if (isValidationError) {
-                            parseApiError(errorMessage)
-                        } else {
-                            errorMessage
-                        },
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
-                    )
-                }
-            }
-        }
-    }
-}
 
 /**
  * Componente para mostrar errores de validación específicos con iconos

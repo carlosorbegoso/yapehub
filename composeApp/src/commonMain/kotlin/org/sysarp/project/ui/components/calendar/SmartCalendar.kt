@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.scale
@@ -125,8 +126,12 @@ fun SmartCalendar(
                             selectedStartDate!!.toString()
                         }
                         onPeriodSelected(periodText)
+                        // Cerrar el diálogo después de aplicar
+                        onDismiss()
                     }
-                }
+                },
+                onPeriodSelected = onPeriodSelected,
+                onDismiss = onDismiss
             )
         }
     }
@@ -139,7 +144,9 @@ private fun VisualCalendarSection(
     selectedStartDate: LocalDate?,
     selectedEndDate: LocalDate?,
     onDateSelected: (LocalDate) -> Unit,
-    onApplyRange: () -> Unit
+    onApplyRange: () -> Unit,
+    onPeriodSelected: (String) -> Unit,
+    onDismiss: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -151,6 +158,15 @@ private fun VisualCalendarSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Botones de período rápido
+            QuickPeriodButtons(
+                onPeriodSelected = { period ->
+                    onPeriodSelected(period)
+                    // Cerrar el diálogo después de seleccionar período rápido
+                    onDismiss()
+                }
+            )
+            
             // Header del mes
             MonthHeader(
                 currentMonth = currentMonth,
@@ -354,6 +370,104 @@ private fun CalendarDay(
     }
 }
 
+
+@Composable
+private fun QuickPeriodButtons(
+    onPeriodSelected: (String) -> Unit
+) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Períodos rápidos",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
+        
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Botón Hoy
+            Button(
+                onClick = {
+                    onPeriodSelected("📅 Hoy")
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                ),
+                contentPadding = PaddingValues(8.dp)
+            ) {
+                Text(
+                    text = "📅 Hoy",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Botón 7 días
+            Button(
+                onClick = {
+                    onPeriodSelected("📅 7 días")
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                ),
+                contentPadding = PaddingValues(8.dp)
+            ) {
+                Text(
+                    text = "📅 7 días",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Botón 30 días
+            Button(
+                onClick = {
+                    onPeriodSelected("📅 30 días")
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                ),
+                contentPadding = PaddingValues(8.dp)
+            ) {
+                Text(
+                    text = "📅 30 días",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Botón 90 días
+            Button(
+                onClick = {
+                    onPeriodSelected("📅 90 días")
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                ),
+                contentPadding = PaddingValues(8.dp)
+            ) {
+                Text(
+                    text = "📅 90 días",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
 
 /**
  * Función para obtener el rango de fechas del período seleccionado

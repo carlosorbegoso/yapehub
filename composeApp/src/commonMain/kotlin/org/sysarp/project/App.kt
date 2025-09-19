@@ -133,7 +133,6 @@ fun YapeApp() {
         qrService = qrService,
         branchService = branchService,
         webSocketService = webSocketService,
-        paymentNotificationService = paymentNotificationService,
         viewModel = viewModel,
         userProfileRepository = userProfileRepository
     )

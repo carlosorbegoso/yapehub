@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.data.BusinessReport
 import org.sysarp.project.data.DailyReport
-import org.sysarp.project.data.TransactionType
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.data.UserRole
 import org.sysarp.project.data.YapeTransaction
@@ -137,105 +136,7 @@ class YapeViewModel(
             }
         _dailyReports.value = reports
     }
-    
-    // Métodos de captura eliminados - se manejan directamente en setCurrentUser()
-    
-    fun addTransaction(transaction: YapeTransaction) {
-        viewModelScope.launch {
-            // Sin base de datos local, solo agregar a la lista en memoria
-            val currentTransactions = _transactions.value.toMutableList()
-            currentTransactions.add(transaction)
-            _transactions.value = currentTransactions
-            updateBusinessReports(currentTransactions)
-            updateDailyReports(currentTransactions)
-        }
-    }
-    
-    fun markTransactionAsProcessed(transactionId: Long) {
-        viewModelScope.launch {
-            // Sin base de datos local, actualizar en memoria
-            val currentTransactions = _transactions.value.toMutableList()
-            val index = currentTransactions.indexOfFirst { it.id == transactionId }
-            if (index != -1) {
-                currentTransactions[index] = currentTransactions[index].copy(isProcessed = true)
-                _transactions.value = currentTransactions
-                updateBusinessReports(currentTransactions)
-                updateDailyReports(currentTransactions)
-            }
-        }
-    }
-    
-    fun assignTransactionToBusiness(transactionId: Long, businessName: String) {
-        viewModelScope.launch {
-            // Sin base de datos local, actualizar en memoria
-            val currentTransactions = _transactions.value.toMutableList()
-            val index = currentTransactions.indexOfFirst { it.id == transactionId }
-            if (index != -1) {
-                currentTransactions[index] = currentTransactions[index].copy(businessName = businessName)
-                _transactions.value = currentTransactions
-                updateBusinessReports(currentTransactions)
-                updateDailyReports(currentTransactions)
-            }
-        }
-    }
-    
-    fun deleteTransaction(transactionId: Long) {
-        viewModelScope.launch {
-            // Sin base de datos local, eliminar de memoria
-            val currentTransactions = _transactions.value.toMutableList()
-            currentTransactions.removeAll { it.id == transactionId }
-            _transactions.value = currentTransactions
-            updateBusinessReports(currentTransactions)
-            updateDailyReports(currentTransactions)
-        }
-    }
-    
-    // Método getTransactionsForReport() eliminado - no se utiliza
-    
-    fun exportTransactionsToText(): String {
-        return try {
-            val transactions = _transactions.value
-            DebugLogger.info("📤 Exportando transacciones - Total: ${transactions.size}")
-            val timestamp = kotlinx.datetime.Clock.System.now()
-            val dateFormatter = kotlinx.datetime.TimeZone.currentSystemDefault()
-            
-            val header = """
-========================================
-YAPE CHAMO - EXPORTACIÓN DE TRANSACCIONES
-========================================
-Exportado: ${timestamp.toLocalDateTime(dateFormatter)}
-Total de transacciones: ${transactions.size}
-Nota: Datos en memoria (sin persistencia local)
-========================================
 
-"""
-            
-            val transactionsText = if (transactions.isEmpty()) {
-                "No hay transacciones en memoria."
-            } else {
-                transactions.mapIndexed { index, transaction ->
-                    """
-[${index + 1}] ID: ${transaction.id}
-    Transaction ID: ${transaction.transactionId}
-    Monto: ${transaction.amount} ${transaction.currency}
-    Remitente: ${transaction.senderName}
-    Código de seguridad: ${transaction.securityCode ?: "N/A"}
-    Creado: ${transaction.createdAt.toLocalDateTime(dateFormatter)}
-    ----------------------------------------
-""".trimIndent()
-                }.joinToString("\n")
-            }
-            
-            header + transactionsText
-        } catch (e: Exception) {
-            "Error: No se pudo exportar las transacciones - ${e.message}"
-        }
-    }
-    
-    // Métodos de exportación duplicados y UI eliminados - no se utilizan
-    
-    // Sistema de pagos pendientes eliminado - no se utiliza
-    
     private suspend fun requestPermissions() {
         // Método simplificado para Android - sin funciones iOS
         kotlinx.coroutines.delay(1000)
@@ -288,88 +189,10 @@ Nota: Datos en memoria (sin persistencia local)
             )
         }
     }
-    
-    private suspend fun checkNotificationPermission(): Boolean {
-        // Verificación real de permisos usando PermissionChecker
-        return PermissionChecker.isNotificationServiceEnabled()
-    }
-    
-    private suspend fun checkAccessibilityPermission(): Boolean {
-        // Verificación real de permisos usando PermissionChecker
-        return PermissionChecker.isAccessibilityServiceEnabled()
-    }
+
     
     // Métodos de permisos no utilizados eliminados - AppLifecycleManager maneja esto
-    
-    fun insertTestTransaction() {
-        viewModelScope.launch {
-            val testTransaction = YapeTransaction(
-                id = 0L,
-                transactionId = "",
-                amount = 25.5,
-                currency = "PEN",
-                senderName = "Usuario de Prueba",
-                senderPhone = "+51999999999",
-                message = "Pago de prueba para verificar funcionamiento",
-                transactionType = TransactionType.RECEIVED,
-                businessName = "Negocio de Prueba",
-                createdAt = kotlinx.datetime.Clock.System.now(),
-                processedAt = null,
-                isProcessed = false,
-                rawNotification = "Confirmación de Pago Usuario de Prueba te envió un pago por S/ 25.5. El cód. de seguridad es: 123",
-                securityCode = "123"
-            )
 
-            DebugLogger.info("🧪 [TEST] Agregando transacción de prueba...")
-            addTransaction(testTransaction)
-            DebugLogger.info("✅ [TEST] Transacción de prueba agregada")
-
-            kotlinx.coroutines.delay(1000)
-            val currentTransactions = _transactions.value
-            val testFound = currentTransactions.any {
-                it.senderName == "Usuario de Prueba" && it.amount == 25.5
-            }
-
-            if (testFound) {
-                DebugLogger.info("✅ [TEST] Verificación exitosa: transacción encontrada en lista")
-            } else {
-                DebugLogger.error("❌ [TEST] ERROR: transacción no encontrada en lista después de insertar")
-            }
-        }
-    }
-
-    fun verifyTransactionsIntegrity() {
-        viewModelScope.launch {
-            DebugLogger.info("🔍 [VERIFY] Iniciando verificación integral de base de datos...")
-
-            try {
-                val viewModelCount = _transactions.value.size
-                DebugLogger.info("📊 [VERIFY] Transacciones en ViewModel: $viewModelCount")
-
-                // Sin repositorio de base de datos, solo verificar ViewModel
-                DebugLogger.info("📊 [VERIFY] Transacciones en memoria: $viewModelCount")
-                DebugLogger.info("✅ [VERIFY] Verificación de memoria completada")
-
-                // Verificar transacciones en memoria
-                _transactions.value.forEach { transaction ->
-                    if (transaction.transactionId.isEmpty()) {
-                        DebugLogger.error("❌ [VERIFY] Transacción con ID vacío: ${transaction.id}")
-                    }
-                    if (transaction.senderName.isNullOrEmpty()) {
-                        DebugLogger.warn("⚠️ [VERIFY] Transacción sin nombre de remitente: ${transaction.id}")
-                    }
-                    if (transaction.amount <= 0) {
-                        DebugLogger.error("❌ [VERIFY] Transacción con monto inválido: ${transaction.id} - ${transaction.amount}")
-                    }
-                }
-
-                DebugLogger.info("✅ [VERIFY] Verificación integral completada")
-
-            } catch (e: Exception) {
-                DebugLogger.error("❌ [VERIFY] Error durante verificación: ${e.message}")
-            }
-        }
-    }
 }
 
 data class YapeUiState(

@@ -99,6 +99,7 @@ fun SellerAnalyticsScreen(
                 }
             }
             
+            
             // Estado de carga
             if (state.isLoadingAnalytics) {
                 item {

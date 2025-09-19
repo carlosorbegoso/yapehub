@@ -4,7 +4,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import org.sysarp.project.repository.UserProfileRepository
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
@@ -13,6 +12,7 @@ import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
+import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.ui.components.FloatingDebugOverlay
 import org.sysarp.project.ui.screens.admin.AdminDashboardScreen
 import org.sysarp.project.ui.screens.admin.AdminPaymentsScreen
@@ -49,9 +49,7 @@ fun AppContent(
     affiliationService: AffiliationService,
     qrService: QRService,
     branchService: BranchService,
-    webSocketService: org.sysarp.project.service.websocket.PaymentWebSocketService,
-    paymentNotificationService: org.sysarp.project.service.notifications.PaymentNotificationService,
-    modifier: Modifier = Modifier
+    webSocketService: PaymentWebSocketService
 ) {
     val currentScreen by navigationManager.currentScreen.collectAsState()
     

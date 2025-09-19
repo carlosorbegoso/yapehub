@@ -45,14 +45,14 @@ fun AdminAnalyticsDialogs(
         )
     }
     
-    // Diálogo de filtros financieros simplificado
+    // Diálogo de filtros financieros específico
     if (state.showFinancialFiltersDialog) {
-        AdminTransparencyFilterDialog(
+        AdminFinancialFilterDialog(
             isVisible = state.showFinancialFiltersDialog,
             onDismiss = onDismissFinancialDialog,
             onApply = { params ->
                 onDismissFinancialDialog()
-                // Cargar análisis financiero con parámetros por defecto
+                // Cargar análisis financiero con parámetros seleccionados
                 val userProfile = authService.userProfile.value
                 val accessToken = authService.accessToken.value
                 val adminId = userProfile?.adminId?.toIntOrNull()
@@ -64,9 +64,9 @@ fun AdminAnalyticsDialogs(
                                 adminId = adminId,
                                 startDate = null,
                                 endDate = null,
-                                include = "revenue,taxes,commissions",
-                                currency = "PEN",
-                                taxRate = 0.18,
+                                include = params.include,
+                                currency = params.currency,
+                                taxRate = params.taxRate,
                                 token = accessToken
                             ).fold(
                                 onSuccess = { response ->
