@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.ui.components.seller_dashboard.cards.SellerStatCard
+import org.sysarp.project.utils.formatCurrencyNoDecimals
 
 /**
  * Sección de estadísticas del vendedor en el dashboard
@@ -77,7 +78,7 @@ fun SellerStatsSection(
             
             SellerStatCard(
                 title = "Total Recaudado",
-                value = "S/ ${"%.0f".format(totalAmountCollected)}",
+                value = formatCurrencyNoDecimals(totalAmountCollected),
                 icon = Icons.Filled.CheckCircle,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f)

@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.text.DecimalFormat
+import org.sysarp.project.utils.formatCurrency
 
 @Composable
 fun TransactionStatsCard(
@@ -117,7 +117,7 @@ fun TransactionStatsCard(
                         text = if (isCount) {
                             animatedAmount.toInt().toString()
                         } else {
-                            "S/ ${DecimalFormat("#,##0.00").format(animatedAmount)}"
+                            formatCurrency(animatedAmount)
                         },
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,

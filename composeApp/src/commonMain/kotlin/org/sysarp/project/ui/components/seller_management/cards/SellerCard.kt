@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.sysarp.project.data.MySeller
+import org.sysarp.project.utils.formatCurrencyNoDecimals
 
 @Composable
 fun SellerCard(
@@ -164,7 +165,7 @@ fun SellerCard(
                 
                 SimpleStatChip(
                     icon = Icons.Filled.CheckCircle,
-                    value = "S/ ${"%.0f".format(seller.totalAmount)}",
+                    value = formatCurrencyNoDecimals(seller.totalAmount),
                     label = "Total",
                     modifier = Modifier.weight(1f)
                 )

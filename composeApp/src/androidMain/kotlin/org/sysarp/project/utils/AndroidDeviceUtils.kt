@@ -4,13 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
-import android.util.Log
 import androidx.annotation.RequiresPermission
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.security.MessageDigest
-import java.util.*
 import kotlinx.datetime.Clock
 
 /**
@@ -19,35 +17,34 @@ import kotlinx.datetime.Clock
 object AndroidDeviceUtils {
     
     /**
-     * Genera un fingerprint único usando identificadores reales del dispositivo Android
+     * Genera un fingerprint único usando identificadores disponibles del dispositivo Android
+     * Sin usar permisos privilegiados del sistema
      */
-    suspend fun generateDeviceFingerprint(context: Context): String = withContext(Dispatchers.IO) @androidx.annotation.RequiresPermission(
-        "android.permission.READ_PRIVILEGED_PHONE_STATE"
-    ) {
+    suspend fun generateDeviceFingerprint(context: Context): String = withContext(Dispatchers.IO) {
         try {
             Timber.tag("AndroidDeviceUtils")
-                .d("Generando device fingerprint usando identificadores reales...")
+                .d("Generando device fingerprint usando identificadores disponibles...")
             
-            // Obtener identificadores únicos del dispositivo
+            // Obtener identificadores únicos del dispositivo (sin permisos privilegiados)
             val androidId = getAndroidId(context)
             val deviceModel = Build.MODEL
             val deviceBrand = Build.BRAND
             val deviceManufacturer = Build.MANUFACTURER
-            val deviceSerial = getDeviceSerial()
+            val deviceFingerprint = getDeviceFingerprint()
 
             Timber.tag("AndroidDeviceUtils").d("Android ID: ${androidId.take(10)}...")
             Timber.tag("AndroidDeviceUtils").d("Device: $deviceBrand $deviceModel")
             Timber.tag("AndroidDeviceUtils").d("Manufacturer: $deviceManufacturer")
-            Timber.tag("AndroidDeviceUtils").d("Serial: ${deviceSerial.take(10)}...")
+            Timber.tag("AndroidDeviceUtils").d("Fingerprint: ${deviceFingerprint.take(10)}...")
             
-            // Crear fingerprint combinando identificadores únicos
+            // Crear fingerprint combinando identificadores únicos disponibles
             val deviceInfo = buildString {
                 append("yapechamo_") // Prefijo de la app
                 append("${androidId}_") // Android ID (único por dispositivo)
                 append("${deviceBrand}_") // Marca del dispositivo
                 append("${deviceModel}_") // Modelo del dispositivo
                 append("${deviceManufacturer}_") // Fabricante
-                append(deviceSerial) // Serial del dispositivo
+                append(deviceFingerprint) // Fingerprint del dispositivo
             }
             
             // Crear hash MD5 para hacer el fingerprint más corto y consistente
@@ -55,12 +52,12 @@ object AndroidDeviceUtils {
 
             Timber.tag("AndroidDeviceUtils")
                 .d("Device fingerprint generado: ${fingerprint.take(20)}...")
-            return@withContext fingerprint
+            fingerprint
             
         } catch (e: Exception) {
             Timber.tag("AndroidDeviceUtils").e("Error generando device fingerprint: ${e.message}")
             // Fallback a un fingerprint básico usando Android ID
-            return@withContext try {
+            try {
                 val androidId = getAndroidId(context)
                 "yapechamo_${androidId}_fallback"
             } catch (fallbackError: Exception) {
@@ -85,20 +82,14 @@ object AndroidDeviceUtils {
     }
     
     /**
-     * Obtiene el serial del dispositivo (si está disponible)
+     * Obtiene el fingerprint del dispositivo (disponible sin permisos especiales)
      */
-    @RequiresPermission("android.permission.READ_PRIVILEGED_PHONE_STATE")
-    private fun getDeviceSerial(): String {
+    private fun getDeviceFingerprint(): String {
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Build.getSerial() ?: "unknown_serial"
-            } else {
-                @Suppress("DEPRECATION")
-                Build.SERIAL ?: "unknown_serial"
-            }
+            Build.FINGERPRINT ?: "unknown_fingerprint"
         } catch (e: Exception) {
-            Timber.tag("AndroidDeviceUtils").e("Error obteniendo serial: ${e.message}")
-            "error_serial"
+            Timber.tag("AndroidDeviceUtils").e("Error obteniendo fingerprint: ${e.message}")
+            "error_fingerprint"
         }
     }
     

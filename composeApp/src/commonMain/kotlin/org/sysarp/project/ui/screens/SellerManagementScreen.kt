@@ -23,6 +23,7 @@ import org.sysarp.project.data.QRCodeData
 import org.sysarp.project.service.admin.AdminService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.AdminProfileApiClient
+import org.sysarp.project.utils.formatCurrencyNoDecimals
 import org.sysarp.project.service.http.AdminSellerApiClient
 import org.sysarp.project.service.http.AdminStatsApiClient
 import org.sysarp.project.service.http.SellerManagementApiClient
@@ -727,7 +728,7 @@ fun SellerCardV2(
                 
                 SellerMetricItem(
                     label = "Total",
-                    value = "S/ ${"%.0f".format(seller.totalAmount)}",
+                    value = formatCurrencyNoDecimals(seller.totalAmount),
                     icon = Icons.Filled.CheckCircle
                 )
                 

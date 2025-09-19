@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.data.SellerPendingPayment
-import org.sysarp.project.data.SellerStats
+import org.sysarp.project.data.SellerStatsData
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.websocket.WebSocketConnectionState
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerActionsSection
@@ -44,6 +44,7 @@ fun SellerDashboardContent(
     accessToken: String,
     userProfile: UserProfile?,
     paymentService: org.sysarp.project.service.payment.PaymentService,
+    statsService: org.sysarp.project.service.stats.StatsService,
     webSocketService: org.sysarp.project.service.websocket.PaymentWebSocketService,
     onNavigateToHistory: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
@@ -57,7 +58,7 @@ fun SellerDashboardContent(
     
     // Estados principales
     var pendingPayments by remember { mutableStateOf<List<SellerPendingPayment>>(emptyList()) }
-    var sellerStats by remember { mutableStateOf<SellerStats?>(null) }
+    var sellerStats by remember { mutableStateOf<SellerStatsData?>(null) }
     var connectionState by remember { mutableStateOf(WebSocketConnectionState.DISCONNECTED) }
     var currentNotification by remember { mutableStateOf<PaymentNotificationData?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -84,13 +85,27 @@ fun SellerDashboardContent(
             try {
                 val sellerId = userProfile?.sellerId?.toIntOrNull()
                 if (sellerId != null && accessToken.isNotEmpty()) {
-                    val result = paymentService.getPendingPayments(sellerId, 0, 20, accessToken)
-                    result.fold(
+                    // Cargar pagos pendientes
+                    val paymentsResult = paymentService.getPendingPayments(sellerId, 0, 20, accessToken)
+                    paymentsResult.fold(
                         onSuccess = { response ->
                             pendingPayments = response.data.payments
                         },
                         onFailure = { error ->
                             showErrorMessage = "Error cargando pagos: ${error.message}"
+                        }
+                    )
+                    
+                    // Cargar estadísticas del vendedor
+                    val statsResult = statsService.getSellerStatsSummary(sellerId, accessToken)
+                    statsResult.fold(
+                        onSuccess = { response ->
+                            sellerStats = response.data
+                            Logger.auth("DASHBOARD", "📊 Estadísticas del vendedor cargadas: ${response.data.summary.totalTransactions} transacciones, S/ ${response.data.summary.totalSales}")
+                        },
+                        onFailure = { error ->
+                            Logger.auth("DASHBOARD", "❌ Error cargando estadísticas: ${error.message}")
+                            showErrorMessage = "Error cargando estadísticas: ${error.message}"
                         }
                     )
                 }
@@ -380,8 +395,8 @@ fun SellerDashboardContent(
             
             // Sección de estadísticas
             SellerStatsSection(
-                confirmedPaymentsCount = sellerStats?.transactionCount ?: 0,
-                totalAmountCollected = sellerStats?.totalSales ?: 0.0,
+                confirmedPaymentsCount = sellerStats?.summary?.confirmedPayments ?: 0,
+                totalAmountCollected = sellerStats?.summary?.totalSales ?: 0.0,
                 isLoadingStats = sellerStats == null
             )
             

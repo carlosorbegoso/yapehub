@@ -1,6 +1,7 @@
 package org.sysarp.project.ui.components.seller_dashboard.utils
 
 import org.sysarp.project.data.SellerPendingPayment
+import org.sysarp.project.utils.formatCurrency
 
 /**
  * Utilidades y lógica para el dashboard del vendedor
@@ -56,6 +57,6 @@ object SellerDashboardLogic {
      */
     fun getSuccessMessage(amount: Double, isConfirmed: Boolean): String {
         val action = if (isConfirmed) "✅ Pago confirmado exitosamente" else "❌ Pago rechazado exitosamente"
-        return "$action - S/ ${"%.2f".format(amount)}"
+        return "$action - ${formatCurrency(amount)}"
     }
 }

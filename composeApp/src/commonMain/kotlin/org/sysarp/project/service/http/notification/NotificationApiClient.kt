@@ -20,6 +20,13 @@ import org.sysarp.project.data.YapeNotificationRequest
 class NotificationApiClient : BaseApiClient() {
     
     /**
+     * Genera el mismo hash de deduplicación que usa Android
+     */
+    private fun generateDeduplicationHash(adminId: Int, timestamp: Long, encryptedNotification: String): String {
+        return "${adminId}_${timestamp}_${encryptedNotification.take(20)}"
+    }
+    
+    /**
      * Enviar notificación de Yape
      */
     suspend fun sendYapeNotification(
@@ -39,7 +46,8 @@ class NotificationApiClient : BaseApiClient() {
                     adminId = adminId,
                     encryptedNotification = encryptedNotification,
                     deviceFingerprint = deviceFingerprint,
-                    timestamp = timestamp
+                    timestamp = timestamp,
+                    deduplicationHash = generateDeduplicationHash(adminId, timestamp, encryptedNotification)
                 ))
             }
             

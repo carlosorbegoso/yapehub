@@ -28,9 +28,9 @@ abstract class BaseApiClient {
             level = LogLevel.INFO
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 30000
-            connectTimeoutMillis = 10000
-            socketTimeoutMillis = 10000
+            requestTimeoutMillis = 60000 // Aumentado de 30 a 60 segundos
+            connectTimeoutMillis = 15000 // Aumentado de 10 a 15 segundos
+            socketTimeoutMillis = 15000  // Aumentado de 10 a 15 segundos
         }
     }
     

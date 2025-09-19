@@ -33,8 +33,12 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     
     // Queue para notificaciones pendientes
     private val pendingNotifications = mutableListOf<YapeNotificationRequest>()
-    private val maxRetries = 3
-    private val retryDelayMs = 5000L // 5 segundos
+    private val maxRetries = 2 // Reducido de 3 a 2 para evitar duplicados
+    private val retryDelayMs = 10000L // Aumentado de 5 a 10 segundos para dar más tiempo a la API
+    
+    // Sistema de deduplicación para evitar notificaciones duplicadas
+    private val sentNotifications = mutableSetOf<String>() // Hash de notificaciones ya enviadas
+    private val maxSentNotifications = 100 // Límite para evitar memory leak
     
     override fun onCreate() {
         super.onCreate()
@@ -226,7 +230,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 )
                 
                 // Solo procesar si el servicio está disponible
-                notificationService?.let { service ->
+                notificationService?.let { _ ->
                     val fullText = if (bigText.isNullOrEmpty()) text else bigText
                     
                             // Crear request para la API de notificaciones con datos reales
@@ -270,7 +274,16 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                         adminId = adminId,
                         encryptedNotification = encryptedNotification,
                         deviceFingerprint = currentFingerprint,
-                        timestamp = sbn.postTime
+                        timestamp = sbn.postTime,
+                        deduplicationHash = generateNotificationHash(
+                            YapeNotificationRequest(
+                                adminId = adminId,
+                                encryptedNotification = encryptedNotification,
+                                deviceFingerprint = currentFingerprint,
+                                timestamp = sbn.postTime,
+                                deduplicationHash = "" // Temporal para generar hash
+                            )
+                        )
                     )
 
                     Timber.tag("NotificationCapture").d("📱 AdminId real: $adminId")
@@ -278,9 +291,11 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                         .d("🔑 DeviceFingerprint real: ${currentFingerprint.take(20)}...")
                     Timber.tag("NotificationCapture")
                         .d("🔐 EncryptedNotification: ${encryptedNotification.take(50)}...")
+                    Timber.tag("NotificationCapture")
+                        .d("🔗 DeduplicationHash: ${notificationRequest.deduplicationHash}")
 
                     Timber.tag("NotificationCapture")
-                        .d("✅ YapeNotificationRequest creada con notificación encriptada")
+                        .d("✅ YapeNotificationRequest creada con notificación encriptada y hash de deduplicación")
                     
                     // Enviar a la API con retry automático
                     sendNotificationWithRetry(notificationRequest, 0)
@@ -327,10 +342,53 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     }
     
     /**
-     * Envía notificación con retry automático
+     * Genera un hash único para la notificación para deduplicación
+     */
+    private fun generateNotificationHash(notificationRequest: YapeNotificationRequest): String {
+        return "${notificationRequest.adminId}_${notificationRequest.timestamp}_${notificationRequest.encryptedNotification.take(20)}"
+    }
+    
+    /**
+     * Verifica si la notificación ya fue enviada (deduplicación)
+     */
+    private fun isNotificationAlreadySent(notificationRequest: YapeNotificationRequest): Boolean {
+        val hash = generateNotificationHash(notificationRequest)
+        return sentNotifications.contains(hash)
+    }
+    
+    /**
+     * Marca la notificación como enviada
+     */
+    private fun markNotificationAsSent(notificationRequest: YapeNotificationRequest) {
+        val hash = generateNotificationHash(notificationRequest)
+        sentNotifications.add(hash)
+        
+        // Limpiar notificaciones antiguas para evitar memory leak
+        if (sentNotifications.size > maxSentNotifications) {
+            val toRemove = sentNotifications.take(sentNotifications.size - maxSentNotifications)
+            sentNotifications.removeAll(toRemove)
+        }
+    }
+    
+    /**
+     * Envía notificación con retry automático y deduplicación
      */
     private suspend fun sendNotificationWithRetry(notificationRequest: YapeNotificationRequest, attempt: Int) {
         try {
+            // DEDUPLICACIÓN: Verificar si la notificación ya fue enviada
+            if (isNotificationAlreadySent(notificationRequest)) {
+                Timber.tag("NotificationCapture").d("🔄 Notificación duplicada detectada - omitiendo envío")
+                DebugLogManager.addLog(
+                    DebugLog(
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
+                        type = LogType.NOTIFICATION,
+                        message = "🔄 Notificación duplicada omitida",
+                        details = "Hash: ${generateNotificationHash(notificationRequest)}"
+                    )
+                )
+                return
+            }
+            
             // VALIDACIÓN DE SEGURIDAD: Verificar que el adminId sea válido (no sea fallback)
             if (notificationRequest.adminId == 605) {
                 Timber.tag("NotificationCapture").w("⚠️ Usando adminId fallback (605) - verificar autenticación")
@@ -359,6 +417,9 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             result?.onSuccess { response ->
                 Timber.tag("NotificationCapture")
                     .d("✅ Notificación enviada exitosamente: ${response.message}")
+                
+                // Marcar como enviada para deduplicación
+                markNotificationAsSent(notificationRequest)
                 
                 // Enviar log de éxito
                 DebugLogManager.addLog(

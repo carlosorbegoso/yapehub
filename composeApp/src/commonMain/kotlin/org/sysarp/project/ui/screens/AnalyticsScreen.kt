@@ -21,6 +21,9 @@ import org.sysarp.project.data.YapeTransaction
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.utils.formatCurrency
+import org.sysarp.project.utils.formatCurrencyNoDecimals
+import org.sysarp.project.utils.formatPercentage
+import org.sysarp.project.utils.formatOneDecimalWithUnit
 import org.sysarp.project.viewmodel.YapeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +73,7 @@ fun AnalyticsScreen(
                 endDate = null,
                 token = accessToken!!
             ).fold(
-                onSuccess = { response ->
+                onSuccess = { _ ->
                     println("📊 [ANALYTICS] Estadísticas completas del admin cargadas exitosamente")
                     // TODO: Usar response.data para mostrar estadísticas adicionales en la UI
                 },
@@ -209,28 +212,28 @@ fun AnalyticsScreen(
                                 value = formatCurrency(data.overview.totalSales),
                                 icon = Icons.Filled.AttachMoney,
                                 color = MaterialTheme.colorScheme.primary,
-                                trend = "+${"%.1f".format(data.overview.salesGrowth)}%"
+                                trend = formatPercentage(data.overview.salesGrowth)
                             ),
                             AnalyticsStat(
                                 title = "Transacciones",
                                 value = "${data.overview.totalTransactions}",
                                 icon = Icons.Filled.Receipt,
                                 color = MaterialTheme.colorScheme.secondary,
-                                trend = "+${"%.1f".format(data.overview.transactionGrowth)}%"
+                                trend = formatPercentage(data.overview.transactionGrowth)
                             ),
                             AnalyticsStat(
                                 title = "Promedio",
                                 value = formatCurrency(data.overview.averageTransactionValue),
                                 icon = Icons.Filled.TrendingUp,
                                 color = MaterialTheme.colorScheme.tertiary,
-                                trend = "+${"%.1f".format(data.overview.averageGrowth)}%"
+                                trend = formatPercentage(data.overview.averageGrowth)
                             ),
                             AnalyticsStat(
                                 title = "Confirmados",
                                 value = "${data.performanceMetrics.confirmedPayments}",
                                 icon = Icons.Filled.CheckCircle,
                                 color = MaterialTheme.colorScheme.primary,
-                                trend = "+${"%.1f".format(data.performanceMetrics.claimRate)}%"
+                                trend = formatPercentage(data.performanceMetrics.claimRate)
                             )
                         )
                     } ?: emptyList()
@@ -320,7 +323,7 @@ fun AnalyticsScreen(
                                         )
                                         
                                         Text(
-                                            text = "S/ ${"%.0f".format(day.amount)}",
+                                            text = formatCurrencyNoDecimals(day.amount),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -408,21 +411,21 @@ fun AnalyticsScreen(
                     if (performanceMetrics != null) {
                         PerformanceMetricCard(
                             title = "Tiempo Promedio de Confirmación",
-                            value = "${"%.1f".format(performanceMetrics.averageConfirmationTime)} min",
+                            value = formatOneDecimalWithUnit(performanceMetrics.averageConfirmationTime, "min"),
                             icon = Icons.Filled.Schedule,
                             color = MaterialTheme.colorScheme.primary
                         )
                         
                         PerformanceMetricCard(
                             title = "Tasa de Confirmación",
-                            value = "${"%.1f".format(performanceMetrics.claimRate)}%",
+                            value = formatPercentage(performanceMetrics.claimRate),
                             icon = Icons.Filled.CheckCircle,
                             color = MaterialTheme.colorScheme.secondary
                         )
                         
                         PerformanceMetricCard(
                             title = "Tasa de Rechazo",
-                            value = "${"%.1f".format(performanceMetrics.rejectionRate)}%",
+                            value = formatPercentage(performanceMetrics.rejectionRate),
                             icon = Icons.Filled.Cancel,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -653,7 +656,7 @@ private fun getAnalyticsStats(transactions: List<YapeTransaction>): List<Analyti
     return listOf(
         AnalyticsStat("Total Vendido", formatCurrency(totalAmount), Icons.Filled.AttachMoney, MaterialTheme.colorScheme.primary, "+12.5%"),
         AnalyticsStat("Transacciones", "$totalCount", Icons.Filled.Receipt, MaterialTheme.colorScheme.secondary, "+8.2%"),
-        AnalyticsStat("Promedio", "S/ ${"%.2f".format(if (totalCount > 0) totalAmount / totalCount else 0.0)}", Icons.Filled.TrendingUp, MaterialTheme.colorScheme.tertiary, "+3.1%"),
+        AnalyticsStat("Promedio", formatCurrency(if (totalCount > 0) totalAmount / totalCount else 0.0), Icons.Filled.TrendingUp, MaterialTheme.colorScheme.tertiary, "+3.1%"),
         AnalyticsStat("Confirmados", "${(totalCount * 0.94).toInt()}", Icons.Filled.CheckCircle, MaterialTheme.colorScheme.primary, "+1.8%")
     )
 }

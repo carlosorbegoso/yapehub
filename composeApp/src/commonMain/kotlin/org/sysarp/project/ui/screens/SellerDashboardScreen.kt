@@ -124,6 +124,7 @@ fun SellerDashboardScreen(
             accessToken = authService.accessToken.value ?: "",
             userProfile = userProfile,
             paymentService = paymentService,
+            statsService = statsService,
             webSocketService = webSocketService,
             onNavigateToHistory = onNavigateToHistory,
             onNavigateToPendingPayments = onNavigateToPendingPayments,

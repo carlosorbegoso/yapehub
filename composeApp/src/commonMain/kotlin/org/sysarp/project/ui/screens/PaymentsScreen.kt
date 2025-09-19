@@ -92,7 +92,7 @@ fun PaymentsScreen(
                 ) {
                     StatItem("Pendientes", "${getPendingCount(transactions)}", Icons.Filled.Schedule, MaterialTheme.colorScheme.error)
                     StatItem("Confirmados", "${getConfirmedCount(transactions)}", Icons.Filled.CheckCircle, MaterialTheme.colorScheme.primary)
-                    StatItem("Total", "S/ ${"%.2f".format(getTotalAmount(transactions))}", Icons.Filled.AttachMoney, MaterialTheme.colorScheme.secondary)
+                    StatItem("Total", formatCurrency(getTotalAmount(transactions)), Icons.Filled.AttachMoney, MaterialTheme.colorScheme.secondary)
                 }
             }
             

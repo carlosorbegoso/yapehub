@@ -16,7 +16,8 @@ data class YapeNotificationRequest(
     val adminId: Int,
     val encryptedNotification: String, // NOTA: Este campo contiene la notificación completa ENCRIPTADA (sin parsear)
     val deviceFingerprint: String,
-    val timestamp: Long
+    val timestamp: Long,
+    val deduplicationHash: String // Hash para deduplicación en el backend
 )
 
 // Modelo alternativo más claro (opcional)
