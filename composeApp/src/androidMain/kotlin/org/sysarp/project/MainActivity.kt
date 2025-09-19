@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.sysarp.project.ui.theme.YapeHubTheme
 import timber.log.Timber
+import kotlinx.datetime.Clock
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +33,7 @@ class MainActivity : ComponentActivity() {
                 // También loggear en el sistema de debug
                 org.sysarp.project.ui.components.DebugLogManager.addLog(
                     org.sysarp.project.ui.components.DebugLog(
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
                         type = org.sysarp.project.ui.components.LogType.PERMISSION,
                         message = "🔑 Device fingerprint generado en MainActivity",
                         details = "Fingerprint: ${fingerprint.take(20)}... (usando Android ID)"

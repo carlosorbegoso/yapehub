@@ -2,11 +2,10 @@ package org.sysarp.project.utils
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import kotlinx.io.ByteArray
-import kotlinx.io.core.toByteArray
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.Codec
 import org.jetbrains.skia.Data
+import org.jetbrains.skia.Image
 
 /**
  * Implementación iOS para decodificar Base64 a ImageBitmap
@@ -25,10 +24,11 @@ actual fun decodeBase64ToImageBitmap(base64String: String): ImageBitmap? {
         // Crear Bitmap desde el codec
         val bitmap = Bitmap()
         bitmap.allocPixels(codec.imageInfo)
-        codec.getPixels(bitmap.pixels, bitmap.rowBytes)
-        
-        // Convertir a ImageBitmap de Compose
-        bitmap.toComposeImageBitmap()
+        codec.readPixels(bitmap) // CORREGIDO: usar readPixels en lugar de getPixels
+
+        val image = Image.makeFromBitmap(bitmap)
+        image.toComposeImageBitmap()
+
         
     } catch (e: Exception) {
         println("❌ [IMAGE_UTILS_IOS] Error decodificando imagen Base64: ${e.message}")
@@ -56,10 +56,10 @@ private fun String.decodeBase64Bytes(): ByteArray {
         var i = 0
         
         while (i < paddedString.length) {
-            val c1 = paddedString[i++].toInt()
-            val c2 = paddedString[i++].toInt()
-            val c3 = paddedString[i++].toInt()
-            val c4 = paddedString[i++].toInt()
+            val c1 = paddedString[i++].code
+            val c2 = paddedString[i++].code
+            val c3 = paddedString[i++].code
+            val c4 = paddedString[i++].code
             
             val b1 = decodeBase64Char(c1)
             val b2 = decodeBase64Char(c2)
@@ -67,10 +67,10 @@ private fun String.decodeBase64Bytes(): ByteArray {
             val b4 = decodeBase64Char(c4)
             
             result[index++] = ((b1 shl 2) or (b2 shr 4)).toByte()
-            if (c3 != '='.toInt()) {
+            if (c3 != '='.code) {
                 result[index++] = ((b2 shl 4) or (b3 shr 2)).toByte()
             }
-            if (c4 != '='.toInt()) {
+            if (c4 != '='.code) {
                 result[index++] = ((b3 shl 6) or b4).toByte()
             }
         }
@@ -84,12 +84,13 @@ private fun String.decodeBase64Bytes(): ByteArray {
 
 private fun decodeBase64Char(c: Int): Int {
     return when (c) {
-        in 'A'.toInt()..'Z'.toInt() -> c - 'A'.toInt()
-        in 'a'.toInt()..'z'.toInt() -> c - 'a'.toInt() + 26
-        in '0'.toInt()..'9'.toInt() -> c - '0'.toInt() + 52
-        '+'.toInt() -> 62
-        '/'.toInt() -> 63
-        '='.toInt() -> 0
+        in 'A'.code..'Z'.code -> c - 'A'.code
+        in 'a'.code..'z'.code -> c - 'a'.code + 26
+        in '0'.code..'9'.code -> c - '0'.code + 52
+        '+'.code -> 62
+        '/'.code -> 63
+        '='.code -> 0
         else -> throw IllegalArgumentException("Invalid Base64 character: $c")
     }
 }
+

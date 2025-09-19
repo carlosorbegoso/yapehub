@@ -59,8 +59,7 @@ import androidx.compose.ui.unit.sp
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
-import org.sysarp.project.data.AdminStatsData
-import org.sysarp.project.data.AffiliationCodeData
+
 import org.sysarp.project.data.GenerateAffiliationCodeResponse
 import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
 import androidx.compose.runtime.*

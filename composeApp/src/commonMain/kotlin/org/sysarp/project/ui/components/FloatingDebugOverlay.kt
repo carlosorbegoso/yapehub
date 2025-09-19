@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import kotlinx.datetime.Clock
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,7 +47,7 @@ object DebugLogManager {
         }
         
         val header = "=== YapeHub Debug Logs ===\n" +
-                "Exportado: ${formatTimestamp(System.currentTimeMillis())}\n" +
+                "Exportado: ${formatTimestamp(Clock.System.now().toEpochMilliseconds())}\n" +
                 "Total logs: ${_logs.value.size}\n" +
                 "================================\n\n"
         

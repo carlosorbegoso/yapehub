@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.security.MessageDigest
 import java.util.*
+import kotlinx.datetime.Clock
 
 /**
  * Utilidades Android-específicas para obtener identificadores únicos del dispositivo
@@ -64,7 +65,7 @@ object AndroidDeviceUtils {
                 "yapechamo_${androidId}_fallback"
             } catch (fallbackError: Exception) {
                 Timber.tag("AndroidDeviceUtils").e("Error en fallback: ${fallbackError.message}")
-                "yapechamo_unknown_device_${System.currentTimeMillis()}"
+                "yapechamo_unknown_device_${Clock.System.now().toEpochMilliseconds()}"
             }
         }
     }
@@ -125,7 +126,7 @@ object AndroidDeviceUtils {
             "yapechamo_${androidId}_simple"
         } catch (e: Exception) {
             Timber.tag("AndroidDeviceUtils").e("Error en fingerprint simple: ${e.message}")
-            "yapechamo_simple_${System.currentTimeMillis()}"
+            "yapechamo_simple_${Clock.System.now().toEpochMilliseconds()}"
         }
     }
     

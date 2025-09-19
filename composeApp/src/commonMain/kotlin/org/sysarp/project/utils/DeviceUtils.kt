@@ -32,7 +32,7 @@ object DeviceUtils {
         } catch (e: Exception) {
             Logger.auth("DEVICE_UTILS", "Error generando device fingerprint: ${e.message}")
             // Fallback a un fingerprint básico
-            return@withContext "yapechamo_fallback_${System.currentTimeMillis()}"
+            return@withContext "yapechamo_fallback_${Clock.System.now().toEpochMilliseconds()}"
         }
     }
     
@@ -57,7 +57,7 @@ object DeviceUtils {
             append("${timestamp}_") // Timestamp de creación
             append("${randomSuffix}_") // Número aleatorio
             append("mobile_") // Tipo de dispositivo
-            append("${System.currentTimeMillis().hashCode()}") // Hash del tiempo actual
+            append("${Clock.System.now().toEpochMilliseconds().hashCode()}") // Hash del tiempo actual
         }
     }
     
@@ -65,7 +65,7 @@ object DeviceUtils {
      * Genera un fingerprint más simple para casos donde no se necesita complejidad
      */
     fun generateSimpleFingerprint(): String {
-        return "yapechamo_${System.currentTimeMillis()}_${(1000..9999).random()}"
+        return "yapechamo_${Clock.System.now().toEpochMilliseconds()}_${(1000..9999).random()}"
     }
     
     /**

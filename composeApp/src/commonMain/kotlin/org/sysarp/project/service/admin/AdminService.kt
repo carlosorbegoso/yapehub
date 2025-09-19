@@ -109,7 +109,7 @@ class AdminService(
         page: Int = 1, 
         limit: Int = 30, 
         token: String
-    ): Result<org.sysarp.project.data.SellersResponse> {
+    ): Result<SellersResponse> {
         return try {
             Logger.auth("ADMIN_SERVICE", "Obteniendo vendedores del admin: $adminId, página: $page")
 

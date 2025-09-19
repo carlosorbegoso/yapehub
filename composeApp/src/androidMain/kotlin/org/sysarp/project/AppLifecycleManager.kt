@@ -13,6 +13,7 @@ import org.sysarp.project.service.AndroidNotificationCaptureService
 import org.sysarp.project.ui.components.DebugLogManager
 import org.sysarp.project.ui.components.DebugLog
 import org.sysarp.project.ui.components.LogType
+import kotlinx.datetime.Clock
 
 object AppLifecycleManager : DefaultLifecycleObserver {
     private val _appResumed = MutableSharedFlow<Unit>()
@@ -63,7 +64,7 @@ object AppLifecycleManager : DefaultLifecycleObserver {
                 // Enviar log de debug
                 DebugLogManager.addLog(
                     DebugLog(
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
                         type = LogType.PERMISSION,
                         message = "❌ Permisos de notificaciones no habilitados",
                         details = "El usuario necesita habilitar el servicio de notificaciones"
@@ -91,7 +92,7 @@ object AppLifecycleManager : DefaultLifecycleObserver {
             // Enviar log de debug
             DebugLogManager.addLog(
                 DebugLog(
-                    timestamp = System.currentTimeMillis(),
+                    timestamp = Clock.System.now().toEpochMilliseconds(),
                     type = LogType.PERMISSION,
                     message = "🧹 Notificaciones limpiadas",
                     details = "Se limpiaron las notificaciones antiguas de la app"
@@ -120,7 +121,7 @@ object AppLifecycleManager : DefaultLifecycleObserver {
             // Enviar log de debug
             DebugLogManager.addLog(
                 DebugLog(
-                    timestamp = System.currentTimeMillis(),
+                    timestamp = Clock.System.now().toEpochMilliseconds(),
                     type = LogType.PERMISSION,
                     message = "✅ Servicio de notificaciones funcionando",
                     details = "El servicio está registrado y funcionando correctamente"

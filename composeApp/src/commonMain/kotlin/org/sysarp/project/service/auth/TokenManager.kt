@@ -31,7 +31,7 @@ class TokenManager {
         _accessToken.value = accessToken
         _refreshToken.value = refreshToken
         
-        val expiryTime = System.currentTimeMillis() + (expiresInSeconds * 1000L)
+        val expiryTime = Clock.System.now().toEpochMilliseconds() + (expiresInSeconds * 1000L)
         _sessionExpiryTime.value = expiryTime
         _lastActivityTime.value = Clock.System.now().toEpochMilliseconds()
 
@@ -43,7 +43,7 @@ class TokenManager {
     fun getAccessToken(): String? {
         val token = _accessToken.value
         if (token != null) {
-            _lastActivityTime.value = System.currentTimeMillis()
+            _lastActivityTime.value = Clock.System.now().toEpochMilliseconds()
         }
         return token
     }
@@ -60,7 +60,7 @@ class TokenManager {
      */
     fun isTokenExpired(): Boolean {
         val expiryTime = _sessionExpiryTime.value
-        return expiryTime != null && System.currentTimeMillis() >= expiryTime
+        return expiryTime != null && Clock.System.now().toEpochMilliseconds() >= expiryTime
     }
     
     /**
@@ -71,7 +71,7 @@ class TokenManager {
         if (expiryTime == null) return false
         
         val fiveMinutes = 5 * 60 * 1000L
-        return System.currentTimeMillis() >= (expiryTime - fiveMinutes)
+        return Clock.System.now().toEpochMilliseconds() >= (expiryTime - fiveMinutes)
     }
     
     /**
@@ -90,8 +90,8 @@ class TokenManager {
     fun updateAccessToken(newAccessToken: String, expiresInSeconds: Int) {
         _accessToken.value = newAccessToken
         
-        val expiryTime = System.currentTimeMillis() + (expiresInSeconds * 1000L)
+        val expiryTime = Clock.System.now().toEpochMilliseconds() + (expiresInSeconds * 1000L)
         _sessionExpiryTime.value = expiryTime
-        _lastActivityTime.value = System.currentTimeMillis()
+        _lastActivityTime.value = Clock.System.now().toEpochMilliseconds()
     }
 }

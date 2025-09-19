@@ -7,6 +7,7 @@ import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
+import kotlinx.datetime.Clock
 
 object EncryptionUtils {
     
@@ -33,7 +34,7 @@ object EncryptionUtils {
             val encryptedPayload = mapOf(
                 "data" to encryptedData,
                 "key" to key,
-                "timestamp" to System.currentTimeMillis(),
+                "timestamp" to Clock.System.now().toEpochMilliseconds(),
                 "checksum" to generateChecksum(jsonString)
             )
             
@@ -75,7 +76,7 @@ object EncryptionUtils {
      * Genera un fingerprint único del dispositivo
      */
     fun generateDeviceFingerprint(): String {
-        val timestamp = System.currentTimeMillis()
+        val timestamp = Clock.System.now().toEpochMilliseconds()
         val random = Random.nextLong()
         val nanos = System.nanoTime()
         val deviceInfo = "device_${timestamp}_${random}_${nanos}_1.0.0"
@@ -84,7 +85,7 @@ object EncryptionUtils {
     
     // Generar fingerprint único para cada notificación
     fun generateUniqueNotificationFingerprint(): String {
-        val timestamp = System.currentTimeMillis()
+        val timestamp = Clock.System.now().toEpochMilliseconds()
         val random = Random.nextLong()
         val nanos = System.nanoTime()
         val threadHash = Thread.currentThread().name.hashCode()

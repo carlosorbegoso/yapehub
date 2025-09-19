@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.SellerStats
@@ -126,7 +127,7 @@ fun SellerDashboardContent(
                                         "paymentId": $paymentId,
                                         "sellerId": $sellerId,
                                         "status": "CONFIRMED",
-                                        "timestamp": "${System.currentTimeMillis()}",
+                                        "timestamp": "${Clock.System.now().toEpochMilliseconds()}",
                                         "message": "Pago confirmado por el vendedor"
                                     }
                                 }
@@ -173,7 +174,7 @@ fun SellerDashboardContent(
                                         "paymentId": $paymentId,
                                         "sellerId": $sellerId,
                                         "status": "REJECTED",
-                                        "timestamp": "${System.currentTimeMillis()}",
+                                        "timestamp": "${Clock.System.now().toEpochMilliseconds()}",
                                         "message": "Pago rechazado por el vendedor",
                                         "reason": "Rechazado por el vendedor"
                                     }
@@ -236,7 +237,7 @@ fun SellerDashboardContent(
                                             "paymentId": ${notification.paymentId},
                                             "sellerId": $sellerId,
                                             "status": "CONFIRMED",
-                                            "timestamp": "${System.currentTimeMillis()}",
+                                            "timestamp": "${Clock.System.now().toEpochMilliseconds()}",
                                             "message": "Pago confirmado por el vendedor desde notificación"
                                         }
                                     }
@@ -286,7 +287,7 @@ fun SellerDashboardContent(
                                             "paymentId": ${notification.paymentId},
                                             "sellerId": $sellerId,
                                             "status": "REJECTED",
-                                            "timestamp": "${System.currentTimeMillis()}",
+                                            "timestamp": "${Clock.System.now().toEpochMilliseconds()}",
                                             "message": "Pago rechazado por el vendedor desde notificación",
                                             "reason": "Rechazado por el vendedor"
                                         }

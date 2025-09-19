@@ -22,6 +22,7 @@ import org.sysarp.project.ui.components.DebugLogManager
 import org.sysarp.project.ui.components.DebugLog
 import org.sysarp.project.ui.components.LogType
 import timber.log.Timber
+import kotlinx.datetime.Clock
 
 class AndroidNotificationCaptureService : NotificationListenerService() {
     
@@ -42,7 +43,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         // Enviar log de inicialización
         DebugLogManager.addLog(
             DebugLog(
-                timestamp = System.currentTimeMillis(),
+                timestamp = Clock.System.now().toEpochMilliseconds(),
                 type = LogType.PERMISSION,
                 message = "🔧 Servicio de notificaciones inicializado",
                 details = "AndroidNotificationCaptureService onCreate()"
@@ -58,7 +59,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                     // Enviar log de device fingerprint
                     DebugLogManager.addLog(
                         DebugLog(
-                            timestamp = System.currentTimeMillis(),
+                            timestamp = Clock.System.now().toEpochMilliseconds(),
                             type = LogType.PERMISSION,
                             message = "🔑 Device fingerprint generado",
                             details = "Fingerprint: ${deviceFingerprint?.take(20)}... (usando Android ID)"
@@ -86,7 +87,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             // Enviar log de error
             DebugLogManager.addLog(
                 DebugLog(
-                    timestamp = System.currentTimeMillis(),
+                    timestamp = Clock.System.now().toEpochMilliseconds(),
                     type = LogType.ERROR,
                     message = "❌ Error inicializando servicios",
                     details = "Exception: ${e.message}"
@@ -99,7 +100,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         // Enviar log de servicios inicializados
         DebugLogManager.addLog(
             DebugLog(
-                timestamp = System.currentTimeMillis(),
+                timestamp = Clock.System.now().toEpochMilliseconds(),
                 type = LogType.PERMISSION,
                 message = "✅ Servicios inicializados correctamente",
                 details = "AuthService y NotificationService preparados"
@@ -131,7 +132,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             // Enviar log de notificación recibida
             DebugLogManager.addLog(
                 DebugLog(
-                    timestamp = System.currentTimeMillis(),
+                    timestamp = Clock.System.now().toEpochMilliseconds(),
                     type = LogType.NOTIFICATION,
                     message = "📨 Notificación recibida",
                     details = "Package: ${sbn.packageName}, ID: ${sbn.id}"
@@ -147,7 +148,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 // Enviar log de Yape detectado
                 DebugLogManager.addLog(
                     DebugLog(
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
                         type = LogType.NOTIFICATION,
                         message = "📱 Yape detectado",
                         details = "Package: ${sbn.packageName}, Text: ${notificationText?.take(50)}..."
@@ -159,7 +160,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 // Enviar log de notificación no-Yape
                 DebugLogManager.addLog(
                     DebugLog(
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
                         type = LogType.NOTIFICATION,
                         message = "❌ No es Yape",
                         details = "Package: ${sbn.packageName} - ignorando"
@@ -172,7 +173,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             // Enviar log de error
             DebugLogManager.addLog(
                 DebugLog(
-                    timestamp = System.currentTimeMillis(),
+                    timestamp = Clock.System.now().toEpochMilliseconds(),
                     type = LogType.ERROR,
                     message = "❌ Error procesando notificación",
                     details = "Exception: ${e.message}"
@@ -188,7 +189,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 Timber.tag("NotificationCapture").w("🚫 SEGURIDAD: Intento de procesar notificación no-Yape bloqueado: ${sbn.packageName}")
                 DebugLogManager.addLog(
                     DebugLog(
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
                         type = LogType.ERROR,
                         message = "🚫 SEGURIDAD: Bloqueado",
                         details = "Intento de procesar notificación no-Yape: ${sbn.packageName}"
@@ -217,7 +218,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 // Enviar log de datos extraídos
                 DebugLogManager.addLog(
                     DebugLog(
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
                         type = LogType.NOTIFICATION,
                         message = "📄 Datos extraídos",
                         details = "Title: $title, Text: ${text.take(30)}..."
@@ -341,7 +342,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             // Enviar log de envío a API
             DebugLogManager.addLog(
                 DebugLog(
-                    timestamp = System.currentTimeMillis(),
+                    timestamp = Clock.System.now().toEpochMilliseconds(),
                     type = LogType.API,
                     message = "🚀 Enviando a API (intento ${attempt + 1})",
                     details = "POST /api/notifications/yape-notifications - Solo Yape autorizado"
@@ -362,7 +363,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 // Enviar log de éxito
                 DebugLogManager.addLog(
                     DebugLog(
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
                         type = LogType.API,
                         message = "✅ Enviado exitosamente",
                         details = "Response: ${response.message}"
@@ -399,7 +400,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                     // Enviar log de error final
                     DebugLogManager.addLog(
                         DebugLog(
-                            timestamp = System.currentTimeMillis(),
+                            timestamp = Clock.System.now().toEpochMilliseconds(),
                             type = LogType.ERROR,
                             message = "💥 Fallo definitivo",
                             details = "Error después de $maxRetries intentos: ${error.message}"
@@ -425,7 +426,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 // Enviar log de excepción final
                 DebugLogManager.addLog(
                     DebugLog(
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
                         type = LogType.ERROR,
                         message = "💥 Excepción definitiva",
                         details = "Exception después de $maxRetries intentos: ${e.message}"
@@ -509,7 +510,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                     // Enviar log de debug
                     org.sysarp.project.ui.components.DebugLogManager.addLog(
                         org.sysarp.project.ui.components.DebugLog(
-                            timestamp = System.currentTimeMillis(),
+                            timestamp = Clock.System.now().toEpochMilliseconds(),
                             type = org.sysarp.project.ui.components.LogType.PERMISSION,
                             message = "🧹 Sistema limpiado",
                             details = "Se limpiaron las notificaciones del sistema"
