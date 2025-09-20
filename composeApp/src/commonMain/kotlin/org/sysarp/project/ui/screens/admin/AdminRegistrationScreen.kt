@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.utils.SuccessHandler
+import org.sysarp.project.utils.SecurityUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -155,7 +156,7 @@ fun AdminRegistrationScreen(
                     // Nombre del negocio
                     OutlinedTextField(
                         value = businessName,
-                        onValueChange = { businessName = it },
+                        onValueChange = { businessName = SecurityUtils.sanitizeInput(it) },
                         label = { Text("Nombre del negocio") },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = {
@@ -164,7 +165,8 @@ fun AdminRegistrationScreen(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                        }
+                        },
+                        isError = businessName.isNotBlank() && businessName.length < 2
                     )
                     
                     // Tipo de negocio
@@ -205,11 +207,15 @@ fun AdminRegistrationScreen(
                         }
                     }
                     
-                    // RUC
+                    // RUC/DNI
                     OutlinedTextField(
                         value = ruc,
-                        onValueChange = { ruc = it },
-                        label = { Text("RUC") },
+                        onValueChange = { 
+                            // Solo permitir números
+                            val cleanValue = it.replace(Regex("[^0-9]"), "")
+                            ruc = cleanValue
+                        },
+                        label = { Text("RUC/DNI") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         leadingIcon = {
@@ -218,13 +224,17 @@ fun AdminRegistrationScreen(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                        }
+                        },
+                        isError = ruc.isNotBlank() && !SecurityUtils.isValidRucOrDni(ruc),
+                        supportingText = if (ruc.isNotBlank() && !SecurityUtils.isValidRucOrDni(ruc)) {
+                            { Text("RUC/DNI debe tener entre 8 y 11 dígitos", color = MaterialTheme.colorScheme.error) }
+                        } else null
                     )
                     
                     // Email
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = { email = SecurityUtils.normalizeEmail(it) },
                         label = { Text("Email") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -234,7 +244,11 @@ fun AdminRegistrationScreen(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                        }
+                        },
+                        isError = email.isNotBlank() && !SecurityUtils.isValidEmail(email),
+                        supportingText = if (email.isNotBlank() && !SecurityUtils.isValidEmail(email)) {
+                            { Text("Formato de email inválido", color = MaterialTheme.colorScheme.error) }
+                        } else null
                     )
                     
                     // Contraseña
@@ -259,13 +273,17 @@ fun AdminRegistrationScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
-                        }
+                        },
+                        isError = password.isNotBlank() && !SecurityUtils.isValidPassword(password),
+                        supportingText = if (password.isNotBlank() && !SecurityUtils.isValidPassword(password)) {
+                            { Text("Mínimo 8 caracteres, sin caracteres especiales", color = MaterialTheme.colorScheme.error) }
+                        } else null
                     )
                     
                     // Teléfono
                     OutlinedTextField(
                         value = phone,
-                        onValueChange = { phone = it },
+                        onValueChange = { phone = SecurityUtils.cleanPhoneNumber(it) },
                         label = { Text("Teléfono") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -275,13 +293,17 @@ fun AdminRegistrationScreen(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                        }
+                        },
+                        isError = phone.isNotBlank() && !SecurityUtils.isValidPhone(phone),
+                        supportingText = if (phone.isNotBlank() && !SecurityUtils.isValidPhone(phone)) {
+                            { Text("Teléfono debe tener entre 9 y 15 dígitos", color = MaterialTheme.colorScheme.error) }
+                        } else null
                     )
                     
                     // Dirección
                     OutlinedTextField(
                         value = address,
-                        onValueChange = { address = it },
+                        onValueChange = { address = SecurityUtils.sanitizeInput(it) },
                         label = { Text("Dirección") },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = {
@@ -290,13 +312,14 @@ fun AdminRegistrationScreen(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                        }
+                        },
+                        isError = address.isNotBlank() && address.length < 5
                     )
                     
                     // Nombre de contacto
                     OutlinedTextField(
                         value = contactName,
-                        onValueChange = { contactName = it },
+                        onValueChange = { contactName = SecurityUtils.sanitizeInput(it) },
                         label = { Text("Nombre de contacto") },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = {
@@ -305,7 +328,8 @@ fun AdminRegistrationScreen(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                        }
+                        },
+                        isError = contactName.isNotBlank() && contactName.length < 2
                     )
                     
                     // Mensaje de error
@@ -387,17 +411,15 @@ fun AdminRegistrationScreen(
                                 }
                             } else {
                                 errorMessage = when {
-                                    businessName.isBlank() -> "El nombre del negocio es obligatorio"
+                                    !SecurityUtils.isValidName(businessName) -> "El nombre del negocio es obligatorio y debe tener al menos 2 caracteres"
                                     businessType.isBlank() -> "Debes seleccionar un tipo de negocio"
-                                    ruc.isBlank() -> "El RUC es obligatorio"
-                                    email.isBlank() -> "El email es obligatorio"
-                                    !email.contains("@") -> "El email debe tener un formato válido"
-                                    password.isBlank() -> "La contraseña es obligatoria"
-                                    password.length < 6 -> "La contraseña debe tener al menos 6 caracteres"
-                                    phone.isBlank() -> "El teléfono es obligatorio"
-                                    address.isBlank() -> "La dirección es obligatoria"
-                                    contactName.isBlank() -> "El nombre de contacto es obligatorio"
-                                    else -> "Por favor completa todos los campos obligatorios"
+                                    !SecurityUtils.isValidRucOrDni(ruc) -> "El RUC/DNI es obligatorio y debe tener entre 8 y 11 dígitos"
+                                    !SecurityUtils.isValidEmail(email) -> "El email es obligatorio y debe tener un formato válido"
+                                    !SecurityUtils.isValidPassword(password) -> "La contraseña es obligatoria y debe tener al menos 8 caracteres sin caracteres especiales"
+                                    !SecurityUtils.isValidPhone(phone) -> "El teléfono es obligatorio y debe tener entre 9 y 15 dígitos"
+                                    !SecurityUtils.isValidAddress(address) -> "La dirección es obligatoria y debe tener al menos 5 caracteres"
+                                    !SecurityUtils.isValidName(contactName) -> "El nombre de contacto es obligatorio y debe tener al menos 2 caracteres"
+                                    else -> "Por favor completa todos los campos obligatorios correctamente"
                                 }
                             }
                         },
@@ -446,15 +468,16 @@ private fun validateForm(
     address: String,
     contactName: String
 ): Boolean {
-    return businessName.isNotBlank() && 
+    return SecurityUtils.isValidName(businessName) && 
            businessType.isNotBlank() &&
-           ruc.isNotBlank() &&
-           email.isNotBlank() && email.contains("@") &&
-           password.isNotBlank() && password.length >= 6 &&
-           phone.isNotBlank() &&
-           address.isNotBlank() &&
-           contactName.isNotBlank()
+           SecurityUtils.isValidRucOrDni(ruc) &&
+           SecurityUtils.isValidEmail(email) &&
+           SecurityUtils.isValidPassword(password) &&
+           SecurityUtils.isValidPhone(phone) &&
+           SecurityUtils.isValidAddress(address) &&
+           SecurityUtils.isValidName(contactName)
 }
+
 
 private fun getBusinessTypeDisplayName(type: String): String {
     return when (type) {

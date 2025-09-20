@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -33,6 +35,7 @@ kotlin {
             // Core Libraries
             implementation(libs.timber)
             implementation(libs.accompanist.permissions)
+            implementation(libs.androidx.security.crypto)
             
             // Ktor Android
             implementation(libs.ktor.client.android)
@@ -105,6 +108,22 @@ android {
         versionCode = 2
         versionName = "1.1.0"
     }
+    
+    // Configuración de firma digital
+    signingConfigs {
+        create("release") {
+            val keystorePropertiesFile = rootProject.file("keystore.properties")
+            if (keystorePropertiesFile.exists()) {
+                val keystoreProperties = Properties()
+                keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+                
+                keyAlias = keystoreProperties["keyAlias"] as String?
+                keyPassword = keystoreProperties["keyPassword"] as String?
+                storeFile = file(keystoreProperties["storeFile"] as String?)
+                storePassword = keystoreProperties["storePassword"] as String?
+            }
+        }
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -117,8 +136,11 @@ android {
             versionNameSuffix = "-debug"
         }
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             isDebuggable = false
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     
@@ -128,6 +150,18 @@ android {
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
             isUniversalApk = true
+        }
+    }
+    
+    bundle {
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = false
+        }
+        abi {
+            enableSplit = false
         }
     }
     compileOptions {

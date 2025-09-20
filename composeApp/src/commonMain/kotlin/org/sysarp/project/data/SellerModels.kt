@@ -81,14 +81,18 @@ data class SellerRegistrationResponse(
 @Serializable
 data class SellerRegistrationData(
     val sellerId: Int,
-    val affiliationCode: String,
-    val sellerName: String,
+    val name: String,
+    val email: String,
     val phone: String,
     val branchId: Int,
     val branchName: String,
-    val adminId: Int,
-    val adminName: String,
-    val registeredAt: String
+    val isActive: Boolean,
+    val isOnline: Boolean,
+    val totalPayments: Int,
+    val totalAmount: Double,
+    val lastPayment: String?,
+    val affiliationDate: String?,
+    val token: String
 )
 
 // Modelos para login de vendedores con código de afiliación

@@ -40,6 +40,39 @@ class SellerService(private val authService: AuthService) {
             result.fold(
                 onSuccess = { response ->
                     Logger.auth("SELLER_SERVICE", "Registro de vendedor exitoso: $sellerName")
+                    
+                    // Actualizar AuthService con los datos del vendedor registrado y el token
+                    if (response.success && response.data != null) {
+                        val registrationData = response.data
+                        val userData = LoginUserData(
+                            id = registrationData.sellerId,
+                            email = registrationData.email,
+                            role = "SELLER",
+                            businessId = registrationData.branchId,
+                            businessName = registrationData.branchName,
+                            isVerified = true,
+                            sellerId = registrationData.sellerId
+                        )
+                        
+                        authService.updateUserProfile(
+                            id = userData.id,
+                            name = registrationData.name,
+                            email = userData.email,
+                            role = userData.role,
+                            branchId = userData.businessId,
+                            branchName = userData.businessName,
+                            branchCode = "", // No viene en el registro
+                            isVerified = userData.isVerified,
+                            sellerId = userData.sellerId,
+                            affiliationCode = affiliationCode // Usar el código que se envió
+                        )
+                        
+                        // Usar el token real que viene del servidor
+                        authService.setAccessToken(registrationData.token)
+                        
+                        Logger.auth("SELLER_SERVICE", "AuthService actualizado para vendedor registrado: ${registrationData.sellerId} con token real")
+                    }
+                    
                     Result.success(response)
                 },
                 onFailure = { error ->

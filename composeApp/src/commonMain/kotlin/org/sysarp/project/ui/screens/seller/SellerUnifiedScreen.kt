@@ -723,7 +723,7 @@ private fun processSellerAction(
     coroutineScope.launch {
         onLoadingChange(true)
         try {
-            // Intentar registro primero
+            // Intentar registro primero (tu lógica es correcta)
             val registerResult = sellerService.registerSeller(
                 affiliationCode = affiliationCode,
                 sellerName = sellerName,
@@ -732,34 +732,39 @@ private fun processSellerAction(
             
             registerResult.fold(
                 onSuccess = { registrationResponse ->
-                    // Registro exitoso, ahora hacer login con código de afiliación
-                    val loginResult = sellerService.loginSellerByPhone(phone, affiliationCode)
-                    
-                    loginResult.fold(
-                        onSuccess = { loginResponse ->
-                            onSuccess("¡Registro y acceso exitoso! Bienvenido a YapeChamo")
-                            onLoadingChange(false)
-                        },
-                        onFailure = { loginError ->
-                            onError("Registro exitoso, pero error al iniciar sesión: ${loginError.message}")
-                            onLoadingChange(false)
-                        }
-                    )
+                    // Registro exitoso, el servidor ya devuelve el token directamente
+                    onSuccess("¡Registro exitoso! Bienvenido a YapeChamo")
+                    onLoadingChange(false)
                 },
                 onFailure = { registerError ->
-                    // Si el registro falla, podría ser porque ya existe, intentar login con código de afiliación
-                    val loginResult = sellerService.loginSellerByPhone(phone, affiliationCode)
+                    // Verificar si el error es porque el vendedor ya existe
+                    val isSellerAlreadyExists = registerError.message?.let { message ->
+                        message.contains("already exists", ignoreCase = true) ||
+                        message.contains("duplicate", ignoreCase = true) ||
+                        message.contains("phone already registered", ignoreCase = true) ||
+                        message.contains("seller already exists", ignoreCase = true) ||
+                        message.contains("ya está registrado", ignoreCase = true)
+                    } ?: false
                     
-                    loginResult.fold(
-                        onSuccess = { loginResponse ->
-                            onSuccess("¡Bienvenido de vuelta!")
-                            onLoadingChange(false)
-                        },
+                    if (isSellerAlreadyExists) {
+                        // El vendedor ya existe, intentar login directamente
+                        val loginResult = sellerService.loginSellerByPhone(phone, affiliationCode)
+                        
+                        loginResult.fold(
+                            onSuccess = { loginResponse ->
+                                onSuccess("¡Bienvenido de vuelta!")
+                                onLoadingChange(false)
+                            },
                         onFailure = { loginError ->
                             onError("Error de acceso: ${loginError.message}")
                             onLoadingChange(false)
                         }
-                    )
+                        )
+                    } else {
+                        // Mostrar directamente el mensaje del servidor
+                        onError("Error en el registro: ${registerError.message}")
+                        onLoadingChange(false)
+                    }
                 }
             )
         } catch (e: Exception) {

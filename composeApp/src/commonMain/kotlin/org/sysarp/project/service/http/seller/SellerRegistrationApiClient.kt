@@ -88,23 +88,9 @@ class SellerRegistrationApiClient : BaseApiClient() {
     }
     
     /**
-     * Convierte mensajes técnicos a mensajes amigables
+     * Devuelve el mensaje original del servidor ya que viene detallado
      */
     private fun getFriendlyMessage(message: String): String {
-        return when {
-            message.contains("Invalid phone number format", ignoreCase = true) -> 
-                "El formato del teléfono no es válido. Debe contener solo números"
-            message.contains("Invalid email format", ignoreCase = true) -> 
-                "El formato del email no es válido"
-            message.contains("Required field", ignoreCase = true) -> 
-                "Este campo es obligatorio"
-            message.contains("Too short", ignoreCase = true) -> 
-                "El texto es muy corto"
-            message.contains("Too long", ignoreCase = true) -> 
-                "El texto es muy largo"
-            message.contains("Invalid format", ignoreCase = true) -> 
-                "El formato no es válido"
-            else -> message
-        }
+        return message
     }
 }

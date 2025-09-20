@@ -39,12 +39,9 @@ fun App() {
     }
 }
 
-// RepositorySingleton eliminado - no usamos base de datos local
 
 @Composable
 fun YapeApp() {
-    // Sin base de datos local - eliminado RepositorySingleton
-    
     val userProfileRepository = remember {
         UserProfileRepository()
     }
@@ -106,11 +103,9 @@ fun YapeApp() {
         BillingService(billingApiClient, authService)
     }
     
-    val credentialStorageService = remember {
-        CredentialStorageService()
-    }
-    
-    val paymentNotificationService = remember {
+    val credentialStorageService = CredentialStorageService
+
+    remember {
         org.sysarp.project.service.notifications.PaymentNotificationService()
     }
     
