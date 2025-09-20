@@ -1,16 +1,7 @@
 package org.sysarp.project.service
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.sysarp.project.utils.Logger
-import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -62,31 +53,6 @@ actual class ImagePickerService {
         val sdf = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
         return sdf.format(Date())
     }
-    
-    private suspend fun convertUriToBase64(uri: Uri): String = withContext(Dispatchers.IO) {
-        try {
-            val inputStream = context?.contentResolver?.openInputStream(uri)
-            val bitmap = BitmapFactory.decodeStream(inputStream)
-            val outputStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-            val byteArray = outputStream.toByteArray()
-            android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT)
-        } catch (e: Exception) {
-            Logger.auth("IMAGE_PICKER", "❌ Error convirtiendo imagen a base64: ${e.message}")
-            ""
-        }
-    }
+
 }
 
-/**
- * Composable helper para usar el ImagePickerService en Android
- */
-@Composable
-fun rememberImagePickerService(): ImagePickerService {
-    val context = LocalContext.current
-    return remember {
-        ImagePickerService().apply {
-            setContext(context)
-        }
-    }
-}
