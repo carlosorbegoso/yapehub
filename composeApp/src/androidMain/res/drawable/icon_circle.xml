@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Sombra suave -->
+    <item android:top="1dp" android:left="1dp">
+        <shape android:shape="oval">
+            <solid android:color="#30000000" />
+        </shape>
+    </item>
+    
+    <!-- Gradiente principal -->
+    <item android:bottom="1dp" android:right="1dp">
+        <shape android:shape="oval">
+            <size android:width="32dp" android:height="32dp" />
+            <gradient
+                android:type="radial"
+                android:gradientRadius="32dp"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:startColor="#6366F1"
+                android:centerColor="#312E81"
+                android:endColor="#000000" />
+        </shape>
+    </item>
+    
+    <!-- Resplandor interno -->
+    <item android:bottom="1dp" android:right="1dp">
+        <shape android:shape="oval">
+            <size android:width="32dp" android:height="32dp" />
+            <gradient
+                android:type="radial"
+                android:gradientRadius="12dp"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:startColor="#60FFFFFF"
+                android:endColor="#00FFFFFF" />
+        </shape>
+    </item>
+    
+</layer-list>

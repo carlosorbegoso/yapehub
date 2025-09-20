@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Constelación 1: Esquina superior izquierda - Triángulo súper suave -->
+    <!-- Línea curva de (18,18) a (30,30) -->
+    <path android:pathData="M18,18 Q24,20 30,30" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (18,18) a (25,25) -->
+    <path android:pathData="M18,18 Q21,21 25,25" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (25,25) a (30,30) -->
+    <path android:pathData="M25,25 Q27,27 30,30" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación 2: Esquina superior derecha - Triángulo súper suave -->
+    <!-- Línea curva de (90,18) a (78,30) -->
+    <path android:pathData="M90,18 Q84,22 78,30" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (90,18) a (83,25) -->
+    <path android:pathData="M90,18 Q86,21 83,25" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (83,25) a (78,30) -->
+    <path android:pathData="M83,25 Q80,27 78,30" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación 3: Esquina inferior izquierda - Triángulo súper suave -->
+    <!-- Línea curva de (18,90) a (30,78) -->
+    <path android:pathData="M18,90 Q24,86 30,78" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (18,90) a (25,83) -->
+    <path android:pathData="M18,90 Q21,87 25,83" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (25,83) a (30,78) -->
+    <path android:pathData="M25,83 Q27,81 30,78" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación 4: Esquina inferior derecha - Triángulo súper suave -->
+    <!-- Línea curva de (90,90) a (78,78) -->
+    <path android:pathData="M90,90 Q84,86 78,78" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (90,90) a (83,83) -->
+    <path android:pathData="M90,90 Q86,87 83,83" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (83,83) a (78,78) -->
+    <path android:pathData="M83,83 Q80,81 78,78" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación central: Forma de estrella suave -->
+    <!-- Línea curva de (54,8) a (45,20) -->
+    <path android:pathData="M54,8 Q50,14 45,20" 
+          android:strokeColor="#20FFFFFF" 
+          android:strokeWidth="0.2" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (45,20) a (63,20) -->
+    <path android:pathData="M45,20 Q54,18 63,20" 
+          android:strokeColor="#20FFFFFF" 
+          android:strokeWidth="0.2" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (63,20) a (54,8) -->
+    <path android:pathData="M63,20 Q58,14 54,8" 
+          android:strokeColor="#20FFFFFF" 
+          android:strokeWidth="0.2" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación adicional 1: Conecta estrellas pequeñas superiores -->
+    <!-- Línea curva de (45,20) a (63,20) -->
+    <path android:pathData="M45,20 Q50,25 63,20" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (45,20) a (50,25) -->
+    <path android:pathData="M45,20 Q47,22 50,25" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (50,25) a (63,20) -->
+    <path android:pathData="M50,25 Q57,22 63,20" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación adicional 2: Conecta estrellas pequeñas inferiores -->
+    <!-- Línea curva de (45,88) a (63,88) -->
+    <path android:pathData="M45,88 Q50,83 63,88" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (45,88) a (50,83) -->
+    <path android:pathData="M45,88 Q47,86 50,83" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (50,83) a (63,88) -->
+    <path android:pathData="M50,83 Q57,86 63,88" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación adicional 3: Conecta estrellas pequeñas laterales izquierdas -->
+    <!-- Línea curva de (20,45) a (20,63) -->
+    <path android:pathData="M20,45 Q25,50 20,63" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (20,45) a (25,50) -->
+    <path android:pathData="M20,45 Q22,47 25,50" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (25,50) a (20,63) -->
+    <path android:pathData="M25,50 Q22,57 20,63" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación adicional 4: Conecta estrellas pequeñas laterales derechas -->
+    <!-- Línea curva de (88,45) a (88,63) -->
+    <path android:pathData="M88,45 Q83,50 88,63" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (88,45) a (83,50) -->
+    <path android:pathData="M88,45 Q86,47 83,50" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (83,50) a (88,63) -->
+    <path android:pathData="M83,50 Q86,57 88,63" 
+          android:strokeColor="#15FFFFFF" 
+          android:strokeWidth="0.15" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación adicional 5: Conecta estrellas ultra pequeñas centrales -->
+    <!-- Línea curva de (40,40) a (68,40) -->
+    <path android:pathData="M40,40 Q50,35 68,40" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (40,40) a (50,35) -->
+    <path android:pathData="M40,40 Q45,37 50,35" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (50,35) a (68,40) -->
+    <path android:pathData="M50,35 Q55,37 68,40" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    
+    <!-- Constelación adicional 6: Conecta estrellas ultra pequeñas inferiores -->
+    <!-- Línea curva de (40,68) a (68,68) -->
+    <path android:pathData="M40,68 Q50,73 68,68" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (40,68) a (50,73) -->
+    <path android:pathData="M40,68 Q45,71 50,73" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    <!-- Línea curva de (50,73) a (68,68) -->
+    <path android:pathData="M50,73 Q55,71 68,68" 
+          android:strokeColor="#10FFFFFF" 
+          android:strokeWidth="0.1" 
+          android:strokeLineCap="round" />
+    
+</vector>
