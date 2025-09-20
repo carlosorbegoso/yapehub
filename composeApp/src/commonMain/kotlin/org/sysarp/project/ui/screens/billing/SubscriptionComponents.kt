@@ -2,6 +2,7 @@ package org.sysarp.project.ui.screens.billing
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -57,15 +58,17 @@ fun CurrentSubscriptionCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = when (subscription.status) {
-                                "free" -> MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                "active" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                else -> MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
-                            }
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = when (subscription.status) {
+                                    "free" -> MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                                    "active" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    else -> MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
                             text = when (subscription.status) {
@@ -74,7 +77,6 @@ fun CurrentSubscriptionCard(
                                 "expired" -> "Expirado"
                                 else -> subscription.status
                             },
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             color = when (subscription.status) {

@@ -158,12 +158,13 @@ class BillingApiClient : BaseApiClient() {
     /**
      * Obtiene los paquetes de tokens disponibles
      */
-    suspend fun getTokenPackages(token: String): Result<List<TokenPackage>> {
+    suspend fun getTokenPackages(adminId: Int, token: String): Result<List<TokenPackage>> {
         return try {
-            Logger.auth("BILLING_API", "🪙 Obteniendo paquetes de tokens disponibles")
+            Logger.auth("BILLING_API", "🪙 Obteniendo paquetes de tokens disponibles para adminId: $adminId")
             
             val response = client.get("$baseUrl/api/billing") {
                 parameter("type", "token-packages")
+                parameter("adminId", adminId.toString())
                 parameter("include", "details")
                 header("Authorization", "Bearer $token")
             }

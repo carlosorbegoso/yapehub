@@ -81,10 +81,7 @@ fun AdminProfileScreen(
     
     val adminService = remember { 
         AdminService(
-            AdminProfileApiClient(),
-            AdminSellerApiClient(),
-            SellerManagementApiClient(),
-            AdminStatsApiClient()
+            AdminProfileApiClient()
         )
     }
     

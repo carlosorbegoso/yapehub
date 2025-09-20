@@ -21,6 +21,7 @@ import org.sysarp.project.ui.screens.admin.AdminPaymentsScreen
 import org.sysarp.project.ui.screens.admin.AdminProfileScreen
 import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
 import org.sysarp.project.ui.screens.admin.BranchManagementScreen
+import org.sysarp.project.ui.screens.admin.SellerManagementScreen
 import org.sysarp.project.ui.screens.admin.UserManagementScreen
 import org.sysarp.project.ui.screens.admin.AdminAnalyticsScreen
 import org.sysarp.project.ui.screens.common.DeactivationRequestScreen
@@ -197,7 +198,9 @@ fun AppContent(
                 qrService = qrService,
                 branchService = branchService,
                 webSocketService = webSocketService,
+                billingService = billingService,
                 onNavigateToBranchManagement = { navigationManager.navigateTo(Screen.BranchManagement) },
+                onNavigateToSellerManagement = { navigationManager.navigateTo(Screen.SellerManagement) },
                 onNavigateToAnalytics = { navigationManager.navigateTo(Screen.Analytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.PendingPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },
@@ -205,6 +208,13 @@ fun AppContent(
                 onNavigateToProfile = { navigationManager.navigateTo(Screen.AdminProfile) },
                 onNavigateToBilling = { navigationManager.navigateToBillingDashboard() },
                 onLogout = { navigationManager.navigateToProfileSelection() }
+            )
+        }
+        is Screen.SellerManagement -> {
+            SellerManagementScreen(
+                sellerService = sellerService,
+                authService = authService,
+                onNavigateBack = { navigationManager.navigateTo(Screen.AdminDashboard) }
             )
         }
         is Screen.SellerDashboard -> {

@@ -234,14 +234,15 @@ class BillingService(
      */
     suspend fun getAvailableTokenPackages(): Result<List<TokenPackage>> {
         return try {
+            val userProfile = authService.userProfile.value
             val accessToken = authService.accessToken.value
             
-            if (accessToken == null) {
-                Logger.auth("BILLING_SERVICE", "❌ Token de autenticación no disponible")
-                return Result.failure(Exception("Token de autenticación no disponible"))
+            if (userProfile?.adminId == null || accessToken == null) {
+                Logger.auth("BILLING_SERVICE", "❌ Perfil de usuario o token de autenticación no disponible")
+                return Result.failure(Exception("Perfil de usuario o token de autenticación no disponible"))
             }
             
-            billingApiClient.getTokenPackages(accessToken)
+            billingApiClient.getTokenPackages(userProfile.adminId.toInt(), accessToken)
         } catch (e: Exception) {
             Logger.auth("BILLING_SERVICE", "❌ Error obteniendo paquetes de tokens: ${e.message}")
             Result.failure(e)

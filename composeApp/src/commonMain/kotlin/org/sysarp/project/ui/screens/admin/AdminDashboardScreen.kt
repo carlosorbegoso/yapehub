@@ -76,6 +76,7 @@ import org.sysarp.project.utils.formatRelativeTime
 import org.sysarp.project.utils.formatTimeOnly
 import org.sysarp.project.utils.Logger
 import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
+import org.sysarp.project.ui.screens.admin.AdminBillingIntegrationCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +88,9 @@ fun AdminDashboardScreen(
     qrService: org.sysarp.project.service.qr.QRService,
     branchService: org.sysarp.project.service.branch.BranchService,
     webSocketService: PaymentWebSocketService,
+    billingService: org.sysarp.project.service.billing.BillingService,
     onNavigateToBranchManagement: () -> Unit,
+    onNavigateToSellerManagement: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -601,6 +604,13 @@ fun AdminDashboardScreen(
                     )
                     
                     ActionCard(
+                        title = "Gestión de Vendedores",
+                        subtitle = "Administrar vendedores y equipos",
+                        icon = Icons.Filled.People,
+                        onClick = onNavigateToSellerManagement
+                    )
+                    
+                    ActionCard(
                         title = "Ver Analytics",
                         subtitle = "Reportes y estadísticas detalladas",
                         icon = Icons.Filled.Analytics,
@@ -628,6 +638,15 @@ fun AdminDashboardScreen(
                         onClick = onNavigateToBilling
                     )
                 }
+            }
+            
+            // Integración de billing
+            item {
+                AdminBillingIntegrationCard(
+                    billingService = billingService,
+                    connectedSellersCount = connectedSellersData?.connectedSellers?.size ?: 0,
+                    onNavigateToBilling = onNavigateToBilling
+                )
             }
             
             // Vendedores conectados
