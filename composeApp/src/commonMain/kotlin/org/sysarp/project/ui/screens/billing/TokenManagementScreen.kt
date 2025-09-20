@@ -27,7 +27,7 @@ fun TokenManagementScreen(
     onNavigateBack: () -> Unit,
     onNavigateToPayment: (PaymentCode) -> Unit
 ) {
-    var tokenStatus by remember { mutableStateOf<TokenStatus?>(null) }
+    var tokenStatus by remember { mutableStateOf<TokenStatusResponse?>(null) }
     var tokenPackages by remember { mutableStateOf<List<TokenPackage>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var showTokenPurchaseDialog by remember { mutableStateOf(false) }
@@ -187,7 +187,7 @@ fun TokenManagementScreen(
 }
 
 @Composable
-private fun TokenStatusOverviewCard(tokenStatus: TokenStatus) {
+private fun TokenStatusOverviewCard(tokenStatus: TokenStatusResponse) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -226,24 +226,25 @@ private fun TokenStatusOverviewCard(tokenStatus: TokenStatus) {
             ) {
                 TokenInfoItem(
                     label = "Disponibles",
-                    value = "${tokenStatus.remainingTokens}",
+                    value = "${tokenStatus.tokensAvailable}",
                     color = MaterialTheme.colorScheme.primary
                 )
                 TokenInfoItem(
                     label = "Usados",
-                    value = "${tokenStatus.usedTokens}",
+                    value = "${tokenStatus.tokensUsed}",
                     color = MaterialTheme.colorScheme.secondary
                 )
                 TokenInfoItem(
                     label = "Total",
-                    value = "${tokenStatus.totalTokens}",
+                    value = "${tokenStatus.tokensAvailable + tokenStatus.tokensUsed + tokenStatus.tokensPurchased}",
                     color = MaterialTheme.colorScheme.tertiary
                 )
             }
             
             // Barra de progreso
+            val totalTokens = tokenStatus.tokensAvailable + tokenStatus.tokensUsed + tokenStatus.tokensPurchased
             LinearProgressIndicator(
-                progress = { tokenStatus.usedTokens.toFloat() / tokenStatus.totalTokens.toFloat() },
+                progress = { tokenStatus.tokensUsed.toFloat() / totalTokens.toFloat() },
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant

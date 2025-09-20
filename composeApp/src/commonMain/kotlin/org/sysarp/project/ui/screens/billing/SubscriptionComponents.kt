@@ -33,14 +33,11 @@ fun CurrentSubscriptionCard(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = when (subscription.status) {
-                    "free" -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    "active" -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                }
+                containerColor = MaterialTheme.colorScheme.surface
             ),
             shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            border = null
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -139,7 +136,7 @@ fun SubscriptionPlanCard(
     onSelectPlan: (SubscriptionPlan) -> Unit
 ) {
     val isCurrentPlan = currentPlanId == plan.id
-    val isPopular = plan.id == 2 // Plan Básico es el más popular
+    val isPopular = plan.isPopular // Usar el campo de la API
     
     // Animaciones de micro-interacción
     var isPressed by remember { mutableStateOf(false) }

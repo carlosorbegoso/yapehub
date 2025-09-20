@@ -30,6 +30,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     private var notificationService: NotificationService? = null
     private var authService: AuthService? = null
     private var deviceFingerprint: String? = null
+    private var audioService: AudioService? = null
     
     // Queue para notificaciones pendientes
     private val pendingNotifications = mutableListOf<YapeNotificationRequest>()
@@ -84,6 +85,11 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             val notificationApiClient = org.sysarp.project.service.http.NotificationApiClient()
             notificationService = org.sysarp.project.service.NotificationService(notificationApiClient, authService!!)
             Timber.tag("NotificationCapture").d("✅ NotificationService inicializado")
+            
+            // Inicializar AudioService
+            audioService = AudioService()
+            audioService?.initialize(this@AndroidNotificationCaptureService)
+            Timber.tag("NotificationCapture").d("🔊 AudioService inicializado")
             
         } catch (e: Exception) {
             Timber.tag("NotificationCapture").e("❌ Error inicializando servicios: ${e.message}")
@@ -296,6 +302,10 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
 
                     Timber.tag("NotificationCapture")
                         .d("✅ YapeNotificationRequest creada con notificación encriptada y hash de deduplicación")
+                    
+                    // Reproducir sonido Yape realista (melodía ascendente)
+                    audioService?.playCustomSound(NotificationSoundType.YAPE_REALISTIC)
+                    Timber.tag("NotificationCapture").d("🔊 Sonido Yape realista reproducido")
                     
                     // Enviar a la API con retry automático
                     sendNotificationWithRetry(notificationRequest, 0)

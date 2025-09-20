@@ -13,7 +13,7 @@ data class SubscriptionPlan(
     val description: String,
     val price: Double,
     val currency: String,
-    val billingCycle: String, // "monthly", "yearly"
+    val billingCycle: String, // " monthly", "yearly"
     val maxSellers: Int,
     val tokensIncluded: Int,
     val features: List<String> = emptyList(),
@@ -208,7 +208,7 @@ data class SubscriptionResponse(
 data class TokenResponse(
     val success: Boolean,
     val message: String,
-    val data: TokenStatus,
+    val data: TokenStatusResponse,
     val error: Boolean = false
 )
 

@@ -9,6 +9,9 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.sysarp.project.data.AdminRegistrationRequest
 import org.sysarp.project.data.AdminRegistrationResponse
 import org.sysarp.project.data.ForgotPasswordRequest
@@ -62,8 +65,41 @@ class AuthApiClient : BaseApiClient() {
                 logInfo("AUTH_API", "Login exitoso para admin: $email")
                 Result.success(loginResponse)
             } else {
-                val errorMessage = "Error en login: ${response.status}"
-                logError("AUTH_API", errorMessage)
+                // Intentar parsear el mensaje de error específico del servidor
+                val errorMessage = try {
+                    val errorBody = response.body<String>()
+                    logError("AUTH_API", "Error response body: $errorBody")
+                    
+                    // Parsear JSON de error si está disponible
+                    val json = kotlinx.serialization.json.Json.parseToJsonElement(errorBody)
+                    val message = json.jsonObject["message"]?.jsonPrimitive?.content
+                    val code = json.jsonObject["code"]?.jsonPrimitive?.content
+                    val details = json.jsonObject["details"]?.jsonObject
+                    
+                    when (code) {
+                        "INVALID_FIELD" -> {
+                            val reason = details?.get("reason")?.jsonPrimitive?.content
+                            when {
+                                reason?.contains("email", ignoreCase = true) == true -> 
+                                    "El email ingresado no es válido"
+                                reason?.contains("password", ignoreCase = true) == true -> 
+                                    "La contraseña ingresada es incorrecta"
+                                reason?.contains("credentials", ignoreCase = true) == true -> 
+                                    "Email o contraseña incorrectos"
+                                else -> message ?: "Credenciales inválidas"
+                            }
+                        }
+                        "ACCOUNT_NOT_FOUND" -> "No existe una cuenta con este email"
+                        "ACCOUNT_LOCKED" -> "Tu cuenta está bloqueada. Contacta al soporte"
+                        "ACCOUNT_DISABLED" -> "Tu cuenta está deshabilitada"
+                        else -> message ?: "Error de autenticación"
+                    }
+                } catch (e: Exception) {
+                    logError("AUTH_API", "Error parseando respuesta de error: ${e.message}")
+                    "Error en login: ${response.status}"
+                }
+                
+                logError("AUTH_API", "Error en login: $errorMessage")
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {

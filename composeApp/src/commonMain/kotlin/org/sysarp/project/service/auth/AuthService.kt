@@ -7,6 +7,8 @@ import org.sysarp.project.data.*
 import org.sysarp.project.service.http.AuthApiClient
 import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.UserProfileFactory
+import org.sysarp.project.utils.ErrorManager
+import org.sysarp.project.utils.ErrorInfo
 
 /**
  * Servicio de autenticación simplificado
@@ -505,6 +507,81 @@ class AuthService {
         } catch (e: Exception) {
             Logger.auth("AUTH_SERVICE", "Excepción obteniendo vendedores: ${e.message}")
             Result.failure(e)
+        }
+    }
+    
+    // =============================================================================
+    // MÉTODOS CON MANEJO ELEGANTE DE ERRORES
+    // =============================================================================
+    
+    /**
+     * Login de administrador con manejo elegante de errores
+     */
+    suspend fun loginAdminWithErrorHandling(
+        email: String,
+        password: String,
+        deviceFingerprint: String? = null,
+        role: String = "ADMIN"
+    ): Pair<LoginUserData?, ErrorInfo?> {
+        return try {
+            Logger.auth("AUTH_SERVICE", "🔐 Iniciando login de admin con manejo elegante de errores: $email")
+            
+            val result = loginAdmin(email, password, deviceFingerprint, role)
+            result.fold(
+                onSuccess = { loginData ->
+                    Logger.auth("AUTH_SERVICE", "✅ Login exitoso para admin: $email")
+                    Pair(loginData, null)
+                },
+                onFailure = { exception ->
+                    Logger.auth("AUTH_SERVICE", "❌ Error en login de admin: ${exception.message}")
+                    
+                    // Parsear el error específico del login
+                    val errorInfo = when {
+                        exception.message?.contains("Email o contraseña incorrectos") == true -> 
+                            ErrorInfo(
+                                type = org.sysarp.project.ui.components.ErrorType.VALIDATION,
+                                title = "Credenciales Incorrectas",
+                                message = "El email o la contraseña que ingresaste no son correctos",
+                                details = "Verifica que hayas escrito correctamente tu email y contraseña",
+                                canRetry = true
+                            )
+                        exception.message?.contains("El email ingresado no es válido") == true -> 
+                            ErrorInfo(
+                                type = org.sysarp.project.ui.components.ErrorType.VALIDATION,
+                                title = "Email Inválido",
+                                message = "El formato del email no es válido",
+                                details = "Asegúrate de escribir un email válido (ejemplo@dominio.com)",
+                                canRetry = true
+                            )
+                        exception.message?.contains("No existe una cuenta con este email") == true -> 
+                            ErrorInfo(
+                                type = org.sysarp.project.ui.components.ErrorType.VALIDATION,
+                                title = "Cuenta No Encontrada",
+                                message = "No existe una cuenta registrada con este email",
+                                details = "Verifica el email o regístrate si es tu primera vez",
+                                canRetry = true
+                            )
+                        exception.message?.contains("Tu cuenta está bloqueada") == true -> 
+                            ErrorInfo(
+                                type = org.sysarp.project.ui.components.ErrorType.PERMISSION,
+                                title = "Cuenta Bloqueada",
+                                message = "Tu cuenta ha sido bloqueada por seguridad",
+                                details = "Contacta al soporte técnico para desbloquear tu cuenta",
+                                canRetry = false
+                            )
+                        exception.message?.contains("network", ignoreCase = true) == true -> 
+                            ErrorManager.parseException(exception)
+                        else -> 
+                            ErrorManager.parseException(exception)
+                    }
+                    
+                    Pair(null, errorInfo)
+                }
+            )
+        } catch (e: Exception) {
+            Logger.auth("AUTH_SERVICE", "❌ Error inesperado en login: ${e.message}")
+            val errorInfo = ErrorManager.parseException(e)
+            Pair(null, errorInfo)
         }
     }
     

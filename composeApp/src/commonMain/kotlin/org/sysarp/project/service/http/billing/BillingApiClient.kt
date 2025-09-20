@@ -21,7 +21,7 @@ class BillingApiClient : BaseApiClient() {
     /**
      * Obtiene el estado de tokens del administrador
      */
-    suspend fun getTokenStatus(adminId: Int, token: String): Result<TokenStatus> {
+    suspend fun getTokenStatus(adminId: Int, token: String): Result<TokenStatusResponse> {
         return try {
             Logger.auth("BILLING_API", "🪙 Obteniendo estado de tokens para admin: $adminId")
             Logger.auth("BILLING_API", "🌐 URL base: $baseUrl")
@@ -37,7 +37,7 @@ class BillingApiClient : BaseApiClient() {
             
             // Intentar parsear como respuesta flexible primero
             try {
-                val flexibleResponse = json.decodeFromString<FlexibleBillingResponse<TokenStatus>>(responseBody)
+                val flexibleResponse = json.decodeFromString<FlexibleBillingResponse<TokenStatusResponse>>(responseBody)
                 
                 if (flexibleResponse.success == true && flexibleResponse.data != null) {
                     Result.success(flexibleResponse.data)
@@ -47,7 +47,7 @@ class BillingApiClient : BaseApiClient() {
             } catch (e: Exception) {
                 // Si falla, intentar como respuesta estándar
                 try {
-                    val billingResponse = json.decodeFromString<BillingResponse<TokenStatus>>(responseBody)
+                    val billingResponse = json.decodeFromString<BillingResponse<TokenStatusResponse>>(responseBody)
                     if (billingResponse.success) {
                         Result.success(billingResponse.data)
                     } else {
@@ -374,6 +374,106 @@ class BillingApiClient : BaseApiClient() {
             }
         } catch (e: Exception) {
             Logger.auth("BILLING_API", "❌ Error verificando estado de pago: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    // =============================================================================
+    // APIs PÚBLICAS QUE GENERAN INGRESOS DIRECTOS
+    // =============================================================================
+    
+    /**
+     * Suscribirse directamente a un plan (genera ingreso inmediato)
+     * API: POST /api/billing/operations?action=subscribe&adminId={adminId}
+     */
+    suspend fun subscribeToPlan(adminId: Int, token: String, planId: Int): Result<Boolean> {
+        return try {
+            Logger.auth("BILLING_API", "🔄 Suscribiéndose al plan ID: $planId para admin: $adminId")
+            
+            val response = client.post("$baseUrl/api/billing/operations") {
+                parameter("adminId", adminId)
+                parameter("action", "subscribe")
+                header("Authorization", "Bearer $token")
+                header("Content-Type", "application/json")
+                setBody(mapOf("planId" to planId))
+            }
+            
+            val responseBody = response.body<String>()
+            Logger.auth("BILLING_API", "📊 Respuesta suscripción: $responseBody")
+            
+            val subscribeResponse = json.decodeFromString<BillingResponse<Any>>(responseBody)
+            
+            if (subscribeResponse.success) {
+                Result.success(true)
+            } else {
+                Result.failure(Exception(subscribeResponse.message))
+            }
+        } catch (e: Exception) {
+            Logger.auth("BILLING_API", "❌ Error suscribiéndose: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Upgrade de plan (genera ingreso por diferencia)
+     * API: POST /api/billing/operations?action=upgrade&adminId={adminId}
+     */
+    suspend fun upgradePlan(adminId: Int, token: String, planId: Int): Result<Boolean> {
+        return try {
+            Logger.auth("BILLING_API", "⬆️ Upgrade al plan ID: $planId para admin: $adminId")
+            
+            val response = client.post("$baseUrl/api/billing/operations") {
+                parameter("adminId", adminId)
+                parameter("action", "upgrade")
+                header("Authorization", "Bearer $token")
+                header("Content-Type", "application/json")
+                setBody(mapOf("planId" to planId))
+            }
+            
+            val responseBody = response.body<String>()
+            Logger.auth("BILLING_API", "📊 Respuesta upgrade: $responseBody")
+            
+            val upgradeResponse = json.decodeFromString<BillingResponse<Any>>(responseBody)
+            
+            if (upgradeResponse.success) {
+                Result.success(true)
+            } else {
+                Result.failure(Exception(upgradeResponse.message))
+            }
+        } catch (e: Exception) {
+            Logger.auth("BILLING_API", "❌ Error haciendo upgrade: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Comprar tokens directamente (genera ingreso inmediato)
+     * API: POST /api/billing/operations?action=purchase&adminId={adminId}
+     */
+    suspend fun purchaseTokens(adminId: Int, token: String, tokensPackage: String): Result<Boolean> {
+        return try {
+            Logger.auth("BILLING_API", "🛒 Comprando tokens: $tokensPackage para admin: $adminId")
+            
+            val response = client.post("$baseUrl/api/billing/operations") {
+                parameter("adminId", adminId)
+                parameter("action", "purchase")
+                header("Authorization", "Bearer $token")
+                header("Content-Type", "application/json")
+                setBody(mapOf("tokensPackage" to tokensPackage))
+            }
+            
+            val responseBody = response.body<String>()
+            Logger.auth("BILLING_API", "📊 Respuesta compra tokens: $responseBody")
+            
+            val purchaseResponse = json.decodeFromString<BillingResponse<Any>>(responseBody)
+            
+            if (purchaseResponse.success) {
+                Result.success(true)
+            } else {
+                Result.failure(Exception(purchaseResponse.message))
+            }
+        } catch (e: Exception) {
+            Logger.auth("BILLING_API", "❌ Error comprando tokens: ${e.message}")
             Result.failure(e)
         }
     }

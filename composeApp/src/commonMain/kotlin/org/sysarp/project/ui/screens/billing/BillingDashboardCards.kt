@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import org.sysarp.project.data.*
 
 @Composable
@@ -122,42 +123,47 @@ fun SubscriptionSummaryCard(
                     }
                 }
                 
-                if (subscription.status == "free") {
-                    var buttonPressed by remember { mutableStateOf(false) }
-                    val buttonScale by animateFloatAsState(
-                        targetValue = if (buttonPressed) 0.95f else 1f,
-                        animationSpec = tween(150),
-                        label = "buttonScale"
+                // Botón para mejorar plan (disponible para todos los usuarios)
+                var buttonPressed by remember { mutableStateOf(false) }
+                val coroutineScope = rememberCoroutineScope()
+                val buttonScale by animateFloatAsState(
+                    targetValue = if (buttonPressed) 0.95f else 1f,
+                    animationSpec = tween(150),
+                    label = "buttonScale"
+                )
+                
+                val iconRotation by animateFloatAsState(
+                    targetValue = if (buttonPressed) 360f else 0f,
+                    animationSpec = tween(300),
+                    label = "iconRotation"
+                )
+                
+                Button(
+                    onClick = { 
+                        buttonPressed = true
+                        onUpgradeClick()
+                        // Reset del estado después de un breve delay
+                        coroutineScope.launch {
+                            kotlinx.coroutines.delay(300)
+                            buttonPressed = false
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .scale(buttonScale),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
                     )
-                    
-                    val iconRotation by animateFloatAsState(
-                        targetValue = if (buttonPressed) 360f else 0f,
-                        animationSpec = tween(300),
-                        label = "iconRotation"
-                    )
-                    
-                    Button(
-                        onClick = { 
-                            buttonPressed = true
-                            onUpgradeClick()
-                        },
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Upgrade,
+                        contentDescription = null,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .scale(buttonScale),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Upgrade,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(18.dp)
-                                .graphicsLayer { rotationZ = iconRotation }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Mejorar Plan")
-                    }
+                            .size(18.dp)
+                            .graphicsLayer { rotationZ = iconRotation }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Mejorar Plan")
                 }
             }
         }

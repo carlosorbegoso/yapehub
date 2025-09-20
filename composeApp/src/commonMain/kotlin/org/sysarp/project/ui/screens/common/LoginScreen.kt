@@ -85,6 +85,10 @@ fun LoginScreen(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
+    // Estados para manejo elegante de errores (solo para parsing, no para UI)
+    // var showErrorDialog by remember { mutableStateOf(false) }
+    // var currentError by remember { mutableStateOf<ErrorInfo?>(null) }
+    
     // Cargar credenciales guardadas al inicializar
     LaunchedEffect(Unit) {
         try {
@@ -404,20 +408,41 @@ fun LoginScreen(
                         }
                     }
                     
-                    // Mensaje de error
+                    // Mensaje de error elegante
                     if (errorMessage.isNotEmpty()) {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
+                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
                             ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = errorMessage,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp, 
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
                             )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                
+                                Text(
+                                    text = errorMessage,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
                     
@@ -436,39 +461,39 @@ fun LoginScreen(
                                 isLoading = true
                                 errorMessage = ""
                                 
-                                // Login real usando la API
+                                // Login real usando la API con manejo elegante de errores
                                 coroutineScope.launch {
-                                    authService.loginAdmin(
+                                    val (loginData, errorInfo) = authService.loginAdminWithErrorHandling(
                                         email = sanitizedEmail,
                                         password = sanitizedPassword
                                         // deviceFingerprint y role se generan automáticamente
-                                    ).fold(
-                                        onSuccess = { loginData ->
-                                            isLoading = false
-                                            successMessage = SuccessHandler.Messages.LOGIN_SUCCESS
-                                            
-                                            // Guardar credenciales si el usuario marcó "Recordar contraseña"
-                                            if (rememberPassword) {
-                                                coroutineScope.launch {
-                                                    val saved = credentialStorageService.saveCredentials(sanitizedEmail, sanitizedPassword)
-                                                    if (saved) {
-                                                        successMessage = "Credenciales guardadas exitosamente"
-                                                    }
-                                                }
-                                            } else {
-                                                // Eliminar credenciales si el usuario desmarcó la opción
-                                                coroutineScope.launch {
-                                                    credentialStorageService.clearCredentials()
+                                    )
+                                    
+                                    if (loginData != null) {
+                                        isLoading = false
+                                        successMessage = SuccessHandler.Messages.LOGIN_SUCCESS
+                                        
+                                        // Guardar credenciales si el usuario marcó "Recordar contraseña"
+                                        if (rememberPassword) {
+                                            coroutineScope.launch {
+                                                val saved = credentialStorageService.saveCredentials(sanitizedEmail, sanitizedPassword)
+                                                if (saved) {
+                                                    successMessage = "Credenciales guardadas exitosamente"
                                                 }
                                             }
-                                            
-                                            onLoginSuccess(loginData.role)
-                                        },
-                                        onFailure = { error ->
-                                            isLoading = false
-                                            errorMessage = error.message ?: "Error desconocido"
+                                        } else {
+                                            // Eliminar credenciales si el usuario desmarcó la opción
+                                            coroutineScope.launch {
+                                                credentialStorageService.clearCredentials()
+                                            }
                                         }
-                                    )
+                                        
+                                        onLoginSuccess(loginData.role)
+                                    } else if (errorInfo != null) {
+                                        isLoading = false
+                                        // Mostrar error inline más elegante
+                                        errorMessage = errorInfo.message
+                                    }
                                 }
                             } else {
                                 errorMessage = "Por favor completa todos los campos correctamente"

@@ -20,6 +20,9 @@ import org.sysarp.project.data.*
 import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.ui.components.topbar.TopBarComponent
 import org.sysarp.project.utils.Logger
+import org.sysarp.project.utils.ErrorInfo
+import org.sysarp.project.ui.components.ErrorAlertDialog
+import org.sysarp.project.ui.components.ErrorType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +39,10 @@ fun SubscriptionScreen(
     var showTokenPurchaseDialog by remember { mutableStateOf(false) }
     var showSuccessAnimation by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
+    
+    // Estados para manejo elegante de errores
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var currentError by remember { mutableStateOf<ErrorInfo?>(null) }
     
     val coroutineScope = rememberCoroutineScope()
     
@@ -57,22 +64,38 @@ fun SubscriptionScreen(
                 }
             )
             
-            // Cargar planes disponibles
-            val plansResult = billingService.getAvailablePlans()
-            plansResult.fold(
-                onSuccess = { plans ->
-                    availablePlans = plans
-                    Logger.auth("SUBSCRIPTION_SCREEN", "✅ Planes cargados: ${plans.size} planes")
-                },
-                onFailure = { e ->
-                    plansError = e.message ?: "Error cargando planes"
-                    Logger.auth("SUBSCRIPTION_SCREEN", "❌ Error cargando planes: ${e.message}")
+            // Cargar planes disponibles con manejo elegante de errores
+            val (plans, errorInfo) = billingService.getAvailablePlansWithErrorHandling()
+            if (plans != null) {
+                availablePlans = plans
+                Logger.auth("SUBSCRIPTION_SCREEN", "✅ Planes cargados desde API: ${plans.size} planes")
+            } else if (errorInfo != null) {
+                Logger.auth("SUBSCRIPTION_SCREEN", "⚠️ Error cargando desde API, usando fallback: ${errorInfo.message}")
+                // Fallback a datos locales
+                availablePlans = billingService.getAvailablePlansLocal()
+                Logger.auth("SUBSCRIPTION_SCREEN", "📋 Planes locales cargados: ${availablePlans.size} planes")
+                
+                // Mostrar error elegante si es crítico
+                if (errorInfo.type == ErrorType.NETWORK || errorInfo.type == ErrorType.SERVER) {
+                    currentError = errorInfo
+                    showErrorDialog = true
                 }
-            )
+            }
             
             isLoading = false
         } catch (e: Exception) {
-            Logger.auth("SUBSCRIPTION_SCREEN", "❌ Error inesperado: ${e.message}")
+            Logger.auth("SUBSCRIPTION_SCREEN", "❌ Error inesperado, usando fallback: ${e.message}")
+            // Fallback a datos locales en caso de error inesperado
+            availablePlans = billingService.getAvailablePlansLocal()
+            Logger.auth("SUBSCRIPTION_SCREEN", "📋 Planes locales cargados en catch: ${availablePlans.size} planes")
+            
+            // Mostrar error elegante para errores críticos
+            val errorInfo = org.sysarp.project.utils.ErrorManager.parseException(e)
+            if (errorInfo.type == ErrorType.NETWORK || errorInfo.type == ErrorType.SERVER) {
+                currentError = errorInfo
+                showErrorDialog = true
+            }
+            
             isLoading = false
         }
     }
@@ -159,12 +182,22 @@ fun SubscriptionScreen(
                                 animationSpec = tween(800, delayMillis = 200, easing = EaseOutCubic)
                             ) + fadeIn(animationSpec = tween(800, delayMillis = 200))
                         ) {
-                            Text(
-                                text = "Planes Disponibles",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Planes Disponibles",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                // Debug info
+                                Text(
+                                    text = "Cargados: ${availablePlans.size} planes",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                     
@@ -191,13 +224,18 @@ fun SubscriptionScreen(
                                 plan = plan,
                                 currentPlanId = currentSubscription?.let { 
                                     // Determinar ID del plan actual basado en el nombre
-                                    when (it.planName) {
-                                        "Plan Gratuito" -> 1
-                                        "Plan Básico" -> 2
-                                        "Plan Profesional" -> 3
-                                        "Plan Empresarial" -> 4
-                                        else -> null
+                                    val planId = when (it.planName.lowercase()) {
+                                        "plan gratuito", "gratuito", "free" -> 1
+                                        "plan básico", "básico", "basic" -> 2
+                                        "plan profesional", "profesional", "professional" -> 3
+                                        "plan empresarial", "empresarial", "enterprise" -> 4
+                                        else -> {
+                                            Logger.auth("SUBSCRIPTION_SCREEN", "⚠️ Plan no reconocido: ${it.planName}")
+                                            null
+                                        }
                                     }
+                                    Logger.auth("SUBSCRIPTION_SCREEN", "📋 Plan actual: ${it.planName} -> ID: $planId")
+                                    planId
                                 },
                                 onSelectPlan = { selectedPlan ->
                                     coroutineScope.launch {
@@ -260,6 +298,45 @@ fun SubscriptionScreen(
             billingService = billingService,
             onDismiss = { showTokenPurchaseDialog = false },
             onNavigateToPayment = onNavigateToPayment
+        )
+    }
+    
+    // Diálogo de error elegante
+    currentError?.let { errorInfo ->
+        ErrorAlertDialog(
+            isVisible = showErrorDialog,
+            errorType = errorInfo.type,
+            title = errorInfo.title,
+            message = errorInfo.message,
+            details = errorInfo.details,
+            onDismiss = { 
+                showErrorDialog = false
+                currentError = null
+            },
+            onRetry = if (errorInfo.canRetry) {
+                {
+                    // Recargar datos
+                    coroutineScope.launch {
+                        isLoading = true
+                        try {
+                            val (plans, newErrorInfo) = billingService.getAvailablePlansWithErrorHandling()
+                            if (plans != null) {
+                                availablePlans = plans
+                            } else if (newErrorInfo != null) {
+                                availablePlans = billingService.getAvailablePlansLocal()
+                                currentError = newErrorInfo
+                                showErrorDialog = true
+                            }
+                        } catch (e: Exception) {
+                            availablePlans = billingService.getAvailablePlansLocal()
+                            val errorInfo = org.sysarp.project.utils.ErrorManager.parseException(e)
+                            currentError = errorInfo
+                            showErrorDialog = true
+                        }
+                        isLoading = false
+                    }
+                }
+            } else null
         )
     }
 }

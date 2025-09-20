@@ -1,9 +1,9 @@
 package org.sysarp.project.service
 
-import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.engine.darwin.Darwin
+import io.ktor.client.engine.*
+import io.ktor.client.engine.darwin.*
 
-internal actual fun getHttpClientEngine(): HttpClientEngine {
-    return Darwin.create()
+actual fun createHttpEngine(): HttpClientEngineFactory<HttpClientEngineConfig> {
+    return Darwin
 }
 

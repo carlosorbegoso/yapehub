@@ -25,7 +25,7 @@ fun AdminBillingIntegrationCard(
     onNavigateToBilling: () -> Unit
 ) {
     var subscriptionStatus by remember { mutableStateOf<SubscriptionStatus?>(null) }
-    var tokenStatus by remember { mutableStateOf<TokenStatus?>(null) }
+    var tokenStatus by remember { mutableStateOf<TokenStatusResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     
@@ -54,7 +54,7 @@ fun AdminBillingIntegrationCard(
             tokenResult.fold(
                 onSuccess = { status ->
                     tokenStatus = status
-                    Logger.auth("ADMIN_BILLING", "✅ Tokens cargados: ${status.remainingTokens}")
+                    Logger.auth("ADMIN_BILLING", "✅ Tokens cargados: ${status.tokensAvailable}")
                 },
                 onFailure = { e ->
                     Logger.auth("ADMIN_BILLING", "❌ Error cargando tokens: ${e.message}")
@@ -244,7 +244,7 @@ private fun SubscriptionInfoCard(subscription: SubscriptionStatus) {
 }
 
 @Composable
-private fun TokenInfoCard(tokenStatus: TokenStatus) {
+private fun TokenInfoCard(tokenStatus: TokenStatusResponse) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -269,7 +269,7 @@ private fun TokenInfoCard(tokenStatus: TokenStatus) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "${tokenStatus.remainingTokens}",
+                    text = "${tokenStatus.tokensAvailable}",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -277,8 +277,9 @@ private fun TokenInfoCard(tokenStatus: TokenStatus) {
             }
             
             // Barra de progreso
+            val totalTokens = tokenStatus.tokensAvailable + tokenStatus.tokensUsed + tokenStatus.tokensPurchased
             LinearProgressIndicator(
-                progress = { tokenStatus.usedTokens.toFloat() / tokenStatus.totalTokens.toFloat() },
+                progress = { tokenStatus.tokensUsed.toFloat() / totalTokens.toFloat() },
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
@@ -289,12 +290,12 @@ private fun TokenInfoCard(tokenStatus: TokenStatus) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Usados: ${tokenStatus.usedTokens}",
+                    text = "Usados: ${tokenStatus.tokensUsed}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Total: ${tokenStatus.totalTokens}",
+                    text = "Total: $totalTokens",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

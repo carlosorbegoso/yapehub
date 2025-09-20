@@ -146,14 +146,16 @@ fun TokenPurchaseDialog(
                                 paymentResult.fold(
                                     onSuccess = { paymentCode ->
                                         // Mostrar animación de éxito
-                                        successMessage = "¡Pago generado exitosamente!"
+                                        successMessage = "¡Tokens listos para comprar!"
                                         showSuccessAnimation = true
                                         
                                         // Navegar después de mostrar la animación
-                                        delay(2000)
-                                        onNavigateToPayment(paymentCode)
-                                        showSuccessAnimation = false
-                                        onDismiss()
+                                        coroutineScope.launch {
+                                            delay(2000) // Mostrar animación por 2 segundos
+                                            onNavigateToPayment(paymentCode)
+                                            showSuccessAnimation = false
+                                            onDismiss()
+                                        }
                                         
                                         Logger.auth("TOKEN_PURCHASE", "✅ Código de pago generado: ${paymentCode.paymentCode}")
                                     },
@@ -229,26 +231,51 @@ private fun TokenPackageCard(
         label = "elevation"
     )
     
+    // Animación suave para el color de fondo
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.08f)
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        animationSpec = tween(300, easing = EaseOutCubic),
+        label = "backgroundColor"
+    )
+    
+    // Animación suave para la elevación
+    val cardElevation by animateDpAsState(
+        targetValue = if (isSelected) 4.dp else 2.dp,
+        animationSpec = tween(300, easing = EaseOutCubic),
+        label = "cardElevation"
+    )
+    
+    // Animación suave para el color del borde
+    val borderColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+        } else {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.0f)
+        },
+        animationSpec = tween(300, easing = EaseOutCubic),
+        label = "borderColor"
+    )
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .scale(scale)
             .clickable { onSelect() },
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.05f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
+            containerColor = backgroundColor
         ),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = if (isSelected) {
-            androidx.compose.foundation.BorderStroke(
-                0.5.dp, 
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-            )
-        } else null
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = cardElevation
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, 
+            borderColor
+        )
     ) {
         Column(
             modifier = Modifier
@@ -290,7 +317,16 @@ private fun TokenPackageCard(
                     }
                 }
                 
-                if (isSelected) {
+                // Animación suave para el icono de selección
+                AnimatedVisibility(
+                    visible = isSelected,
+                    enter = scaleIn(
+                        animationSpec = tween(300, easing = EaseOutBack)
+                    ) + fadeIn(animationSpec = tween(300)),
+                    exit = scaleOut(
+                        animationSpec = tween(200)
+                    ) + fadeOut(animationSpec = tween(200))
+                ) {
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
                         contentDescription = null,
