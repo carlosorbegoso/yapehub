@@ -1,6 +1,5 @@
 package org.sysarp.project.service
 
-import org.sysarp.project.utils.Logger
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -8,7 +7,6 @@ actual class ImagePickerService {
     
     actual suspend fun selectImageFromGallery(): Result<ImageResult> {
         return try {
-            Logger.auth("IMAGE_PICKER", "📸 Seleccionando imagen desde galería (iOS)")
             
             // Por ahora, usar imagen mock hasta implementar la funcionalidad nativa de iOS
             Result.success(
@@ -19,14 +17,12 @@ actual class ImagePickerService {
                 )
             )
         } catch (e: Exception) {
-            Logger.auth("IMAGE_PICKER", "❌ Error seleccionando imagen: ${e.message}")
             Result.failure(e)
         }
     }
     
     actual suspend fun capturePhotoFromCamera(): Result<ImageResult> {
         return try {
-            Logger.auth("IMAGE_PICKER", "📷 Capturando foto desde cámara (iOS)")
             
             // Por ahora, usar imagen mock hasta implementar la funcionalidad nativa de iOS
             Result.success(
@@ -37,7 +33,6 @@ actual class ImagePickerService {
                 )
             )
         } catch (e: Exception) {
-            Logger.auth("IMAGE_PICKER", "❌ Error capturando foto: ${e.message}")
             Result.failure(e)
         }
     }

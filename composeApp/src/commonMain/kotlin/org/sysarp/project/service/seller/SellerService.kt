@@ -147,8 +147,6 @@ class SellerService(private val authService: AuthService) {
             Result.failure(e)
         }
     }
-
-
     /**
      * Login de vendedor por teléfono y código de afiliación
      */

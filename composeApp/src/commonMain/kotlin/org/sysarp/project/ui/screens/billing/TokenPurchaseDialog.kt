@@ -21,7 +21,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.*
 import org.sysarp.project.service.billing.BillingService
-import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.formatCurrency
 
 @Composable
@@ -42,20 +41,16 @@ fun TokenPurchaseDialog(
     // Cargar paquetes de tokens desde la API
     LaunchedEffect(Unit) {
         try {
-            Logger.auth("TOKEN_PURCHASE_DIALOG", "🪙 Cargando paquetes de tokens desde API")
             val result = billingService.getAvailableTokenPackages()
             result.fold(
                 onSuccess = { packages ->
                     tokenPackages = packages
-                    Logger.auth("TOKEN_PURCHASE_DIALOG", "✅ Paquetes cargados desde API: ${packages.size}")
                 },
                 onFailure = { error ->
-                    Logger.auth("TOKEN_PURCHASE_DIALOG", "⚠️ Error cargando desde API, usando fallback: ${error.message}")
                     tokenPackages = billingService.getAvailableTokenPackagesLocal()
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("TOKEN_PURCHASE_DIALOG", "❌ Error inesperado, usando fallback: ${e.message}")
             tokenPackages = billingService.getAvailableTokenPackagesLocal()
         } finally {
             isLoadingPackages = false
@@ -138,7 +133,6 @@ fun TokenPurchaseDialog(
                         
                         coroutineScope.launch {
                             try {
-                                Logger.auth("TOKEN_PURCHASE", "💳 Generando pago para paquete: ${tokenPackage.name}")
                                 
                                 val paymentResult = billingService.generateTokenPurchasePayment(tokenPackage.tokens.toString())
                                 paymentResult.fold(
@@ -155,15 +149,12 @@ fun TokenPurchaseDialog(
                                             onDismiss()
                                         }
                                         
-                                        Logger.auth("TOKEN_PURCHASE", "✅ Código de pago generado: ${paymentCode.paymentCode}")
                                     },
                                     onFailure = { e ->
-                                        Logger.auth("TOKEN_PURCHASE", "❌ Error generando pago: ${e.message}")
                                         isLoading = false
                                     }
                                 )
                             } catch (e: Exception) {
-                                Logger.auth("TOKEN_PURCHASE", "❌ Error inesperado: ${e.message}")
                                 isLoading = false
                             }
                         }

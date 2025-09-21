@@ -11,7 +11,6 @@ import org.sysarp.project.data.SellerFinancialAnalysisParams
 import org.sysarp.project.data.SellerFinancialAnalysisResponse
 import org.sysarp.project.data.SellerStatsResponse
 import org.sysarp.project.service.http.StatsApiClient
-import org.sysarp.project.utils.Logger
 
 class StatsService(
     private val statsApiClient: StatsApiClient
@@ -24,27 +23,21 @@ class StatsService(
         token: String
     ): Result<AdminStatsResponse> {
         return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo resumen de estadísticas del admin: $adminId")
 
             val result = statsApiClient.getAdminStatsSummary(adminId, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Resumen de estadísticas de admin obtenido exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo resumen de estadísticas de admin: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo resumen de estadísticas de admin: ${e.message}")
             Result.failure(e)
         }
     }
-
-
 
     suspend fun getSellerStatsSummary(
         sellerId: Int,
@@ -53,27 +46,21 @@ class StatsService(
         token: String
     ): Result<SellerStatsResponse> {
         return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo resumen de estadísticas del vendedor: $sellerId")
 
             val result = statsApiClient.getSellerStatsSummary(sellerId, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Resumen de estadísticas de vendedor obtenido exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo resumen de estadísticas de vendedor: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo resumen de estadísticas de vendedor: ${e.message}")
             Result.failure(e)
         }
     }
-
-
     suspend fun getAdminDashboard(
         adminId: Int,
         startDate: String? = null,
@@ -81,22 +68,18 @@ class StatsService(
         token: String
     ): Result<QuickSummaryResponse> {
         return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo dashboard para admin: $adminId")
 
             val result = statsApiClient.getAdminDashboard(adminId, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Dashboard de admin obtenido exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo dashboard de admin: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo dashboard de admin: ${e.message}")
             Result.failure(e)
         }
     }
@@ -113,22 +96,18 @@ class StatsService(
         token: String
     ): Result<AnalyticsResponse> {
         return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo analytics completos para admin: $adminId con parámetros avanzados")
 
             val result = statsApiClient.getAnalytics(adminId, startDate, endDate, include, period, metric, confidence, days, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Analytics obtenidos exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo analytics: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo analytics: ${e.message}")
             Result.failure(e)
         }
     }
@@ -145,22 +124,18 @@ class StatsService(
         token: String
     ): Result<AnalyticsResponse> {
         return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo analytics completos para vendedor: $sellerId con parámetros avanzados")
 
             val result = statsApiClient.getSellerAnalytics(sellerId, startDate, endDate, include, period, metric, confidence, days, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Analytics de vendedor obtenidos exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo analytics de vendedor: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo analytics de vendedor: ${e.message}")
             Result.failure(e)
         }
     }
@@ -261,22 +236,18 @@ class StatsService(
         token: String
     ): Result<FinancialAnalysisResponse> {
         return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo análisis financiero para admin: $adminId")
 
             val result = statsApiClient.getFinancialAnalysis(adminId, startDate, endDate, include, currency, taxRate, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Análisis financiero obtenido exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo análisis financiero: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo análisis financiero: ${e.message}")
             Result.failure(e)
         }
     }
@@ -292,22 +263,18 @@ class StatsService(
         token: String
     ): Result<PaymentTransparencyResponse> {
         return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo transparencia de pagos para admin: $adminId")
 
             val result = statsApiClient.getPaymentTransparency(adminId, startDate, endDate, includeFees, includeTaxes, includeCommissions, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Transparencia de pagos obtenida exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo transparencia de pagos: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo transparencia de pagos: ${e.message}")
             Result.failure(e)
         }
     }
@@ -323,22 +290,18 @@ class StatsService(
         token: String
     ): Result<SellerFinancialAnalysisResponse> {
         return try {
-            Logger.auth("STATS_SERVICE", "Obteniendo análisis financiero para vendedor: $sellerId")
 
             val result = statsApiClient.getSellerFinancialAnalysis(sellerId, startDate, endDate, include, currency, commissionRate, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("STATS_SERVICE", "Análisis financiero de vendedor obtenido exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_SERVICE", "Error obteniendo análisis financiero de vendedor: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_SERVICE", "Error obteniendo análisis financiero de vendedor: ${e.message}")
             Result.failure(e)
         }
     }

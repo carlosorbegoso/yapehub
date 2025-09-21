@@ -476,8 +476,6 @@ private fun validateForm(
            SecurityUtils.isValidAddress(address) &&
            SecurityUtils.isValidName(contactName)
 }
-
-
 private fun getBusinessTypeDisplayName(type: String): String {
     return when (type) {
         "RESTAURANT" -> "Restaurante"

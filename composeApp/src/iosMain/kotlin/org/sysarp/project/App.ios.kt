@@ -39,4 +39,3 @@ actual suspend fun checkAccessibilityPermission(): Boolean {
     // iOS no soporta captura de notificaciones de otras apps
     return false
 }
-

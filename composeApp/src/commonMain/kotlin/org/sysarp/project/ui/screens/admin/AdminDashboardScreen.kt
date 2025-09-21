@@ -1105,5 +1105,3 @@ fun ConnectedSellerCard(
         }
     }
 }
-
-

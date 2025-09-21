@@ -8,7 +8,6 @@ import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.dashboard.DashboardAutoRefreshService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
-import org.sysarp.project.utils.Logger
 
 /**
  * Composable para manejar la actualización automática de dashboards
@@ -29,16 +28,13 @@ fun DashboardAutoRefreshHandler(
     
     // Iniciar el servicio cuando el composable se monta
     LaunchedEffect(refreshService, autoRefreshEnabled) {
-        Logger.auth("DASHBOARD_REFRESH_HANDLER", "🚀 Iniciando handler de actualización automática")
         
         refreshService.setAutoRefreshEnabled(autoRefreshEnabled)
         refreshService.startAutoRefresh(
             onSellerRefresh = {
-                Logger.auth("DASHBOARD_REFRESH_HANDLER", "🔄 Actualizando dashboard del vendedor")
                 onRefreshSellerDashboard()
             },
             onAdminRefresh = {
-                Logger.auth("DASHBOARD_REFRESH_HANDLER", "🔄 Actualizando dashboard del administrador")
                 onRefreshAdminDashboard()
             }
         )
@@ -47,9 +43,7 @@ fun DashboardAutoRefreshHandler(
     // Cleanup cuando el composable se desmonta
     DisposableEffect(refreshService) {
         onDispose {
-            Logger.auth("DASHBOARD_REFRESH_HANDLER", "🛑 Deteniendo handler de actualización automática")
             refreshService.stopAutoRefresh()
         }
     }
 }
-

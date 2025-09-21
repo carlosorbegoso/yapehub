@@ -24,7 +24,6 @@ import org.sysarp.project.data.SellersResponse
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.ui.components.topbar.TopBarComponent
-import org.sysarp.project.utils.Logger
 
 data class SellerData(
     val name: String,
@@ -276,7 +275,6 @@ fun SellerManagementScreen(
             isLoading = true
             error = null
             
-            Logger.auth("SELLER_MANAGEMENT", "📋 Cargando vendedores para admin: ${userProfile!!.adminId}")
             
             sellerService.getMySellers(
                 adminId = userProfile!!.adminId!!.toInt(),
@@ -286,11 +284,9 @@ fun SellerManagementScreen(
             ).fold(
                 onSuccess = { response ->
                     sellersData = response
-                    Logger.auth("SELLER_MANAGEMENT", "✅ Vendedores cargados: ${response.data?.sellers?.size ?: 0}")
                 },
                 onFailure = { e ->
                     error = e.message
-                    Logger.auth("SELLER_MANAGEMENT", "❌ Error cargando vendedores: ${e.message}")
                 }
             )
             isLoading = false
@@ -527,7 +523,6 @@ fun SellerManagementScreen(
             onDismiss = { showAddSellerDialog = false },
             onConfirm = { sellerData ->
                 coroutineScope.launch {
-                    Logger.auth("SELLER_MANAGEMENT", "Creando vendedor: ${sellerData.name}")
                     showAddSellerDialog = false
                     // Recargar lista
                     currentPage = 1
@@ -546,7 +541,6 @@ fun SellerManagementScreen(
             },
             onConfirm = { sellerData ->
                 coroutineScope.launch {
-                    Logger.auth("SELLER_MANAGEMENT", "Actualizando vendedor: ${sellerData.name}")
                     showEditSellerDialog = false
                     selectedSeller = null
                     // Recargar lista
@@ -714,4 +708,3 @@ private fun SellerCard(
         }
     }
 }
-

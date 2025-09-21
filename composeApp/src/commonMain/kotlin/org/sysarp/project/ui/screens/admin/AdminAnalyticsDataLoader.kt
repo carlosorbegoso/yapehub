@@ -10,7 +10,6 @@ import org.sysarp.project.data.FinancialAnalysisData
 import org.sysarp.project.data.PaymentTransparencyData
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
-import org.sysarp.project.utils.Logger
 import kotlin.time.Duration.Companion.days
 
 /**
@@ -59,18 +58,15 @@ class AdminAnalyticsDataLoader(
                     onSuccess = { response ->
                         onDataLoaded(response.data)
                         onLoadingChange(false)
-                        Logger.auth("ADMIN_ANALYTICS", "📊 Analytics administrativos cargados exitosamente")
                     },
                     onFailure = { error ->
                         onError(error.message ?: "Error cargando analytics administrativos")
                         onLoadingChange(false)
-                        Logger.auth("ADMIN_ANALYTICS", "❌ Error cargando analytics administrativos: ${error.message}")
                     }
                 )
             } catch (e: Exception) {
                 onError(e.message ?: "Error inesperado")
                 onLoadingChange(false)
-                Logger.auth("ADMIN_ANALYTICS", "❌ Error inesperado: ${e.message}")
             }
         }
     }
@@ -129,18 +125,15 @@ class AdminAnalyticsDataLoader(
                     onSuccess = { response ->
                         onDataLoaded(response.data)
                         onLoadingChange(false)
-                        Logger.auth("ADMIN_FINANCIAL", "💰 Datos financieros cargados exitosamente")
                     },
                     onFailure = { error ->
                         onError(error.message ?: "Error cargando datos financieros")
                         onLoadingChange(false)
-                        Logger.auth("ADMIN_FINANCIAL", "❌ Error cargando datos financieros: ${error.message}")
                     }
                 )
             } catch (e: Exception) {
                 onError(e.message ?: "Error inesperado")
                 onLoadingChange(false)
-                Logger.auth("ADMIN_FINANCIAL", "❌ Error inesperado: ${e.message}")
             }
         }
     }
@@ -184,18 +177,15 @@ class AdminAnalyticsDataLoader(
                     onSuccess = { response ->
                         onDataLoaded(response.data)
                         onLoadingChange(false)
-                        Logger.auth("ADMIN_TRANSPARENCY", "🔍 Datos de transparencia cargados exitosamente")
                     },
                     onFailure = { error ->
                         onError(error.message ?: "Error cargando datos de transparencia")
                         onLoadingChange(false)
-                        Logger.auth("ADMIN_TRANSPARENCY", "❌ Error cargando datos de transparencia: ${error.message}")
                     }
                 )
             } catch (e: Exception) {
                 onError(e.message ?: "Error inesperado")
                 onLoadingChange(false)
-                Logger.auth("ADMIN_TRANSPARENCY", "❌ Error inesperado: ${e.message}")
             }
         }
     }

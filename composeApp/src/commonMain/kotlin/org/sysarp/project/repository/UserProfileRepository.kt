@@ -48,4 +48,3 @@ class UserProfileRepository {
         stores.add(store)
     }
 }
-

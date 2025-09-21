@@ -22,7 +22,6 @@ import org.sysarp.project.ui.components.ErrorAlertDialog
 import org.sysarp.project.ui.components.ErrorType
 import org.sysarp.project.ui.components.topbar.TopBarComponent
 import org.sysarp.project.utils.ErrorInfo
-import org.sysarp.project.utils.Logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,18 +48,15 @@ fun SubscriptionScreen(
     // Cargar datos iniciales
     LaunchedEffect(Unit) {
         try {
-            Logger.auth("SUBSCRIPTION_SCREEN", "📋 Cargando datos de suscripción")
             
             // Cargar suscripción actual
             val subscriptionResult = billingService.getCurrentSubscription()
             subscriptionResult.fold(
                 onSuccess = { subscription ->
                     currentSubscription = subscription
-                    Logger.auth("SUBSCRIPTION_SCREEN", "✅ Suscripción cargada: ${subscription.planName}")
                 },
                 onFailure = { e ->
                     subscriptionError = e.message ?: "Error cargando suscripción"
-                    Logger.auth("SUBSCRIPTION_SCREEN", "❌ Error cargando suscripción: ${e.message}")
                 }
             )
             
@@ -68,11 +64,8 @@ fun SubscriptionScreen(
             val (plans, errorInfo) = billingService.getAvailablePlansWithErrorHandling()
             if (plans != null) {
                 availablePlans = plans
-                Logger.auth("SUBSCRIPTION_SCREEN", "✅ Planes cargados desde API: ${plans.size} planes")
             } else if (errorInfo != null) {
-                Logger.auth("SUBSCRIPTION_SCREEN", "⚠️ Error cargando desde API, usando fallback: ${errorInfo.message}")
                 availablePlans = billingService.getAvailablePlansLocal()
-                Logger.auth("SUBSCRIPTION_SCREEN", "📋 Planes locales cargados: ${availablePlans.size} planes")
                 
                 // Mostrar error elegante si es crítico
                 if (errorInfo.type == ErrorType.NETWORK || errorInfo.type == ErrorType.SERVER) {
@@ -83,9 +76,7 @@ fun SubscriptionScreen(
             
             isLoading = false
         } catch (e: Exception) {
-            Logger.auth("SUBSCRIPTION_SCREEN", "❌ Error inesperado, usando fallback: ${e.message}")
             availablePlans = billingService.getAvailablePlansLocal()
-            Logger.auth("SUBSCRIPTION_SCREEN", "📋 Planes locales cargados en catch: ${availablePlans.size} planes")
             
             // Mostrar error elegante para errores críticos
             val errorInfo = org.sysarp.project.utils.ErrorManager.parseException(e)
@@ -227,17 +218,14 @@ fun SubscriptionScreen(
                                         "plan profesional", "profesional", "professional" -> 3
                                         "plan empresarial", "empresarial", "enterprise" -> 4
                                         else -> {
-                                            Logger.auth("SUBSCRIPTION_SCREEN", "⚠️ Plan no reconocido: ${it.planName}")
                                             null
                                         }
                                     }
-                                    Logger.auth("SUBSCRIPTION_SCREEN", "📋 Plan actual: ${it.planName} -> ID: $planId")
                                     planId
                                 },
                                 onSelectPlan = { selectedPlan ->
                                     coroutineScope.launch {
                                         try {
-                                            Logger.auth("SUBSCRIPTION_SCREEN", "💳 Generando pago para plan: ${selectedPlan.name}")
                                             
                                             val paymentResult = billingService.generateSubscriptionPayment(selectedPlan.id)
                                             paymentResult.fold(
@@ -253,15 +241,12 @@ fun SubscriptionScreen(
                                                         showSuccessAnimation = false
                                                     }
                                                     
-                                                    Logger.auth("SUBSCRIPTION_SCREEN", "✅ Código de pago generado: ${paymentCode.paymentCode}")
                                                 },
                                                 onFailure = { e ->
-                                                    Logger.auth("SUBSCRIPTION_SCREEN", "❌ Error generando pago: ${e.message}")
                                                     // Mostrar error en un snackbar o dialog
                                                 }
                                             )
                                         } catch (e: Exception) {
-                                            Logger.auth("SUBSCRIPTION_SCREEN", "❌ Error inesperado: ${e.message}")
                                             // Mostrar error en un snackbar o dialog
                                         }
                                     }

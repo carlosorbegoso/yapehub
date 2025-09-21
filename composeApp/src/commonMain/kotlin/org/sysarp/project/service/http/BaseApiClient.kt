@@ -10,7 +10,6 @@ import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.sysarp.project.utils.Constants
-import org.sysarp.project.utils.Logger
 
 /**
  * Cliente HTTP base con configuración común para todos los servicios
@@ -47,12 +46,9 @@ abstract class BaseApiClient {
      * Logging común para todos los servicios
      */
     protected fun logInfo(service: String, message: String) {
-        Logger.auth(service, message)
     }
     
     protected fun logError(service: String, message: String) {
-        Logger.auth(service, "ERROR: $message")
     }
     
 }
-

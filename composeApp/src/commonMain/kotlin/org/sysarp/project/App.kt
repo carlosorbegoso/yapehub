@@ -38,8 +38,6 @@ fun App() {
         }
     }
 }
-
-
 @Composable
 fun YapeApp() {
     val userProfileRepository = remember {

@@ -3,7 +3,6 @@ package org.sysarp.project.service
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.SecurityUtils
 
 @Serializable

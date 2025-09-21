@@ -48,13 +48,11 @@ class PaymentWebSocketClient(
      */
     suspend fun connect(sellerId: Long) {
         if (_connectionState.value == WebSocketConnectionState.CONNECTED) {
-            Logger.auth("WEBSOCKET", "Ya conectado")
             return
         }
         
         val token = authService.accessToken.value
         if (token.isNullOrBlank()) {
-            Logger.auth("WEBSOCKET", "❌ Token no disponible")
             return
         }
         
@@ -63,9 +61,6 @@ class PaymentWebSocketClient(
         
         try {
             val url = "${Constants.WEBSOCKET_URL}/ws/payments/$sellerId?token=$token"
-            Logger.auth("WEBSOCKET", "🔗 Conectando a: $url")
-            Logger.auth("WEBSOCKET", "🔑 Token: ${token.take(20)}...")
-            Logger.auth("WEBSOCKET", "👤 Seller ID: $sellerId")
             
             httpClient.webSocket(url) {
                 webSocketSession = this
@@ -75,39 +70,30 @@ class PaymentWebSocketClient(
                     when (frame) {
                         is Frame.Text -> {
                             val message = frame.readText()
-                            Logger.auth("WEBSOCKET", "📨 Mensaje recibido: $message")
                             processMessage(message)
                         }
                         is Frame.Close -> {
                             val reason = frame.readReason()
-                            Logger.auth("WEBSOCKET", "🔌 Conexión cerrada: ${reason?.message}")
                             _connectionState.value = WebSocketConnectionState.DISCONNECTED
                             scheduleReconnect()
                         }
                         is Frame.Ping -> {
-                            Logger.auth("WEBSOCKET", "🏓 Ping recibido")
                         }
                         is Frame.Pong -> {
-                            Logger.auth("WEBSOCKET", "🏓 Pong recibido")
                         }
                         else -> {
-                            Logger.auth("WEBSOCKET", "📋 Frame recibido: ${frame::class.simpleName}")
                         }
                     }
                 }
             }
             
         } catch (e: Exception) {
-            Logger.auth("WEBSOCKET", "❌ Error conectando: ${e.message}")
-            Logger.auth("WEBSOCKET", "🔍 Tipo de error: ${e::class.simpleName}")
-            Logger.auth("WEBSOCKET", "🔍 Stack trace: ${e.stackTraceToString()}")
             _connectionState.value = WebSocketConnectionState.DISCONNECTED
             
             val message = e.message ?: ""
             if (!message.contains("401") && !message.contains("403")) {
                 scheduleReconnect()
             } else {
-                Logger.auth("WEBSOCKET", "🚫 Error de autenticación, no reintentando")
             }
         }
     }
@@ -117,11 +103,9 @@ class PaymentWebSocketClient(
      */
     private suspend fun processMessage(message: String) {
         try {
-            Logger.auth("WEBSOCKET", "📨 Procesando mensaje: $message")
             
             // Manejar mensaje de conexión especial
             if (message.contains("\"type\":\"CONNECTED\"")) {
-                Logger.auth("WEBSOCKET", "🎉 CONEXIÓN ESTABLECIDA")
                 _connectionState.value = WebSocketConnectionState.CONNECTED
                 reconnectAttempts = 0
                 startHeartbeat()
@@ -142,9 +126,6 @@ class PaymentWebSocketClient(
                         message = webSocketMessage.data.message
                     )
                     _paymentNotifications.emit(notificationData)
-                    Logger.auth("WEBSOCKET", "💰 NUEVO PAGO RECIBIDO: ${notificationData.paymentId} - S/ ${notificationData.amount}")
-                    Logger.auth("WEBSOCKET", "👤 Cliente: ${notificationData.senderName}")
-                    Logger.auth("WEBSOCKET", "🔢 Código Yape: ${notificationData.yapeCode}")
                 }
                 
                 "PAYMENT_RESULT" -> {
@@ -156,17 +137,13 @@ class PaymentWebSocketClient(
                         sellerName = webSocketMessage.data.sellerName ?: ""
                     )
                     _paymentResults.emit(resultData)
-                    Logger.auth("WEBSOCKET", "✅ RESULTADO DE PAGO: ${resultData.paymentId} - ${resultData.status}")
                 }
                 
                 else -> {
-                    Logger.auth("WEBSOCKET", "⚠️ Tipo de mensaje desconocido: ${webSocketMessage.type}")
                 }
             }
             
         } catch (e: Exception) {
-            Logger.auth("WEBSOCKET", "❌ Error procesando mensaje: ${e.message}")
-            Logger.auth("WEBSOCKET", "📄 Mensaje problemático: $message")
         }
     }
     
@@ -180,9 +157,7 @@ class PaymentWebSocketClient(
                 delay(60000) // Heartbeat cada 60 segundos (aumentado de 30 segundos)
                 
                 try {
-                    Logger.auth("WEBSOCKET", "💓 Heartbeat WebSocket - Conexión activa")
                 } catch (e: Exception) {
-                    Logger.auth("WEBSOCKET", "❌ Error en heartbeat: ${e.message}")
                     _connectionState.value = WebSocketConnectionState.DISCONNECTED
                     scheduleReconnect()
                     break
@@ -200,7 +175,6 @@ class PaymentWebSocketClient(
         val currentTime = System.currentTimeMillis()
         
         if (currentTime - lastReconnectTime < minTimeBetweenReconnects) {
-            Logger.auth("WEBSOCKET", "⏳ Throttling: ignorando reconexión (muy reciente)")
             return
         }
         
@@ -208,18 +182,15 @@ class PaymentWebSocketClient(
             reconnectAttempts++
             
             if (reconnectAttempts > maxReconnectAttempts) {
-                Logger.auth("WEBSOCKET", "🚫 Máximo de intentos de reconexión alcanzado ($maxReconnectAttempts)")
                 reconnectAttempts = 0
                 return@launch
             }
             
             val delaySeconds = minOf(reconnectAttempts * 10, 60) // 10, 20, 30 segundos (aumentado)
-            Logger.auth("WEBSOCKET", "🔄 Programando reconexión en $delaySeconds segundos (intento $reconnectAttempts/$maxReconnectAttempts)")
             
             delay(delaySeconds * 1000L)
             
             currentSellerId?.let { sellerId ->
-                Logger.auth("WEBSOCKET", "🔄 Intentando reconexión automática...")
                 lastReconnectTime = System.currentTimeMillis()
                 connect(sellerId)
             }
@@ -230,7 +201,6 @@ class PaymentWebSocketClient(
      * Desconecta el WebSocket
      */
     fun disconnect() {
-        Logger.auth("WEBSOCKET", "🔌 Desconectando WebSocket")
         
         reconnectJob?.cancel()
         reconnectJob = null
@@ -250,12 +220,9 @@ class PaymentWebSocketClient(
             val session = webSocketSession
             if (session != null && _connectionState.value == WebSocketConnectionState.CONNECTED) {
                 session.send(Frame.Text(message))
-                Logger.auth("WEBSOCKET", "📤 Mensaje enviado: $message")
             } else {
-                Logger.auth("WEBSOCKET", "❌ No se puede enviar mensaje: WebSocket no conectado")
             }
         } catch (e: Exception) {
-            Logger.auth("WEBSOCKET", "❌ Error enviando mensaje: ${e.message}")
         }
     }
     

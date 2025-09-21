@@ -23,7 +23,6 @@ import kotlinx.coroutines.delay
 import org.sysarp.project.data.*
 import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.ui.components.topbar.TopBarComponent
-import org.sysarp.project.utils.Logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,25 +42,21 @@ fun BillingDashboardScreen(
     // Cargar datos del dashboard
     LaunchedEffect(Unit) {
         try {
-            Logger.auth("BILLING_DASHBOARD", "📊 Cargando dashboard de facturación")
             
             val dashboardResult = billingService.getCurrentBillingDashboard()
             dashboardResult.fold(
                 onSuccess = { dashboard ->
                     billingDashboard = dashboard
                     isLoading = false
-                    Logger.auth("BILLING_DASHBOARD", "✅ Dashboard cargado exitosamente")
                 },
                 onFailure = { e ->
                     error = e.message ?: "Error desconocido"
                     isLoading = false
-                    Logger.auth("BILLING_DASHBOARD", "❌ Error cargando dashboard: ${e.message}")
                 }
             )
         } catch (e: Exception) {
             error = e.message ?: "Error inesperado"
             isLoading = false
-            Logger.auth("BILLING_DASHBOARD", "❌ Error inesperado: ${e.message}")
         }
     }
     

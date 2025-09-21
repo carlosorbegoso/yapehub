@@ -42,4 +42,3 @@ data class DailyReport(
     val totalAmount: Double,
     val transactionCount: Int
 )
-

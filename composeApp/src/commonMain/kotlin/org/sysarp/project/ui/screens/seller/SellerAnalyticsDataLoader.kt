@@ -8,7 +8,6 @@ import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.data.AnalyticsData
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
-import org.sysarp.project.utils.Logger
 import kotlin.time.Duration.Companion.days
 
 /**
@@ -57,18 +56,15 @@ class SellerAnalyticsDataLoader(
                     onSuccess = { response ->
                         onDataLoaded(response.data)
                         onLoadingChange(false)
-                        Logger.auth("SELLER_ANALYTICS", "📊 Analytics cargados exitosamente")
                     },
                     onFailure = { error ->
                         onError(error.message ?: "Error cargando analytics")
                         onLoadingChange(false)
-                        Logger.auth("SELLER_ANALYTICS", "❌ Error cargando analytics: ${error.message}")
                     }
                 )
             } catch (e: Exception) {
                 onError(e.message ?: "Error inesperado")
                 onLoadingChange(false)
-                Logger.auth("SELLER_ANALYTICS", "❌ Error inesperado: ${e.message}")
             }
         }
     }
@@ -127,18 +123,15 @@ class SellerAnalyticsDataLoader(
                     onSuccess = { response ->
                         onDataLoaded(response.data)
                         onLoadingChange(false)
-                        Logger.auth("SELLER_FINANCIAL", "💰 Datos financieros cargados exitosamente")
                     },
                     onFailure = { error ->
                         onError(error.message ?: "Error cargando datos financieros")
                         onLoadingChange(false)
-                        Logger.auth("SELLER_FINANCIAL", "❌ Error cargando datos financieros: ${error.message}")
                     }
                 )
             } catch (e: Exception) {
                 onError(e.message ?: "Error inesperado")
                 onLoadingChange(false)
-                Logger.auth("SELLER_FINANCIAL", "❌ Error inesperado: ${e.message}")
             }
         }
     }

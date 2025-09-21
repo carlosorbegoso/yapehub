@@ -401,4 +401,3 @@ private fun NotificationCard(
         }
     }
 }
-

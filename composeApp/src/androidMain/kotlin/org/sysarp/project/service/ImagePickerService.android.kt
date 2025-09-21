@@ -178,4 +178,3 @@ actual class ImagePickerService {
         return sdf.format(Date())
     }
 }
-

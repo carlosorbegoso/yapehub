@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.ui.components.EnhancedPaymentNotificationCard
-import org.sysarp.project.utils.Logger
 
 /**
  * Sección de notificaciones de pago del vendedor mejorada
@@ -19,10 +18,8 @@ fun SellerNotificationSection(
     onRejectNotification: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Logger.auth("NOTIFICATION_SECTION", "🔍 SellerNotificationSection renderizando - currentNotification: ${currentNotification?.paymentId}")
     
     currentNotification?.let { notification ->
-        Logger.auth("NOTIFICATION_SECTION", "📱 Mostrando EnhancedPaymentNotificationCard para pago: ${notification.paymentId}")
         EnhancedPaymentNotificationCard(
             notification = notification,
             onDismiss = onDismissNotification,
@@ -31,6 +28,5 @@ fun SellerNotificationSection(
             modifier = modifier.fillMaxWidth()
         )
     } ?: run {
-        Logger.auth("NOTIFICATION_SECTION", "❌ No hay notificación para mostrar")
     }
 }

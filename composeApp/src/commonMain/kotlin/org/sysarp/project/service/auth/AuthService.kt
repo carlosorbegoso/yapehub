@@ -7,7 +7,6 @@ import org.sysarp.project.data.*
 import org.sysarp.project.service.http.AuthApiClient
 import org.sysarp.project.utils.ErrorInfo
 import org.sysarp.project.utils.ErrorManager
-import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.UserProfileFactory
 
 /**
@@ -51,18 +50,15 @@ class AuthService {
         }
         
         if (tokenManager.isTokenExpired()) {
-            Logger.auth("AUTH_SERVICE", "Token expirado, intentando refrescar...")
             
             val refreshResult = refreshToken()
             return refreshResult.isSuccess
         }
         
         if (shouldRefreshToken()) {
-            Logger.auth("AUTH_SERVICE", "Token próximo a expirar, refrescando preventivamente...")
             
             val refreshResult = refreshToken()
             if (refreshResult.isFailure) {
-                Logger.auth("AUTH_SERVICE", "Error refrescando token preventivamente: ${refreshResult.exceptionOrNull()?.message}")
             }
         }
         
@@ -79,10 +75,8 @@ class AuthService {
         role: String = "ADMIN"
     ): Result<LoginUserData> {
         return try {
-            Logger.auth("AUTH_SERVICE", "Iniciando login de admin: $email")
             
             val fingerprint = deviceFingerprint ?: org.sysarp.project.utils.DeviceUtils.generateDeviceFingerprint()
-            Logger.auth("AUTH_SERVICE", "Device fingerprint: ${fingerprint.take(20)}...")
             
             val apiResponse = authApiClient.adminLogin(email, password, fingerprint, role)
             
@@ -117,22 +111,18 @@ class AuthService {
                         
                         _authState.value = AuthState.AUTHENTICATED
                         
-                        Logger.auth("AUTH_SERVICE", "Login exitoso para admin: $email")
                         Result.success(loginData)
                     } else {
-                        Logger.auth("AUTH_SERVICE", "Error en login de admin: ${response.message}")
                         _authState.value = AuthState.UNAUTHENTICATED
                         Result.failure(Exception(response.message))
                     }
                 },
                 onFailure = { error ->
-                    Logger.auth("AUTH_SERVICE", "Error en login de admin: ${error.message}")
                     _authState.value = AuthState.UNAUTHENTICATED
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción en login de admin: ${e.message}")
             _authState.value = AuthState.UNAUTHENTICATED
             Result.failure(e)
         }
@@ -146,11 +136,9 @@ class AuthService {
         return try {
             val refreshToken = tokenManager.getRefreshToken()
             if (refreshToken == null) {
-                Logger.auth("AUTH_SERVICE", "No hay refresh token disponible")
                 return Result.failure(Exception("No hay refresh token disponible"))
             }
             
-            Logger.auth("AUTH_SERVICE", "Refrescando token...")
             
             val apiResponse = authApiClient.refreshToken(refreshToken)
             
@@ -163,20 +151,16 @@ class AuthService {
                             response.data.expiresIn
                         )
                         
-                        Logger.auth("AUTH_SERVICE", "Token refrescado exitosamente")
                         Result.success(true)
                     } else {
-                        Logger.auth("AUTH_SERVICE", "Error refrescando token: ${response.message}")
                         Result.failure(Exception(response.message))
                     }
                 },
                 onFailure = { error ->
-                    Logger.auth("AUTH_SERVICE", "Error refrescando token: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción refrescando token: ${e.message}")
             Result.failure(e)
         }
     }
@@ -197,15 +181,12 @@ class AuthService {
             
             // Intentar cerrar sesión en el servidor si hay token
             if (accessToken != null) {
-                Logger.auth("AUTH_SERVICE", "Cerrando sesión en el servidor...")
                 val apiResponse = authApiClient.logout(accessToken)
                 
                 apiResponse.fold(
                     onSuccess = { response ->
-                        Logger.auth("AUTH_SERVICE", "Sesión cerrada exitosamente en el servidor")
                     },
                     onFailure = { error ->
-                        Logger.auth("AUTH_SERVICE", "Error cerrando sesión en el servidor: ${error.message}")
                         // Continuar con logout local aunque falle el servidor
                     }
                 )
@@ -216,10 +197,8 @@ class AuthService {
             _userProfile.value = null
             _authState.value = AuthState.UNAUTHENTICATED
             
-            Logger.auth("AUTH_SERVICE", "Usuario ha cerrado sesión localmente")
             Result.success(Unit)
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción en logout: ${e.message}")
             
             // Limpiar datos locales aunque haya error
             tokenManager.clearTokens()
@@ -236,7 +215,6 @@ class AuthService {
     fun updateActivity() {
         // Actualizar timestamp de última actividad en TokenManager
         tokenManager.getAccessToken() // Esto actualiza automáticamente lastActivityTime
-        Logger.auth("AUTH_SERVICE", "Actividad del usuario actualizada")
     }
     
     /**
@@ -246,22 +224,17 @@ class AuthService {
     suspend fun checkAndRefreshTokenIfNeeded(): Boolean {
         return try {
             if (shouldRefreshToken()) {
-                Logger.auth("AUTH_SERVICE", "Token necesita refresh, refrescando...")
                 val refreshResult = refreshToken()
                 
                 if (refreshResult.isSuccess) {
-                    Logger.auth("AUTH_SERVICE", "Token refrescado exitosamente en verificación periódica")
                     true
                 } else {
-                    Logger.auth("AUTH_SERVICE", "Error refrescando token en verificación periódica: ${refreshResult.exceptionOrNull()?.message}")
                     false
                 }
             } else {
-                Logger.auth("AUTH_SERVICE", "Token no necesita refresh")
                 true
             }
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción en verificación periódica de token: ${e.message}")
             false
         }
     }
@@ -324,7 +297,6 @@ class AuthService {
         contactName: String
     ): Result<LoginUserData> {
         return try {
-            Logger.auth("AUTH_SERVICE", "Iniciando registro de admin: $email")
             
             val apiResponse = authApiClient.adminRegister(
                 businessName = businessName,
@@ -368,22 +340,18 @@ class AuthService {
                         
                         _authState.value = AuthState.AUTHENTICATED
                         
-                        Logger.auth("AUTH_SERVICE", "Registro exitoso para admin: $email")
                         Result.success(loginData)
                     } else {
-                        Logger.auth("AUTH_SERVICE", "Error en registro de admin: ${response.message}")
                         _authState.value = AuthState.UNAUTHENTICATED
                         Result.failure(Exception(response.message))
                     }
                 },
                 onFailure = { error ->
-                    Logger.auth("AUTH_SERVICE", "Error en registro de admin: ${error.message}")
                     _authState.value = AuthState.UNAUTHENTICATED
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción en registro de admin: ${e.message}")
             _authState.value = AuthState.UNAUTHENTICATED
             Result.failure(e)
         }
@@ -396,22 +364,18 @@ class AuthService {
      */
     suspend fun forgotPassword(email: String): Result<ForgotPasswordData> {
         return try {
-            Logger.auth("AUTH_SERVICE", "Solicitando recuperación de contraseña para: $email")
             
             val result = authApiClient.forgotPassword(email)
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("AUTH_SERVICE", "Solicitud de recuperación enviada exitosamente")
                     Result.success(response.data!!)
                 },
                 onFailure = { error ->
-                    Logger.auth("AUTH_SERVICE", "Error en recuperación de contraseña: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción en recuperación de contraseña: ${e.message}")
             Result.failure(e)
         }
     }
@@ -424,22 +388,18 @@ class AuthService {
         affiliationCode: String
     ): Result<SellerLoginByPhoneResponse> {
         return try {
-            Logger.auth("AUTH_SERVICE", "Intentando login de vendedor por teléfono: $phone")
             
             val result = authApiClient.sellerLoginByPhone(phone, affiliationCode)
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("AUTH_SERVICE", "Login de vendedor exitoso por teléfono: $phone")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("AUTH_SERVICE", "Error en login de vendedor por teléfono: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción en login de vendedor por teléfono: ${e.message}")
             Result.failure(e)
         }
     }
@@ -451,22 +411,18 @@ class AuthService {
         affiliationCode: String
     ): Result<ValidateAffiliationCodeResponse> {
         return try {
-            Logger.auth("AUTH_SERVICE", "Validando código de afiliación: ${affiliationCode.take(10)}...")
             
             val result = authApiClient.validateAffiliationCode(affiliationCode)
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("AUTH_SERVICE", "Código de afiliación validado exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("AUTH_SERVICE", "Error validando código de afiliación: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción validando código de afiliación: ${e.message}")
             Result.failure(e)
         }
     }
@@ -481,22 +437,18 @@ class AuthService {
         token: String
     ): Result<org.sysarp.project.data.SellersResponse> {
         return try {
-            Logger.auth("AUTH_SERVICE", "Obteniendo vendedores del admin: $adminId, página: $page")
             
             val result = authApiClient.getMySellers(adminId, page, limit, token)
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("AUTH_SERVICE", "Vendedores obtenidos: ${response.data?.sellers?.size ?: 0} vendedores")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("AUTH_SERVICE", "Error obteniendo vendedores: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "Excepción obteniendo vendedores: ${e.message}")
             Result.failure(e)
         }
     }
@@ -512,16 +464,13 @@ class AuthService {
         role: String = "ADMIN"
     ): Pair<LoginUserData?, ErrorInfo?> {
         return try {
-            Logger.auth("AUTH_SERVICE", "🔐 Iniciando login de admin con manejo elegante de errores: $email")
             
             val result = loginAdmin(email, password, deviceFingerprint, role)
             result.fold(
                 onSuccess = { loginData ->
-                    Logger.auth("AUTH_SERVICE", "✅ Login exitoso para admin: $email")
                     Pair(loginData, null)
                 },
                 onFailure = { exception ->
-                    Logger.auth("AUTH_SERVICE", "❌ Error en login de admin: ${exception.message}")
                     
                     // Parsear el error específico del login
                     val errorInfo = when {
@@ -567,7 +516,6 @@ class AuthService {
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("AUTH_SERVICE", "❌ Error inesperado en login: ${e.message}")
             val errorInfo = ErrorManager.parseException(e)
             Pair(null, errorInfo)
         }

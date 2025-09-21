@@ -1,7 +1,4 @@
 package org.sysarp.project.service.notifications
-
-import org.sysarp.project.utils.Logger
-
 /**
  * Servicio para manejar notificaciones locales de pagos
  * Clase simplificada - funcionalidades específicas implementadas en SellerNotificationService
@@ -14,7 +11,6 @@ class PaymentNotificationService {
      * Constructor por defecto para evitar errores de NoClassDefFoundError
      */
     init {
-        Logger.auth("PAYMENT_NOTIFICATION_SERVICE", "PaymentNotificationService inicializado")
     }
 }
 
@@ -39,22 +35,18 @@ class SellerNotificationService(
             val userProfile = authService.userProfile.value ?: throw Exception("Perfil de usuario no disponible")
             val userId = userProfile.id ?: throw Exception("ID de usuario no disponible")
             
-            Logger.auth("SELLER_NOTIFICATION_SERVICE", "Obteniendo notificaciones del vendedor")
             
             val result = notificationApiClient.getSellerNotifications(token, userId.toInt(), page, size)
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("SELLER_NOTIFICATION_SERVICE", "Notificaciones obtenidas exitosamente")
                     Result.success(response.data!!)
                 },
                 onFailure = { error ->
-                    Logger.auth("SELLER_NOTIFICATION_SERVICE", "Error obteniendo notificaciones: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("SELLER_NOTIFICATION_SERVICE", "Error obteniendo notificaciones: ${e.message}")
             Result.failure(e)
         }
     }
@@ -66,22 +58,18 @@ class SellerNotificationService(
         return try {
             val token = authService.accessToken.value ?: throw Exception("Token no disponible")
             
-            Logger.auth("SELLER_NOTIFICATION_SERVICE", "Marcando notificación como leída: $notificationId")
             
             val result = notificationApiClient.markNotificationAsRead(notificationId, token)
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("SELLER_NOTIFICATION_SERVICE", "Notificación marcada como leída exitosamente")
                     Result.success(response.data!!)
                 },
                 onFailure = { error ->
-                    Logger.auth("SELLER_NOTIFICATION_SERVICE", "Error marcando notificación como leída: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("SELLER_NOTIFICATION_SERVICE", "Error marcando notificación como leída: ${e.message}")
             Result.failure(e)
         }
     }

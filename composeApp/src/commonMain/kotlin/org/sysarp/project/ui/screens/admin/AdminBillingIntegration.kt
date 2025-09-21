@@ -15,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.*
 import org.sysarp.project.service.billing.BillingService
-import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.formatCurrency
 
 @Composable
@@ -34,17 +33,14 @@ fun AdminBillingIntegrationCard(
     // Cargar datos de billing
     LaunchedEffect(Unit) {
         try {
-            Logger.auth("ADMIN_BILLING", "📊 Cargando datos de billing para admin")
             
             // Cargar estado de suscripción
             val subscriptionResult = billingService.getCurrentSubscription()
             subscriptionResult.fold(
                 onSuccess = { status ->
                     subscriptionStatus = status
-                    Logger.auth("ADMIN_BILLING", "✅ Suscripción cargada: ${status.planName}")
                 },
                 onFailure = { e ->
-                    Logger.auth("ADMIN_BILLING", "❌ Error cargando suscripción: ${e.message}")
                     error = e.message
                 }
             )
@@ -54,15 +50,12 @@ fun AdminBillingIntegrationCard(
             tokenResult.fold(
                 onSuccess = { status ->
                     tokenStatus = status
-                    Logger.auth("ADMIN_BILLING", "✅ Tokens cargados: ${status.tokensAvailable}")
                 },
                 onFailure = { e ->
-                    Logger.auth("ADMIN_BILLING", "❌ Error cargando tokens: ${e.message}")
                     if (error == null) error = e.message
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("ADMIN_BILLING", "❌ Error inesperado: ${e.message}")
             error = e.message
         } finally {
             isLoading = false

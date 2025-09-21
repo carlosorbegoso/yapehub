@@ -5,7 +5,6 @@ import io.ktor.client.request.*
 import kotlinx.serialization.json.Json
 import org.sysarp.project.data.*
 import org.sysarp.project.service.http.BaseApiClient
-import org.sysarp.project.utils.Logger
 
 class BillingApiClient : BaseApiClient() {
     
@@ -23,8 +22,6 @@ class BillingApiClient : BaseApiClient() {
      */
     suspend fun getTokenStatus(adminId: Int, token: String): Result<TokenStatusResponse> {
         return try {
-            Logger.auth("BILLING_API", "🪙 Obteniendo estado de tokens para admin: $adminId")
-            Logger.auth("BILLING_API", "🌐 URL base: $baseUrl")
             
             val response = client.get("$baseUrl/api/billing") {
                 parameter("type", "tokens")
@@ -33,7 +30,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta tokens: $responseBody")
             
             // Intentar parsear como respuesta flexible primero
             try {
@@ -58,7 +54,6 @@ class BillingApiClient : BaseApiClient() {
                 }
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error obteniendo tokens: ${e.message}")
             Result.failure(e)
         }
     }
@@ -68,8 +63,6 @@ class BillingApiClient : BaseApiClient() {
      */
     suspend fun getSubscriptionStatus(adminId: Int, token: String): Result<SubscriptionStatus> {
         return try {
-            Logger.auth("BILLING_API", "📋 Obteniendo estado de suscripción para admin: $adminId")
-            Logger.auth("BILLING_API", "🌐 URL base: $baseUrl")
             
             val response = client.get("$baseUrl/api/billing") {
                 parameter("type", "subscription")
@@ -78,7 +71,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta suscripción: $responseBody")
             
             // Intentar parsear como respuesta flexible primero
             try {
@@ -103,7 +95,6 @@ class BillingApiClient : BaseApiClient() {
                 }
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error obteniendo suscripción: ${e.message}")
             Result.failure(e)
         }
     }
@@ -113,8 +104,6 @@ class BillingApiClient : BaseApiClient() {
      */
     suspend fun getBillingDashboard(adminId: Int, token: String): Result<BillingDashboard> {
         return try {
-            Logger.auth("BILLING_API", "📊 Obteniendo dashboard de facturación para admin: $adminId")
-            Logger.auth("BILLING_API", "🌐 URL base: $baseUrl")
             
             val response = client.get("$baseUrl/api/billing") {
                 parameter("type", "dashboard")
@@ -125,7 +114,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta dashboard: $responseBody")
             
             // Intentar parsear como respuesta flexible primero
             try {
@@ -150,7 +138,6 @@ class BillingApiClient : BaseApiClient() {
                 }
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error obteniendo dashboard: ${e.message}")
             Result.failure(e)
         }
     }
@@ -160,7 +147,6 @@ class BillingApiClient : BaseApiClient() {
      */
     suspend fun getTokenPackages(adminId: Int, token: String): Result<List<TokenPackage>> {
         return try {
-            Logger.auth("BILLING_API", "🪙 Obteniendo paquetes de tokens disponibles para adminId: $adminId")
             
             val response = client.get("$baseUrl/api/billing") {
                 parameter("type", "token-packages")
@@ -170,7 +156,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta paquetes de tokens: $responseBody")
             
             // Intentar parsear como respuesta flexible primero
             try {
@@ -195,7 +180,6 @@ class BillingApiClient : BaseApiClient() {
                 }
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error obteniendo paquetes de tokens: ${e.message}")
             Result.failure(e)
         }
     }
@@ -205,7 +189,6 @@ class BillingApiClient : BaseApiClient() {
      */
     suspend fun getAvailablePlans(token: String): Result<List<SubscriptionPlan>> {
         return try {
-            Logger.auth("BILLING_API", "📋 Obteniendo planes disponibles")
             
             val response = client.get("$baseUrl/api/billing") {
                 parameter("type", "plans")
@@ -214,7 +197,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta planes: $responseBody")
             
             // Intentar parsear como respuesta flexible primero
             try {
@@ -239,7 +221,6 @@ class BillingApiClient : BaseApiClient() {
                 }
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error obteniendo planes: ${e.message}")
             Result.failure(e)
         }
     }
@@ -253,7 +234,6 @@ class BillingApiClient : BaseApiClient() {
         request: GeneratePaymentRequest
     ): Result<PaymentCode> {
         return try {
-            Logger.auth("BILLING_API", "💳 Generando código de pago para admin: $adminId")
             
             val response = client.post("$baseUrl/api/billing/operations") {
                 parameter("adminId", adminId)
@@ -265,7 +245,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta código pago: $responseBody")
             
             val paymentResponse = json.decodeFromString<PaymentCodeResponse>(responseBody)
             
@@ -275,7 +254,6 @@ class BillingApiClient : BaseApiClient() {
                 Result.failure(Exception(paymentResponse.message))
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error generando código de pago: ${e.message}")
             Result.failure(e)
         }
     }
@@ -289,7 +267,6 @@ class BillingApiClient : BaseApiClient() {
         request: PaymentUploadRequest
     ): Result<Boolean> {
         return try {
-            Logger.auth("BILLING_API", "📸 Subiendo comprobante de pago para admin: $adminId")
             
             val response = client.post("$baseUrl/api/billing/payments/upload") {
                 parameter("adminId", adminId)
@@ -300,7 +277,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta subida: $responseBody")
             
             val uploadResponse = json.decodeFromString<BillingResponse<Any>>(responseBody)
             
@@ -310,7 +286,6 @@ class BillingApiClient : BaseApiClient() {
                 Result.failure(Exception(uploadResponse.message))
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error subiendo comprobante: ${e.message}")
             Result.failure(e)
         }
     }
@@ -325,7 +300,6 @@ class BillingApiClient : BaseApiClient() {
         request: PaymentUploadBase64Request
     ): Result<Boolean> {
         return try {
-            Logger.auth("BILLING_API", "📸 Subiendo comprobante de pago (base64) para admin: $adminId")
             
             val response = client.post("$baseUrl/api/billing/payments/upload") {
                 parameter("adminId", adminId)
@@ -336,7 +310,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta subida base64: $responseBody")
             
             val uploadResponse = json.decodeFromString<BillingResponse<Any>>(responseBody)
             
@@ -346,7 +319,6 @@ class BillingApiClient : BaseApiClient() {
                 Result.failure(Exception(uploadResponse.message))
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error subiendo comprobante base64: ${e.message}")
             Result.failure(e)
         }
     }
@@ -356,14 +328,12 @@ class BillingApiClient : BaseApiClient() {
      */
     suspend fun getPaymentStatus(paymentCode: String, token: String): Result<PaymentStatus> {
         return try {
-            Logger.auth("BILLING_API", "📋 Verificando estado de pago: $paymentCode")
             
             val response = client.get("$baseUrl/api/billing/payments/status/$paymentCode") {
                 header("Authorization", "Bearer $token")
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta estado pago: $responseBody")
             
             val statusResponse = json.decodeFromString<PaymentStatusResponse>(responseBody)
             
@@ -373,7 +343,6 @@ class BillingApiClient : BaseApiClient() {
                 Result.failure(Exception(statusResponse.message))
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error verificando estado de pago: ${e.message}")
             Result.failure(e)
         }
     }
@@ -388,7 +357,6 @@ class BillingApiClient : BaseApiClient() {
      */
     suspend fun subscribeToPlan(adminId: Int, token: String, planId: Int): Result<Boolean> {
         return try {
-            Logger.auth("BILLING_API", "🔄 Suscribiéndose al plan ID: $planId para admin: $adminId")
             
             val response = client.post("$baseUrl/api/billing/operations") {
                 parameter("adminId", adminId)
@@ -399,7 +367,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta suscripción: $responseBody")
             
             val subscribeResponse = json.decodeFromString<BillingResponse<Any>>(responseBody)
             
@@ -409,7 +376,6 @@ class BillingApiClient : BaseApiClient() {
                 Result.failure(Exception(subscribeResponse.message))
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error suscribiéndose: ${e.message}")
             Result.failure(e)
         }
     }
@@ -420,7 +386,6 @@ class BillingApiClient : BaseApiClient() {
      */
     suspend fun upgradePlan(adminId: Int, token: String, planId: Int): Result<Boolean> {
         return try {
-            Logger.auth("BILLING_API", "⬆️ Upgrade al plan ID: $planId para admin: $adminId")
             
             val response = client.post("$baseUrl/api/billing/operations") {
                 parameter("adminId", adminId)
@@ -431,7 +396,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta upgrade: $responseBody")
             
             val upgradeResponse = json.decodeFromString<BillingResponse<Any>>(responseBody)
             
@@ -441,7 +405,6 @@ class BillingApiClient : BaseApiClient() {
                 Result.failure(Exception(upgradeResponse.message))
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error haciendo upgrade: ${e.message}")
             Result.failure(e)
         }
     }
@@ -452,7 +415,6 @@ class BillingApiClient : BaseApiClient() {
      */
     suspend fun purchaseTokens(adminId: Int, token: String, tokensPackage: String): Result<Boolean> {
         return try {
-            Logger.auth("BILLING_API", "🛒 Comprando tokens: $tokensPackage para admin: $adminId")
             
             val response = client.post("$baseUrl/api/billing/operations") {
                 parameter("adminId", adminId)
@@ -463,7 +425,6 @@ class BillingApiClient : BaseApiClient() {
             }
             
             val responseBody = response.body<String>()
-            Logger.auth("BILLING_API", "📊 Respuesta compra tokens: $responseBody")
             
             val purchaseResponse = json.decodeFromString<BillingResponse<Any>>(responseBody)
             
@@ -473,7 +434,6 @@ class BillingApiClient : BaseApiClient() {
                 Result.failure(Exception(purchaseResponse.message))
             }
         } catch (e: Exception) {
-            Logger.auth("BILLING_API", "❌ Error comprando tokens: ${e.message}")
             Result.failure(e)
         }
     }

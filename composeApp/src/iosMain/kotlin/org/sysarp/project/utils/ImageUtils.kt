@@ -93,4 +93,3 @@ private fun decodeBase64Char(c: Int): Int {
         else -> throw IllegalArgumentException("Invalid Base64 character: $c")
     }
 }
-

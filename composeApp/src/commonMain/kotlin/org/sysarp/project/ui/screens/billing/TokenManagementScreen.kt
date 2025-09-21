@@ -18,7 +18,6 @@ import kotlinx.coroutines.launch
 import org.sysarp.project.data.*
 import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.ui.components.topbar.TopBarComponent
-import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.formatCurrency
 
 @Composable
@@ -39,17 +38,14 @@ fun TokenManagementScreen(
     // Cargar datos iniciales
     LaunchedEffect(Unit) {
         try {
-            Logger.auth("TOKEN_MANAGEMENT", "🪙 Cargando estado de tokens y paquetes")
             
             // Cargar estado de tokens
             val tokenResult = billingService.getCurrentTokenStatus()
             tokenResult.fold(
                 onSuccess = { status ->
                     tokenStatus = status
-                    Logger.auth("TOKEN_MANAGEMENT", "✅ Estado de tokens cargado")
                 },
                 onFailure = { error ->
-                    Logger.auth("TOKEN_MANAGEMENT", "❌ Error cargando estado de tokens: ${error.message}")
                 }
             )
             
@@ -58,15 +54,12 @@ fun TokenManagementScreen(
             packagesResult.fold(
                 onSuccess = { packages ->
                     tokenPackages = packages
-                    Logger.auth("TOKEN_MANAGEMENT", "✅ Paquetes de tokens cargados: ${packages.size}")
                 },
                 onFailure = { error ->
-                    Logger.auth("TOKEN_MANAGEMENT", "⚠️ Error cargando paquetes, usando fallback: ${error.message}")
                     tokenPackages = billingService.getAvailableTokenPackagesLocal()
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("TOKEN_MANAGEMENT", "❌ Error inesperado: ${e.message}")
             tokenPackages = billingService.getAvailableTokenPackagesLocal()
         } finally {
             isLoading = false

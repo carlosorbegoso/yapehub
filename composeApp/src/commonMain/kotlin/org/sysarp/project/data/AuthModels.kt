@@ -137,4 +137,3 @@ data class ForgotPasswordData(
     val resetToken: String? = null,
     val expiresAt: String? = null
 )
-

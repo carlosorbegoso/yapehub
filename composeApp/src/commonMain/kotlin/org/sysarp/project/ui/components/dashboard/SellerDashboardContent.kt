@@ -33,7 +33,6 @@ import org.sysarp.project.ui.components.seller_dashboard.sections.SellerPayments
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerProfileSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerStatsSection
 import org.sysarp.project.ui.components.seller_dashboard.utils.SellerDashboardLogic
-import org.sysarp.project.utils.Logger
 
 /**
  * Contenido principal del dashboard del vendedor
@@ -100,10 +99,8 @@ fun SellerDashboardContent(
                     statsResult.fold(
                         onSuccess = { response ->
                             sellerStats = response.data
-                            Logger.auth("DASHBOARD", "📊 Estadísticas del vendedor cargadas: ${response.data.summary.totalTransactions} transacciones, S/ ${response.data.summary.totalSales}")
                         },
                         onFailure = { error ->
-                            Logger.auth("DASHBOARD", "❌ Error cargando estadísticas: ${error.message}")
                             showErrorMessage = "Error cargando estadísticas: ${error.message}"
                         }
                     )
@@ -145,9 +142,7 @@ fun SellerDashboardContent(
                                 }
                                 """.trimIndent()
                                 webSocketService.sendMessage(websocketMessage)
-                                Logger.auth("DASHBOARD", "📤 Notificación WebSocket enviada: PAYMENT_CONFIRMED")
                             } catch (e: Exception) {
-                                Logger.auth("DASHBOARD", "❌ Error enviando notificación WebSocket: ${e.message}")
                             }
                         },
                         onFailure = { error ->
@@ -193,9 +188,7 @@ fun SellerDashboardContent(
                                 }
                                 """.trimIndent()
                                 webSocketService.sendMessage(websocketMessage)
-                                Logger.auth("DASHBOARD", "📤 Notificación WebSocket enviada: PAYMENT_REJECTED")
                             } catch (e: Exception) {
-                                Logger.auth("DASHBOARD", "❌ Error enviando notificación WebSocket: ${e.message}")
                             }
                         },
                         onFailure = { error ->
@@ -214,9 +207,7 @@ fun SellerDashboardContent(
     
     // Función para manejar notificación
     val handleNotification = { notification: PaymentNotificationData ->
-        Logger.auth("DASHBOARD", "🎯 handleNotification llamado con: ${notification.paymentId}")
         currentNotification = notification
-        Logger.auth("DASHBOARD", "✅ currentNotification asignado: ${currentNotification?.paymentId}")
     }
     
     // Función para descartar notificación
@@ -255,9 +246,7 @@ fun SellerDashboardContent(
                                     }
                                     """.trimIndent()
                                     webSocketService.sendMessage(websocketMessage)
-                                    Logger.auth("DASHBOARD", "📤 Notificación WebSocket enviada: PAYMENT_CONFIRMED (desde notificación)")
                                 } catch (e: Exception) {
-                                    Logger.auth("DASHBOARD", "❌ Error enviando notificación WebSocket: ${e.message}")
                                 }
                             },
                             onFailure = { error ->
@@ -306,9 +295,7 @@ fun SellerDashboardContent(
                                     }
                                     """.trimIndent()
                                     webSocketService.sendMessage(websocketMessage)
-                                    Logger.auth("DASHBOARD", "📤 Notificación WebSocket enviada: PAYMENT_REJECTED (desde notificación)")
                                 } catch (e: Exception) {
-                                    Logger.auth("DASHBOARD", "❌ Error enviando notificación WebSocket: ${e.message}")
                                 }
                             },
                             onFailure = { error ->
@@ -360,10 +347,7 @@ fun SellerDashboardContent(
     // Manejar notificaciones de WebSocket
     LaunchedEffect(webSocketService) {
         webSocketService.paymentNotifications.collect { notification ->
-            Logger.auth("DASHBOARD", "🔔 Notificación recibida en UI: ${notification.paymentId} - S/ ${notification.amount}")
-            Logger.auth("DASHBOARD", "👤 Cliente: ${notification.senderName}")
             handleNotification(notification)
-            Logger.auth("DASHBOARD", "📱 currentNotification actualizado: ${currentNotification?.paymentId}")
         }
     }
     

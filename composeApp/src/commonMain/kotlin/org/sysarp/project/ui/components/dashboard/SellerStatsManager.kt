@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.data.AnalyticsConfigs
-import org.sysarp.project.utils.Logger
 
 /**
  * Manager para manejar la lógica de estadísticas del vendedor
@@ -23,7 +22,6 @@ class SellerStatsManager(
         onError: (String) -> Unit
     ) {
         try {
-            Logger.auth("STATS_MANAGER", "Cargando estadísticas para vendedor $sellerId")
             val response = statsService.getSellerStatsSummary(sellerId.toInt(), null, null, accessToken)
             
             response.fold(
@@ -32,16 +30,13 @@ class SellerStatsManager(
                     val confirmedCount = summary.confirmedPayments
                     val totalAmount = summary.totalSales
                     
-                    Logger.auth("STATS_MANAGER", "Estadísticas cargadas: $confirmedCount pagos confirmados, S/ $totalAmount")
                     onSuccess(confirmedCount, totalAmount)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_MANAGER", "Error al cargar estadísticas: ${error.message}")
                     onError(error.message ?: "Error al cargar estadísticas")
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_MANAGER", "Excepción al cargar estadísticas: ${e.message}")
             onError("Error de conexión: ${e.message}")
         }
     }
@@ -56,7 +51,6 @@ class SellerStatsManager(
         onError: (String) -> Unit
     ) {
         try {
-            Logger.auth("STATS_MANAGER", "Cargando analytics detallados para vendedor $sellerId")
             val response = statsService.getSellerAnalytics(
                 sellerId = sellerId.toInt(),
                 startDate = null, // Usar fechas por defecto
@@ -66,16 +60,13 @@ class SellerStatsManager(
             
             response.fold(
                 onSuccess = { result ->
-                    Logger.auth("STATS_MANAGER", "Analytics detallados cargados exitosamente")
                     onSuccess(result)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_MANAGER", "Error al cargar analytics: ${error.message}")
                     onError(error.message ?: "Error al cargar analytics")
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_MANAGER", "Excepción al cargar analytics: ${e.message}")
             onError("Error de conexión: ${e.message}")
         }
     }
@@ -92,7 +83,6 @@ class SellerStatsManager(
         onError: (String) -> Unit
     ) {
         try {
-            Logger.auth("STATS_MANAGER", "Cargando analytics detallados para vendedor $sellerId con fechas: $startDate - $endDate")
             val response = statsService.getSellerQuickAnalytics(
                 sellerId = sellerId.toInt(),
                 startDate = startDate,
@@ -102,16 +92,13 @@ class SellerStatsManager(
             
             response.fold(
                 onSuccess = { result ->
-                    Logger.auth("STATS_MANAGER", "Analytics detallados con filtros cargados exitosamente")
                     onSuccess(result)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_MANAGER", "Error al cargar analytics con filtros: ${error.message}")
                     onError(error.message ?: "Error al cargar analytics")
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_MANAGER", "Excepción al cargar analytics con filtros: ${e.message}")
             onError("Error de conexión: ${e.message}")
         }
     }
@@ -128,7 +115,6 @@ class SellerStatsManager(
         onError: (String) -> Unit
     ) {
         try {
-            Logger.auth("STATS_MANAGER", "Cargando analytics de rendimiento para vendedor $sellerId")
             val response = statsService.getSellerPerformanceAnalytics(
                 sellerId = sellerId.toInt(),
                 startDate = startDate,
@@ -138,16 +124,13 @@ class SellerStatsManager(
             
             response.fold(
                 onSuccess = { result ->
-                    Logger.auth("STATS_MANAGER", "Analytics de rendimiento cargados exitosamente")
                     onSuccess(result)
                 },
                 onFailure = { error ->
-                    Logger.auth("STATS_MANAGER", "Error al cargar analytics de rendimiento: ${error.message}")
                     onError(error.message ?: "Error al cargar analytics de rendimiento")
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("STATS_MANAGER", "Excepción al cargar analytics de rendimiento: ${e.message}")
             onError("Error de conexión: ${e.message}")
         }
     }

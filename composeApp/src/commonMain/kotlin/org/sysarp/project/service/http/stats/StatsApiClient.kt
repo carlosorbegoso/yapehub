@@ -70,8 +70,6 @@ class StatsApiClient : BaseApiClient() {
         }
     }
 
-
-
     suspend fun getSellerStatsSummary(
         sellerId: Int,
         startDate: String? = null,
@@ -119,8 +117,6 @@ class StatsApiClient : BaseApiClient() {
             Result.failure(e)
         }
     }
-
-
     suspend fun getAdminDashboard(
         adminId: Int,
         startDate: String? = null,

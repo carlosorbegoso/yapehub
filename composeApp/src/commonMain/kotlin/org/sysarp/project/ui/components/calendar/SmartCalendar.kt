@@ -369,8 +369,6 @@ private fun CalendarDay(
         )
     }
 }
-
-
 @Composable
 private fun QuickPeriodButtons(
     onPeriodSelected: (String) -> Unit

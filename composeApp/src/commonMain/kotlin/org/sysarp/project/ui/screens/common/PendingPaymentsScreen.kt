@@ -33,4 +33,3 @@ fun PaymentStatItem(title: String, value: String, icon: androidx.compose.ui.grap
         )
     }
 }
-

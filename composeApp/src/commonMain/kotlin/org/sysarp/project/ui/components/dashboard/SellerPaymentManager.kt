@@ -5,7 +5,6 @@ import androidx.compose.runtime.remember
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
-import org.sysarp.project.utils.Logger
 
 /**
  * Manager para manejar la lógica de pagos del vendedor
@@ -25,21 +24,17 @@ class SellerPaymentManager(
         onError: (String) -> Unit
     ) {
         try {
-            Logger.auth("PAYMENT_MANAGER", "Cargando pagos pendientes para vendedor $sellerId")
             val response = paymentService.getPendingPayments(sellerId.toInt(), 0, 20, accessToken)
             
             response.fold(
                 onSuccess = { result ->
-                    Logger.auth("PAYMENT_MANAGER", "Pagos cargados exitosamente: ${result.data.payments.size} pagos")
                     onSuccess(result.data.payments)
                 },
                 onFailure = { error ->
-                    Logger.auth("PAYMENT_MANAGER", "Error al cargar pagos: ${error.message}")
                     onError(error.message ?: "Error desconocido")
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("PAYMENT_MANAGER", "Excepción al cargar pagos: ${e.message}")
             onError("Error de conexión: ${e.message}")
         }
     }
@@ -55,21 +50,17 @@ class SellerPaymentManager(
         onError: (String) -> Unit
     ) {
         try {
-            Logger.auth("PAYMENT_MANAGER", "Cargando más pagos - página $currentPage")
             val response = paymentService.getPendingPayments(sellerId.toInt(), currentPage, 20, accessToken)
             
             response.fold(
                 onSuccess = { result ->
-                    Logger.auth("PAYMENT_MANAGER", "Más pagos cargados: ${result.data.payments.size} pagos")
                     onSuccess(result.data.payments)
                 },
                 onFailure = { error ->
-                    Logger.auth("PAYMENT_MANAGER", "Error al cargar más pagos: ${error.message}")
                     onError(error.message ?: "Error desconocido")
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("PAYMENT_MANAGER", "Excepción al cargar más pagos: ${e.message}")
             onError("Error de conexión: ${e.message}")
         }
     }
@@ -85,21 +76,17 @@ class SellerPaymentManager(
         onError: (String) -> Unit
     ) {
         try {
-            Logger.auth("PAYMENT_MANAGER", "Confirmando pago $paymentId para vendedor $sellerId")
             val response = paymentService.claimPayment(sellerId.toInt(), paymentId, accessToken)
             
             response.fold(
                 onSuccess = { result ->
-                    Logger.auth("PAYMENT_MANAGER", "Pago confirmado exitosamente")
                     onSuccess("Pago confirmado exitosamente")
                 },
                 onFailure = { error ->
-                    Logger.auth("PAYMENT_MANAGER", "Error al confirmar pago: ${error.message}")
                     onError(error.message ?: "Error al confirmar el pago")
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("PAYMENT_MANAGER", "Excepción al confirmar pago: ${e.message}")
             onError("Error de conexión: ${e.message}")
         }
     }
@@ -116,21 +103,17 @@ class SellerPaymentManager(
         onError: (String) -> Unit
     ) {
         try {
-            Logger.auth("PAYMENT_MANAGER", "Rechazando pago $paymentId para vendedor $sellerId")
             val response = paymentService.rejectPayment(sellerId.toInt(), paymentId, reason, accessToken)
             
             response.fold(
                 onSuccess = { result ->
-                    Logger.auth("PAYMENT_MANAGER", "Pago rechazado exitosamente")
                     onSuccess("Pago rechazado exitosamente")
                 },
                 onFailure = { error ->
-                    Logger.auth("PAYMENT_MANAGER", "Error al rechazar pago: ${error.message}")
                     onError(error.message ?: "Error al rechazar el pago")
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("PAYMENT_MANAGER", "Excepción al rechazar pago: ${e.message}")
             onError("Error de conexión: ${e.message}")
         }
     }

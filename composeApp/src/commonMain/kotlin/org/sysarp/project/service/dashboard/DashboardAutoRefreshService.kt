@@ -14,7 +14,6 @@ import org.sysarp.project.data.UserRole
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
-import org.sysarp.project.utils.Logger
 
 /**
  * Servicio para actualización automática de dashboards basado en eventos
@@ -52,7 +51,6 @@ class DashboardAutoRefreshService(
         onSellerRefresh: (() -> Unit)? = null,
         onAdminRefresh: (() -> Unit)? = null
     ) {
-        Logger.auth("DASHBOARD_REFRESH", "🔄 Iniciando servicio de actualización automática")
         
         onSellerDashboardRefresh = onSellerRefresh
         onAdminDashboardRefresh = onAdminRefresh
@@ -73,14 +71,12 @@ class DashboardAutoRefreshService(
             }
         }
         
-        Logger.auth("DASHBOARD_REFRESH", "✅ Servicio de actualización automática iniciado")
     }
     
     /**
      * Detiene el servicio de actualización automática
      */
     fun stopAutoRefresh() {
-        Logger.auth("DASHBOARD_REFRESH", "⏹️ Deteniendo servicio de actualización automática")
         
         refreshJob?.cancel()
         refreshJob = null
@@ -93,14 +89,12 @@ class DashboardAutoRefreshService(
      */
     fun setAutoRefreshEnabled(enabled: Boolean) {
         _isAutoRefreshEnabled.value = enabled
-        Logger.auth("DASHBOARD_REFRESH", "🔄 Actualización automática ${if (enabled) "habilitada" else "deshabilitada"}")
     }
     
     /**
      * Fuerza una actualización inmediata
      */
     fun forceRefresh() {
-        Logger.auth("DASHBOARD_REFRESH", "🔄 Forzando actualización inmediata")
         coroutineScope.launch {
             performRefresh("manual")
         }
@@ -113,11 +107,9 @@ class DashboardAutoRefreshService(
         val currentTime = System.currentTimeMillis()
         
         if (currentTime - lastNotificationTime < minTimeBetweenNotifications) {
-            Logger.auth("DASHBOARD_REFRESH", "⏳ Throttling: ignorando notificación (muy reciente)")
             return
         }
         
-        Logger.auth("DASHBOARD_REFRESH", "📨 Notificación de pago recibida: ${notification.status}")
         lastNotificationTime = currentTime
         
         when (notification.status) {
@@ -126,7 +118,6 @@ class DashboardAutoRefreshService(
                 performRefresh("payment_notification")
             }
             else -> {
-                Logger.auth("DASHBOARD_REFRESH", "ℹ️ Estado de notificación no requiere actualización: ${notification.status}")
             }
         }
     }
@@ -138,11 +129,9 @@ class DashboardAutoRefreshService(
         val currentTime = System.currentTimeMillis()
         
         if (currentTime - lastPeriodicRefreshTime < minTimeBetweenPeriodicRefresh) {
-            Logger.auth("DASHBOARD_REFRESH", "⏳ Throttling: ignorando actualización periódica (muy reciente)")
             return
         }
         
-        Logger.auth("DASHBOARD_REFRESH", "⏰ Actualización periódica")
         lastPeriodicRefreshTime = currentTime
         performRefresh("periodic")
     }
@@ -152,30 +141,24 @@ class DashboardAutoRefreshService(
      */
     private suspend fun performRefresh(source: String) {
         try {
-            Logger.auth("DASHBOARD_REFRESH", "🔄 Ejecutando actualización desde: $source")
             
             val userProfile = authService.userProfile.value
             val userRole = userProfile?.role
             
             when (userRole) {
                 UserRole.VENDOR -> {
-                    Logger.auth("DASHBOARD_REFRESH", "👤 Actualizando dashboard del vendedor")
                     onSellerDashboardRefresh?.invoke()
                 }
                 UserRole.ADMIN -> {
-                    Logger.auth("DASHBOARD_REFRESH", "👑 Actualizando dashboard del administrador")
                     onAdminDashboardRefresh?.invoke()
                 }
                 else -> {
-                    Logger.auth("DASHBOARD_REFRESH", "❓ Rol de usuario no reconocido: $userRole")
                 }
             }
             
             _lastRefreshTime.value = System.currentTimeMillis()
-            Logger.auth("DASHBOARD_REFRESH", "✅ Actualización completada desde: $source")
             
         } catch (e: Exception) {
-            Logger.auth("DASHBOARD_REFRESH", "❌ Error en actualización: ${e.message}")
         }
     }
     

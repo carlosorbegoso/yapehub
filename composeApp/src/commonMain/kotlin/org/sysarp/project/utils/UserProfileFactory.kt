@@ -70,32 +70,6 @@ object UserProfileFactory {
         )
     }
     
-    /**
-     * Crea un UserProfile mock para pruebas
-     */
-    fun createMockSellerProfile(
-        sellerName: String,
-        deviceId: String,
-        adminId: String,
-        branchCode: String
-    ): UserProfile {
-        return UserProfile(
-            id = "0", // Mock ID
-            name = sellerName,
-            email = "seller@mock.com", // Mock email
-            role = UserRole.VENDOR,
-            businessId = null,
-            businessName = null,
-            isVerified = false,
-            deviceId = deviceId,
-            adminId = adminId,
-            sellerName = sellerName,
-            branchCode = branchCode,
-            permissions = getSellerPermissions(),
-            subscriptionPlan = "BASIC",
-            subscriptionStatus = "ACTIVE"
-        )
-    }
     
     /**
      * Obtiene permisos para administradores

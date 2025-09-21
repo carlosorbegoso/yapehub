@@ -15,21 +15,17 @@ object DeviceUtils {
      */
     suspend fun generateDeviceFingerprint(): String = withContext(Dispatchers.IO) {
         try {
-            Logger.auth("DEVICE_UTILS", "Generando device fingerprint...")
             
             // Intentar usar AndroidDeviceUtils si está disponible
             val fingerprint = try {
                 generateAndroidFingerprint()
             } catch (e: Exception) {
-                Logger.auth("DEVICE_UTILS", "No es Android o error: ${e.message}, usando fallback")
                 generateFallbackFingerprint()
             }
             
-            Logger.auth("DEVICE_UTILS", "Device fingerprint generado: ${fingerprint.take(20)}...")
             return@withContext fingerprint
             
         } catch (e: Exception) {
-            Logger.auth("DEVICE_UTILS", "Error generando device fingerprint: ${e.message}")
             return@withContext "yapechamo_fallback_${Clock.System.now().toEpochMilliseconds()}"
         }
     }

@@ -304,4 +304,3 @@ fun CompactTopBarComponent(
             )
     }
 }
-

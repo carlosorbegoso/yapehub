@@ -19,7 +19,6 @@ import kotlinx.coroutines.launch
 import org.sysarp.project.data.*
 import org.sysarp.project.service.ImagePickerService
 import org.sysarp.project.service.billing.BillingService
-import org.sysarp.project.utils.Logger
 
 @Composable
 fun PaymentDialog(
@@ -86,7 +85,6 @@ fun PaymentDialog(
                                     isLoading = true
                                     error = ""
                                     
-                                    Logger.auth("PAYMENT_DIALOG", "📸 Subiendo comprobante: ${paymentCode.paymentCode}")
                                     
                                     val uploadResult = billingService.uploadPaymentProof(
                                         paymentCode.paymentCode,
@@ -97,16 +95,13 @@ fun PaymentDialog(
                                     uploadResult.fold(
                                         onSuccess = {
                                             currentStep = PaymentStep.UPLOAD_SUCCESS
-                                            Logger.auth("PAYMENT_DIALOG", "✅ Comprobante subido exitosamente")
                                         },
                                         onFailure = { e ->
                                             error = e.message ?: "Error subiendo comprobante"
-                                            Logger.auth("PAYMENT_DIALOG", "❌ Error subiendo comprobante: ${e.message}")
                                         }
                                     )
                                 } catch (e: Exception) {
                                     error = e.message ?: "Error inesperado"
-                                    Logger.auth("PAYMENT_DIALOG", "❌ Error inesperado: ${e.message}")
                                 } finally {
                                     isLoading = false
                                 }
@@ -124,12 +119,10 @@ fun PaymentDialog(
                             coroutineScope.launch {
                                 isCheckingStatus = true
                                 try {
-                                    Logger.auth("PAYMENT_DIALOG", "🔍 Verificando estado manualmente...")
                                     val statusResult = billingService.checkPaymentStatus(paymentCode.paymentCode)
                                     statusResult.fold(
                                         onSuccess = { status ->
                                             paymentStatus = status
-                                            Logger.auth("PAYMENT_DIALOG", "✅ Estado verificado: ${status.status}")
                                             if (status.status == "approved") {
                                                 currentStep = PaymentStep.SUCCESS
                                                 onPaymentCompleted()
@@ -139,12 +132,10 @@ fun PaymentDialog(
                                             }
                                         },
                                         onFailure = { e ->
-                                            Logger.auth("PAYMENT_DIALOG", "❌ Error verificando estado: ${e.message}")
                                             error = e.message ?: "Error verificando estado"
                                         }
                                     )
                                 } catch (e: Exception) {
-                                    Logger.auth("PAYMENT_DIALOG", "❌ Error inesperado verificando estado: ${e.message}")
                                     error = e.message ?: "Error inesperado"
                                 } finally {
                                     isCheckingStatus = false
@@ -842,14 +833,11 @@ private fun ImagePickerDialog(
                                     result.fold(
                                         onSuccess = { imageResult ->
                                             onImageSelected(imageResult.base64, imageResult.fileName)
-                                            Logger.auth("IMAGE_PICKER", "✅ Imagen seleccionada: ${imageResult.fileName}")
                                         },
                                         onFailure = { e ->
-                                            Logger.auth("IMAGE_PICKER", "❌ Error seleccionando imagen: ${e.message}")
                                         }
                                     )
                                 } catch (e: Exception) {
-                                    Logger.auth("IMAGE_PICKER", "❌ Error inesperado: ${e.message}")
                                 }
                             }
                         },
@@ -878,14 +866,11 @@ private fun ImagePickerDialog(
                                     result.fold(
                                         onSuccess = { imageResult ->
                                             onImageSelected(imageResult.base64, imageResult.fileName)
-                                            Logger.auth("IMAGE_PICKER", "✅ Foto capturada: ${imageResult.fileName}")
                                         },
                                         onFailure = { e ->
-                                            Logger.auth("IMAGE_PICKER", "❌ Error capturando foto: ${e.message}")
                                         }
                                     )
                                 } catch (e: Exception) {
-                                    Logger.auth("IMAGE_PICKER", "❌ Error inesperado: ${e.message}")
                                 }
                             }
                         },

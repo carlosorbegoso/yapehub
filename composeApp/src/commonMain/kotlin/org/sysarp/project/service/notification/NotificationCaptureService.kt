@@ -5,4 +5,3 @@ interface NotificationCaptureService {
     suspend fun stopCapturing()
     fun isCapturing(): Boolean
 }
-

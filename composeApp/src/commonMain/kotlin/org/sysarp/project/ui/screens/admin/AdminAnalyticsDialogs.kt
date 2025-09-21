@@ -7,7 +7,6 @@ import org.sysarp.project.data.FinancialAnalysisParams
 import org.sysarp.project.data.PaymentTransparencyParams
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
-import org.sysarp.project.utils.Logger
 
 /**
  * Componente simplificado para los dialogs del AdminAnalyticsScreen
@@ -71,16 +70,13 @@ fun AdminAnalyticsDialogs(
                             ).fold(
                                 onSuccess = { response ->
                                     onFinancialDataLoaded(response.data)
-                                    Logger.auth("ADMIN_FINANCIAL", "💰 Análisis financiero cargado")
                                 },
                                 onFailure = { error ->
                                     onFinancialError(error.message ?: "Error cargando análisis financiero")
-                                    Logger.auth("ADMIN_FINANCIAL", "❌ Error cargando análisis financiero: ${error.message}")
                                 }
                             )
                         } catch (e: Exception) {
                             onFinancialError(e.message ?: "Error inesperado")
-                            Logger.auth("ADMIN_FINANCIAL", "❌ Error inesperado: ${e.message}")
                         }
                     }
                 }
@@ -114,16 +110,13 @@ fun AdminAnalyticsDialogs(
                             ).fold(
                                 onSuccess = { response ->
                                     onTransparencyDataLoaded(response.data)
-                                    Logger.auth("ADMIN_TRANSPARENCY", "🔍 Datos de transparencia cargados")
                                 },
                                 onFailure = { error ->
                                     onTransparencyError(error.message ?: "Error cargando datos de transparencia")
-                                    Logger.auth("ADMIN_TRANSPARENCY", "❌ Error cargando datos de transparencia: ${error.message}")
                                 }
                             )
                         } catch (e: Exception) {
                             onTransparencyError(e.message ?: "Error inesperado")
-                            Logger.auth("ADMIN_TRANSPARENCY", "❌ Error inesperado: ${e.message}")
                         }
                     }
                 }

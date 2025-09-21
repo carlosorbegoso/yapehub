@@ -103,8 +103,6 @@ data class SellerLoginByPhoneResponse(
     val data: SellerLoginData? = null,
     val error: Boolean = false
 )
-
-
 // Modelos legacy para compatibilidad
 @Serializable
 data class SellerLoginDataLegacy(

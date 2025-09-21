@@ -374,5 +374,3 @@ private fun EmptyChartCard(
         }
     }
 }
-
-

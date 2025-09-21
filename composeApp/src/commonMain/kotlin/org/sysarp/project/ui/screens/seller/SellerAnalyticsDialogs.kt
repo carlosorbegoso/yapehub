@@ -8,7 +8,6 @@ import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 // Import removed - using local SellerSectionFiltersDialog
 import org.sysarp.project.ui.components.financial.SellerFinancialFilterDialog
-import org.sysarp.project.utils.Logger
 
 /**
  * Componente para los dialogs del SellerAnalyticsScreen
@@ -69,16 +68,13 @@ fun SellerAnalyticsDialogs(
                             ).fold(
                                 onSuccess = { response ->
                                     onFinancialDataLoaded(response.data)
-                                    Logger.auth("SELLER_FINANCIAL", "💰 Análisis financiero cargado: ${response.data.netEarnings}")
                                 },
                                 onFailure = { error ->
                                     onFinancialError(error.message ?: "Error cargando análisis financiero")
-                                    Logger.auth("SELLER_FINANCIAL", "❌ Error cargando análisis financiero: ${error.message}")
                                 }
                             )
                         } catch (e: Exception) {
                             onFinancialError(e.message ?: "Error inesperado")
-                            Logger.auth("SELLER_FINANCIAL", "❌ Error inesperado: ${e.message}")
                         }
                     }
                 }

@@ -1,7 +1,4 @@
 package org.sysarp.project.service
-
-import org.sysarp.project.utils.Logger
-
 /**
  * Servicio para selección de imágenes y captura de fotos
  * Maneja la selección desde galería y captura desde cámara
@@ -28,4 +25,3 @@ data class ImageResult(
     val fileName: String,
     val mimeType: String = "image/jpeg"
 )
-
