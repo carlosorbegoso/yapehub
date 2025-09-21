@@ -98,7 +98,6 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Panel de Administración (solo para administradores)
             if (currentUser?.role == org.sysarp.project.data.UserRole.ADMIN) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),

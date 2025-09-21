@@ -49,7 +49,6 @@ fun QRDisplayScreen(
     onShareQR: () -> Unit,
     onInvalidateQR: () -> Unit
 ) {
-    // Simplificar para usar solo los campos disponibles en QRCodeData
     val timeRemaining = "Válido hasta: ${qrCode.expiresAt}"
     val isExpired = false // Simplificado por ahora
     

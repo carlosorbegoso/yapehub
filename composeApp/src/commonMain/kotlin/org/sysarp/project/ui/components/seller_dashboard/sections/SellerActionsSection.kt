@@ -93,7 +93,6 @@ fun SellerActionsSection(
         }
     }
     
-    // Botón "Ver menos" si se están mostrando todos los pagos
     if (showAllPayments && pendingPayments.size > 2) {
         Card(
             modifier = modifier

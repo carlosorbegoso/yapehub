@@ -55,8 +55,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.utils.SuccessHandler
 import org.sysarp.project.utils.SecurityUtils
+import org.sysarp.project.utils.SuccessHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -211,7 +211,6 @@ fun AdminRegistrationScreen(
                     OutlinedTextField(
                         value = ruc,
                         onValueChange = { 
-                            // Solo permitir números
                             val cleanValue = it.replace(Regex("[^0-9]"), "")
                             ruc = cleanValue
                         },

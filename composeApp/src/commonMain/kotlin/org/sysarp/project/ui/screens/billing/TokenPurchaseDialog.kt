@@ -51,13 +51,11 @@ fun TokenPurchaseDialog(
                 },
                 onFailure = { error ->
                     Logger.auth("TOKEN_PURCHASE_DIALOG", "⚠️ Error cargando desde API, usando fallback: ${error.message}")
-                    // Fallback a datos locales
                     tokenPackages = billingService.getAvailableTokenPackagesLocal()
                 }
             )
         } catch (e: Exception) {
             Logger.auth("TOKEN_PURCHASE_DIALOG", "❌ Error inesperado, usando fallback: ${e.message}")
-            // Fallback a datos locales
             tokenPackages = billingService.getAvailableTokenPackagesLocal()
         } finally {
             isLoadingPackages = false

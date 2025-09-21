@@ -61,7 +61,6 @@ class BranchApiClient : BaseApiClient() {
             }
             
         } catch (e: Exception) {
-            println("❌ [BRANCH_API] Error creando sucursal: ${e.message}")
             Result.failure(e)
         }
     }
@@ -94,7 +93,6 @@ class BranchApiClient : BaseApiClient() {
             }
             
         } catch (e: Exception) {
-            println("❌ [BRANCH_API] Error obteniendo sucursales: ${e.message}")
             Result.failure(e)
         }
     }
@@ -122,7 +120,6 @@ class BranchApiClient : BaseApiClient() {
             }
             
         } catch (e: Exception) {
-            println("❌ [BRANCH_API] Error obteniendo detalles: ${e.message}")
             Result.failure(e)
         }
     }
@@ -163,7 +160,6 @@ class BranchApiClient : BaseApiClient() {
             }
             
         } catch (e: Exception) {
-            println("❌ [BRANCH_API] Error actualizando sucursal: ${e.message}")
             Result.failure(e)
         }
     }
@@ -188,7 +184,6 @@ class BranchApiClient : BaseApiClient() {
             }
             
         } catch (e: Exception) {
-            println("❌ [BRANCH_API] Error eliminando sucursal: ${e.message}")
             Result.failure(e)
         }
     }
@@ -220,7 +215,6 @@ class BranchApiClient : BaseApiClient() {
             }
             
         } catch (e: Exception) {
-            println("❌ [BRANCH_API] Error obteniendo vendedores: ${e.message}")
             Result.failure(e)
         }
     }

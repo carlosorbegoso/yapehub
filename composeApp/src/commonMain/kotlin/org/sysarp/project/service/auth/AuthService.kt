@@ -5,10 +5,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.sysarp.project.data.*
 import org.sysarp.project.service.http.AuthApiClient
+import org.sysarp.project.utils.ErrorInfo
+import org.sysarp.project.utils.ErrorManager
 import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.UserProfileFactory
-import org.sysarp.project.utils.ErrorManager
-import org.sysarp.project.utils.ErrorInfo
 
 /**
  * Servicio de autenticación simplificado
@@ -32,14 +32,12 @@ class AuthService {
     private val authApiClient = AuthApiClient()
     private val tokenManager = TokenManager()
     
-    // Estados básicos
     private val _authState = MutableStateFlow(AuthState.LOADING)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
     
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
     
-    // Delegar al TokenManager
     val accessToken: StateFlow<String?> = tokenManager.accessToken
     
     /**
@@ -48,12 +46,10 @@ class AuthService {
     suspend fun isSessionValid(): Boolean {
         val accessToken = tokenManager.getAccessToken()
         
-        // Si no hay token, la sesión no es válida
         if (accessToken == null) {
             return false
         }
         
-        // Si el token está expirado, intentar refrescarlo
         if (tokenManager.isTokenExpired()) {
             Logger.auth("AUTH_SERVICE", "Token expirado, intentando refrescar...")
             
@@ -61,14 +57,12 @@ class AuthService {
             return refreshResult.isSuccess
         }
         
-        // Si el token está próximo a expirar, refrescarlo preventivamente
         if (shouldRefreshToken()) {
             Logger.auth("AUTH_SERVICE", "Token próximo a expirar, refrescando preventivamente...")
             
             val refreshResult = refreshToken()
             if (refreshResult.isFailure) {
                 Logger.auth("AUTH_SERVICE", "Error refrescando token preventivamente: ${refreshResult.exceptionOrNull()?.message}")
-                // No fallar la sesión por error en refresh preventivo
             }
         }
         
@@ -87,7 +81,6 @@ class AuthService {
         return try {
             Logger.auth("AUTH_SERVICE", "Iniciando login de admin: $email")
             
-            // Generar device fingerprint si no se proporciona
             val fingerprint = deviceFingerprint ?: org.sysarp.project.utils.DeviceUtils.generateDeviceFingerprint()
             Logger.auth("AUTH_SERVICE", "Device fingerprint: ${fingerprint.take(20)}...")
             
@@ -252,7 +245,6 @@ class AuthService {
      */
     suspend fun checkAndRefreshTokenIfNeeded(): Boolean {
         return try {
-            // Solo refrescar si es necesario
             if (shouldRefreshToken()) {
                 Logger.auth("AUTH_SERVICE", "Token necesita refresh, refrescando...")
                 val refreshResult = refreshToken()
@@ -307,7 +299,6 @@ class AuthService {
      * Establecer token de acceso (para uso interno)
      */
     fun setAccessToken(token: String) {
-        // Actualizar solo el access token en TokenManager
         tokenManager.updateAccessToken(token, 3600) // 1 hora por defecto
     }
     
@@ -510,9 +501,6 @@ class AuthService {
         }
     }
     
-    // =============================================================================
-    // MÉTODOS CON MANEJO ELEGANTE DE ERRORES
-    // =============================================================================
     
     /**
      * Login de administrador con manejo elegante de errores

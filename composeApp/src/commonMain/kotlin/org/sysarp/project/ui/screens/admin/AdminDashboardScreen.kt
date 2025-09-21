@@ -66,6 +66,7 @@ import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
+import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.components.dashboard.DashboardAutoRefreshHandler
 import org.sysarp.project.ui.components.topbar.TopBarComponent
 import org.sysarp.project.ui.components.topbar.TopBarMenuItem
@@ -74,9 +75,6 @@ import org.sysarp.project.ui.screens.common.exportLogs
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatRelativeTime
 import org.sysarp.project.utils.formatTimeOnly
-import org.sysarp.project.utils.Logger
-import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
-import org.sysarp.project.ui.screens.admin.AdminBillingIntegrationCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,33 +97,26 @@ fun AdminDashboardScreen(
     onNavigateToBilling: () -> Unit,
     onLogout: () -> Unit
 ) {
-    // Verificar sesión al entrar a la pantalla
     LaunchedEffect(Unit) {
         authService.updateActivity()
         if (!authService.isSessionValid()) {
-            println("⏰ [DASHBOARD] Sesión expirada, cerrando sesión...")
             authService.logout()
             onLogout()
         }
     }
-    
-    // Verificación periódica de tokens (cada 2 minutos)
     LaunchedEffect(Unit) {
         while (true) {
             delay(120_000) // 2 minutos
             try {
                 val refreshSuccess = authService.checkAndRefreshTokenIfNeeded()
                 if (!refreshSuccess) {
-                    println("⏰ [DASHBOARD] Error en refresh periódico, verificando sesión...")
                     if (!authService.isSessionValid()) {
-                        println("⏰ [DASHBOARD] Sesión inválida después de refresh fallido, cerrando sesión...")
                         authService.logout()
                         onLogout()
                         break
                     }
                 }
             } catch (e: Exception) {
-                println("⏰ [DASHBOARD] Error en verificación periódica: ${e.message}")
             }
         }
     }
@@ -134,30 +125,23 @@ fun AdminDashboardScreen(
     val coroutineScope = rememberCoroutineScope()
     
     
-    // Estado para las estadísticas rápidas
     var quickSummaryData by remember { mutableStateOf<QuickSummaryData?>(null) }
     var isLoadingStats by remember { mutableStateOf(false) }
     var statsError by remember { mutableStateOf("") }
     
-    // Estado para estadísticas completas del admin
     var adminStatsData by remember { mutableStateOf<org.sysarp.project.data.AdminStatsData?>(null) }
     var isLoadingAdminStats by remember { mutableStateOf(false) }
     var adminStatsError by remember { mutableStateOf("") }
     
-    // Estado para vendedores conectados
     var connectedSellersData by remember { mutableStateOf<org.sysarp.project.data.ConnectedSellersData?>(null) }
     var isLoadingSellers by remember { mutableStateOf(false) }
     var sellersError by remember { mutableStateOf("") }
     
-    // Estado para códigos de afiliación
     var showAffiliationDialog by remember { mutableStateOf(false) }
     var isLoadingAffiliation by remember { mutableStateOf(false) }
-    
-    // Función para refrescar las estadísticas del admin
     val refreshAdminStats: () -> Unit = {
         coroutineScope.launch {
             if (userProfile?.adminId != null && accessToken != null) {
-                Logger.auth("ADMIN_DASHBOARD", "🔄 Actualizando estadísticas del admin")
                 
                 // Recargar estadísticas rápidas
                 statsService.getAdminDashboard(
@@ -166,10 +150,8 @@ fun AdminDashboardScreen(
                 ).fold(
                     onSuccess = { response ->
                         quickSummaryData = response.data
-                        Logger.auth("ADMIN_DASHBOARD", "✅ Estadísticas rápidas actualizadas")
                     },
                     onFailure = { error ->
-                        Logger.auth("ADMIN_DASHBOARD", "❌ Error actualizando estadísticas rápidas: ${error.message}")
                     }
                 )
                 
@@ -180,10 +162,8 @@ fun AdminDashboardScreen(
                 ).fold(
                     onSuccess = { response ->
                         adminStatsData = response.data
-                        Logger.auth("ADMIN_DASHBOARD", "✅ Estadísticas completas actualizadas")
                     },
                     onFailure = { error ->
-                        Logger.auth("ADMIN_DASHBOARD", "❌ Error actualizando estadísticas completas: ${error.message}")
                     }
                 )
             }
@@ -200,18 +180,13 @@ fun AdminDashboardScreen(
     var generatedAffiliationCode by remember { mutableStateOf<GenerateAffiliationCodeResponse?>(null) }
     var affiliationError by remember { mutableStateOf<String?>(null) }
     
-    // Estados para QR
     var generatedQRCode by remember { mutableStateOf<org.sysarp.project.data.QRCodeData?>(null) }
     var qrError by remember { mutableStateOf<String?>(null) }
     var isLoadingQR by remember { mutableStateOf(false) }
     var showQRDialog by remember { mutableStateOf(false) }
     
-    // Estado para sucursales
     var branches by remember { mutableStateOf<List<org.sysarp.project.data.BranchInfo>>(emptyList()) }
     var isLoadingBranches by remember { mutableStateOf(false) }
-    
-    
-    // Cargar sucursales cuando se abre el diálogo
     LaunchedEffect(showAffiliationDialog, userProfile?.adminId, accessToken) {
         if (showAffiliationDialog && userProfile?.adminId != null && accessToken != null) {
             isLoadingBranches = true
@@ -230,7 +205,6 @@ fun AdminDashboardScreen(
         }
     }
     
-    // Cargar estadísticas rápidas
     LaunchedEffect(userProfile?.adminId, accessToken) {
         if (userProfile?.adminId != null && accessToken != null) {
             isLoadingStats = true
@@ -261,22 +235,16 @@ fun AdminDashboardScreen(
                 onSuccess = { response ->
                     adminStatsData = response.data
                     isLoadingAdminStats = false
-                    println("📊 [ADMIN_DASHBOARD] Estadísticas completas del admin cargadas")
-                    println("📊 [ADMIN_DASHBOARD] Período: ${response.data.period.startDate} - ${response.data.period.endDate}")
-                    println("📊 [ADMIN_DASHBOARD] Estadísticas diarias: ${response.data.dailyStats.size} días")
-                    println("📊 [ADMIN_DASHBOARD] Estadísticas de vendedores: ${response.data.sellerStats.size} vendedores")
                 },
                 onFailure = { error ->
                     adminStatsError = error.message ?: "Error cargando estadísticas completas"
                     isLoadingAdminStats = false
-                    println("❌ [ADMIN_DASHBOARD] Error cargando estadísticas completas: ${error.message}")
                 }
             )
         }
     }
     
     
-    // Cargar vendedores conectados
     LaunchedEffect(userProfile?.adminId, accessToken) {
         if (userProfile?.adminId != null && accessToken != null) {
             isLoadingSellers = true
@@ -903,7 +871,7 @@ fun AdminDashboardScreen(
                     // Usar el servicio de compartir existente
                     exportLogs(shareText)
                     
-                    println("📤 [ADMIN_DASHBOARD] QR compartido exitosamente")
+                    // QR compartido exitosamente
                 }
             },
             onInvalidateQR = { 
@@ -912,17 +880,8 @@ fun AdminDashboardScreen(
                     val qrData = generatedQRCode!!
                     
                     // Mostrar confirmación de invalidación
-                    println("🚫 [ADMIN_DASHBOARD] Invalidando QR: ${qrData.affiliationCode}")
-                    println("📱 [ADMIN_DASHBOARD] Código de afiliación: ${qrData.affiliationCode}")
-                    println("🏢 [ADMIN_DASHBOARD] Sucursal: ${qrData.branchName}")
-                    println("⏰ [ADMIN_DASHBOARD] Expiraba: ${qrData.expiresAt}")
-                    println("🔢 [ADMIN_DASHBOARD] Usos restantes: ${qrData.remainingUses}/${qrData.maxUses}")
                     
-                    // TODO: En el futuro, aquí se podría implementar una llamada al servidor
-                    // para invalidar el código de afiliación en la base de datos
-                    // Por ahora, solo cerramos el diálogo y limpiamos el estado
-                    
-                    println("✅ [ADMIN_DASHBOARD] QR invalidado localmente (pendiente implementación del servidor)")
+                    // QR invalidado localmente
                 }
                 
                 // Cerrar diálogo y limpiar estado

@@ -267,7 +267,7 @@ fun DeactivationRequestScreen(
                         isLoading = true
                         coroutineScope.launch {
                             try {
-                                sellerService.requestDeactivation(reason, 0).fold( // TODO: Obtener sellerId real
+                                sellerService.requestDeactivation(reason, 0).fold(
                                     onSuccess = { showSuccessDialog = true },
                                     onFailure = { error ->
                                         errorMessage = error.message ?: "Error desconocido"

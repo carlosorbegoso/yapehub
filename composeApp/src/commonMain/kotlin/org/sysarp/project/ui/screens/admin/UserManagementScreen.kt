@@ -209,7 +209,7 @@ fun UserManagementScreen(
                         showStoreAssignment = true
                     },
                     onEditUser = { 
-                        // TODO: Implementar edición de usuario
+                        // Edición de usuario pendiente
                     }
                 )
             }
@@ -399,7 +399,6 @@ fun UserManagementCard(
                 }
             }
             
-            // Tiendas asignadas (solo para vendedores)
             if (user.role == UserRole.VENDOR && user.assignedStores.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 
@@ -494,7 +493,6 @@ fun StoreAssignmentDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    // TODO: Implementar actualización de tiendas asignadas
                     onStoresAssigned()
                 }
             ) {
@@ -611,7 +609,6 @@ fun AddUserDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    // TODO: Implementar creación de usuario
                     onUserAdded()
                 }
             ) {

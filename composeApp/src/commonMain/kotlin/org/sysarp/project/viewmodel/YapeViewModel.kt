@@ -15,7 +15,6 @@ import org.sysarp.project.data.UserProfile
 import org.sysarp.project.data.UserRole
 import org.sysarp.project.data.YapeTransaction
 import org.sysarp.project.repository.UserProfileRepository
-import org.sysarp.project.service.DebugLogger
 import org.sysarp.project.service.PermissionChecker
 import org.sysarp.project.service.SimpleNotificationService
 
@@ -71,11 +70,7 @@ class YapeViewModel(
         if (!isObservingRepository) {
             isObservingRepository = true
             viewModelScope.launch {
-                DebugLogger.info("🔍 ViewModel iniciando observación del repositorio...")
-                // Sin base de datos local, mantener lista vacía
-                DebugLogger.info("🔄 ViewModel sin base de datos local - usando lista vacía")
                 _transactions.value = emptyList()
-                DebugLogger.info("📊 ViewModel actualizado - Transacciones: ${_transactions.value.size}")
                 updateBusinessReports(emptyList())
                 updateDailyReports(emptyList())
             }
@@ -138,7 +133,6 @@ class YapeViewModel(
     }
 
     private suspend fun requestPermissions() {
-        // Método simplificado para Android - sin funciones iOS
         kotlinx.coroutines.delay(1000)
         checkPermissions()
     }
@@ -149,11 +143,9 @@ class YapeViewModel(
             val hasNotificationPermission = PermissionChecker.isNotificationServiceEnabled()
             val hasAccessibilityPermission = PermissionChecker.isAccessibilityServiceEnabled()
             
-            DebugLogger.info("Resultados de permisos - Notificaciones: $hasNotificationPermission, Accesibilidad: $hasAccessibilityPermission")
             
             when {
                 hasNotificationPermission && hasAccessibilityPermission -> {
-                    DebugLogger.info("Todos los permisos GRANTED - Actualizando UI a GRANTED")
                     _uiState.value = _uiState.value.copy(
                         permissionState = PermissionState.GRANTED,
                         permissionMessage = "✅ Todos los permisos están habilitados",
@@ -191,7 +183,6 @@ class YapeViewModel(
     }
 
     
-    // Métodos de permisos no utilizados eliminados - AppLifecycleManager maneja esto
 
 }
 

@@ -22,7 +22,7 @@ data class PendingPayment(
     val amount: Double,
     val currency: String,
     val createdAt: Instant,
-    val businessName: String, // Solo el nombre del negocio, no datos del cliente
+    val businessName: String,
     val message: String? = null, // Mensaje del pago (sin datos personales)
     val isConfirmed: Boolean = false,
     val confirmedBy: String? = null,

@@ -9,7 +9,6 @@ import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.SellerAuthApiClient
 import org.sysarp.project.service.http.SellerManagementApiClient
 import org.sysarp.project.service.http.SellerRegistrationApiClient
-import org.sysarp.project.utils.Logger
 
 /**
  * Servicio especializado para manejar vendedores
@@ -29,8 +28,6 @@ class SellerService(private val authService: AuthService) {
         phone: String
     ): Result<SellerRegistrationResponse> {
         return try {
-            Logger.auth("SELLER_SERVICE", "Iniciando registro de vendedor: $sellerName")
-            
             val result = sellerRegistrationApiClient.registerSeller(
                 affiliationCode = affiliationCode,
                 sellerName = sellerName,
@@ -39,8 +36,6 @@ class SellerService(private val authService: AuthService) {
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("SELLER_SERVICE", "Registro de vendedor exitoso: $sellerName")
-                    
                     // Actualizar AuthService con los datos del vendedor registrado y el token
                     if (response.success && response.data != null) {
                         val registrationData = response.data
@@ -70,18 +65,15 @@ class SellerService(private val authService: AuthService) {
                         // Usar el token real que viene del servidor
                         authService.setAccessToken(registrationData.token)
                         
-                        Logger.auth("SELLER_SERVICE", "AuthService actualizado para vendedor registrado: ${registrationData.sellerId} con token real")
                     }
                     
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("SELLER_SERVICE", "Error en registro de vendedor: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("SELLER_SERVICE", "Error en registro de vendedor: ${e.message}")
             Result.failure(e)
         }
     }
@@ -92,22 +84,18 @@ class SellerService(private val authService: AuthService) {
      */
     suspend fun getMySellers(adminId: Int, page: Int = 1, limit: Int = 30, token: String): Result<org.sysarp.project.data.SellersResponse> {
         return try {
-            Logger.auth("SELLER_SERVICE", "Obteniendo vendedores del admin: $adminId, página: $page")
 
             val result = sellerManagementApiClient.getMySellers(adminId, page, limit, token)
 
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("SELLER_SERVICE", "Vendedores obtenidos: ${response.data?.sellers?.size ?: 0} vendedores")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("SELLER_SERVICE", "Error obteniendo vendedores: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("SELLER_SERVICE", "Error obteniendo vendedores: ${e.message}")
             Result.failure(e)
         }
     }
@@ -121,22 +109,18 @@ class SellerService(private val authService: AuthService) {
         token: String
     ): Result<MySeller> {
         return try {
-            Logger.auth("SELLER_SERVICE", "Actualizando vendedor: $sellerId")
 
             val result = sellerManagementApiClient.updateSeller(sellerId, adminId, name, phone, isActive, token)
 
             result.fold(
                 onSuccess = { updatedSeller ->
-                    Logger.auth("SELLER_SERVICE", "Vendedor actualizado exitosamente: ${updatedSeller.name}")
                     Result.success(updatedSeller)
                 },
                 onFailure = { error ->
-                    Logger.auth("SELLER_SERVICE", "Error actualizando vendedor: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("SELLER_SERVICE", "Error actualizando vendedor: ${e.message}")
             Result.failure(e)
         }
     }
@@ -148,22 +132,18 @@ class SellerService(private val authService: AuthService) {
         token: String
     ): Result<Boolean> {
         return try {
-            Logger.auth("SELLER_SERVICE", "Eliminando/pausando vendedor: $sellerId con acción: $action")
 
             val result = sellerManagementApiClient.deleteSeller(sellerId, adminId, action, token)
 
             result.fold(
                 onSuccess = { success ->
-                    Logger.auth("SELLER_SERVICE", "Vendedor $action exitosamente: $sellerId")
                     Result.success(success)
                 },
                 onFailure = { error ->
-                    Logger.auth("SELLER_SERVICE", "Error $action vendedor: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("SELLER_SERVICE", "Error $action vendedor: ${e.message}")
             Result.failure(e)
         }
     }
@@ -174,13 +154,11 @@ class SellerService(private val authService: AuthService) {
      */
     suspend fun loginSellerByPhone(phone: String, affiliationCode: String): Result<org.sysarp.project.data.SellerLoginByPhoneResponse> {
         return try {
-            Logger.auth("SELLER_SERVICE", "Iniciando login de vendedor por teléfono: $phone con código: $affiliationCode")
             
             val result = sellerAuthApiClient.loginSellerByPhone(phone, affiliationCode)
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("SELLER_SERVICE", "Login de vendedor exitoso por teléfono: $phone")
                     
                     // Actualizar AuthService con los datos del usuario
                     if (response.success && response.data != null) {
@@ -210,18 +188,15 @@ class SellerService(private val authService: AuthService) {
                         authService.setAccessToken(loginData.accessToken)
                         authService.setAuthState(AuthState.AUTHENTICATED)
                         
-                        Logger.auth("SELLER_SERVICE", "AuthService actualizado para vendedor: ${loginData.sellerId} en sucursal: ${loginData.branchName}")
                     }
                     
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("SELLER_SERVICE", "Error en login de vendedor: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("SELLER_SERVICE", "Error en login de vendedor: ${e.message}")
             Result.failure(e)
         }
     }
@@ -231,16 +206,13 @@ class SellerService(private val authService: AuthService) {
      */
     suspend fun getPendingDeactivationRequests(): Result<List<org.sysarp.project.data.DeactivationRequest>> {
         return try {
-            Logger.auth("SELLER_SERVICE", "Obteniendo solicitudes de desactivación pendientes")
             
             // Por ahora retornamos una lista vacía ya que no hay API específica para esto
             // En el futuro se puede implementar una llamada a API real
             val requests = emptyList<org.sysarp.project.data.DeactivationRequest>()
             
-            Logger.auth("SELLER_SERVICE", "Solicitudes de desactivación obtenidas: ${requests.size} solicitudes")
             Result.success(requests)
         } catch (e: Exception) {
-            Logger.auth("SELLER_SERVICE", "Error obteniendo solicitudes de desactivación: ${e.message}")
             Result.failure(e)
         }
     }
@@ -250,15 +222,10 @@ class SellerService(private val authService: AuthService) {
      */
     suspend fun requestDeactivation(reason: String, sellerId: Int): Result<Unit> {
         return try {
-            Logger.auth("SELLER_SERVICE", "Solicitando desactivación para vendedor: $sellerId con razón: $reason")
             
-            // Por ahora solo logueamos la solicitud ya que no hay API específica para esto
-            // En el futuro se puede implementar una llamada a API real para enviar la solicitud
-            Logger.auth("SELLER_SERVICE", "Solicitud de desactivación registrada exitosamente")
             
             Result.success(Unit)
         } catch (e: Exception) {
-            Logger.auth("SELLER_SERVICE", "Error solicitando desactivación: ${e.message}")
             Result.failure(e)
         }
     }
@@ -271,7 +238,6 @@ class SellerService(private val authService: AuthService) {
         token: String
     ): Result<ConnectedSellersResponse> {
         return try {
-            Logger.auth("SELLER_SERVICE", "Obteniendo vendedores conectados para admin: $adminId")
             
             val result = sellerManagementApiClient.getConnectedSellers(
                 adminId = adminId,
@@ -280,16 +246,13 @@ class SellerService(private val authService: AuthService) {
             
             result.fold(
                 onSuccess = { response ->
-                    Logger.auth("SELLER_SERVICE", "Vendedores conectados obtenidos exitosamente")
                     Result.success(response)
                 },
                 onFailure = { error ->
-                    Logger.auth("SELLER_SERVICE", "Error obteniendo vendedores conectados: ${error.message}")
                     Result.failure(error)
                 }
             )
         } catch (e: Exception) {
-            Logger.auth("SELLER_SERVICE", "Error obteniendo vendedores conectados: ${e.message}")
             Result.failure(e)
         }
     }

@@ -6,16 +6,16 @@ import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import kotlinx.serialization.json.Json
 import org.sysarp.project.data.AdminStatsResponse
-import org.sysarp.project.data.AnalyticsResponse
-import org.sysarp.project.data.QuickSummaryResponse
-import org.sysarp.project.data.SellerStatsResponse
 import org.sysarp.project.data.AnalyticsParams
-import org.sysarp.project.data.FinancialAnalysisResponse
-import org.sysarp.project.data.PaymentTransparencyResponse
+import org.sysarp.project.data.AnalyticsResponse
 import org.sysarp.project.data.FinancialAnalysisParams
+import org.sysarp.project.data.FinancialAnalysisResponse
 import org.sysarp.project.data.PaymentTransparencyParams
-import org.sysarp.project.data.SellerFinancialAnalysisResponse
+import org.sysarp.project.data.PaymentTransparencyResponse
+import org.sysarp.project.data.QuickSummaryResponse
 import org.sysarp.project.data.SellerFinancialAnalysisParams
+import org.sysarp.project.data.SellerFinancialAnalysisResponse
+import org.sysarp.project.data.SellerStatsResponse
 
 /**
  * Cliente HTTP para estadísticas
@@ -285,7 +285,6 @@ class StatsApiClient : BaseApiClient() {
         }
     }
 
-    // Métodos sobrecargados con AnalyticsParams para mayor flexibilidad
     suspend fun getAnalytics(
         adminId: Int,
         startDate: String? = null,
@@ -418,7 +417,6 @@ class StatsApiClient : BaseApiClient() {
         }
     }
 
-    // Métodos sobrecargados con parámetros estructurados
     suspend fun getFinancialAnalysis(
         adminId: Int,
         startDate: String? = null,
@@ -501,7 +499,6 @@ class StatsApiClient : BaseApiClient() {
         }
     }
 
-    // Método sobrecargado con parámetros estructurados para vendedores
     suspend fun getSellerFinancialAnalysis(
         sellerId: Int,
         startDate: String? = null,

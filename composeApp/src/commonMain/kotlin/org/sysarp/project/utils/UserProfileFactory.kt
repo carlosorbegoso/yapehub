@@ -21,7 +21,7 @@ object UserProfileFactory {
     ): UserProfile {
         return UserProfile(
             id = id.toString(),
-            name = email, // Usar email como name temporalmente
+            name = email,
             email = email,
             role = UserRole.ADMIN,
             businessId = businessId,

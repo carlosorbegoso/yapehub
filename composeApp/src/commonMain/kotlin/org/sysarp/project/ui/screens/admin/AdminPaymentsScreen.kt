@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Cancel
@@ -35,11 +34,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import org.sysarp.project.ui.components.topbar.TopBarComponent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -59,6 +56,7 @@ import org.sysarp.project.data.AdminPayment
 import org.sysarp.project.data.PaymentSummary
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.ui.components.topbar.TopBarComponent
 import org.sysarp.project.utils.extractShortYapeCode
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatDateTime
@@ -104,12 +102,10 @@ fun AdminPaymentsScreen(
                         paymentSummary = response.data.summary
                         hasMorePayments = response.data.pagination.currentPage < response.data.pagination.totalPages - 1
                         isLoading = false
-                        println("🔍 [ADMIN_PAYMENTS] Gestión de pagos cargada: ${payments.size} pagos")
                     },
                     onFailure = { error ->
                         errorMessage = error.message ?: "Error cargando gestión de pagos"
                         isLoading = false
-                        println("🔍 [ADMIN_PAYMENTS] Error: ${error.message}")
                     }
                 )
             }
@@ -135,7 +131,6 @@ fun AdminPaymentsScreen(
                         currentPage = nextPage
                         hasMorePayments = response.data.pagination.currentPage < response.data.pagination.totalPages - 1
                         isLoadingMore = false
-                        println("🔍 [ADMIN_PAYMENTS] Más pagos cargados: ${response.data.payments.size}")
                     },
                     onFailure = { error ->
                         errorMessage = error.message ?: "Error cargando más pagos"
@@ -447,7 +442,6 @@ fun StatusFilterCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Primera fila - Todos y Pendientes
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)

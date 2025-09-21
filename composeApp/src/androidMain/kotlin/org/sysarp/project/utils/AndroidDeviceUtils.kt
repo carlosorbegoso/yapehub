@@ -7,7 +7,6 @@ import android.provider.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import timber.log.Timber
 import java.security.MessageDigest
 
 /**
@@ -21,8 +20,6 @@ object AndroidDeviceUtils {
      */
     suspend fun generateDeviceFingerprint(context: Context): String = withContext(Dispatchers.IO) {
         try {
-            Timber.tag("AndroidDeviceUtils")
-                .d("Generando device fingerprint usando identificadores disponibles...")
             
             // Obtener identificadores únicos del dispositivo (sin permisos privilegiados)
             val androidId = getAndroidId(context)
@@ -31,10 +28,6 @@ object AndroidDeviceUtils {
             val deviceManufacturer = Build.MANUFACTURER
             val deviceFingerprint = getDeviceFingerprint()
 
-            Timber.tag("AndroidDeviceUtils").d("Android ID: ${androidId.take(10)}...")
-            Timber.tag("AndroidDeviceUtils").d("Device: $deviceBrand $deviceModel")
-            Timber.tag("AndroidDeviceUtils").d("Manufacturer: $deviceManufacturer")
-            Timber.tag("AndroidDeviceUtils").d("Fingerprint: ${deviceFingerprint.take(10)}...")
             
             // Crear fingerprint combinando identificadores únicos disponibles
             val deviceInfo = buildString {
@@ -49,18 +42,13 @@ object AndroidDeviceUtils {
             // Crear hash MD5 para hacer el fingerprint más corto y consistente
             val fingerprint = createMD5Hash(deviceInfo)
 
-            Timber.tag("AndroidDeviceUtils")
-                .d("Device fingerprint generado: ${fingerprint.take(20)}...")
             fingerprint
             
         } catch (e: Exception) {
-            Timber.tag("AndroidDeviceUtils").e("Error generando device fingerprint: ${e.message}")
-            // Fallback a un fingerprint básico usando Android ID
             try {
                 val androidId = getAndroidId(context)
                 "yapechamo_${androidId}_fallback"
             } catch (fallbackError: Exception) {
-                Timber.tag("AndroidDeviceUtils").e("Error en fallback: ${fallbackError.message}")
                 "yapechamo_unknown_device_${Clock.System.now().toEpochMilliseconds()}"
             }
         }
@@ -75,7 +63,6 @@ object AndroidDeviceUtils {
             Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
                 ?: "unknown_android_id"
         } catch (e: Exception) {
-            Timber.tag("AndroidDeviceUtils").e("Error obteniendo Android ID: ${e.message}")
             "error_android_id"
         }
     }
@@ -87,7 +74,6 @@ object AndroidDeviceUtils {
         return try {
             Build.FINGERPRINT ?: "unknown_fingerprint"
         } catch (e: Exception) {
-            Timber.tag("AndroidDeviceUtils").e("Error obteniendo fingerprint: ${e.message}")
             "error_fingerprint"
         }
     }
@@ -101,8 +87,6 @@ object AndroidDeviceUtils {
             val hashBytes = md.digest(input.toByteArray())
             hashBytes.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
-            Timber.tag("AndroidDeviceUtils").e("Error creando MD5: ${e.message}")
-            // Fallback: usar hashCode
             input.hashCode().toString()
         }
     }
@@ -115,7 +99,6 @@ object AndroidDeviceUtils {
             val androidId = getAndroidId(context)
             "yapechamo_${androidId}_simple"
         } catch (e: Exception) {
-            Timber.tag("AndroidDeviceUtils").e("Error en fingerprint simple: ${e.message}")
             "yapechamo_simple_${Clock.System.now().toEpochMilliseconds()}"
         }
     }

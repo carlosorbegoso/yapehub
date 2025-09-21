@@ -20,7 +20,7 @@ object ImageUtils {
             try {
                 org.sysarp.project.utils.decodeBase64ToImageBitmap(base64String)
             } catch (e: Exception) {
-                println("❌ [IMAGE_UTILS] Error decodificando imagen Base64: ${e.message}")
+                // Error decodificando imagen Base64
                 null
             }
         }

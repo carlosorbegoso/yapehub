@@ -12,18 +12,18 @@ import io.ktor.client.HttpClient
 import org.sysarp.project.navigation.AppContent
 import org.sysarp.project.navigation.rememberNavigationManager
 import org.sysarp.project.repository.UserProfileRepository
+import org.sysarp.project.service.CredentialStorageService
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.SimpleNotificationService
 import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.service.http.PaymentApiClient
 import org.sysarp.project.service.http.StatsApiClient
 import org.sysarp.project.service.http.billing.BillingApiClient
-import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.stats.StatsService
-import org.sysarp.project.service.CredentialStorageService
 import org.sysarp.project.ui.theme.YapeHubTheme
 import org.sysarp.project.viewmodel.YapeViewModel
 
@@ -51,10 +51,8 @@ fun YapeApp() {
     val notificationService = remember {
         object : SimpleNotificationService {
             override fun startCapture() {
-                println("🚀 Iniciando captura de notificaciones de Yape")
             }
             override fun stopCapture() {
-                println("🛑 Deteniendo captura de notificaciones de Yape")
             }
             override fun isCapturing(): Boolean = false
         }
@@ -109,27 +107,21 @@ fun YapeApp() {
         org.sysarp.project.service.notifications.PaymentNotificationService()
     }
     
-    // Sin base de datos local, solo usar servicios
     val viewModel = remember {
         YapeViewModel(notificationService, userProfileRepository)
     }
     
-    // Iniciar servicios WebSocket
     LaunchedEffect(Unit) {
         webSocketService.startAutoConnect()
     }
     
-    // Detener servicios al desmontar
     DisposableEffect(Unit) {
         onDispose {
             webSocketService.stop()
         }
     }
     
-    // Sistema de navegación simple multiplataforma
     val navigationManager = rememberNavigationManager()
-    
-    // Contenido de la aplicación
     AppContent(
         navigationManager = navigationManager,
         authService = authService,

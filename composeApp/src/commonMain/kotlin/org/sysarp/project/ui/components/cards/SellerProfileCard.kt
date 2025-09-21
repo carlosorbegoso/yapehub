@@ -85,14 +85,14 @@ fun SellerProfileCard(
             shape = RoundedCornerShape(12.dp)
         ) {
             Row(
-                modifier = Modifier.padding(16.dp), // Reducido de 24dp a 16dp
+                modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Avatar con animación - más pequeño
                 AnimatedAvatar(
                     connectionState = connectionState,
-                    modifier = Modifier.size(56.dp) // Reducido de 80dp a 56dp
+                    modifier = Modifier.size(56.dp)
                 )
                 
                 // Información del vendedor en columna compacta

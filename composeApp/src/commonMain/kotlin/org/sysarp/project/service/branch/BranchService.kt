@@ -25,7 +25,6 @@ class BranchService {
                 accessToken = accessToken
             )
         } catch (e: Exception) {
-            println("❌ [BRANCH_SERVICE] Error creando sucursal: ${e.message}")
             Result.failure(e)
         }
     }
@@ -46,7 +45,6 @@ class BranchService {
                 size = size
             )
         } catch (e: Exception) {
-            println("❌ [BRANCH_SERVICE] Error obteniendo sucursales: ${e.message}")
             Result.failure(e)
         }
     }
@@ -63,7 +61,6 @@ class BranchService {
                 accessToken = accessToken
             )
         } catch (e: Exception) {
-            println("❌ [BRANCH_SERVICE] Error obteniendo detalles: ${e.message}")
             Result.failure(e)
         }
     }
@@ -88,7 +85,6 @@ class BranchService {
                 accessToken = accessToken
             )
         } catch (e: Exception) {
-            println("❌ [BRANCH_SERVICE] Error actualizando sucursal: ${e.message}")
             Result.failure(e)
         }
     }
@@ -105,7 +101,6 @@ class BranchService {
                 accessToken = accessToken
             )
         } catch (e: Exception) {
-            println("❌ [BRANCH_SERVICE] Error eliminando sucursal: ${e.message}")
             Result.failure(e)
         }
     }
@@ -126,7 +121,6 @@ class BranchService {
                 size = size
             )
         } catch (e: Exception) {
-            println("❌ [BRANCH_SERVICE] Error obteniendo vendedores: ${e.message}")
             Result.failure(e)
         }
     }

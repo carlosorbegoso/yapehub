@@ -38,12 +38,7 @@ fun SellerDashboardScreen(
     val userProfile by authService.userProfile.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     
-    // Estados de notificaciones
     var newPaymentsCount by remember { mutableStateOf(0) }
-    
-    // Estados de WebSocket (solo los que se usan)
-    
-    // Iniciar WebSocket cuando el componente se monta
     LaunchedEffect(userProfile?.sellerId, authService.accessToken.value) {
         val sellerId = userProfile?.sellerId
         val accessToken = authService.accessToken.value
@@ -51,45 +46,39 @@ fun SellerDashboardScreen(
         if (sellerId != null && accessToken != null) {
             webSocketService.startAutoConnect()
             
-            // Verificar estado de conexión del vendedor
             paymentService.getSellerConnectionStatus(
                 sellerId = sellerId.toInt(),
                 token = accessToken
             ).fold(
                 onSuccess = { response ->
-                    println("🔗 [SELLER_DASHBOARD] Estado de conexión: ${response.data?.isConnected}")
                 },
                 onFailure = { error ->
-                    println("❌ [SELLER_DASHBOARD] Error verificando conexión: ${error.message}")
                 }
             )
         }
     }
     
-    // Escuchar notificaciones de WebSocket
     LaunchedEffect(Unit) {
         webSocketService.paymentNotifications.collect { _ ->
             newPaymentsCount++
         }
     }
-    
-    // Verificación periódica de tokens (cada 2 minutos)
     LaunchedEffect(Unit) {
         while (true) {
             delay(120_000) // 2 minutos
             try {
                 val refreshSuccess = authService.checkAndRefreshTokenIfNeeded()
                 if (!refreshSuccess) {
-                    println("⏰ [SELLER_DASHBOARD] Error en refresh periódico, verificando sesión...")
+                    // Error en refresh periódico, verificando sesión
                     if (!authService.isSessionValid()) {
-                        println("⏰ [SELLER_DASHBOARD] Sesión inválida después de refresh fallido, cerrando sesión...")
+                        // Sesión inválida después de refresh fallido, cerrando sesión
                         authService.logout()
                         onLogout()
                         break
                     }
                 }
             } catch (e: Exception) {
-                println("⏰ [SELLER_DASHBOARD] Error en verificación periódica: ${e.message}")
+                // Error en verificación periódica
             }
         }
     }

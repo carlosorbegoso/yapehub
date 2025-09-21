@@ -13,16 +13,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import org.sysarp.project.data.ServiceStatus
 import org.sysarp.project.data.YapeNotificationRequest
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.ui.components.DebugLog
-import org.sysarp.project.ui.components.DebugLogManager
-import org.sysarp.project.ui.components.LogType
 import org.sysarp.project.utils.AndroidDeviceUtils
 import org.sysarp.project.utils.EncryptionUtils
-import timber.log.Timber
 
 class AndroidNotificationCaptureService : NotificationListenerService() {
     
@@ -43,79 +38,30 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     
     override fun onCreate() {
         super.onCreate()
-        Timber.tag("NotificationCapture").d("🔧 Servicio de notificaciones inicializado")
         
-        // Enviar log de inicialización
-        DebugLogManager.addLog(
-            DebugLog(
-                timestamp = Clock.System.now().toEpochMilliseconds(),
-                type = LogType.PERMISSION,
-                message = "🔧 Servicio de notificaciones inicializado",
-                details = "AndroidNotificationCaptureService onCreate()"
-            )
-        )
         
                 // Generar device fingerprint único usando identificadores reales del dispositivo
                 serviceScope.launch {
                     deviceFingerprint = AndroidDeviceUtils.generateDeviceFingerprint(this@AndroidNotificationCaptureService)
-                    Timber.tag("NotificationCapture")
-                        .d("Device fingerprint generado: ${deviceFingerprint?.take(20)}...")
 
-                    // Enviar log de device fingerprint
-                    DebugLogManager.addLog(
-                        DebugLog(
-                            timestamp = Clock.System.now().toEpochMilliseconds(),
-                            type = LogType.PERMISSION,
-                            message = "🔑 Device fingerprint generado",
-                            details = "Fingerprint: ${deviceFingerprint?.take(20)}... (usando Android ID)"
-                        )
-                    )
                 }
         
         // Inicializar AuthService con contexto disponible
         try {
             authService = org.sysarp.project.service.auth.AuthService.getInstance()
-            Timber.tag("NotificationCapture").d("✅ AuthService singleton inicializado")
-            
-            // Verificar si hay token disponible
-            val currentToken = authService?.accessToken?.value
-            Timber.tag("NotificationCapture").d("🔑 Token disponible: ${if (currentToken != null) "SÍ (${currentToken.take(20)}...)" else "NO"}")
-            
             // Inicializar NotificationService con dependencias reales
             val notificationApiClient = org.sysarp.project.service.http.NotificationApiClient()
             notificationService = org.sysarp.project.service.NotificationService(notificationApiClient, authService!!)
-            Timber.tag("NotificationCapture").d("✅ NotificationService inicializado")
             
             // Inicializar AudioService
             audioService = AudioService()
             audioService?.initialize(this@AndroidNotificationCaptureService)
-            Timber.tag("NotificationCapture").d("🔊 AudioService inicializado")
             
         } catch (e: Exception) {
-            Timber.tag("NotificationCapture").e("❌ Error inicializando servicios: ${e.message}")
-            
-            // Enviar log de error
-            DebugLogManager.addLog(
-                DebugLog(
-                    timestamp = Clock.System.now().toEpochMilliseconds(),
-                    type = LogType.ERROR,
-                    message = "❌ Error inicializando servicios",
-                    details = "Exception: ${e.message}"
-                )
-            )
+            // Error handling removed for production
         }
 
-        Timber.tag("NotificationCapture").d("Servicios inicializados correctamente")
-        
-        // Enviar log de servicios inicializados
-        DebugLogManager.addLog(
-            DebugLog(
-                timestamp = Clock.System.now().toEpochMilliseconds(),
-                type = LogType.PERMISSION,
-                message = "✅ Servicios inicializados correctamente",
-                details = "AuthService y NotificationService preparados"
-            )
-        )
+        // Services initialized
     }
     
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -127,8 +73,6 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         super.onNotificationRemoved(sbn)
-        Timber.tag("NotificationCapture")
-            .d("🗑️ Notificación removida: ${sbn.packageName} - ${sbn.id}")
     }
     
     /**
@@ -137,83 +81,28 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
      */
     private suspend fun processNotification(sbn: StatusBarNotification) {
         try {
-            Timber.tag("NotificationCapture").d("🔍 Procesando notificación: ${sbn.packageName}")
             
-            // Enviar log de notificación recibida
-            DebugLogManager.addLog(
-                DebugLog(
-                    timestamp = Clock.System.now().toEpochMilliseconds(),
-                    type = LogType.NOTIFICATION,
-                    message = "📨 Notificación recibida",
-                    details = "Package: ${sbn.packageName}, ID: ${sbn.id}"
-                )
-            )
             
-            // TEMPORAL: Restaurar validación de Yape para evitar errores 400 del servidor
             if (isYapePackage(sbn.packageName)) {
                 val notificationText = extractNotificationText(sbn)
-                Timber.tag("NotificationCapture")
-                    .d("📱 Notificación de Yape detectada: $notificationText")
                 
-                // Enviar log de Yape detectado
-                DebugLogManager.addLog(
-                    DebugLog(
-                        timestamp = Clock.System.now().toEpochMilliseconds(),
-                        type = LogType.NOTIFICATION,
-                        message = "📱 Yape detectado",
-                        details = "Package: ${sbn.packageName}, Text: ${notificationText?.take(50)}..."
-                    )
-                )
                 
                 processYapeNotification(sbn, notificationText)
             } else {
-                // Enviar log de notificación no-Yape
-                DebugLogManager.addLog(
-                    DebugLog(
-                        timestamp = Clock.System.now().toEpochMilliseconds(),
-                        type = LogType.NOTIFICATION,
-                        message = "❌ No es Yape",
-                        details = "Package: ${sbn.packageName} - ignorando"
-                    )
-                )
             }
         } catch (e: Exception) {
-            Timber.tag("NotificationCapture").e("Error procesando notificación: ${e.message}")
             
-            // Enviar log de error
-            DebugLogManager.addLog(
-                DebugLog(
-                    timestamp = Clock.System.now().toEpochMilliseconds(),
-                    type = LogType.ERROR,
-                    message = "❌ Error procesando notificación",
-                    details = "Exception: ${e.message}"
-                )
-            )
         }
     }
     
     private suspend fun processYapeNotification(sbn: StatusBarNotification, notificationText: String?) {
         try {
-            // VALIDACIÓN DE SEGURIDAD: Verificar que realmente sea Yape
             if (!isYapePackage(sbn.packageName)) {
-                Timber.tag("NotificationCapture").w("🚫 SEGURIDAD: Intento de procesar notificación no-Yape bloqueado: ${sbn.packageName}")
-                DebugLogManager.addLog(
-                    DebugLog(
-                        timestamp = Clock.System.now().toEpochMilliseconds(),
-                        type = LogType.ERROR,
-                        message = "🚫 SEGURIDAD: Bloqueado",
-                        details = "Intento de procesar notificación no-Yape: ${sbn.packageName}"
-                    )
-                )
                 return
             }
             
-            Timber.tag("NotificationCapture")
-                .d("🔍 Procesando notificación de Yape: $notificationText")
             
             if (notificationText != null) {
-                Timber.tag("NotificationCapture")
-                    .d("✅ Es notificación de Yape válida, enviando a API...")
                 
                 // Extraer datos de la notificación
                 val extras = sbn.notification.extras
@@ -221,27 +110,14 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
                 val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
 
-                Timber.tag("NotificationCapture").d("📱 Package: ${sbn.packageName}")
-                Timber.tag("NotificationCapture").d("📝 Title: $title")
-                Timber.tag("NotificationCapture").d("📄 Text: $text")
                 
-                // Enviar log de datos extraídos
-                DebugLogManager.addLog(
-                    DebugLog(
-                        timestamp = Clock.System.now().toEpochMilliseconds(),
-                        type = LogType.NOTIFICATION,
-                        message = "📄 Datos extraídos",
-                        details = "Title: $title, Text: ${text.take(30)}..."
-                    )
-                )
                 
-                // Solo procesar si el servicio está disponible
                 notificationService?.let { _ ->
                     val fullText = if (bigText.isNullOrEmpty()) text else bigText
                     
                             // Crear request para la API de notificaciones con datos reales
                             val currentFingerprint = deviceFingerprint ?: AndroidDeviceUtils.generateSimpleFingerprint(this@AndroidNotificationCaptureService)
-                    val adminId = authService?.userProfile?.value?.id?.toIntOrNull() ?: 605 // Fallback temporal
+                    val adminId = authService?.userProfile?.value?.id?.toIntOrNull() ?: 605
                     
                     // ENCRIPTAR la notificación completa sin parsear
                     val encryptedNotification = try {
@@ -261,18 +137,9 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                         // Encriptar usando XOR con deviceFingerprint como clave
                         val encrypted = EncryptionUtils.encryptWithKey(jsonString, currentFingerprint)
 
-                        Timber.tag("NotificationCapture")
-                            .d("🔐 Notificación encriptada exitosamente")
-                        Timber.tag("NotificationCapture")
-                            .d("🔐 Tamaño original: ${jsonString.length} chars")
-                        Timber.tag("NotificationCapture")
-                            .d("🔐 Tamaño encriptado: ${encrypted.length} chars")
                         
                         encrypted
                     } catch (e: Exception) {
-                        Timber.tag("NotificationCapture")
-                            .e("❌ Error encriptando notificación: ${e.message}")
-                        // Fallback: encriptar solo el texto
                         EncryptionUtils.encryptWithKey(fullText, currentFingerprint)
                     }
                     
@@ -287,36 +154,22 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                                 encryptedNotification = encryptedNotification,
                                 deviceFingerprint = currentFingerprint,
                                 timestamp = sbn.postTime,
-                                deduplicationHash = "" // Temporal para generar hash
+                                deduplicationHash = ""
                             )
                         )
                     )
 
-                    Timber.tag("NotificationCapture").d("📱 AdminId real: $adminId")
-                    Timber.tag("NotificationCapture")
-                        .d("🔑 DeviceFingerprint real: ${currentFingerprint.take(20)}...")
-                    Timber.tag("NotificationCapture")
-                        .d("🔐 EncryptedNotification: ${encryptedNotification.take(50)}...")
-                    Timber.tag("NotificationCapture")
-                        .d("🔗 DeduplicationHash: ${notificationRequest.deduplicationHash}")
-
-                    Timber.tag("NotificationCapture")
-                        .d("✅ YapeNotificationRequest creada con notificación encriptada y hash de deduplicación")
                     
                     // Reproducir sonido Yape realista (melodía ascendente)
                     audioService?.playCustomSound(NotificationSoundType.YAPE_REALISTIC)
-                    Timber.tag("NotificationCapture").d("🔊 Sonido Yape realista reproducido")
                     
                     // Enviar a la API con retry automático
                     sendNotificationWithRetry(notificationRequest, 0)
-                } ?: Timber.tag("NotificationCapture").w("Servicio de notificaciones no disponible")
+                }
                 
             } else {
-                Timber.tag("NotificationCapture").w("❌ No es notificación de Yape válida")
             }
         } catch (e: Exception) {
-            Timber.tag("NotificationCapture")
-                .e("Error procesando notificación de Yape: ${e.message}")
         }
     }
     
@@ -332,7 +185,6 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         )
         
         val isYape = yapePackages.contains(packageName)
-        Timber.tag("NotificationCapture").d("🔍 Verificando package Yape: $packageName -> $isYape")
         return isYape
     }
     
@@ -387,35 +239,13 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         try {
             // DEDUPLICACIÓN: Verificar si la notificación ya fue enviada
             if (isNotificationAlreadySent(notificationRequest)) {
-                Timber.tag("NotificationCapture").d("🔄 Notificación duplicada detectada - omitiendo envío")
-                DebugLogManager.addLog(
-                    DebugLog(
-                        timestamp = Clock.System.now().toEpochMilliseconds(),
-                        type = LogType.NOTIFICATION,
-                        message = "🔄 Notificación duplicada omitida",
-                        details = "Hash: ${generateNotificationHash(notificationRequest)}"
-                    )
-                )
                 return
             }
             
-            // VALIDACIÓN DE SEGURIDAD: Verificar que el adminId sea válido (no sea fallback)
             if (notificationRequest.adminId == 605) {
-                Timber.tag("NotificationCapture").w("⚠️ Usando adminId fallback (605) - verificar autenticación")
             }
             
-            Timber.tag("NotificationCapture").d("🚀 Enviando a API (intento ${attempt + 1}/$maxRetries)...")
-            Timber.tag("NotificationCapture").d("🔒 SEGURIDAD: Solo datos de Yape autorizados")
             
-            // Enviar log de envío a API
-            DebugLogManager.addLog(
-                DebugLog(
-                    timestamp = Clock.System.now().toEpochMilliseconds(),
-                    type = LogType.API,
-                    message = "🚀 Enviando a API (intento ${attempt + 1})",
-                    details = "POST /api/notifications/yape-notifications - Solo Yape autorizado"
-                )
-            )
             
             val result = notificationService?.sendYapeNotification(
                 adminId = notificationRequest.adminId,
@@ -424,33 +254,19 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 timestamp = notificationRequest.timestamp
             )
             
-            result?.onSuccess { response ->
-                Timber.tag("NotificationCapture")
-                    .d("✅ Notificación enviada exitosamente: ${response.message}")
+            result?.onSuccess { _ ->
                 
                 // Marcar como enviada para deduplicación
                 markNotificationAsSent(notificationRequest)
                 
-                // Enviar log de éxito
-                DebugLogManager.addLog(
-                    DebugLog(
-                        timestamp = Clock.System.now().toEpochMilliseconds(),
-                        type = LogType.API,
-                        message = "✅ Enviado exitosamente",
-                        details = "Response: ${response.message}"
-                    )
-                )
                 
                 // Remover de queue si estaba pendiente
                 pendingNotifications.remove(notificationRequest)
                 
-            }?.onFailure { error ->
-                Timber.tag("NotificationCapture")
-                    .e("❌ Error enviando notificación (intento ${attempt + 1}): ${error.message}")
+            }?.onFailure { _ ->
                 
                 // Si no es el último intento, agregar a queue y reintentar
                 if (attempt < maxRetries - 1) {
-                    Timber.tag("NotificationCapture").d("🔄 Reintentando en ${retryDelayMs}ms...")
                     
                     // Agregar a queue si no está ya
                     if (!pendingNotifications.contains(notificationRequest)) {
@@ -461,28 +277,15 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                     kotlinx.coroutines.delay(retryDelayMs)
                     sendNotificationWithRetry(notificationRequest, attempt + 1)
                 } else {
-                    // Último intento fallido, mantener en queue para procesamiento manual
-                    Timber.tag("NotificationCapture").e("💥 Fallo definitivo después de $maxRetries intentos")
                     
                     if (!pendingNotifications.contains(notificationRequest)) {
                         pendingNotifications.add(notificationRequest)
                     }
                     
-                    // Enviar log de error final
-                    DebugLogManager.addLog(
-                        DebugLog(
-                            timestamp = Clock.System.now().toEpochMilliseconds(),
-                            type = LogType.ERROR,
-                            message = "💥 Fallo definitivo",
-                            details = "Error después de $maxRetries intentos: ${error.message}"
-                        )
-                    )
                 }
             }
             
         } catch (e: Exception) {
-            Timber.tag("NotificationCapture")
-                .e("💥 Excepción enviando notificación (intento ${attempt + 1}): ${e.message}")
             
             // Si no es el último intento, reintentar
             if (attempt < maxRetries - 1) {
@@ -494,15 +297,6 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                     pendingNotifications.add(notificationRequest)
                 }
                 
-                // Enviar log de excepción final
-                DebugLogManager.addLog(
-                    DebugLog(
-                        timestamp = Clock.System.now().toEpochMilliseconds(),
-                        type = LogType.ERROR,
-                        message = "💥 Excepción definitiva",
-                        details = "Exception después de $maxRetries intentos: ${e.message}"
-                    )
-                )
             }
         }
     }
@@ -512,7 +306,6 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
      */
     private suspend fun processPendingNotifications() {
         if (pendingNotifications.isNotEmpty()) {
-            Timber.tag("NotificationCapture").d("🔄 Procesando ${pendingNotifications.size} notificaciones pendientes...")
             
             val notificationsToProcess = pendingNotifications.toList()
             pendingNotifications.clear()
@@ -576,22 +369,10 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                     // Limpiar notificaciones activas de la app
                     notificationManager.cancelAll()
                     
-                    Timber.tag("NotificationCapture").d("🧹 Notificaciones del sistema limpiadas")
                     
-                    // Enviar log de debug
-                    org.sysarp.project.ui.components.DebugLogManager.addLog(
-                        org.sysarp.project.ui.components.DebugLog(
-                            timestamp = Clock.System.now().toEpochMilliseconds(),
-                            type = org.sysarp.project.ui.components.LogType.PERMISSION,
-                            message = "🧹 Sistema limpiado",
-                            details = "Se limpiaron las notificaciones del sistema"
-                        )
-                    )
                 } else {
-                    Timber.tag("NotificationCapture").w("⚠️ No se puede limpiar notificaciones - servicio no habilitado")
                 }
             } catch (e: Exception) {
-                Timber.tag("NotificationCapture").e("❌ Error limpiando notificaciones del sistema: ${e.message}")
             }
         }
     }
@@ -599,6 +380,5 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
-        Timber.tag("NotificationCapture").d("Servicio de captura de notificaciones destruido")
     }
 }

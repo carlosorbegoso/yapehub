@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.serialization.json.Json
-import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.SecurityUtils
 
 /**
@@ -41,7 +40,6 @@ actual object CredentialStorageService {
     actual suspend fun saveCredentials(email: String, password: String): Boolean {
         return try {
             val prefs = sharedPreferences ?: run {
-                Logger.auth("CREDENTIAL_STORAGE", "❌ Contexto no disponible para guardar credenciales")
                 return false
             }
             
@@ -58,10 +56,8 @@ actual object CredentialStorageService {
                 .putLong("credentials_timestamp", credentials.timestamp)
                 .apply()
             
-            Logger.auth("CREDENTIAL_STORAGE", "✅ Credenciales guardadas para: ${credentials.email}")
             true
         } catch (e: Exception) {
-            Logger.auth("CREDENTIAL_STORAGE", "❌ Error guardando credenciales: ${e.message}")
             false
         }
     }
@@ -69,7 +65,6 @@ actual object CredentialStorageService {
     actual suspend fun getSavedCredentials(): SavedCredentials? {
         return try {
             val prefs = sharedPreferences ?: run {
-                Logger.auth("CREDENTIAL_STORAGE", "❌ Contexto no disponible para recuperar credenciales")
                 return null
             }
             
@@ -77,14 +72,11 @@ actual object CredentialStorageService {
             
             if (credentialsJson != null) {
                 val credentials = json.decodeFromString(SavedCredentials.serializer(), credentialsJson)
-                Logger.auth("CREDENTIAL_STORAGE", "🔍 Credenciales encontradas para: ${credentials.email}")
                 credentials
             } else {
-                Logger.auth("CREDENTIAL_STORAGE", "🔍 No hay credenciales guardadas")
                 null
             }
         } catch (e: Exception) {
-            Logger.auth("CREDENTIAL_STORAGE", "❌ Error recuperando credenciales: ${e.message}")
             null
         }
     }
@@ -92,7 +84,6 @@ actual object CredentialStorageService {
     actual suspend fun clearCredentials(): Boolean {
         return try {
             val prefs = sharedPreferences ?: run {
-                Logger.auth("CREDENTIAL_STORAGE", "❌ Contexto no disponible para eliminar credenciales")
                 return false
             }
             
@@ -101,10 +92,8 @@ actual object CredentialStorageService {
                 .remove("credentials_timestamp")
                 .apply()
             
-            Logger.auth("CREDENTIAL_STORAGE", "🗑️ Credenciales eliminadas")
             true
         } catch (e: Exception) {
-            Logger.auth("CREDENTIAL_STORAGE", "❌ Error eliminando credenciales: ${e.message}")
             false
         }
     }

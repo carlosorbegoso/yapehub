@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import org.sysarp.project.utils.Logger
 
 /**
  * Implementación de AudioService para Android
@@ -32,7 +31,6 @@ actual class AudioService {
         this.vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         this.audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         this.voiceService = VoiceService(context)
-        Logger.auth("AUDIO_SERVICE", "🔊 Servicio de audio inicializado")
     }
     
     actual fun playNotificationSound() {
@@ -60,7 +58,6 @@ actual class AudioService {
     
     actual fun playCustomSound(soundType: NotificationSoundType) {
         try {
-            Logger.auth("AUDIO_SERVICE", "🔊 Reproduciendo sonido: $soundType")
             
             // Detener sonido anterior si está reproduciéndose
             stopAllSounds()
@@ -103,9 +100,7 @@ actual class AudioService {
                     // Vibrar si está habilitado
                     vibrateIfEnabled()
                     
-                    Logger.auth("AUDIO_SERVICE", "✅ Sonido reproducido exitosamente: $soundResource")
                 } else {
-                    Logger.auth("AUDIO_SERVICE", "❌ No se encontró el recurso de sonido: $soundResource")
                 }
                 
                 // Liberar recursos cuando termine la reproducción
@@ -116,7 +111,6 @@ actual class AudioService {
                 
                 // Manejar errores
                 setOnErrorListener { _, what, extra ->
-                    Logger.auth("AUDIO_SERVICE", "❌ Error reproduciendo sonido: what=$what, extra=$extra")
                     release()
                     mediaPlayer = null
                     true
@@ -124,7 +118,6 @@ actual class AudioService {
             }
             
         } catch (e: Exception) {
-            Logger.auth("AUDIO_SERVICE", "❌ Error al reproducir sonido: ${e.message}")
         }
     }
     
@@ -136,16 +129,13 @@ actual class AudioService {
                 }
                 player.release()
                 mediaPlayer = null
-                Logger.auth("AUDIO_SERVICE", "🔇 Sonidos detenidos")
             }
         } catch (e: Exception) {
-            Logger.auth("AUDIO_SERVICE", "❌ Error deteniendo sonidos: ${e.message}")
         }
     }
     
     actual fun setVolume(volume: Float) {
         this.volume = volume.coerceIn(0.0f, 1.0f)
-        Logger.auth("AUDIO_SERVICE", "🔊 Volumen configurado: ${this.volume}")
     }
     
     /**
@@ -164,10 +154,8 @@ actual class AudioService {
                     @Suppress("DEPRECATION")
                     vib.vibrate(200)
                 }
-                Logger.auth("AUDIO_SERVICE", "📳 Vibración activada")
             }
         } catch (e: Exception) {
-            Logger.auth("AUDIO_SERVICE", "❌ Error en vibración: ${e.message}")
         }
     }
 }

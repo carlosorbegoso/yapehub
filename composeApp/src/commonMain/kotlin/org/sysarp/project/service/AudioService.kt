@@ -1,6 +1,5 @@
 package org.sysarp.project.service
 
-import org.sysarp.project.utils.Logger
 
 /**
  * Servicio para manejar la reproducción de sonidos de notificación

@@ -71,7 +71,6 @@ class SellerRegistrationApiClient : BaseApiClient() {
                             apiError.message
                         }
                     } catch (e: Exception) {
-                        // Fallback al mensaje original si no se puede parsear
                         errorBody
                     }
                 } catch (e: Exception) {

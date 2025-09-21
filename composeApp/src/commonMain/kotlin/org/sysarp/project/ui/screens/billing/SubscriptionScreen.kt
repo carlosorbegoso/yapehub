@@ -18,11 +18,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.*
 import org.sysarp.project.service.billing.BillingService
-import org.sysarp.project.ui.components.topbar.TopBarComponent
-import org.sysarp.project.utils.Logger
-import org.sysarp.project.utils.ErrorInfo
 import org.sysarp.project.ui.components.ErrorAlertDialog
 import org.sysarp.project.ui.components.ErrorType
+import org.sysarp.project.ui.components.topbar.TopBarComponent
+import org.sysarp.project.utils.ErrorInfo
+import org.sysarp.project.utils.Logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,7 +71,6 @@ fun SubscriptionScreen(
                 Logger.auth("SUBSCRIPTION_SCREEN", "✅ Planes cargados desde API: ${plans.size} planes")
             } else if (errorInfo != null) {
                 Logger.auth("SUBSCRIPTION_SCREEN", "⚠️ Error cargando desde API, usando fallback: ${errorInfo.message}")
-                // Fallback a datos locales
                 availablePlans = billingService.getAvailablePlansLocal()
                 Logger.auth("SUBSCRIPTION_SCREEN", "📋 Planes locales cargados: ${availablePlans.size} planes")
                 
@@ -85,7 +84,6 @@ fun SubscriptionScreen(
             isLoading = false
         } catch (e: Exception) {
             Logger.auth("SUBSCRIPTION_SCREEN", "❌ Error inesperado, usando fallback: ${e.message}")
-            // Fallback a datos locales en caso de error inesperado
             availablePlans = billingService.getAvailablePlansLocal()
             Logger.auth("SUBSCRIPTION_SCREEN", "📋 Planes locales cargados en catch: ${availablePlans.size} planes")
             
@@ -191,7 +189,6 @@ fun SubscriptionScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                // Debug info
                                 Text(
                                     text = "Cargados: ${availablePlans.size} planes",
                                     style = MaterialTheme.typography.bodySmall,

@@ -78,7 +78,6 @@ fun formatShortDate(timestamp: String): String {
  */
 fun formatTimeOnly(timestamp: String): String {
     return try {
-        // Formatear timestamp para mostrar solo la hora
         val timePart = timestamp.substringAfter("T").substringBefore(".")
         val timeComponents = timePart.split(":")
         
@@ -100,7 +99,6 @@ fun formatTimeOnly(timestamp: String): String {
 fun formatRelativeTime(timestamp: String): String {
     return try {
         // Formatear la fecha para mostrar de manera más amigable
-        // Extraer solo la parte de la fecha del timestamp ISO
         val datePart = timestamp.substringBefore("T")
         val timePart = timestamp.substringAfter("T").substringBefore(".")
         
@@ -140,7 +138,6 @@ fun formatDateTime(dateTimeString: String): String {
             dateTimeString
         }
     } catch (e: Exception) {
-        // Fallback: extraer solo los primeros 16 caracteres (yyyy-MM-ddTHH:mm)
         try {
             dateTimeString.substring(0, 16)
         } catch (e2: Exception) {

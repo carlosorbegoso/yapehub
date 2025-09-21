@@ -16,7 +16,7 @@ data class YapeNotification(
     val notificationInfoText: String?,
     val notificationSummaryText: String?,
     val notificationTickerText: String?,
-    val notificationExtras: String?, // JSON string de todos los extras
+    val notificationExtras: String?,
     val notificationId: Int,
     val notificationTag: String?,
     val notificationKey: String?,

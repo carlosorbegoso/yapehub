@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.BusinessCenter
@@ -45,7 +44,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import org.sysarp.project.ui.components.topbar.TopBarComponent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,6 +64,7 @@ import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.ui.components.branch.BranchSellersDialog
 import org.sysarp.project.ui.components.branch.CreateBranchDialog
 import org.sysarp.project.ui.components.branch.EditBranchDialog
+import org.sysarp.project.ui.components.topbar.TopBarComponent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,7 +74,6 @@ fun BranchManagementScreen(
     accessToken: String,
     onBackClick: () -> Unit
 ) {
-    // Estados
     var branchesData by remember { mutableStateOf<BranchesData?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -91,8 +89,6 @@ fun BranchManagementScreen(
     var showFilters by remember { mutableStateOf(false) }
     
     val coroutineScope = rememberCoroutineScope()
-    
-    // Cargar sucursales
     LaunchedEffect(adminId, accessToken, currentPage, filterStatus) {
         if (adminId > 0 && accessToken.isNotEmpty()) {
             isLoading = true
@@ -109,18 +105,15 @@ fun BranchManagementScreen(
                     onSuccess = { response ->
                         branchesData = response
                         isLoading = false
-                        println("🔍 [BRANCH_MANAGEMENT] Sucursales cargadas: ${response.branches.size}")
                     },
                     onFailure = { error ->
                         errorMessage = error.message ?: "Error cargando sucursales"
                         isLoading = false
-                        println("🔍 [BRANCH_MANAGEMENT] Error cargando sucursales: ${error.message}")
                     }
                 )
             } catch (e: Exception) {
                 errorMessage = "Error de conexión: ${e.message}"
                 isLoading = false
-                println("🔍 [BRANCH_MANAGEMENT] Excepción cargando sucursales: ${e.message}")
             }
         }
     }
@@ -450,11 +443,9 @@ fun BranchManagementScreen(
                                     onSuccess = { details ->
                                         branchDetails = details
                                         showDetailsDialog = true
-                                        println("✅ [BRANCH_MANAGEMENT] Detalles de sucursal cargados")
                                     },
                                     onFailure = { error ->
                                         errorMessage = "Error cargando detalles: ${error.message}"
-                                        println("❌ [BRANCH_MANAGEMENT] Error cargando detalles: ${error.message}")
                                     }
                                 )
                             }
@@ -581,7 +572,7 @@ fun BranchManagementScreen(
                                 }
                             },
                             onFailure = { error ->
-                                println("Error actualizando sucursal: ${error.message}")
+                                // Error actualizando sucursal
                                 showEditDialog = false
                             }
                         )
@@ -626,7 +617,6 @@ fun BranchManagementScreen(
                                             showDeleteDialog = false
                                             // Recargar la lista de sucursales
                                             currentPage = 0
-                                            println("✅ [BRANCH_MANAGEMENT] Sucursal eliminada exitosamente")
                                         } else {
                                             errorMessage = "Error al eliminar la sucursal"
                                             showDeleteDialog = false
@@ -635,7 +625,6 @@ fun BranchManagementScreen(
                                     onFailure = { error ->
                                         errorMessage = "Error al eliminar la sucursal: ${error.message}"
                                         showDeleteDialog = false
-                                        println("❌ [BRANCH_MANAGEMENT] Error eliminando sucursal: ${error.message}")
                                     }
                                 )
                             }

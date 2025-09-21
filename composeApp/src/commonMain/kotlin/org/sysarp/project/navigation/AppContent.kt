@@ -5,17 +5,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import org.sysarp.project.repository.UserProfileRepository
+import org.sysarp.project.service.CredentialStorageService
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
-import org.sysarp.project.service.billing.BillingService
-import org.sysarp.project.service.CredentialStorageService
-import org.sysarp.project.ui.components.FloatingDebugOverlay
+import org.sysarp.project.ui.screens.admin.AdminAnalyticsScreen
 import org.sysarp.project.ui.screens.admin.AdminDashboardScreen
 import org.sysarp.project.ui.screens.admin.AdminPaymentsScreen
 import org.sysarp.project.ui.screens.admin.AdminProfileScreen
@@ -23,7 +23,9 @@ import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
 import org.sysarp.project.ui.screens.admin.BranchManagementScreen
 import org.sysarp.project.ui.screens.admin.SellerManagementScreen
 import org.sysarp.project.ui.screens.admin.UserManagementScreen
-import org.sysarp.project.ui.screens.admin.AdminAnalyticsScreen
+import org.sysarp.project.ui.screens.billing.BillingDashboardScreen
+import org.sysarp.project.ui.screens.billing.PaymentDialog
+import org.sysarp.project.ui.screens.billing.SubscriptionScreen
 import org.sysarp.project.ui.screens.common.DeactivationRequestScreen
 import org.sysarp.project.ui.screens.common.ForgotPasswordScreen
 import org.sysarp.project.ui.screens.common.LoginScreen
@@ -38,9 +40,6 @@ import org.sysarp.project.ui.screens.seller.SellerNotificationsScreen
 import org.sysarp.project.ui.screens.seller.SellerPaymentsScreen
 import org.sysarp.project.ui.screens.seller.SellerSpecificPaymentsScreen
 import org.sysarp.project.ui.screens.seller.SellerUnifiedScreen
-import org.sysarp.project.ui.screens.billing.BillingDashboardScreen
-import org.sysarp.project.ui.screens.billing.SubscriptionScreen
-import org.sysarp.project.ui.screens.billing.PaymentDialog
 import org.sysarp.project.viewmodel.YapeViewModel
 
 @Composable
@@ -266,8 +265,8 @@ fun AppContent(
             QRDisplayScreen(
                 qrCode = qrScreen.qrCode,
                 onNavigateBack = { navigationManager.navigateBack() },
-                onShareQR = { /* TODO: Implementar compartir QR */ },
-                onInvalidateQR = { /* TODO: Implementar invalidar QR */ }
+                onShareQR = { },
+                onInvalidateQR = { }
             )
         }
         is Screen.DeactivationRequest -> {
@@ -304,13 +303,9 @@ fun AppContent(
             QRScannerScreen(
                 onNavigateBack = { navigationManager.navigateBack() },
                 onQRScanned = { qrData ->
-                    // Aquí manejaremos el QR escaneado
-                    // Por ahora solo navegamos de vuelta
                     navigationManager.navigateBack()
                 },
                 onManualCodeEntry = {
-                    // Aquí manejaremos la entrada manual de código
-                    // Por ahora solo navegamos de vuelta
                     navigationManager.navigateBack()
                 },
                 onLoginSuccess = {
@@ -355,6 +350,4 @@ fun AppContent(
         }
     }
     
-    // Overlay flotante de debug (solo en modo desarrollo)
-    FloatingDebugOverlay()
 }

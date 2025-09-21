@@ -195,7 +195,6 @@ fun ServerQRDisplayScreen(
                                         .clip(RoundedCornerShape(8.dp))
                                 )
                             } else {
-                                // Fallback si no se puede decodificar la imagen
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
@@ -330,7 +329,7 @@ fun ServerQRDisplayScreen(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
-                                    text = qrData.expiresAt.take(10), // Solo fecha
+                                    text = qrData.expiresAt.take(10),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -528,7 +527,6 @@ fun ServerQRDisplayScreen(
                 OutlinedButton(
                     onClick = {
                         // Mostrar Base64 completo en un diálogo
-                        // Por ahora solo copiamos
                         clipboardManager.setText(AnnotatedString(qrData.qrBase64))
                         showCopiedMessage = true
                     },

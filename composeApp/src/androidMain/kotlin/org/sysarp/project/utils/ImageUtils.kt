@@ -20,7 +20,7 @@ actual fun decodeBase64ToImageBitmap(base64String: String): ImageBitmap? {
         bitmap?.asImageBitmap()
         
     } catch (e: Exception) {
-        println("❌ [IMAGE_UTILS_ANDROID] Error decodificando imagen Base64: ${e.message}")
+        // Error decodificando imagen Base64
         null
     }
 }

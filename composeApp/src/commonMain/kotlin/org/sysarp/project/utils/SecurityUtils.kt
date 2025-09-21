@@ -24,10 +24,7 @@ object SecurityUtils {
      * @return true si es válido
      */
     fun isValidRucOrDni(ruc: String): Boolean {
-        // Limpiar el RUC/DNI (solo números)
         val cleanRuc = ruc.replace(Regex("[^0-9]"), "")
-        
-        // Validar que tenga entre 8 y 11 dígitos
         return cleanRuc.length in 8..11 && cleanRuc.all { it.isDigit() }
     }
     
@@ -39,7 +36,6 @@ object SecurityUtils {
     fun isValidEmail(email: String): Boolean {
         if (email.isBlank()) return false
         
-        // Validación básica de email
         val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
         return emailRegex.matches(email)
     }
@@ -52,10 +48,8 @@ object SecurityUtils {
     fun isValidPassword(password: String): Boolean {
         if (password.isBlank()) return false
         
-        // Validar longitud mínima
         if (password.length < 8) return false
         
-        // Validar que no contenga caracteres peligrosos
         val dangerousChars = Regex("['\"\\\\;<>]")
         if (dangerousChars.containsMatchIn(password)) return false
         
@@ -70,10 +64,7 @@ object SecurityUtils {
     fun isValidPhone(phone: String): Boolean {
         if (phone.isBlank()) return false
         
-        // Limpiar el teléfono (solo números y +)
         val cleanPhone = phone.replace(Regex("[^0-9+]"), "")
-        
-        // Validar que tenga entre 9 y 15 dígitos (incluyendo código de país)
         val digitsOnly = cleanPhone.replace("+", "")
         return digitsOnly.length in 9..15 && digitsOnly.all { it.isDigit() }
     }
@@ -86,10 +77,8 @@ object SecurityUtils {
     fun isValidName(name: String): Boolean {
         if (name.isBlank()) return false
         
-        // Validar longitud mínima
         if (name.length < 2) return false
         
-        // Validar que no contenga caracteres peligrosos
         val dangerousChars = Regex("['\"\\\\;<>]")
         if (dangerousChars.containsMatchIn(name)) return false
         

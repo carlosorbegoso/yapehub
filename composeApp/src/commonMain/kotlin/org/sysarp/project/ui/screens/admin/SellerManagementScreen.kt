@@ -527,7 +527,6 @@ fun SellerManagementScreen(
             onDismiss = { showAddSellerDialog = false },
             onConfirm = { sellerData ->
                 coroutineScope.launch {
-                    // TODO: Implementar creación de vendedor
                     Logger.auth("SELLER_MANAGEMENT", "Creando vendedor: ${sellerData.name}")
                     showAddSellerDialog = false
                     // Recargar lista
@@ -547,7 +546,6 @@ fun SellerManagementScreen(
             },
             onConfirm = { sellerData ->
                 coroutineScope.launch {
-                    // TODO: Implementar actualización de vendedor
                     Logger.auth("SELLER_MANAGEMENT", "Actualizando vendedor: ${sellerData.name}")
                     showEditSellerDialog = false
                     selectedSeller = null

@@ -62,8 +62,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.CredentialStorageService
+import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.utils.SuccessHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -229,7 +229,6 @@ fun LoginScreen(
                         OutlinedTextField(
                             value = email,
                             onValueChange = { newValue ->
-                                // Validación estricta: solo caracteres válidos para email, máximo 50 caracteres
                                 val sanitizedValue = newValue.filter { it.isLetterOrDigit() || it == '@' || it == '.' || it == '_' || it == '-' }.take(50)
                                 email = sanitizedValue
                                 if (errorMessage.isNotEmpty()) {
@@ -293,7 +292,6 @@ fun LoginScreen(
                         OutlinedTextField(
                             value = password,
                             onValueChange = { newValue ->
-                                // Validación estricta: solo caracteres alfanuméricos y símbolos seguros, máximo 30 caracteres
                                 val sanitizedValue = newValue.filter { it.isLetterOrDigit() || it in "!@#$%^&*()_+-=[]{}|;:,.<>?" }.take(30)
                                 password = sanitizedValue
                                 if (errorMessage.isNotEmpty()) {

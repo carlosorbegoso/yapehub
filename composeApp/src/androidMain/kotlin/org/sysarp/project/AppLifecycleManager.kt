@@ -8,12 +8,7 @@ import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.datetime.Clock
 import org.sysarp.project.service.AndroidNotificationCaptureService
-import org.sysarp.project.ui.components.DebugLog
-import org.sysarp.project.ui.components.DebugLogManager
-import org.sysarp.project.ui.components.LogType
-import timber.log.Timber
 
 object AppLifecycleManager : DefaultLifecycleObserver {
     private val _appResumed = MutableSharedFlow<Unit>()
@@ -23,12 +18,10 @@ object AppLifecycleManager : DefaultLifecycleObserver {
     
     fun initialize(application: Application) {
         this.application = application
-        Timber.tag("AppLifecycleManager").d("🔧 Lifecycle manager initialized")
     }
     
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
-        Timber.tag("AppLifecycleManager").d("📱 App resumed - checking permissions and cleaning notifications")
         
         // Emitir evento para otros componentes
         _appResumed.tryEmit(Unit)
@@ -44,13 +37,11 @@ object AppLifecycleManager : DefaultLifecycleObserver {
      */
     private fun checkNotificationPermissionsAndCleanup(context: Context) {
         try {
-            Timber.tag("AppLifecycleManager").d("🔍 Verificando permisos de notificaciones...")
             
             // 1. Verificar si el servicio de notificaciones está habilitado
             val hasNotificationPermission = AndroidNotificationCaptureService.isNotificationServiceEnabled(context)
             
             if (hasNotificationPermission) {
-                Timber.tag("AppLifecycleManager").d("✅ Permisos de notificaciones habilitados")
                 
                 // 2. Limpiar notificaciones antiguas para evitar acumulación
                 cleanupOldNotifications(context)
@@ -59,21 +50,10 @@ object AppLifecycleManager : DefaultLifecycleObserver {
                 verifyNotificationServiceStatus(context)
                 
             } else {
-                Timber.tag("AppLifecycleManager").w("❌ Permisos de notificaciones NO habilitados")
                 
-                // Enviar log de debug
-                DebugLogManager.addLog(
-                    DebugLog(
-                        timestamp = Clock.System.now().toEpochMilliseconds(),
-                        type = LogType.PERMISSION,
-                        message = "❌ Permisos de notificaciones no habilitados",
-                        details = "El usuario necesita habilitar el servicio de notificaciones"
-                    )
-                )
             }
             
         } catch (e: Exception) {
-            Timber.tag("AppLifecycleManager").e("❌ Error verificando permisos: ${e.message}")
         }
     }
     
@@ -84,23 +64,11 @@ object AppLifecycleManager : DefaultLifecycleObserver {
         try {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             
-            // Limpiar notificaciones activas (esto solo afecta las notificaciones de la app, no las del sistema)
             notificationManager.cancelAll()
             
-            Timber.tag("AppLifecycleManager").d("🧹 Notificaciones de la app limpiadas")
             
-            // Enviar log de debug
-            DebugLogManager.addLog(
-                DebugLog(
-                    timestamp = Clock.System.now().toEpochMilliseconds(),
-                    type = LogType.PERMISSION,
-                    message = "🧹 Notificaciones limpiadas",
-                    details = "Se limpiaron las notificaciones antiguas de la app"
-                )
-            )
             
         } catch (e: Exception) {
-            Timber.tag("AppLifecycleManager").e("❌ Error limpiando notificaciones: ${e.message}")
         }
     }
     
@@ -116,20 +84,9 @@ object AppLifecycleManager : DefaultLifecycleObserver {
                 0
             )
             
-            Timber.tag("AppLifecycleManager").d("✅ Servicio de notificaciones registrado correctamente")
             
-            // Enviar log de debug
-            DebugLogManager.addLog(
-                DebugLog(
-                    timestamp = Clock.System.now().toEpochMilliseconds(),
-                    type = LogType.PERMISSION,
-                    message = "✅ Servicio de notificaciones funcionando",
-                    details = "El servicio está registrado y funcionando correctamente"
-                )
-            )
             
         } catch (e: Exception) {
-            Timber.tag("AppLifecycleManager").w("⚠️ Servicio de notificaciones no encontrado: ${e.message}")
         }
     }
 }

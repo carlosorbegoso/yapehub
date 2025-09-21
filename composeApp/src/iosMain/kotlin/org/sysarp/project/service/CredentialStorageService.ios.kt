@@ -1,7 +1,6 @@
 package org.sysarp.project.service
 
 import kotlinx.serialization.json.Json
-import org.sysarp.project.utils.Logger
 import org.sysarp.project.utils.SecurityUtils
 import platform.Foundation.NSUserDefaults
 
@@ -31,10 +30,8 @@ actual object CredentialStorageService {
             userDefaults.setDouble(credentials.timestamp.toDouble(), "credentials_timestamp")
             userDefaults.synchronize()
             
-            Logger.auth("CREDENTIAL_STORAGE", "✅ Credenciales guardadas para: ${credentials.email}")
             true
         } catch (e: Exception) {
-            Logger.auth("CREDENTIAL_STORAGE", "❌ Error guardando credenciales: ${e.message}")
             false
         }
     }
@@ -45,14 +42,11 @@ actual object CredentialStorageService {
             
             if (credentialsJson != null) {
                 val credentials = json.decodeFromString(SavedCredentials.serializer(), credentialsJson)
-                Logger.auth("CREDENTIAL_STORAGE", "🔍 Credenciales encontradas para: ${credentials.email}")
                 credentials
             } else {
-                Logger.auth("CREDENTIAL_STORAGE", "🔍 No hay credenciales guardadas")
                 null
             }
         } catch (e: Exception) {
-            Logger.auth("CREDENTIAL_STORAGE", "❌ Error recuperando credenciales: ${e.message}")
             null
         }
     }
@@ -63,10 +57,8 @@ actual object CredentialStorageService {
             userDefaults.removeObjectForKey("credentials_timestamp")
             userDefaults.synchronize()
             
-            Logger.auth("CREDENTIAL_STORAGE", "🗑️ Credenciales eliminadas")
             true
         } catch (e: Exception) {
-            Logger.auth("CREDENTIAL_STORAGE", "❌ Error eliminando credenciales: ${e.message}")
             false
         }
     }

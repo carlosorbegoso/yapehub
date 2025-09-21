@@ -40,7 +40,6 @@ class UserProfileRepository {
         currentUser = user
     }
     
-    // Métodos de inicialización (solo para init)
     private fun addUser(user: UserProfile) {
         users.add(user)
     }

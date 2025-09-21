@@ -68,7 +68,6 @@ import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.ui.components.ValidationErrorDisplay
 import org.sysarp.project.ui.components.dashboard.DashboardAutoRefreshHandler
-import org.sysarp.project.utils.Logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,7 +82,6 @@ fun SellerUnifiedScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     
-    // Estados del formulario
     var affiliationCode by remember { mutableStateOf("") }
     var sellerName by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
@@ -91,11 +89,8 @@ fun SellerUnifiedScreen(
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
     
-    // Estado para mostrar campos adicionales
     var showAdditionalFields by remember { mutableStateOf(false) }
     var isExistingSeller by remember { mutableStateOf(false) }
-    
-    // Animaciones
     val animatedScale by animateFloatAsState(
         targetValue = if (isLoading) 0.95f else 1f,
         animationSpec = spring(
@@ -105,17 +100,12 @@ fun SellerUnifiedScreen(
         label = "formScale"
     )
     
-    // Función para refrescar datos del vendedor
     val refreshSellerData: () -> Unit = {
         coroutineScope.launch {
-            Logger.auth("SELLER_DASHBOARD", "🔄 Actualizando datos del vendedor")
             // Aquí se pueden agregar llamadas para refrescar estadísticas del vendedor
             // Por ejemplo: statsService.getSellerSummary(), etc.
-            Logger.auth("SELLER_DASHBOARD", "✅ Datos del vendedor actualizados")
         }
     }
-    
-    // Integrar actualización automática
     DashboardAutoRefreshHandler(
         authService = authService,
         statsService = statsService,
@@ -131,7 +121,6 @@ fun SellerUnifiedScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header con animación
         AnimatedVisibility(
             visible = true,
             enter = slideInVertically(
@@ -196,7 +185,6 @@ fun SellerUnifiedScreen(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Título principal con animación
         AnimatedVisibility(
             visible = true,
             enter = slideInVertically(
@@ -288,17 +276,14 @@ fun SellerUnifiedScreen(
                             )
                         }
                     }
-                    // Campo de código de afiliación
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         OutlinedTextField(
                             value = affiliationCode,
                             onValueChange = { newValue ->
-                                // Validación estricta: solo alfanumérico, máximo 10 caracteres
                                 val sanitizedValue = newValue.filter { it.isLetterOrDigit() }.take(10)
                                 affiliationCode = sanitizedValue
-                                // Limpiar errores cuando el usuario escribe
                                 if (errorMessage.isNotEmpty()) {
                                     errorMessage = ""
                                 }
@@ -338,7 +323,6 @@ fun SellerUnifiedScreen(
                             )
                         )
                         
-                        // Texto de ayuda
                         Text(
                             text = "Código de 6 dígitos del administrador",
                             fontSize = 11.sp,
@@ -346,7 +330,6 @@ fun SellerUnifiedScreen(
                             modifier = Modifier.padding(horizontal = 2.dp)
                         )
                         
-                        // Botón para escanear QR
                         OutlinedButton(
                             onClick = onNavigateToQRScanner,
                             modifier = Modifier.fillMaxWidth(),
@@ -366,14 +349,12 @@ fun SellerUnifiedScreen(
                         }
                     }
                     
-                    // Campo de nombre completo
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         OutlinedTextField(
                             value = sellerName,
                             onValueChange = { newValue ->
-                                // Validación estricta: solo letras, espacios y guiones, máximo 50 caracteres
                                 val sanitizedValue = newValue.filter { it.isLetter() || it == ' ' || it == '-' }.take(50)
                                 sellerName = sanitizedValue
                                 if (errorMessage.isNotEmpty()) {
@@ -415,7 +396,6 @@ fun SellerUnifiedScreen(
                             )
                         )
                         
-                        // Texto de ayuda
                         Text(
                             text = "Nombre completo como en tu documento",
                             fontSize = 11.sp,
@@ -424,14 +404,12 @@ fun SellerUnifiedScreen(
                         )
                     }
                     
-                    // Campo de teléfono
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         OutlinedTextField(
                             value = phone,
                             onValueChange = { newValue ->
-                                // Validación estricta: solo números, máximo 9 dígitos
                                 val sanitizedValue = newValue.filter { it.isDigit() }.take(9)
                                 phone = sanitizedValue
                                 if (errorMessage.isNotEmpty()) {
@@ -474,7 +452,6 @@ fun SellerUnifiedScreen(
                             )
                         )
                         
-                        // Texto de ayuda
                         Text(
                             text = "Número de 9 dígitos (sin código de país)",
                             fontSize = 11.sp,
@@ -483,7 +460,6 @@ fun SellerUnifiedScreen(
                         )
                     }
                     
-                    // Botón principal mejorado con validación estricta
                     val isFormValid = affiliationCode.length >= 6 && 
                                     sellerName.length >= 3 && 
                                     phone.length == 9 &&

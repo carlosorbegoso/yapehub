@@ -31,7 +31,7 @@ actual fun decodeBase64ToImageBitmap(base64String: String): ImageBitmap? {
 
         
     } catch (e: Exception) {
-        println("❌ [IMAGE_UTILS_IOS] Error decodificando imagen Base64: ${e.message}")
+        // Error decodificando imagen Base64
         null
     }
 }
@@ -77,7 +77,7 @@ private fun String.decodeBase64Bytes(): ByteArray {
         
         result.copyOf(index)
     } catch (e: Exception) {
-        println("❌ [BASE64_DECODE] Error decodificando Base64: ${e.message}")
+        // Error decodificando Base64
         ByteArray(0)
     }
 }

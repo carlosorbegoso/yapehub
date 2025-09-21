@@ -19,7 +19,6 @@ fun SellerNotificationSection(
     onRejectNotification: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Logging para debugging
     Logger.auth("NOTIFICATION_SECTION", "🔍 SellerNotificationSection renderizando - currentNotification: ${currentNotification?.paymentId}")
     
     currentNotification?.let { notification ->

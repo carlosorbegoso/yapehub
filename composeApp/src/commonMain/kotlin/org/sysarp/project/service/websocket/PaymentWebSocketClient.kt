@@ -38,7 +38,7 @@ class PaymentWebSocketClient(
     
     // Configuración de reconexión optimizada
     private var reconnectAttempts = 0
-    private val maxReconnectAttempts = 3 // Reducido de 5 a 3 intentos
+    private val maxReconnectAttempts = 3
     private var currentSellerId: Long? = null
     private var lastReconnectTime = 0L
     private val minTimeBetweenReconnects = 30000L // 30 segundos mínimo entre reconexiones
@@ -103,7 +103,6 @@ class PaymentWebSocketClient(
             Logger.auth("WEBSOCKET", "🔍 Stack trace: ${e.stackTraceToString()}")
             _connectionState.value = WebSocketConnectionState.DISCONNECTED
             
-            // Solo reintentar si no es un error de autenticación
             val message = e.message ?: ""
             if (!message.contains("401") && !message.contains("403")) {
                 scheduleReconnect()
@@ -200,7 +199,6 @@ class PaymentWebSocketClient(
         
         val currentTime = System.currentTimeMillis()
         
-        // Throttling: solo reconectar si han pasado al menos 30 segundos desde la última reconexión
         if (currentTime - lastReconnectTime < minTimeBetweenReconnects) {
             Logger.auth("WEBSOCKET", "⏳ Throttling: ignorando reconexión (muy reciente)")
             return

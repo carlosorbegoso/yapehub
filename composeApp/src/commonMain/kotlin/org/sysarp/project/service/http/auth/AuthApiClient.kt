@@ -9,7 +9,6 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.sysarp.project.data.AdminRegistrationRequest
@@ -254,7 +253,6 @@ class AuthApiClient : BaseApiClient() {
             DeviceUtils.generateDeviceFingerprint()
         } catch (e: Exception) {
             logError("AUTH_API", "Error generando fingerprint real: ${e.message}")
-            // Fallback a fingerprint simple
             DeviceUtils.generateSimpleFingerprint()
         }
     }

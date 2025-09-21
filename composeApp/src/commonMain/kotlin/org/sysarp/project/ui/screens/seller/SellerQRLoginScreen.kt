@@ -264,12 +264,11 @@ fun SellerQRLoginScreen(
                                             },
                                             onFailure = { error ->
                                                 // Manejar error - podríamos mostrar un mensaje de error
-                                                println("❌ [SELLER_QR_LOGIN] Error en login por teléfono: ${error.message}")
+                                                // Error en login por teléfono
                                             }
                                         )
                                 }
                             } else {
-                                // Fallback al método original
                                 onQRScanned(qrData)
                             }
                         }

@@ -16,40 +16,31 @@ object YapeNotificationParser {
     ): YapeTransaction? {
         return try {
             val cleanedText = notificationText.trim()
-            DebugLogger.info("🔍 [PARSER] Iniciando parseo de: $cleanedText")
             
             // Verificar primero si es una notificación de Yape válida
             if (!isYapeNotification(cleanedText)) {
-                DebugLogger.warn("❌ [PARSER] No es una notificación de Yape válida")
                 return null
             }
             
-            DebugLogger.info("🔍 [PARSER] Procesando notificación de Yape válida")
             
             // Extraer código de seguridad (3 o más dígitos) - buscar cualquier número de 3+ dígitos
             val securityCodePattern = Regex("([0-9]{3,})", RegexOption.IGNORE_CASE)
             val securityCodeMatch = securityCodePattern.find(cleanedText)
             val securityCode = securityCodeMatch?.groupValues?.get(1)
             
-            DebugLogger.info("🔍 [PARSER] Código de seguridad encontrado: $securityCode")
             if (securityCode == null) {
-                DebugLogger.warn("❌ [PARSER] No se encontró código de seguridad")
                 return null
             }
             
-            // Extraer monto (S/ X.XX, S/ X,XX, S/ X,XXX.XX)
             val amountPattern = Regex("S/\\s*([0-9,]+(?:\\.[0-9]{1,2})?)", RegexOption.IGNORE_CASE)
             val amountMatch = amountPattern.find(cleanedText)
             val amountString = amountMatch?.groupValues?.get(1)
             
-            DebugLogger.info("🔍 [PARSER] Monto encontrado: $amountString")
             if (amountString == null) {
-                DebugLogger.warn("❌ [PARSER] No se encontró monto")
                 return null
             }
             
             val amount = parseAmount(amountString)
-            DebugLogger.info("🔍 [PARSER] Monto parseado: $amount")
             
             // Extraer nombre del remitente - manejar tanto recibidos como enviados
             val senderName = when {
@@ -85,10 +76,8 @@ object YapeNotificationParser {
                 securityCode = securityCode
             )
             
-            DebugLogger.info("✅ [PARSER] Transacción creada exitosamente: ${transaction.amount} PEN de ${transaction.senderName}")
             return transaction
         } catch (e: Exception) {
-            DebugLogger.error("❌ [PARSER] Error parseando notificación de Yape: ${e.message}")
             null
         }
     }
@@ -121,10 +110,7 @@ object YapeNotificationParser {
             hasAmount && hasSecurityCode && hasPaymentIndicator
         }
         
-        DebugLogger.debug("🔍 Verificando si es notificación de Yape: $isYape")
-        DebugLogger.debug("🔍 - Monto: $hasAmount, Código: $hasSecurityCode, Pago: $hasPaymentIndicator, Yape: $hasYapeIndicator")
         if (isYape) {
-            DebugLogger.debug("📱 Notificación de Yape válida: $notificationText")
         }
         return isYape
     }

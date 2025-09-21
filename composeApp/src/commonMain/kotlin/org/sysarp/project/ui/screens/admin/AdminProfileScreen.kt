@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Category
@@ -66,9 +65,6 @@ import org.sysarp.project.data.UpdateAdminProfileRequest
 import org.sysarp.project.service.admin.AdminService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.AdminProfileApiClient
-import org.sysarp.project.service.http.AdminSellerApiClient
-import org.sysarp.project.service.http.AdminStatsApiClient
-import org.sysarp.project.service.http.SellerManagementApiClient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -300,8 +296,17 @@ fun AdminProfileScreen(
                             // Botón QR siempre visible
                             IconButton(
                                 onClick = { 
-                                    // TODO: Implementar generación de QR
-                                    // onNavigateToQR(qrCodeData)
+                                    // Crear QRCodeData con datos del perfil
+                                    val qrData = org.sysarp.project.data.QRCodeData(
+                                        affiliationCode = profileData?.id?.toString() ?: "0",
+                                        qrBase64 = "", // Se generará en la pantalla QR
+                                        expiresAt = "",
+                                        maxUses = 0,
+                                        remainingUses = 0,
+                                        branchName = profileData?.businessName ?: "Mi Empresa",
+                                        adminName = profileData?.contactName ?: "Admin"
+                                    )
+                                    onNavigateToQR(qrData)
                                 },
                                 colors = IconButtonDefaults.iconButtonColors(
                                     containerColor = MaterialTheme.colorScheme.secondaryContainer

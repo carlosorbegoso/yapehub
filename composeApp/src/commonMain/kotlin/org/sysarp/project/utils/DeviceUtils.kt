@@ -30,7 +30,6 @@ object DeviceUtils {
             
         } catch (e: Exception) {
             Logger.auth("DEVICE_UTILS", "Error generando device fingerprint: ${e.message}")
-            // Fallback a un fingerprint básico
             return@withContext "yapechamo_fallback_${Clock.System.now().toEpochMilliseconds()}"
         }
     }
@@ -40,7 +39,6 @@ object DeviceUtils {
      * Esta función será sobrescrita en androidMain
      */
     private suspend fun generateAndroidFingerprint(): String {
-        // En commonMain, siempre lanza excepción para usar fallback
         throw Exception("Not Android platform")
     }
     

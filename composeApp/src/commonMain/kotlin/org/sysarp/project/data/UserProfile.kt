@@ -29,7 +29,7 @@ data class UserProfile(
 @Serializable
 enum class UserRole {
     ADMIN,      // Puede ver todas las transacciones y gestionar tiendas
-    VENDOR      // Solo puede ver transacciones de sus tiendas asignadas
+    VENDOR
 }
 
 @Serializable

@@ -162,10 +162,6 @@ object GenericErrorHandler {
      * Maneja errores de forma silenciosa (solo logging)
      */
     fun logError(error: Throwable?, context: String = "") {
-        if (error != null) {
-            println("🚨 [ERROR] $context: ${error.javaClass.simpleName}")
-            println("🚨 [ERROR] Mensaje: ${error.message}")
-            println("🚨 [ERROR] Stack trace: ${error.stackTrace.take(3).joinToString("\n")}")
-        }
+        // Error logging removed for production
     }
 }

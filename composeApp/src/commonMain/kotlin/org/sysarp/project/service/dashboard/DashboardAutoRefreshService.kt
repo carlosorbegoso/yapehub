@@ -64,7 +64,6 @@ class DashboardAutoRefreshService(
             }
         }
         
-        // Actualización periódica cada 2 minutos (reducido de 30 segundos)
         refreshJob = coroutineScope.launch {
             while (true) {
                 delay(120_000) // 2 minutos en lugar de 30 segundos
@@ -113,7 +112,6 @@ class DashboardAutoRefreshService(
     private suspend fun handlePaymentNotification(notification: PaymentNotificationData) {
         val currentTime = System.currentTimeMillis()
         
-        // Throttling: solo procesar si han pasado al menos 5 segundos desde la última notificación
         if (currentTime - lastNotificationTime < minTimeBetweenNotifications) {
             Logger.auth("DASHBOARD_REFRESH", "⏳ Throttling: ignorando notificación (muy reciente)")
             return
@@ -139,7 +137,6 @@ class DashboardAutoRefreshService(
     private suspend fun performPeriodicRefresh() {
         val currentTime = System.currentTimeMillis()
         
-        // Throttling: solo procesar si han pasado al menos 2 minutos desde la última actualización periódica
         if (currentTime - lastPeriodicRefreshTime < minTimeBetweenPeriodicRefresh) {
             Logger.auth("DASHBOARD_REFRESH", "⏳ Throttling: ignorando actualización periódica (muy reciente)")
             return
