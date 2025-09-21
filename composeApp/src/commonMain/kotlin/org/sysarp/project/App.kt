@@ -100,10 +100,6 @@ fun YapeApp() {
     }
     
     val credentialStorageService = CredentialStorageService
-
-    remember {
-        org.sysarp.project.service.notifications.PaymentNotificationService()
-    }
     
     val viewModel = remember {
         YapeViewModel(notificationService, userProfileRepository)

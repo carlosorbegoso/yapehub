@@ -7,7 +7,6 @@ import org.sysarp.project.data.AnalyticsResponse
 import org.sysarp.project.data.FinancialAnalysisResponse
 import org.sysarp.project.data.PaymentTransparencyResponse
 import org.sysarp.project.data.QuickSummaryResponse
-import org.sysarp.project.data.SellerFinancialAnalysisParams
 import org.sysarp.project.data.SellerFinancialAnalysisResponse
 import org.sysarp.project.data.SellerStatsResponse
 import org.sysarp.project.service.http.StatsApiClient
@@ -304,24 +303,6 @@ class StatsService(
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    suspend fun getSellerFinancialAnalysis(
-        sellerId: Int,
-        startDate: String? = null,
-        endDate: String? = null,
-        sellerFinancialParams: SellerFinancialAnalysisParams,
-        token: String
-    ): Result<SellerFinancialAnalysisResponse> {
-        return getSellerFinancialAnalysis(
-            sellerId = sellerId,
-            startDate = startDate,
-            endDate = endDate,
-            include = sellerFinancialParams.include,
-            currency = sellerFinancialParams.currency,
-            commissionRate = sellerFinancialParams.commissionRate,
-            token = token
-        )
     }
 
 }

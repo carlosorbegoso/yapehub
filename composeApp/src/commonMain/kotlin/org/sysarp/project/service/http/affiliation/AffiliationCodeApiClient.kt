@@ -56,32 +56,4 @@ class AffiliationCodeApiClient : BaseApiClient() {
         }
     }
     
-    /**
-     * Validar código de afiliación
-     */
-    suspend fun validateAffiliationCode(affiliationCode: String): Result<ValidateAffiliationCodeResponse> {
-        return try {
-            logInfo("AFFILIATION_CODE_API", "Validando código de afiliación: ${affiliationCode.take(10)}...")
-            
-            val requestData = ValidateAffiliationCodeRequest(affiliationCode = affiliationCode)
-            
-            val response = client.post("$baseUrl/api/validate-affiliation-code") {
-                contentType(ContentType.Application.Json)
-                setBody(requestData)
-            }
-            
-            if (response.status.isSuccess()) {
-                val validationResponse = response.body<ValidateAffiliationCodeResponse>()
-                logInfo("AFFILIATION_CODE_API", "Código de afiliación validado exitosamente")
-                Result.success(validationResponse)
-            } else {
-                val errorMessage = "Error validando código de afiliación: ${response.status}"
-                logError("AFFILIATION_CODE_API", errorMessage)
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: Exception) {
-            logError("AFFILIATION_CODE_API", "Error validando código de afiliación: ${e.message}")
-            Result.failure(e)
-        }
-    }
 }

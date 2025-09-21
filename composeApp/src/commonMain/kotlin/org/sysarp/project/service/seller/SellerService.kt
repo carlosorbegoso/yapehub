@@ -3,7 +3,6 @@ package org.sysarp.project.service
 import org.sysarp.project.data.AuthState
 import org.sysarp.project.data.ConnectedSellersResponse
 import org.sysarp.project.data.LoginUserData
-import org.sysarp.project.data.MySeller
 import org.sysarp.project.data.SellerRegistrationResponse
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.SellerAuthApiClient
@@ -100,53 +99,6 @@ class SellerService(private val authService: AuthService) {
         }
     }
 
-    suspend fun updateSeller(
-        sellerId: Int,
-        adminId: Int,
-        name: String? = null,
-        phone: String? = null,
-        isActive: Boolean? = null,
-        token: String
-    ): Result<MySeller> {
-        return try {
-
-            val result = sellerManagementApiClient.updateSeller(sellerId, adminId, name, phone, isActive, token)
-
-            result.fold(
-                onSuccess = { updatedSeller ->
-                    Result.success(updatedSeller)
-                },
-                onFailure = { error ->
-                    Result.failure(error)
-                }
-            )
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun deleteSeller(
-        sellerId: Int,
-        adminId: Int,
-        action: String = "pause", // "pause" o "delete"
-        token: String
-    ): Result<Boolean> {
-        return try {
-
-            val result = sellerManagementApiClient.deleteSeller(sellerId, adminId, action, token)
-
-            result.fold(
-                onSuccess = { success ->
-                    Result.success(success)
-                },
-                onFailure = { error ->
-                    Result.failure(error)
-                }
-            )
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
     /**
      * Login de vendedor por teléfono y código de afiliación
      */
@@ -202,7 +154,7 @@ class SellerService(private val authService: AuthService) {
     /**
      * Obtener solicitudes de desactivación pendientes
      */
-    suspend fun getPendingDeactivationRequests(): Result<List<org.sysarp.project.data.DeactivationRequest>> {
+    fun getPendingDeactivationRequests(): Result<List<org.sysarp.project.data.DeactivationRequest>> {
         return try {
             
             // Por ahora retornamos una lista vacía ya que no hay API específica para esto
@@ -218,7 +170,7 @@ class SellerService(private val authService: AuthService) {
     /**
      * Solicitar desactivación de vendedor
      */
-    suspend fun requestDeactivation(reason: String, sellerId: Int): Result<Unit> {
+    fun requestDeactivation(reason: String, sellerId: Int): Result<Unit> {
         return try {
             
             
