@@ -114,7 +114,7 @@ Para usar cualquier componente de esta estructura, simplemente importa desde la 
 ```kotlin
 import org.sysarp.project.ui.seller.components.cards.SellerProfileCard
 import org.sysarp.project.ui.seller.screens.dashboard.SellerDashboardScreen
-import org.sysarp.project.ui.seller.services.SellerService
+import org.sysarp.project.service.seller.SellerService
 ```
 
 ---
