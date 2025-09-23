@@ -31,19 +31,30 @@ fun PaymentDialog(
         )
     }
     
-    PaymentDialogContainer(
+    PaymentDialogComponents(
         currentStep = state.currentStep,
+        paymentCode = paymentCode,
+        selectedImageBase64 = state.selectedImageBase64,
+        selectedImageName = state.selectedImageName,
+        notes = state.notes,
+        isLoading = state.isLoading,
+        error = state.error,
+        isCheckingStatus = state.isCheckingStatus,
+        paymentStatus = state.paymentStatus,
+        showImagePicker = state.showImagePicker,
+        imagePickerService = imagePickerService,
+        onImageSelected = { base64, name -> state.updateSelectedImage(base64, name) },
+        onShowImagePicker = { state.showImagePicker() },
+        onDismissImagePicker = { state.hideImagePicker() },
+        onNotesChange = { notes -> state.updateNotes(notes) },
+        onUploadProof = { 
+            state.uploadPaymentProof(
+                onSuccess = { },
+                onFailure = { error -> state.updateError(error) }
+            )
+        },
         onDismiss = onDismiss
-    ) {
-        PaymentDialogContent(
-            state = state,
-            paymentCode = paymentCode,
-            billingService = billingService,
-            imagePickerService = imagePickerService,
-            onPaymentCompleted = onPaymentCompleted,
-            onDismiss = onDismiss
-        )
-    }
+    )
     
     // Manejar acciones del diálogo
     PaymentDialogActions(
