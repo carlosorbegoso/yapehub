@@ -1,16 +1,22 @@
-package org.sysarp.project.ui.screens.admin
+package org.sysarp.project.ui.admin.screens.dashboard
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.sysarp.project.data.*
+import org.sysarp.project.data.AdminStatsData
+import org.sysarp.project.data.BranchInfo
+import org.sysarp.project.data.ConnectedSellersData
+import org.sysarp.project.data.DeactivationRequest
+import org.sysarp.project.data.GenerateAffiliationCodeResponse
+import org.sysarp.project.data.QRCodeData
+import org.sysarp.project.data.QuickSummaryData
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.service.billing.BillingService
+import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 

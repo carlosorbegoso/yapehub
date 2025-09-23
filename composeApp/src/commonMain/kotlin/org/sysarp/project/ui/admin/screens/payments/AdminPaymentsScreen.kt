@@ -1,14 +1,22 @@
 package org.sysarp.project.ui.screens.admin
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.launch
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsActions
+import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsContentHandler
+import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsState
 import org.sysarp.project.ui.components.topbar.TopBarComponent
-import org.sysarp.project.ui.admin.screens.payments.*
 
 /**
  * Pantalla de gestión de pagos del administrador refactorizada

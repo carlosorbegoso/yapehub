@@ -2,9 +2,6 @@ package org.sysarp.project.ui.seller.screens.payments
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import org.sysarp.project.data.SellerPendingPayment
-import org.sysarp.project.data.UserProfile
-import org.sysarp.project.service.payment.PaymentService
 
 /**
  * Acciones y handlers para SellerPaymentsScreen

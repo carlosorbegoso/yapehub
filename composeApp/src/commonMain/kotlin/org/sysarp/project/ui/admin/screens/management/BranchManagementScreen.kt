@@ -1,14 +1,11 @@
 package org.sysarp.project.ui.admin.screens.management
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
-import org.sysarp.project.data.BranchInfo
 import org.sysarp.project.service.branch.BranchService
 
 /**
@@ -25,11 +22,36 @@ fun BranchManagementScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     
-    // TODO: Implementar estado del management
+    // Crear el estado principal de gestión de sucursales
+    val state = remember {
+        BranchManagementState(
+            branchService = branchService,
+            adminId = adminId,
+            accessToken = accessToken,
+            coroutineScope = coroutineScope
+        )
+    }
     
     // Crear el estado de los componentes
     val componentsState = remember {
         BranchManagementComponentsState()
+    }
+    
+    // Cargar datos iniciales
+    LaunchedEffect(Unit) {
+        state.loadBranches()
+    }
+    
+    // Sincronizar datos entre estados
+    LaunchedEffect(state.branchesData) {
+        state.branchesData?.let { branchesData ->
+            componentsState.updateBranches(branchesData.branches)
+            componentsState.updateLoading(false)
+        }
+    }
+    
+    LaunchedEffect(state.isLoading) {
+        componentsState.updateLoading(state.isLoading)
     }
     
     Scaffold(

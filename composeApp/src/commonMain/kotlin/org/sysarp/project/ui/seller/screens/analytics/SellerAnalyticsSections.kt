@@ -5,8 +5,11 @@ import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,9 +17,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.AnalyticsData
 import org.sysarp.project.data.SellerFinancialAnalysisData
-import org.sysarp.project.ui.components.admin.ResponsiveChartRow
 import org.sysarp.project.ui.components.admin.ChartItem
-import org.sysarp.project.ui.components.charts.*
+import org.sysarp.project.ui.components.admin.ResponsiveChartRow
+import org.sysarp.project.ui.components.charts.AchievementsChart
+import org.sysarp.project.ui.components.charts.ComparisonsChart
+import org.sysarp.project.ui.components.charts.DailySalesBarChart
+import org.sysarp.project.ui.components.charts.GoalsProgressChart
+import org.sysarp.project.ui.components.charts.HourlySalesChart
+import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
+import org.sysarp.project.ui.components.charts.PredictionsChart
+import org.sysarp.project.ui.components.charts.SalesDistributionChart
+import org.sysarp.project.ui.components.charts.SalesTrendLineChart
 import org.sysarp.project.ui.components.financial.SellerFinancialAnalysisCard
 
 /**

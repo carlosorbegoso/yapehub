@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.admin
+package org.sysarp.project.ui.admin.screens.dashboard
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -9,10 +9,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.ui.common.screens.ServerQRDisplayScreen
+import org.sysarp.project.ui.common.screens.exportLogs
 import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
 import org.sysarp.project.ui.components.dashboard.DashboardAutoRefreshHandler
-import org.sysarp.project.ui.screens.common.ServerQRDisplayScreen
-import org.sysarp.project.ui.screens.common.exportLogs
 
 /**
  * Acciones y handlers para AdminDashboardScreen

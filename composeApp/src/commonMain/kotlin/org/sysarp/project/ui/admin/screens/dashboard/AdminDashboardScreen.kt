@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.admin
+package org.sysarp.project.ui.admin.screens.dashboard
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize

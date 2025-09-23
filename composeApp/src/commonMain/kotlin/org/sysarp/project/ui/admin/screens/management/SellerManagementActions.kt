@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.auth.AuthService
 
 /**

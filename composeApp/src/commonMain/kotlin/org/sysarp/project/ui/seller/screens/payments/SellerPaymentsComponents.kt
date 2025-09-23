@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.payment.PaymentService
-import org.sysarp.project.ui.screens.common.PaymentStatItem
+import org.sysarp.project.ui.common.screens.PaymentStatItem
 import org.sysarp.project.utils.extractShortYapeCode
 import org.sysarp.project.utils.formatCurrency
 import java.text.SimpleDateFormat

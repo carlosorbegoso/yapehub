@@ -3,8 +3,6 @@ package org.sysarp.project.ui.screens.admin
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.sysarp.project.data.FinancialAnalysisParams
-import org.sysarp.project.data.PaymentTransparencyParams
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 

@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.admin
+package org.sysarp.project.ui.admin.screens.management
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

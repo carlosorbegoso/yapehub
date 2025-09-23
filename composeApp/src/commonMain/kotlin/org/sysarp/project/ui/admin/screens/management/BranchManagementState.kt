@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.admin
+package org.sysarp.project.ui.admin.screens.management
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,6 +9,7 @@ import org.sysarp.project.data.BranchData
 import org.sysarp.project.data.BranchInfo
 import org.sysarp.project.data.BranchesData
 import org.sysarp.project.service.branch.BranchService
+import org.sysarp.project.ui.admin.screens.management.BranchStats
 
 /**
  * Estado y lógica de negocio para BranchManagementScreen
@@ -352,12 +353,3 @@ class BranchManagementState(
     }
 }
 
-/**
- * Datos de estadísticas de sucursales
- */
-data class BranchStats(
-    val total: Int,
-    val active: Int,
-    val inactive: Int,
-    val totalSellers: Int
-)
