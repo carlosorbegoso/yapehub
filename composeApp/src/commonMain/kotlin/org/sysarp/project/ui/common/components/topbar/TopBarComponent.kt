@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.components.topbar
+package org.sysarp.project.ui.common.components.topbar
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -39,7 +39,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -219,88 +218,3 @@ data class TopBarMenuItem(
     val iconColor: Color? = null
 )
 
-/**
- * TopAppBar compacto mejorado para pantallas que necesitan más espacio
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CompactTopBarComponent(
-    title: String,
-    icon: ImageVector? = null,
-    onNavigateBack: (() -> Unit)? = null,
-    onRefresh: (() -> Unit)? = null,
-    actions: @Composable (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    AnimatedVisibility(
-        visible = true,
-        enter = slideInVertically(
-            initialOffsetY = { -it },
-            animationSpec = tween(durationMillis = 250)
-        ) + fadeIn(animationSpec = tween(durationMillis = 250))
-    ) {
-        TopAppBar(
-                title = {
-                    // Título centrado
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                },
-                navigationIcon = {
-                    onNavigateBack?.let {
-                        IconButton(
-                            onClick = it,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = "Volver",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    onRefresh?.let {
-                        IconButton(
-                            onClick = it,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Refresh,
-                                contentDescription = "Actualizar",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    actions?.invoke()
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier.height(56.dp)
-            )
-    }
-}

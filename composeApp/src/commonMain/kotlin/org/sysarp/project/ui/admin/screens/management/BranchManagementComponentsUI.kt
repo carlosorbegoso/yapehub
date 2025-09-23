@@ -54,34 +54,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.BranchInfo
+import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 
 /**
- * Header simple para la pantalla de gestión de sucursales
+ * Header usando TopBarComponent para la pantalla de gestión de sucursales
  */
 @Composable
-fun BranchManagementHeader() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Gestión de Sucursales",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        Spacer(modifier = Modifier.height(4.dp))
-        
-        Text(
-            text = "Administra tus sucursales y equipos",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
+fun BranchManagementHeader(
+    onNavigateBack: (() -> Unit)? = null
+) {
+    TopBarComponent(
+        title = "Gestión de Sucursales",
+        subtitle = "Administra tus sucursales y equipos",
+        icon = Icons.Filled.Business,
+        onNavigateBack = onNavigateBack
+    )
 }
 
 @Composable

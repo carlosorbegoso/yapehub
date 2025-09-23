@@ -31,7 +31,8 @@ fun BranchManagementComponents(
     onPageChange: (Int) -> Unit,
     onFilterChange: (String?) -> Unit,
     onToggleFilters: () -> Unit,
-    onAddBranch: () -> Unit
+    onAddBranch: () -> Unit,
+    onNavigateBack: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier.fillMaxSize()
@@ -43,8 +44,8 @@ fun BranchManagementComponents(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header simple sin TopBar
-            BranchManagementHeader()
+            // Header usando TopBarComponent
+            BranchManagementHeader(onNavigateBack = onNavigateBack)
             
             // Sección de estadísticas
             BranchStatsSection(state = state)

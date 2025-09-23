@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
-import org.sysarp.project.ui.components.topbar.TopBarComponent
+import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 
 /**
  * Pantalla de analytics detallados para el vendedor - Refactorizada

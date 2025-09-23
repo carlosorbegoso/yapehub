@@ -247,19 +247,17 @@ fun AppContent(
                     adminId = userProfile!!.adminId!!.toInt(),
                     accessToken = accessToken!!,
                     onBackClick = { navigationManager.navigateBack() },
-                    onNavigate = { globalNavItem ->
-                        when (globalNavItem) {
-                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Dashboard -> 
-                                navigationManager.navigateToAdminDashboard()
-                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Management -> 
-                                navigationManager.navigateTo(Screen.BranchManagement)
-                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Analytics -> 
-                                navigationManager.navigateTo(Screen.Analytics)
-                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Payments -> 
-                                navigationManager.navigateTo(Screen.PendingPayments)
-                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Settings -> 
-                                navigationManager.navigateTo(Screen.Settings)
-                        }
+                    onNavigateToBranchDetails = { branch ->
+                        // TODO: Implementar navegación a detalles de sucursal
+                    },
+                    onNavigateToSellers = { branch ->
+                        // TODO: Implementar navegación a vendedores de la sucursal
+                    },
+                    onNavigateToEditBranch = { branch ->
+                        // TODO: Implementar navegación a editar sucursal
+                    },
+                    onNavigateToAddBranch = {
+                        // TODO: Implementar navegación a agregar sucursal
                     }
                 )
             } else {

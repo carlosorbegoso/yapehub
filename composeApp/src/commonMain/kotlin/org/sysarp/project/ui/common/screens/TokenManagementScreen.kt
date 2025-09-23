@@ -41,7 +41,7 @@ import org.sysarp.project.data.PaymentCode
 import org.sysarp.project.data.TokenPackage
 import org.sysarp.project.data.TokenStatusResponse
 import org.sysarp.project.service.billing.BillingService
-import org.sysarp.project.ui.components.topbar.TopBarComponent
+import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 import org.sysarp.project.utils.formatCurrency
 
 @Composable

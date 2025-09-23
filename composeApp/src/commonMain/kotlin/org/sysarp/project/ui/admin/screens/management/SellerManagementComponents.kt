@@ -48,7 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.MySeller
-import org.sysarp.project.ui.components.topbar.TopBarComponent
+import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 
 /**
  * Componentes UI para SellerManagementScreen

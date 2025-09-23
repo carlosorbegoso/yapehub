@@ -179,24 +179,24 @@ fun createTopBarMenuItems(
     onNavigateToProfile: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onLogout: () -> Unit
-): List<org.sysarp.project.ui.components.topbar.TopBarMenuItem> {
+): List<org.sysarp.project.ui.common.components.topbar.TopBarMenuItem> {
     return listOf(
-        org.sysarp.project.ui.components.topbar.TopBarMenuItem(
+        org.sysarp.project.ui.common.components.topbar.TopBarMenuItem(
             title = "Generar código de afiliación",
             icon = Icons.Filled.QrCode,
             onClick = onShowAffiliationDialog
         ),
-        org.sysarp.project.ui.components.topbar.TopBarMenuItem(
+        org.sysarp.project.ui.common.components.topbar.TopBarMenuItem(
             title = "Mi Perfil",
             icon = Icons.Filled.Person,
             onClick = onNavigateToProfile
         ),
-        org.sysarp.project.ui.components.topbar.TopBarMenuItem(
+        org.sysarp.project.ui.common.components.topbar.TopBarMenuItem(
             title = "Configuración",
             icon = Icons.Filled.Settings,
             onClick = onNavigateToSettings
         ),
-        org.sysarp.project.ui.components.topbar.TopBarMenuItem(
+        org.sysarp.project.ui.common.components.topbar.TopBarMenuItem(
             title = "Cerrar sesión",
             icon = Icons.Filled.Logout,
             onClick = onLogout,

@@ -16,7 +16,7 @@ import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsActions
 import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsContentHandler
 import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsState
-import org.sysarp.project.ui.components.topbar.TopBarComponent
+import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 
 /**
  * Pantalla de gestión de pagos del administrador refactorizada

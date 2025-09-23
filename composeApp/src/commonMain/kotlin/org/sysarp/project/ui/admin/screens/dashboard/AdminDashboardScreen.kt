@@ -15,7 +15,7 @@ import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
-import org.sysarp.project.ui.components.topbar.TopBarComponent
+import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 
 /**
  * Pantalla principal del dashboard de administración
