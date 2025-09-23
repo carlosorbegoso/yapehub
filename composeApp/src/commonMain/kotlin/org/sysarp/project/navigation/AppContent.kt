@@ -15,13 +15,13 @@ import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.ui.admin.screens.management.SellerManagementScreen
 import org.sysarp.project.ui.screens.admin.AdminAnalyticsScreen
 import org.sysarp.project.ui.screens.admin.AdminDashboardScreen
 import org.sysarp.project.ui.screens.admin.AdminPaymentsScreen
 import org.sysarp.project.ui.screens.admin.AdminProfileScreen
 import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
 import org.sysarp.project.ui.screens.admin.BranchManagementScreen
-import org.sysarp.project.ui.screens.admin.SellerManagementScreen
 import org.sysarp.project.ui.screens.admin.UserManagementScreen
 import org.sysarp.project.ui.screens.billing.BillingDashboardScreen
 import org.sysarp.project.ui.screens.billing.PaymentDialog
