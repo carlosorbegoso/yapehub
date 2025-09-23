@@ -246,7 +246,21 @@ fun AppContent(
                     branchService = branchService,
                     adminId = userProfile!!.adminId!!.toInt(),
                     accessToken = accessToken!!,
-                    onBackClick = { navigationManager.navigateBack() }
+                    onBackClick = { navigationManager.navigateBack() },
+                    onNavigate = { globalNavItem ->
+                        when (globalNavItem) {
+                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Dashboard -> 
+                                navigationManager.navigateToAdminDashboard()
+                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Management -> 
+                                navigationManager.navigateTo(Screen.BranchManagement)
+                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Analytics -> 
+                                navigationManager.navigateTo(Screen.Analytics)
+                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Payments -> 
+                                navigationManager.navigateTo(Screen.PendingPayments)
+                            org.sysarp.project.ui.common.components.navigation.GlobalNavItem.Settings -> 
+                                navigationManager.navigateTo(Screen.Settings)
+                        }
+                    }
                 )
             } else {
                 // Manejar caso de error

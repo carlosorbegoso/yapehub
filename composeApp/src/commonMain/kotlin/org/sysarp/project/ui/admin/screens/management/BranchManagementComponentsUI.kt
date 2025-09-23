@@ -51,60 +51,14 @@ import org.sysarp.project.data.BranchInfo
 
 @Composable
 fun BranchManagementHeader() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Business,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "Gestión de Sucursales",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                textAlign = TextAlign.Center
-            )
-            
-            Text(
-                text = "Administra tus sucursales y equipos",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center
-            )
-        }
-    }
+    // Header eliminado - la información ahora está en el TopBar
+    // Esto hace que la pantalla sea más limpia y moderna
 }
 
 @Composable
 fun BranchStatsSection(
     state: BranchManagementComponentsState
 ) {
-    // Título de la sección
-    Text(
-        text = "Estadísticas Principales",
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(horizontal = 16.dp)
-    )
-    
     // Contenido de estadísticas
     if (state.isCurrentlyLoading()) {
         BranchLoadingCard()
@@ -239,13 +193,6 @@ fun BranchListSection(
     onDelete: (BranchInfo) -> Unit,
     onViewDetails: (BranchInfo) -> Unit
 ) {
-    // Título de la sección
-    Text(
-        text = "Lista de Sucursales",
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(horizontal = 16.dp)
-    )
     
     // Contenido de la lista
     if (!state.hasBranches() && !state.isCurrentlyLoading()) {
@@ -253,7 +200,7 @@ fun BranchListSection(
     } else {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             state.getFilteredBranches().forEach { branch ->
                 BranchCardV2(
@@ -515,7 +462,7 @@ fun BranchCardV2(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Acción de estado - Botón destacado
+            // Acción de estado - Botón destacado con mejor diseño
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
@@ -526,26 +473,30 @@ fun BranchCardV2(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (branch.isActive) 
                             MaterialTheme.colorScheme.errorContainer
-                        else MaterialTheme.colorScheme.primary,
+                        else MaterialTheme.colorScheme.primaryContainer,
                         contentColor = if (branch.isActive) 
                             MaterialTheme.colorScheme.onErrorContainer
-                        else MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onPrimaryContainer
                     ),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = PaddingValues(vertical = 14.dp, horizontal = 16.dp),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 8.dp
+                    )
                 ) {
                     Icon(
                         imageVector = if (branch.isActive) 
                             Icons.Filled.Pause 
                         else Icons.Filled.PlayArrow,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = if (branch.isActive) "Pausar Sucursal" else "Activar Sucursal",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

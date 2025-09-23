@@ -1,24 +1,26 @@
 package org.sysarp.project.ui.admin.screens.management
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import org.sysarp.project.service.branch.BranchService
+import org.sysarp.project.ui.common.components.layout.GlobalAppLayout
+import org.sysarp.project.ui.common.components.navigation.GlobalNavItem
 
 /**
  * Pantalla de gestión de sucursales
  * Refactorizada para usar componentes modulares
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BranchManagementScreen(
     branchService: BranchService,
     adminId: Int,
     accessToken: String,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onNavigate: (GlobalNavItem) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     
@@ -54,11 +56,13 @@ fun BranchManagementScreen(
         componentsState.updateLoading(state.isLoading)
     }
     
-    Scaffold(
-        topBar = {
-            // TODO: Implementar TopBar
-        }
-    ) { paddingValues ->
+    GlobalAppLayout(
+        currentScreen = GlobalNavItem.Management,
+        title = "Gestión de Sucursales",
+        subtitle = "Administra tus sucursales y equipos",
+        onNavigate = onNavigate,
+        onBackClick = onBackClick
+    ) {
         // Usar el nuevo componente modular
         BranchManagementComponents(
             state = componentsState,
@@ -69,7 +73,7 @@ fun BranchManagementScreen(
                 // TODO: Implementar visualización de vendedores
             },
             onToggleBranchStatus = { branch -> 
-                // TODO: Implementar toggle de estado
+                state.toggleBranchStatus(branch)
             },
             onDeleteBranch = { branch -> 
                 // TODO: Implementar eliminación

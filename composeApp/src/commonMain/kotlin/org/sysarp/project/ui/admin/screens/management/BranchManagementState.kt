@@ -351,5 +351,38 @@ class BranchManagementState(
             totalSellers = branches.sumOf { it.sellersCount }
         )
     }
+    
+    /**
+     * Alterna el estado activo/inactivo de una sucursal
+     */
+    fun toggleBranchStatus(branch: BranchInfo) {
+        coroutineScope.launch {
+            isLoading = true
+            errorMessage = null
+            
+            try {
+                val result = branchService.updateBranch(
+                    branchId = branch.branchId,
+                    adminId = adminId,
+                    name = branch.name,
+                    code = branch.code,
+                    address = branch.address,
+                    isActive = !branch.isActive, // Cambiar el estado
+                    accessToken = accessToken
+                )
+                
+                if (result.isSuccess) {
+                    // Recargar la lista de sucursales para reflejar el cambio
+                    loadBranches()
+                } else {
+                    errorMessage = result.exceptionOrNull()?.message ?: "Error al actualizar la sucursal"
+                }
+            } catch (e: Exception) {
+                errorMessage = e.message ?: "Error inesperado al actualizar la sucursal"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 }
 
