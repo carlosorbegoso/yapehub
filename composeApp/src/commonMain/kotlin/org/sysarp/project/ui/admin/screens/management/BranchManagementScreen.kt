@@ -68,6 +68,7 @@ fun BranchManagementScreen(
         currentScreen = GlobalNavItem.Management,
         title = "Gestión de Sucursales",
         subtitle = "Administra tus sucursales y equipos",
+        showTopBar = false, // Sin TopBar, solo navegación inferior
         onNavigate = onNavigate,
         onBackClick = onBackClick
     ) {

@@ -43,6 +43,9 @@ fun BranchManagementComponents(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Header simple sin TopBar
+            BranchManagementHeader()
+            
             // Sección de estadísticas
             BranchStatsSection(state = state)
             

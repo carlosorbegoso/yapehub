@@ -130,13 +130,6 @@ class BranchManagementComponentsState {
     }
     
     /**
-     * Alterna la visibilidad de los filtros
-     */
-    fun toggleFilters() {
-        showFilters = !showFilters
-    }
-    
-    /**
      * Aplica un filtro de estado
      */
     fun applyFilter(status: String?) {
