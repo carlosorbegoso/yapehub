@@ -295,32 +295,26 @@ class BranchManagementComponentsState {
     }
     
     /**
-     * Obtiene el texto del filtro activo
+     * Cambia la página actual
      */
-    fun getActiveFilterText(): String {
-        return when (filterStatus) {
-            "active" -> "Activas"
-            "inactive" -> "Inactivas"
-            else -> "Todas"
-        }
+    fun changeCurrentPage(page: Int) {
+        currentPage = page
     }
     
     /**
-     * Resetea todos los estados
+     * Cambia el filtro de estado
      */
-    fun resetAll() {
-        branchStats = null
-        branches = emptyList()
-        updateLoading(false)
-        updateShowFilters(false)
-        updateFilterStatus(null)
-        clearErrorMessage()
-        updateSelectedBranch(null)
-        updateCurrentPage(1)
-        updateTotalPages(1)
-        updateHasNextPage(false)
-        updateHasPreviousPage(false)
+    fun changeFilterStatus(status: String?) {
+        filterStatus = status
     }
+    
+    /**
+     * Alterna la visibilidad de los filtros
+     */
+    fun toggleFilters() {
+        showFilters = !showFilters
+    }
+
 }
 
 /**

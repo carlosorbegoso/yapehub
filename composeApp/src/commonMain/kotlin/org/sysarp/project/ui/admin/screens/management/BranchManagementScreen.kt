@@ -4,25 +4,33 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import org.sysarp.project.data.BranchInfo
 import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.ui.common.components.layout.GlobalAppLayout
 import org.sysarp.project.ui.common.components.navigation.GlobalNavItem
 
-/**
- * Pantalla de gestión de sucursales
- * Refactorizada para usar componentes modulares
- */
 @Composable
 fun BranchManagementScreen(
     branchService: BranchService,
     adminId: Int,
     accessToken: String,
     onBackClick: () -> Unit,
-    onNavigate: (GlobalNavItem) -> Unit
+    onNavigate: (GlobalNavItem) -> Unit,
+    onNavigateToBranchDetails: (BranchInfo) -> Unit = {},
+    onNavigateToSellers: (BranchInfo) -> Unit = {},
+    onNavigateToEditBranch: (BranchInfo) -> Unit = {},
+    onNavigateToAddBranch: () -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
+    
+    // Estados para diálogos y acciones
+    var showDeleteDialog by remember { mutableStateOf<BranchInfo?>(null) }
+    var showAddBranchDialog by remember { mutableStateOf(false) }
     
     // Crear el estado principal de gestión de sucursales
     val state = remember {
@@ -67,29 +75,47 @@ fun BranchManagementScreen(
         BranchManagementComponents(
             state = componentsState,
             onEditBranch = { branch -> 
-                // TODO: Implementar edición
+                onNavigateToEditBranch(branch)
             },
             onViewSellers = { branch -> 
-                // TODO: Implementar visualización de vendedores
+                onNavigateToSellers(branch)
             },
             onToggleBranchStatus = { branch -> 
                 state.toggleBranchStatus(branch)
             },
             onDeleteBranch = { branch -> 
-                // TODO: Implementar eliminación
+                showDeleteDialog = branch
             },
             onViewBranchDetails = { branch -> 
-                // TODO: Implementar visualización de detalles
+                onNavigateToBranchDetails(branch)
             },
             onPageChange = { page -> 
-                // TODO: Implementar cambio de página
+                componentsState.changeCurrentPage(page)
+                state.loadBranches()
             },
             onFilterChange = { status -> 
-                // TODO: Implementar cambio de filtro
+                componentsState.changeFilterStatus(status)
             },
             onToggleFilters = { 
-                // TODO: Implementar toggle de filtros
+                componentsState.toggleFilters()
+            },
+            onAddBranch = {
+                onNavigateToAddBranch()
             }
         )
+        
+        // Diálogo de confirmación para eliminar sucursal
+        showDeleteDialog?.let { branch ->
+            BranchDeleteConfirmationDialog(
+                branch = branch,
+                onConfirm = {
+                    state.deleteBranch(branch)
+                    showDeleteDialog = null
+                },
+                onDismiss = {
+                    showDeleteDialog = null
+                }
+            )
+        }
     }
 }

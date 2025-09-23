@@ -384,5 +384,34 @@ class BranchManagementState(
             }
         }
     }
+    
+    /**
+     * Elimina una sucursal
+     */
+    fun deleteBranch(branch: BranchInfo) {
+        coroutineScope.launch {
+            isLoading = true
+            errorMessage = null
+            
+            try {
+                val result = branchService.deleteBranch(
+                    branchId = branch.branchId,
+                    adminId = adminId,
+                    accessToken = accessToken
+                )
+                
+                if (result.isSuccess) {
+                    // Recargar la lista de sucursales para reflejar el cambio
+                    loadBranches()
+                } else {
+                    errorMessage = result.exceptionOrNull()?.message ?: "Error al eliminar la sucursal"
+                }
+            } catch (e: Exception) {
+                errorMessage = e.message ?: "Error inesperado al eliminar la sucursal"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 }
 
