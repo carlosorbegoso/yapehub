@@ -19,7 +19,7 @@ import org.sysarp.project.ui.admin.screens.management.SellerManagementScreen
 import org.sysarp.project.ui.screens.admin.AdminAnalyticsScreen
 import org.sysarp.project.ui.screens.admin.AdminDashboardScreen
 import org.sysarp.project.ui.screens.admin.AdminPaymentsScreen
-import org.sysarp.project.ui.screens.admin.AdminProfileScreen
+import org.sysarp.project.ui.admin.screens.profile.AdminProfileScreen
 import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
 import org.sysarp.project.ui.screens.admin.BranchManagementScreen
 import org.sysarp.project.ui.screens.admin.UserManagementScreen
