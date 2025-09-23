@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.admin
+package org.sysarp.project.ui.admin.screens.management
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -25,47 +25,45 @@ fun BranchManagementScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     
-    // Crear el estado del management
-    val state = remember {
-        BranchManagementState(
-            branchService = branchService,
-            adminId = adminId,
-            accessToken = accessToken,
-            coroutineScope = coroutineScope
-        )
+    // TODO: Implementar estado del management
+    
+    // Crear el estado de los componentes
+    val componentsState = remember {
+        BranchManagementComponentsState()
     }
     
     Scaffold(
         topBar = {
-            BranchManagementTopBar(
-                state = state,
-                onBackClick = onBackClick
-            )
+            // TODO: Implementar TopBar
         }
     ) { paddingValues ->
-        BranchManagementContent(
-            state = state,
-            onEdit = { branch -> state.showEditDialog(branch) },
-            onViewSellers = { branch -> state.showSellersDialog(branch) },
-            onToggleStatus = { branch -> 
+        // Usar el nuevo componente modular
+        BranchManagementComponents(
+            state = componentsState,
+            onEditBranch = { branch -> 
+                // TODO: Implementar edición
+            },
+            onViewSellers = { branch -> 
+                // TODO: Implementar visualización de vendedores
+            },
+            onToggleBranchStatus = { branch -> 
                 // TODO: Implementar toggle de estado
             },
-            onDelete = { branch -> state.showDeleteDialog(branch) },
-            onViewDetails = { branch -> state.showDetailsDialog(branch) }
+            onDeleteBranch = { branch -> 
+                // TODO: Implementar eliminación
+            },
+            onViewBranchDetails = { branch -> 
+                // TODO: Implementar visualización de detalles
+            },
+            onPageChange = { page -> 
+                // TODO: Implementar cambio de página
+            },
+            onFilterChange = { status -> 
+                // TODO: Implementar cambio de filtro
+            },
+            onToggleFilters = { 
+                // TODO: Implementar toggle de filtros
+            }
         )
     }
-    
-    // Manejar acciones y efectos secundarios
-    BranchManagementActions(
-        state = state,
-        onBackClick = onBackClick
-    )
-    
-    // Manejar diálogos
-    BranchManagementDialogs(
-        state = state,
-        branchService = branchService,
-        adminId = adminId,
-        accessToken = accessToken
-    )
 }
