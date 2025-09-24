@@ -106,7 +106,7 @@ fun SellerAnalyticsSections(
                     ResponsiveChartRow(
                         charts = listOf(
                             ChartItem("Ventas por Hora", { HourlySalesChart(hourlySales = analyticsData.hourlySales, showCard = false) }),
-                            ChartItem("Progreso de Metas", { GoalsProgressChart(sellerGoals = analyticsData.sellerGoals) }),
+                            ChartItem("Progreso de Metas", { GoalsProgressChart(sellerGoals = analyticsData.sellerGoals, showCard = false) }),
                             ChartItem("Logros", { AchievementsChart(sellerAchievements = analyticsData.sellerAchievements) })
                         )
                     )

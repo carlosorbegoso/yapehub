@@ -43,34 +43,31 @@ import org.sysarp.project.utils.formatPercentage
 @Composable
 fun GoalsProgressChart(
     sellerGoals: SellerGoalsData?,
+    showCard: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    if (sellerGoals == null) {
-        EmptyChartCard(
-            title = "🎯 Progreso de Objetivos",
-            subtitle = "No hay datos de objetivos disponibles",
-            modifier = modifier
-        )
-        return
-    }
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Título y resumen
-            ChartHeader(
-                title = "🎯 Progreso de Objetivos",
-                subtitle = "Tu progreso hacia las metas establecidas"
-            )
+    val chartContent = @Composable {
+        if (sellerGoals == null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 16.dp else 0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "No hay datos de objetivos disponibles",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 16.dp else 0.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
 
             // Gráficos circulares de progreso
             Row(
@@ -97,8 +94,25 @@ fun GoalsProgressChart(
                 )
             }
 
-            // Resumen de logros
-            GoalsSummary(sellerGoals = sellerGoals)
+                // Resumen de logros
+                GoalsSummary(sellerGoals = sellerGoals)
+            }
+        }
+    }
+
+    // Renderizar con o sin Card según el parámetro
+    if (showCard) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            chartContent()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            chartContent()
         }
     }
 }
@@ -261,62 +275,6 @@ private fun GoalStatItem(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
                 fontSize = 10.sp
-            )
-        }
-    }
-}
-
-@Composable
-private fun ChartHeader(
-    title: String,
-    subtitle: String
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-    }
-}
-
-@Composable
-private fun EmptyChartCard(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
             )
         }
     }
