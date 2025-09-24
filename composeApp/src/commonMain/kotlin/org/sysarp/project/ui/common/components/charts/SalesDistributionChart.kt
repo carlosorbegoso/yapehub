@@ -89,7 +89,7 @@ fun SalesDistributionChart(
             modifier = modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             chartContent()
         }
@@ -122,8 +122,12 @@ private fun DistributionPieChart(
             text = "🥧 Distribución por Tiempo del Día",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
+
+        val primaryColor = MaterialTheme.colorScheme.primary
+        val secondaryColor = MaterialTheme.colorScheme.secondary
+        val tertiaryColor = MaterialTheme.colorScheme.tertiary
 
         Canvas(
             modifier = Modifier
@@ -166,25 +170,34 @@ private fun DistributionPieChart(
             drawDistributionPie(
                 salesDistribution = salesDistribution,
                 animationProgress = animationProgress.value,
-                size = size
+                size = size,
+                primaryColor = primaryColor,
+                secondaryColor = secondaryColor,
+                tertiaryColor = tertiaryColor
             )
         }
+
+        // Leyenda del gráfico circular
+        DistributionLegend(salesDistribution = salesDistribution)
     }
 }
 
 private fun DrawScope.drawDistributionPie(
     salesDistribution: SalesDistributionData,
     animationProgress: Float,
-    size: Size
+    size: Size,
+    primaryColor: Color,
+    secondaryColor: Color,
+    tertiaryColor: Color
 ) {
     val center = Offset(size.width / 2, size.height / 2)
     val radius = (size.minDimension - 40.dp.toPx()) / 2
     
     // Datos para el gráfico circular
     val data = listOf(
-        Triple("Mañana", salesDistribution.morning, Color(0xFF4CAF50)),
-        Triple("Tarde", salesDistribution.afternoon, Color(0xFF2196F3)),
-        Triple("Noche", salesDistribution.evening, Color(0xFFFF9800))
+        Triple("Mañana", salesDistribution.morning, primaryColor),
+        Triple("Tarde", salesDistribution.afternoon, secondaryColor),
+        Triple("Noche", salesDistribution.evening, tertiaryColor)
     )
     
     val total = data.sumOf { it.second }
@@ -233,7 +246,7 @@ private fun DistributionStats(
             text = "📈 Estadísticas Detalladas",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         // Distribución por tiempo del día
@@ -245,25 +258,25 @@ private fun DistributionStats(
                 label = "Mañana",
                 value = formatCurrency(salesDistribution.morning),
                 percentage = if (salesDistribution.morning > 0) "🌅" else "—",
-                color = Color(0xFF4CAF50)
+                color = MaterialTheme.colorScheme.primary
             )
             DistributionItem(
                 label = "Tarde",
                 value = formatCurrency(salesDistribution.afternoon),
                 percentage = if (salesDistribution.afternoon > 0) "☀️" else "—",
-                color = Color(0xFF2196F3)
+                color = MaterialTheme.colorScheme.secondary
             )
             DistributionItem(
                 label = "Noche",
                 value = formatCurrency(salesDistribution.evening),
                 percentage = if (salesDistribution.evening > 0) "🌙" else "—",
-                color = Color(0xFFFF9800)
+                color = MaterialTheme.colorScheme.tertiary
             )
         }
 
         Divider(
             modifier = Modifier.padding(vertical = 8.dp),
-            color = Color.Gray.copy(alpha = 0.3f)
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
         )
 
         // Distribución por día de la semana
@@ -275,13 +288,13 @@ private fun DistributionStats(
                 label = "Días Laborales",
                 value = formatCurrency(salesDistribution.weekday),
                 percentage = if (salesDistribution.weekday > 0) "📅" else "—",
-                color = Color(0xFF9C27B0)
+                color = MaterialTheme.colorScheme.primary
             )
             DistributionItem(
                 label = "Fin de Semana",
                 value = formatCurrency(salesDistribution.weekend),
                 percentage = if (salesDistribution.weekend > 0) "🎉" else "—",
-                color = Color(0xFFE91E63)
+                color = MaterialTheme.colorScheme.error
             )
         }
     }
@@ -326,7 +339,79 @@ private fun DistributionItem(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun DistributionLegend(
+    salesDistribution: SalesDistributionData
+) {
+    val total = salesDistribution.morning + salesDistribution.afternoon + salesDistribution.evening
+    if (total <= 0) return
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        LegendItem(
+            label = "Mañana",
+            percentage = "${((salesDistribution.morning / total) * 100).toInt()}%",
+            color = MaterialTheme.colorScheme.primary,
+            icon = "🌅"
+        )
+        LegendItem(
+            label = "Tarde",
+            percentage = "${((salesDistribution.afternoon / total) * 100).toInt()}%",
+            color = MaterialTheme.colorScheme.secondary,
+            icon = "☀️"
+        )
+        LegendItem(
+            label = "Noche",
+            percentage = "${((salesDistribution.evening / total) * 100).toInt()}%",
+            color = MaterialTheme.colorScheme.tertiary,
+            icon = "🌙"
+        )
+    }
+}
+
+@Composable
+private fun LegendItem(
+    label: String,
+    percentage: String,
+    color: Color,
+    icon: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(16.dp)
+                .background(color = color, shape = CircleShape)
+        )
+        Text(
+            text = icon,
+            fontSize = 14.sp
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = percentage,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                color = color,
+                fontSize = 12.sp
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp
             )
         }
