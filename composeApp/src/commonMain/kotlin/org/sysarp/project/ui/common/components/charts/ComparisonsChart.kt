@@ -40,41 +40,56 @@ import kotlin.math.abs
 @Composable
 fun ComparisonsChart(
     sellerComparisons: SellerComparisonsData?,
+    showCard: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    if (sellerComparisons == null) {
-        EmptyChartCard(
-            title = "📊 Comparaciones Temporales",
-            subtitle = "No hay datos de comparaciones disponibles",
-            modifier = modifier
-        )
-        return
-    }
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                color = Color.White,
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(20.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            // Título y resumen
-            ChartHeader(
-                title = "📊 Comparaciones Temporales",
-                subtitle = "Rendimiento vs períodos anteriores"
-            )
+    val chartContent = @Composable {
+        if (sellerComparisons == null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 20.dp else 0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "No hay datos de comparaciones disponibles",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 20.dp else 0.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
 
             // Gráfico de barras comparativas
             ComparisonBarsChart(sellerComparisons = sellerComparisons)
 
-            // Resumen de comparaciones
-            ComparisonSummary(sellerComparisons = sellerComparisons)
+                // Resumen de comparaciones
+                ComparisonSummary(sellerComparisons = sellerComparisons)
+            }
+        }
+    }
+
+    // Renderizar con o sin Box según el parámetro
+    if (showCard) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(16.dp)
+                )
+        ) {
+            chartContent()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            chartContent()
         }
     }
 }
@@ -294,59 +309,3 @@ private fun ComparisonItem(
     }
 }
 
-@Composable
-private fun ChartHeader(
-    title: String,
-    subtitle: String
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-    }
-}
-
-@Composable
-private fun EmptyChartCard(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                color = Color.White,
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(24.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
-        }
-    }
-}

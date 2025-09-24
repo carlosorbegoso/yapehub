@@ -141,8 +141,8 @@ fun AdminAnalyticsSections(
                     ResponsiveChartRow(
                         charts = listOf(
                             ChartItem("Predicciones", { PredictionsChart(sellerForecasting = analyticsData.sellerForecasting, showCard = false) }),
-                            ChartItem("Distribución", { SalesDistributionChart(salesDistribution = analyticsData.sellerAnalytics?.salesDistribution) }),
-                            ChartItem("Comparaciones", { ComparisonsChart(sellerComparisons = analyticsData.sellerComparisons) })
+                            ChartItem("Distribución", { SalesDistributionChart(salesDistribution = analyticsData.sellerAnalytics?.salesDistribution, showCard = false) }),
+                            ChartItem("Comparaciones", { ComparisonsChart(sellerComparisons = analyticsData.sellerComparisons, showCard = false) })
                         )
                     )
                 }

@@ -126,7 +126,8 @@ fun PaymentStatusSection(
                         averageConfirmationTime = quickSummaryData.averageConfirmationTime,
                         claimRate = quickSummaryData.claimRate,
                         rejectionRate = 0.0 // Calcular si es necesario
-                    )
+                    ),
+                    showCard = false // ← Evitar duplicación de Card
                 )
             }
         }
