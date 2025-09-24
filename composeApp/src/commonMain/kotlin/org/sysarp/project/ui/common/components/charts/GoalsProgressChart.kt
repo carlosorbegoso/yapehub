@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
 import org.sysarp.project.data.SellerGoalsData
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatPercentage
@@ -70,28 +71,51 @@ fun GoalsProgressChart(
             ) {
 
             // Gráficos circulares de progreso
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CircularProgressItem(
-                    label = "Diario",
-                    target = sellerGoals.dailyTarget,
-                    progress = sellerGoals.dailyProgress,
-                    color = Color(0xFF4CAF50)
-                )
-                CircularProgressItem(
-                    label = "Semanal",
-                    target = sellerGoals.weeklyTarget,
-                    progress = sellerGoals.weeklyProgress,
-                    color = Color(0xFF2196F3)
-                )
-                CircularProgressItem(
-                    label = "Mensual",
-                    target = sellerGoals.monthlyTarget,
-                    progress = sellerGoals.monthlyProgress,
-                    color = Color(0xFFFF9800)
-                )
+                // Primera fila: Diario y Semanal
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    CircularProgressItem(
+                        label = "Diario",
+                        target = sellerGoals.dailyTarget,
+                        progress = sellerGoals.dailyProgress,
+                        color = MaterialTheme.colorScheme.primary,
+                        animationDelay = 0
+                    )
+                    CircularProgressItem(
+                        label = "Semanal",
+                        target = sellerGoals.weeklyTarget,
+                        progress = sellerGoals.weeklyProgress,
+                        color = MaterialTheme.colorScheme.secondary,
+                        animationDelay = 200
+                    )
+                }
+                
+                // Segunda fila: Mensual y Anual
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    CircularProgressItem(
+                        label = "Mensual",
+                        target = sellerGoals.monthlyTarget,
+                        progress = sellerGoals.monthlyProgress,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        animationDelay = 400
+                    )
+                    CircularProgressItem(
+                        label = "Anual",
+                        target = sellerGoals.yearlyTarget,
+                        progress = sellerGoals.achievementRate, // Usar achievementRate como progreso anual
+                        color = MaterialTheme.colorScheme.error,
+                        animationDelay = 600
+                    )
+                }
             }
 
                 // Resumen de logros
@@ -122,15 +146,33 @@ private fun CircularProgressItem(
     label: String,
     target: Double,
     progress: Double,
-    color: Color
+    color: Color,
+    animationDelay: Int = 0
 ) {
     val animationProgress = remember { Animatable(0f) }
-    val progressPercentage = (progress * 100).coerceIn(0.0, 100.0)
+    val scaleAnimation = remember { Animatable(0.8f) }
+    
+    // Corregir cálculo del progreso - manejar tanto decimal (0-1) como porcentaje (0-100)
+    val progressPercentage = if (progress <= 1.0) {
+        // Si viene como decimal (0-1), convertir a porcentaje
+        (progress * 100).coerceIn(0.0, 100.0)
+    } else {
+        // Si viene como porcentaje (0-100), usar directamente
+        progress.coerceIn(0.0, 100.0)
+    }
+    
 
     LaunchedEffect(progress) {
+        // Animación escalonada de entrada
+        scaleAnimation.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 600, delayMillis = animationDelay)
+        )
+        
+        // Animación del progreso
         animationProgress.animateTo(
             targetValue = progressPercentage.toFloat() / 100f,
-            animationSpec = tween(durationMillis = 1500)
+            animationSpec = tween(durationMillis = 1200, delayMillis = animationDelay + 200)
         )
     }
 
@@ -139,7 +181,12 @@ private fun CircularProgressItem(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Box(
-            modifier = Modifier.size(80.dp),
+            modifier = Modifier
+                .size(80.dp)
+                .graphicsLayer {
+                    scaleX = scaleAnimation.value
+                    scaleY = scaleAnimation.value
+                },
             contentAlignment = Alignment.Center
         ) {
             Canvas(
@@ -156,7 +203,7 @@ private fun CircularProgressItem(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "${(progressPercentage * animationProgress.value).toInt()}%",
+                    text = "${progressPercentage.toInt()}%",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = color
@@ -222,13 +269,13 @@ private fun GoalsSummary(
         GoalStatItem(
             label = "Tasa de Logro",
             value = formatPercentage(achievementRate),
-            color = if (achievementRate >= 50) Color(0xFF4CAF50) else Color(0xFFFF9800),
+            color = if (achievementRate >= 50) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
             icon = if (achievementRate >= 50) "🎯" else "📈"
         )
         GoalStatItem(
             label = "Objetivo Anual",
             value = formatCurrency(sellerGoals.yearlyTarget),
-            color = Color(0xFF2196F3),
+            color = MaterialTheme.colorScheme.secondary,
             icon = "📅"
         )
     }
