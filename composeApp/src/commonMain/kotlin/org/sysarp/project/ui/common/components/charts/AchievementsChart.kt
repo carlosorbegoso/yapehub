@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
 import org.sysarp.project.data.BadgeData
 import org.sysarp.project.data.MilestoneData
 import org.sysarp.project.data.SellerAchievementsData
@@ -105,28 +108,44 @@ fun AchievementsChart(
 private fun StreakStats(
     achievements: SellerAchievementsData
 ) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        StreakItem(
-            label = "Racha Actual",
-            value = "${achievements.streakDays} días",
-            color = Color(0xFF4CAF50),
-            icon = "🔥"
-        )
-        StreakItem(
-            label = "Mejor Racha",
-            value = "${achievements.bestStreak} días",
-            color = Color(0xFF2196F3),
-            icon = "⭐"
-        )
-        StreakItem(
-            label = "Total Rachas",
-            value = "${achievements.totalStreaks}",
-            color = Color(0xFFFF9800),
-            icon = "🎯"
-        )
+        // Primera fila: Racha Actual y Mejor Racha
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            StreakItem(
+                label = "Racha Actual",
+                value = "${achievements.streakDays} días",
+                color = MaterialTheme.colorScheme.primary,
+                icon = "🔥",
+                animationDelay = 0
+            )
+            StreakItem(
+                label = "Mejor Racha",
+                value = "${achievements.bestStreak} días",
+                color = MaterialTheme.colorScheme.secondary,
+                icon = "⭐",
+                animationDelay = 200
+            )
+        }
+        
+        // Segunda fila: Total Rachas (centrado)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            StreakItem(
+                label = "Total Rachas",
+                value = "${achievements.totalStreaks}",
+                color = MaterialTheme.colorScheme.tertiary,
+                icon = "🎯",
+                animationDelay = 400
+            )
+        }
     }
 }
 
@@ -135,8 +154,17 @@ private fun StreakItem(
     label: String,
     value: String,
     color: Color,
-    icon: String
+    icon: String,
+    animationDelay: Int = 0
 ) {
+    val scaleAnimation = remember { Animatable(0.8f) }
+    
+    LaunchedEffect(Unit) {
+        scaleAnimation.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 600, delayMillis = animationDelay)
+        )
+    }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -144,6 +172,10 @@ private fun StreakItem(
         Box(
             modifier = Modifier
                 .size(50.dp)
+                .graphicsLayer {
+                    scaleX = scaleAnimation.value
+                    scaleY = scaleAnimation.value
+                }
                 .background(
                     color = color.copy(alpha = 0.15f),
                     shape = CircleShape
@@ -219,7 +251,7 @@ private fun BadgeItem(
             .width(120.dp)
             .height(100.dp)
             .background(
-                color = if (badge.earned) Color(0xFF4CAF50).copy(alpha = 0.05f) else Color.Gray.copy(alpha = 0.05f),
+                color = if (badge.earned) MaterialTheme.colorScheme.primary.copy(alpha = 0.05f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.05f),
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(12.dp)
@@ -234,7 +266,7 @@ private fun BadgeItem(
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        color = if (badge.earned) Color(0xFF4CAF50).copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f),
+                        color = if (badge.earned) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -249,7 +281,7 @@ private fun BadgeItem(
                 text = badge.name,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
-                color = if (badge.earned) Color(0xFF4CAF50) else Color.Gray,
+                color = if (badge.earned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp
             )
             
@@ -275,15 +307,18 @@ private fun MilestonesSection(
             text = "🎯 Milestones Alcanzados",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
         
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 4.dp)
         ) {
-            items(milestones) { milestone ->
-                MilestoneItem(milestone = milestone)
+            itemsIndexed(milestones) { index, milestone ->
+                MilestoneItem(
+                    milestone = milestone,
+                    animationDelay = index * 150
+                )
             }
         }
     }
@@ -291,47 +326,96 @@ private fun MilestonesSection(
 
 @Composable
 private fun MilestoneItem(
-    milestone: MilestoneData
+    milestone: MilestoneData,
+    animationDelay: Int = 0
 ) {
+    val scaleAnimation = remember { Animatable(0.8f) }
+    val alphaAnimation = remember { Animatable(0f) }
+    
+    LaunchedEffect(Unit) {
+        scaleAnimation.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 600, delayMillis = animationDelay)
+        )
+        alphaAnimation.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 400, delayMillis = animationDelay + 100)
+        )
+    }
     Box(
         modifier = Modifier
-            .width(100.dp)
-            .height(80.dp)
+            .width(120.dp)
+            .height(100.dp)
+            .graphicsLayer {
+                scaleX = scaleAnimation.value
+                scaleY = scaleAnimation.value
+                alpha = alphaAnimation.value
+            }
             .background(
-                color = if (milestone.achieved) Color(0xFF2196F3).copy(alpha = 0.05f) else Color.Gray.copy(alpha = 0.05f),
+                color = if (milestone.achieved) MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.05f),
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(10.dp)
+            .padding(12.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Icono con fondo circular suave
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(36.dp)
                     .background(
-                        color = if (milestone.achieved) Color(0xFF2196F3).copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f),
+                        color = if (milestone.achieved) MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = if (milestone.achieved) "✅" else "⏳",
-                    fontSize = 16.sp
+                    fontSize = 18.sp
                 )
             }
             
-            Text(
-                text = milestone.type.replace("_", " ").uppercase(),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = if (milestone.achieved) Color(0xFF2196F3) else Color.Gray,
-                fontSize = 10.sp,
-                maxLines = 2
-            )
+            // Información del milestone
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = milestone.type.replace("_", " ").uppercase(),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (milestone.achieved) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp,
+                    maxLines = 2
+                )
+                
+                // Barra de progreso (si no está logrado)
+                if (!milestone.achieved) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(2.dp)
+                            )
+                    ) {
+                        // Progreso simulado (puedes usar milestone.progress si existe)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(0.3f) // 30% de progreso simulado
+                                .background(
+                                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f),
+                                    shape = RoundedCornerShape(2.dp)
+                                )
+                        )
+                    }
+                }
+            }
         }
     }
 }
