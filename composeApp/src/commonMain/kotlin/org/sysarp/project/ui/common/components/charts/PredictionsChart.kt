@@ -20,13 +20,16 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
 import org.sysarp.project.data.PredictedSalesData
 import org.sysarp.project.data.SellerForecastingData
 import org.sysarp.project.data.TrendAnalysisData
 import org.sysarp.project.utils.formatPercentage
+import org.sysarp.project.utils.formatCurrency
 
 /**
  * Gráfico de predicciones para mostrar ventas futuras y tendencias
@@ -84,7 +87,7 @@ fun PredictionsChart(
             modifier = modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             chartContent()
         }
@@ -103,7 +106,18 @@ private fun PredictionsLineChart(
     val animationProgress = remember { Animatable(0f) }
     val maxValue = predictedSales.maxOfOrNull { it.predicted } ?: 0.0
     val minValue = predictedSales.minOfOrNull { it.predicted } ?: 0.0
-    val valueRange = maxValue - minValue
+    
+    // Mejorar el rango para valores pequeños
+    val adjustedMinValue = if (minValue == maxValue) 0.0 else minValue
+    val adjustedMaxValue = if (maxValue == 0.0) 0.1 else maxValue
+    val valueRange = adjustedMaxValue - adjustedMinValue
+    
+    // Debug: Imprimir valores para verificar
+    println("DEBUG PredictionsChart - MaxValue: $maxValue, MinValue: $minValue, ValueRange: $valueRange")
+    println("DEBUG PredictionsChart - AdjustedMaxValue: $adjustedMaxValue, AdjustedMinValue: $adjustedMinValue")
+    predictedSales.forEach { data ->
+        println("DEBUG PredictionsChart - Date: ${data.date}, Predicted: ${data.predicted}, Confidence: ${data.confidence}")
+    }
 
     LaunchedEffect(predictedSales) {
         animationProgress.animateTo(
@@ -120,9 +134,24 @@ private fun PredictionsLineChart(
             text = "📈 Proyección de Ventas",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
+        
+        // Información sobre la escalabilidad
+        if (maxValue <= 0.1) {
+            Text(
+                text = "💡 Los valores pueden crecer con el tiempo según el desarrollo del negocio",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp
+            )
+        }
 
+        val primaryColor = MaterialTheme.colorScheme.primary
+        val tertiaryColor = MaterialTheme.colorScheme.tertiary
+        val errorColor = MaterialTheme.colorScheme.error
+        val textColor = MaterialTheme.colorScheme.onSurface
+        
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -130,16 +159,23 @@ private fun PredictionsLineChart(
         ) {
             drawPredictionsLine(
                 predictedSales = predictedSales,
-                maxValue = maxValue,
-                minValue = minValue,
+                maxValue = adjustedMaxValue,
+                minValue = adjustedMinValue,
                 valueRange = valueRange,
                 animationProgress = animationProgress.value,
-                canvasSize = size
+                canvasSize = size,
+                primaryColor = primaryColor,
+                tertiaryColor = tertiaryColor,
+                errorColor = errorColor,
+                textColor = textColor
             )
         }
 
+        // Resumen de valores
+        PredictedValuesSummary(predictedSales = predictedSales)
+        
         // Leyenda de confianza
-        ConfidenceLegend(predictedSales = predictedSales)
+        ConfidenceLegend()
     }
 }
 
@@ -149,7 +185,11 @@ private fun DrawScope.drawPredictionsLine(
     minValue: Double,
     valueRange: Double,
     animationProgress: Float,
-    canvasSize: Size
+    canvasSize: Size,
+    primaryColor: Color,
+    tertiaryColor: Color,
+    errorColor: Color,
+    textColor: Color
 ) {
     if (predictedSales.isEmpty()) return
 
@@ -169,6 +209,20 @@ private fun DrawScope.drawPredictionsLine(
         chartHeight = chartHeight
     )
 
+    // Dibujar área bajo la curva
+    drawAreaUnderCurve(
+        predictedSales = predictedSales,
+        maxValue = maxValue,
+        minValue = minValue,
+        valueRange = valueRange,
+        startX = startX,
+        startY = startY,
+        chartWidth = chartWidth,
+        chartHeight = chartHeight,
+        animationProgress = animationProgress,
+        primaryColor = primaryColor
+    )
+
     // Dibujar línea de predicciones
     drawPredictionLine(
         predictedSales = predictedSales,
@@ -179,7 +233,8 @@ private fun DrawScope.drawPredictionsLine(
         startY = startY,
         chartWidth = chartWidth,
         chartHeight = chartHeight,
-        animationProgress = animationProgress
+        animationProgress = animationProgress,
+        lineColor = primaryColor
     )
 
     // Dibujar puntos de datos
@@ -192,7 +247,36 @@ private fun DrawScope.drawPredictionsLine(
         startY = startY,
         chartWidth = chartWidth,
         chartHeight = chartHeight,
-        animationProgress = animationProgress
+        animationProgress = animationProgress,
+        primaryColor = primaryColor,
+        tertiaryColor = tertiaryColor,
+        errorColor = errorColor
+    )
+    
+    // Dibujar etiquetas de valores
+    drawValueLabels(
+        predictedSales = predictedSales,
+        maxValue = maxValue,
+        minValue = minValue,
+        valueRange = valueRange,
+        startX = startX,
+        startY = startY,
+        chartWidth = chartWidth,
+        chartHeight = chartHeight,
+        animationProgress = animationProgress,
+        textColor = textColor
+    )
+
+    // Dibujar etiquetas de ejes
+    drawAxisLabels(
+        predictedSales = predictedSales,
+        maxValue = maxValue,
+        minValue = minValue,
+        startX = startX,
+        startY = startY,
+        chartWidth = chartWidth,
+        chartHeight = chartHeight,
+        textColor = textColor
     )
 }
 
@@ -238,7 +322,8 @@ private fun DrawScope.drawPredictionLine(
     startY: Float,
     chartWidth: Float,
     chartHeight: Float,
-    animationProgress: Float
+    animationProgress: Float,
+    lineColor: Color
 ) {
     if (predictedSales.size < 2) return
 
@@ -262,7 +347,7 @@ private fun DrawScope.drawPredictionLine(
     // Dibujar línea principal
     drawPath(
         path = path,
-        color = Color(0xFF2196F3),
+        color = lineColor,
         style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
     )
 }
@@ -276,7 +361,10 @@ private fun DrawScope.drawDataPoints(
     startY: Float,
     chartWidth: Float,
     chartHeight: Float,
-    animationProgress: Float
+    animationProgress: Float,
+    primaryColor: Color,
+    tertiaryColor: Color,
+    errorColor: Color
 ) {
     val stepX = chartWidth / (predictedSales.size - 1)
 
@@ -289,9 +377,9 @@ private fun DrawScope.drawDataPoints(
 
         // Color basado en confianza
         val color = when {
-            data.confidence >= 0.8 -> Color(0xFF4CAF50) // Verde - Alta confianza
-            data.confidence >= 0.6 -> Color(0xFFFF9800) // Naranja - Media confianza
-            else -> Color(0xFFF44336) // Rojo - Baja confianza
+            data.confidence >= 0.8 -> primaryColor // Alta confianza
+            data.confidence >= 0.6 -> tertiaryColor // Media confianza
+            else -> errorColor // Baja confianza
         }
 
         // Dibujar punto
@@ -310,26 +398,124 @@ private fun DrawScope.drawDataPoints(
     }
 }
 
+private fun DrawScope.drawValueLabels(
+    predictedSales: List<PredictedSalesData>,
+    maxValue: Double,
+    minValue: Double,
+    valueRange: Double,
+    startX: Float,
+    startY: Float,
+    chartWidth: Float,
+    chartHeight: Float,
+    animationProgress: Float,
+    textColor: Color
+) {
+    val stepX = chartWidth / (predictedSales.size - 1)
+
+    predictedSales.forEachIndexed { index, data ->
+        val x = startX + index * stepX
+        val normalizedValue = if (valueRange > 0) {
+            (data.predicted - minValue) / valueRange
+        } else 0.5
+        val y = startY + chartHeight - (normalizedValue * chartHeight * animationProgress).toFloat()
+
+        // Dibujar etiqueta de valor solo si es significativo
+        if (data.predicted > 0) {
+            // Dibujar un pequeño círculo como indicador de valor
+            drawCircle(
+                color = textColor,
+                radius = 3.dp.toPx(),
+                center = Offset(x, y - 15.dp.toPx())
+            )
+        }
+    }
+}
+
 @Composable
-private fun ConfidenceLegend(
+private fun PredictedValuesSummary(
     predictedSales: List<PredictedSalesData>
 ) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "📊 Valores Predichos",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp)
+        ) {
+            items(predictedSales.take(5)) { data ->
+                PredictedValueCard(data = data)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PredictedValueCard(
+    data: PredictedSalesData
+) {
+    Box(
+        modifier = Modifier
+            .width(120.dp)
+            .height(60.dp)
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = data.date.substring(5), // Solo mes-día
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 10.sp
+            )
+            Text(
+                text = formatCurrency(data.predicted),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 11.sp
+            )
+            Text(
+                text = "${(data.confidence * 100).toInt()}%",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 9.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConfidenceLegend() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         LegendItem(
-            color = Color(0xFF4CAF50),
+            color = MaterialTheme.colorScheme.primary,
             label = "Alta Confianza",
             description = "≥80%"
         )
         LegendItem(
-            color = Color(0xFFFF9800),
+            color = MaterialTheme.colorScheme.tertiary,
             label = "Media Confianza",
             description = "60-79%"
         )
         LegendItem(
-            color = Color(0xFFF44336),
+            color = MaterialTheme.colorScheme.error,
             label = "Baja Confianza",
             description = "<60%"
         )
@@ -358,13 +544,13 @@ private fun LegendItem(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 10.sp
             )
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 8.sp
             )
         }
@@ -382,39 +568,55 @@ private fun TrendAnalysisSection(
             text = "📊 Análisis de Tendencias",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
 
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TrendItem(
-                label = "Tendencia",
-                value = trendAnalysis.trend,
-                color = when (trendAnalysis.trend.lowercase()) {
-                    "up", "rising", "creciente" -> Color(0xFF4CAF50)
-                    "down", "falling", "decreciente" -> Color(0xFFF44336)
-                    else -> Color(0xFFFF9800)
-                },
-                icon = when (trendAnalysis.trend.lowercase()) {
-                    "up", "rising", "creciente" -> "📈"
-                    "down", "falling", "decreciente" -> "📉"
-                    else -> "➡️"
-                }
-            )
-            TrendItem(
-                label = "Precisión",
-                value = formatPercentage(trendAnalysis.forecastAccuracy * 100),
-                color = Color(0xFF2196F3),
-                icon = "🎯"
-            )
-            TrendItem(
-                label = "R²",
-                value = String.format("%.3f", trendAnalysis.r2),
-                color = Color(0xFF9C27B0),
-                icon = "📐"
-            )
+            // Primera fila: Tendencia y Precisión
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                TrendItem(
+                    label = "Tendencia",
+                    value = trendAnalysis.trend,
+                    color = when (trendAnalysis.trend.lowercase()) {
+                        "up", "rising", "creciente" -> MaterialTheme.colorScheme.primary
+                        "down", "falling", "decreciente" -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.tertiary
+                    },
+                    icon = when (trendAnalysis.trend.lowercase()) {
+                        "up", "rising", "creciente" -> "📈"
+                        "down", "falling", "decreciente" -> "📉"
+                        else -> "➡️"
+                    },
+                    animationDelay = 0
+                )
+                TrendItem(
+                    label = "Precisión",
+                    value = formatPercentage(trendAnalysis.forecastAccuracy * 100),
+                    color = MaterialTheme.colorScheme.secondary,
+                    icon = "🎯",
+                    animationDelay = 200
+                )
+            }
+            
+            // Segunda fila: R² (centrado)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                TrendItem(
+                    label = "R²",
+                    value = String.format("%.3f", trendAnalysis.r2),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    icon = "📐",
+                    animationDelay = 400
+                )
+            }
         }
     }
 }
@@ -424,8 +626,17 @@ private fun TrendItem(
     label: String,
     value: String,
     color: Color,
-    icon: String
+    icon: String,
+    animationDelay: Int = 0
 ) {
+    val scaleAnimation = remember { Animatable(0.8f) }
+    
+    LaunchedEffect(Unit) {
+        scaleAnimation.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 600, delayMillis = animationDelay)
+        )
+    }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -433,6 +644,10 @@ private fun TrendItem(
         Box(
             modifier = Modifier
                 .size(40.dp)
+                .graphicsLayer {
+                    scaleX = scaleAnimation.value
+                    scaleY = scaleAnimation.value
+                }
                 .background(
                     color = color.copy(alpha = 0.1f),
                     shape = CircleShape
@@ -457,7 +672,7 @@ private fun TrendItem(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp
             )
         }
@@ -475,7 +690,7 @@ private fun RecommendationsSection(
             text = "💡 Recomendaciones",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         LazyRow(
@@ -493,34 +708,128 @@ private fun RecommendationsSection(
 private fun RecommendationCard(
     recommendation: String
 ) {
-    Card(
+    Box(
         modifier = Modifier
             .width(200.dp)
-            .height(80.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE3F2FD)
-        ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .height(80.dp)
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(12.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
                 text = "💡",
-                fontSize = 16.sp
+                fontSize = 18.sp
             )
             Text(
                 text = recommendation,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Black,
-                fontSize = 10.sp,
-                maxLines = 3
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 11.sp,
+                maxLines = 3,
+                lineHeight = 14.sp
             )
         }
+    }
+}
+
+private fun DrawScope.drawAreaUnderCurve(
+    predictedSales: List<PredictedSalesData>,
+    maxValue: Double,
+    minValue: Double,
+    valueRange: Double,
+    startX: Float,
+    startY: Float,
+    chartWidth: Float,
+    chartHeight: Float,
+    animationProgress: Float,
+    primaryColor: Color
+) {
+    if (predictedSales.size < 2) return
+
+    val path = Path()
+    val stepX = chartWidth / (predictedSales.size - 1)
+
+    // Crear área bajo la curva
+    predictedSales.forEachIndexed { index, data ->
+        val x = startX + index * stepX
+        val normalizedValue = if (valueRange > 0) {
+            (data.predicted - minValue) / valueRange
+        } else 0.5
+        val y = startY + chartHeight - (normalizedValue * chartHeight * animationProgress).toFloat()
+
+        if (index == 0) {
+            path.moveTo(x, startY + chartHeight) // Empezar desde la base
+            path.lineTo(x, y)
+        } else {
+            path.lineTo(x, y)
+        }
+    }
+
+    // Cerrar el área volviendo a la base
+    path.lineTo(startX + chartWidth, startY + chartHeight)
+    path.lineTo(startX, startY + chartHeight)
+    path.close()
+
+    // Dibujar área con gradiente
+    drawPath(
+        path = path,
+        brush = Brush.verticalGradient(
+            colors = listOf(
+                primaryColor.copy(alpha = 0.3f),
+                primaryColor.copy(alpha = 0.1f)
+            ),
+            startY = startY,
+            endY = startY + chartHeight
+        )
+    )
+}
+
+private fun DrawScope.drawAxisLabels(
+    predictedSales: List<PredictedSalesData>,
+    maxValue: Double,
+    minValue: Double,
+    startX: Float,
+    startY: Float,
+    chartWidth: Float,
+    chartHeight: Float,
+    textColor: Color
+) {
+    val stepX = chartWidth / (predictedSales.size - 1)
+
+    // Etiquetas del eje X (fechas) - usando círculos como marcadores
+    predictedSales.forEachIndexed { index, data ->
+        if (index % 2 == 0) { // Mostrar cada dos fechas para evitar saturación
+            val x = startX + index * stepX
+            // Dibujar un pequeño círculo como marcador de fecha
+            drawCircle(
+                color = textColor.copy(alpha = 0.6f),
+                radius = 2.dp.toPx(),
+                center = Offset(x, startY + chartHeight + 15.dp.toPx())
+            )
+        }
+    }
+
+    // Etiquetas del eje Y (valores) - usando líneas como marcadores
+    val yLabels = listOf(minValue, (minValue + maxValue) / 2, maxValue)
+    yLabels.forEach { value ->
+        val normalizedValue = if (maxValue > minValue) {
+            (value - minValue) / (maxValue - minValue)
+        } else 0.5
+        val y = startY + chartHeight - (normalizedValue * chartHeight)
+        
+        // Dibujar una pequeña línea como marcador de valor
+        drawLine(
+            color = textColor.copy(alpha = 0.6f),
+            start = Offset(startX - 8.dp.toPx(), y.toFloat()),
+            end = Offset(startX - 3.dp.toPx(), y.toFloat()),
+            strokeWidth = 2.dp.toPx()
+        )
     }
 }
 
