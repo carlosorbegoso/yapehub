@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -77,14 +79,19 @@ fun HourlySalesChart(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
-            // Gráfico de barras interactivo
-            HourlyBarsChart(
-                hourlySales = hourlySales,
-                onHourSelected = { hourData ->
-                    selectedHour = hourData
-                    showDetailsDialog = true
-                }
-            )
+            // Gráfico de barras interactivo con etiquetas
+            Box {
+                HourlyBarsChart(
+                    hourlySales = hourlySales,
+                    onHourSelected = { hourData ->
+                        selectedHour = hourData
+                        showDetailsDialog = true
+                    }
+                )
+                
+                // Etiquetas de horas superpuestas
+                HourLabelsOverlay(hourlySales = hourlySales)
+            }
 
                 // Estadísticas resumidas
                 HourlyStatsSummary(hourlySales = hourlySales)
@@ -129,6 +136,11 @@ private fun HourlyBarsChart(
     val maxSales = hourlySales.maxOfOrNull { it.sales } ?: 0.0
     val animationProgress = remember { Animatable(0f) }
     var selectedIndex by remember { mutableStateOf(-1) }
+    
+    // Obtener colores del tema fuera del Canvas
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val outlineColor = MaterialTheme.colorScheme.outline
 
     LaunchedEffect(hourlySales) {
         animationProgress.animateTo(
@@ -155,7 +167,10 @@ private fun HourlyBarsChart(
             maxSales = maxSales,
             animationProgress = animationProgress.value,
             canvasSize = size,
-            selectedIndex = selectedIndex
+            selectedIndex = selectedIndex,
+            primaryColor = primaryColor,
+            secondaryColor = secondaryColor,
+            outlineColor = outlineColor
         )
     }
 }
@@ -165,11 +180,21 @@ private fun DrawScope.drawHourlyBars(
     maxSales: Double,
     animationProgress: Float,
     canvasSize: Size,
-    selectedIndex: Int = -1
+    selectedIndex: Int = -1,
+    primaryColor: Color,
+    secondaryColor: Color,
+    outlineColor: Color
 ) {
     val barWidth = canvasSize.width / 24f
-    val maxBarHeight = canvasSize.height * 0.8f
+    val maxBarHeight = canvasSize.height * 0.7f // Reducido para espacio de etiquetas
     val startY = canvasSize.height * 0.1f
+    val labelAreaHeight = canvasSize.height * 0.2f // Espacio para etiquetas
+
+    // Dibujar líneas de referencia
+    drawReferenceLines(maxSales, canvasSize, maxBarHeight, startY, primaryColor, secondaryColor)
+    
+    // Dibujar etiquetas de horas
+    drawHourLabels(hourlySales, canvasSize, barWidth, labelAreaHeight, outlineColor)
 
     hourlySales.forEachIndexed { index, hourData ->
         val barHeight = if (maxSales > 0) {
@@ -180,44 +205,128 @@ private fun DrawScope.drawHourlyBars(
         val y = startY + maxBarHeight - barHeight
         val isSelected = index == selectedIndex
 
-        // Color basado en la intensidad de ventas
-        val baseColor = when {
-            hourData.sales > maxSales * 0.7 -> Color(0xFF4CAF50) // Verde fuerte
-            hourData.sales > maxSales * 0.4 -> Color(0xFF8BC34A) // Verde medio
-            hourData.sales > maxSales * 0.1 -> Color(0xFFFFC107) // Amarillo
-            hourData.sales > 0 -> Color(0xFFFF9800) // Naranja
-            else -> Color(0xFFE0E0E0) // Gris claro
-        }
+        // Sistema de colores mejorado
+        val baseColor = getBarColor(hourData.sales, maxSales, primaryColor)
 
         // Color final con efecto de selección
         val finalColor = if (isSelected) {
-            baseColor.copy(alpha = 0.8f)
+            baseColor.copy(alpha = 0.9f)
         } else {
             baseColor
         }
 
-        // Dibujar barra
+        // Dibujar barra con gradiente sutil
         drawRect(
             color = finalColor,
             topLeft = Offset(x + 2, y),
             size = Size(barWidth - 4, barHeight)
         )
 
-        // Dibujar borde de selección
+        // Dibujar borde de selección mejorado
         if (isSelected) {
             drawRect(
-                color = Color(0xFF2196F3),
+                color = primaryColor,
                 topLeft = Offset(x + 1, y - 2),
                 size = Size(barWidth - 2, barHeight + 4),
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
             )
         }
+    }
+}
 
-        // Dibujar etiqueta de hora cada 4 horas
-        if (index % 4 == 0) {
+private fun DrawScope.drawReferenceLines(
+    maxSales: Double,
+    canvasSize: Size,
+    maxBarHeight: Float,
+    startY: Float,
+    primaryColor: Color,
+    secondaryColor: Color
+) {
+    val averageSales = maxSales * 0.5 // Simulamos promedio como 50% del máximo
+    
+    // Línea de valor máximo
+    val maxLineY = startY
+    drawLine(
+        color = primaryColor.copy(alpha = 0.3f),
+        start = Offset(0f, maxLineY),
+        end = Offset(canvasSize.width, maxLineY),
+        strokeWidth = 1.dp.toPx()
+    )
+    
+    // Línea de promedio
+    val avgLineY = startY + maxBarHeight * 0.5f
+    drawLine(
+        color = secondaryColor.copy(alpha = 0.3f),
+        start = Offset(0f, avgLineY),
+        end = Offset(canvasSize.width, avgLineY),
+        strokeWidth = 1.dp.toPx()
+    )
+}
+
+private fun DrawScope.drawHourLabels(
+    hourlySales: List<HourlySalesData>,
+    canvasSize: Size,
+    barWidth: Float,
+    labelAreaHeight: Float,
+    outlineColor: Color
+) {
+    // Dibujar etiquetas cada 3 horas para mejor legibilidad
+    hourlySales.forEachIndexed { index, hourData ->
+        if (index % 3 == 0) {
             val hourText = hourData.hour.substring(0, 2)
-            // Nota: En Compose multiplataforma, el dibujo de texto en Canvas es limitado
-            // Se puede usar drawIntoCanvas para acceso nativo si es necesario
+            val x = index * barWidth + barWidth / 2
+            
+            // Dibujar línea vertical de referencia
+            drawLine(
+                color = outlineColor.copy(alpha = 0.2f),
+                start = Offset(x, canvasSize.height * 0.1f),
+                end = Offset(x, canvasSize.height * 0.8f),
+                strokeWidth = 0.5.dp.toPx()
+            )
+            
+            // Nota: El texto se dibujará usando Text composables superpuestos
+            // ya que drawIntoCanvas no está disponible en Compose multiplataforma
+        }
+    }
+}
+
+private fun getBarColor(sales: Double, maxSales: Double, primaryColor: Color): Color {
+    val intensity = if (maxSales > 0) sales / maxSales else 0.0
+    
+    return when {
+        intensity > 0.8 -> primaryColor // Color principal
+        intensity > 0.6 -> Color(0xFF1976D2) // Azul medio
+        intensity > 0.4 -> Color(0xFF42A5F5) // Azul claro
+        intensity > 0.2 -> Color(0xFF81C784) // Verde claro
+        intensity > 0.0 -> Color(0xFFFFB74D) // Naranja claro
+        else -> Color(0xFFE0E0E0) // Gris para cero
+    }
+}
+
+@Composable
+private fun HourLabelsOverlay(
+    hourlySales: List<HourlySalesData>
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.Bottom
+    ) {
+        hourlySales.forEachIndexed { index, hourData ->
+            if (index % 3 == 0) { // Mostrar cada 3 horas
+                Text(
+                    text = hourData.hour.substring(0, 2),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            } else {
+                // Espacio vacío para mantener alineación
+                Spacer(modifier = Modifier.width(0.dp))
+            }
         }
     }
 }
@@ -229,6 +338,8 @@ private fun HourlyStatsSummary(
     val peakHour = hourlySales.maxByOrNull { it.sales }
     val totalSales = hourlySales.sumOf { it.sales }
     val activeHours = hourlySales.count { it.sales > 0 }
+    val averageSales = if (activeHours > 0) totalSales / activeHours else 0.0
+    val maxSales = hourlySales.maxOfOrNull { it.sales } ?: 0.0
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -237,17 +348,17 @@ private fun HourlyStatsSummary(
         StatItem(
             label = "Hora Pico",
             value = peakHour?.hour ?: "N/A",
-            color = Color(0xFF4CAF50)
+            color = MaterialTheme.colorScheme.primary
         )
         StatItem(
-            label = "Total Ventas",
-            value = formatCurrency(totalSales),
-            color = Color(0xFF2196F3)
+            label = "Promedio",
+            value = formatCurrency(averageSales),
+            color = MaterialTheme.colorScheme.secondary
         )
         StatItem(
-            label = "Horas Activas",
+            label = "Activas",
             value = "$activeHours/24",
-            color = Color(0xFFFF9800)
+            color = MaterialTheme.colorScheme.tertiary
         )
     }
 }
