@@ -48,37 +48,34 @@ import org.sysarp.project.utils.formatCurrency
 @Composable
 fun HourlySalesChart(
     hourlySales: List<HourlySalesData>?,
+    showCard: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var selectedHour by remember { mutableStateOf<HourlySalesData?>(null) }
     var showDetailsDialog by remember { mutableStateOf(false) }
 
-    if (hourlySales.isNullOrEmpty()) {
-        EmptyChartCard(
-            title = "📊 Ventas por Hora",
-            subtitle = "No hay datos disponibles",
-            modifier = modifier
-        )
-        return
-    }
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Título y resumen
-            ChartHeader(
-                title = "📊 Ventas por Hora",
-                subtitle = "Toca una barra para ver detalles"
-            )
+    val chartContent = @Composable {
+        if (hourlySales.isNullOrEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 16.dp else 0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "No hay datos disponibles",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 16.dp else 0.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
 
             // Gráfico de barras interactivo
             HourlyBarsChart(
@@ -89,8 +86,25 @@ fun HourlySalesChart(
                 }
             )
 
-            // Estadísticas resumidas
-            HourlyStatsSummary(hourlySales = hourlySales)
+                // Estadísticas resumidas
+                HourlyStatsSummary(hourlySales = hourlySales)
+            }
+        }
+    }
+
+    // Renderizar con o sin Card según el parámetro
+    if (showCard) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            chartContent()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            chartContent()
         }
     }
 
@@ -106,27 +120,6 @@ fun HourlySalesChart(
     }
 }
 
-@Composable
-private fun ChartHeader(
-    title: String,
-    subtitle: String
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-    }
-}
 
 @Composable
 private fun HourlyBarsChart(
@@ -428,39 +421,5 @@ private fun DetailRow(
             fontWeight = FontWeight.Bold,
             color = color
         )
-    }
-}
-
-@Composable
-private fun EmptyChartCard(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
-        }
     }
 }

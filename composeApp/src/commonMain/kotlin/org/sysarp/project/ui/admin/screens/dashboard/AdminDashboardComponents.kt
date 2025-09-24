@@ -35,7 +35,7 @@ import org.sysarp.project.data.ConnectedSellersData
 import org.sysarp.project.data.PerformanceMetricsData
 import org.sysarp.project.data.QuickSummaryData
 import org.sysarp.project.service.billing.BillingService
-import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
+import org.sysarp.project.ui.common.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.screens.admin.AdminBillingIntegrationCard
 import org.sysarp.project.utils.formatTimeOnly
 

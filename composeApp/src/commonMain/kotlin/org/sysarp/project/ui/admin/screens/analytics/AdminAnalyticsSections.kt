@@ -25,7 +25,7 @@ import org.sysarp.project.ui.components.charts.ComparisonsChart
 import org.sysarp.project.ui.common.components.charts.DailySalesBarChart
 import org.sysarp.project.ui.components.charts.GoalsProgressChart
 import org.sysarp.project.ui.components.charts.HourlySalesChart
-import org.sysarp.project.ui.components.charts.PerformanceMetricsPieChart
+import org.sysarp.project.ui.common.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.components.charts.PredictionsChart
 import org.sysarp.project.ui.components.charts.SalesDistributionChart
 import org.sysarp.project.ui.components.charts.SalesTrendLineChart
@@ -77,8 +77,8 @@ fun AdminAnalyticsSections(
                     ResponsiveChartRow(
                         charts = listOf(
                             ChartItem("Ventas Diarias", { DailySalesBarChart(dailySales = analyticsData.dailySales, showCard = false) }),
-                            ChartItem("Métricas de Rendimiento", { PerformanceMetricsPieChart(performanceMetrics = analyticsData.performanceMetrics) }),
-                            ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales) })
+                            ChartItem("Métricas de Rendimiento", { PerformanceMetricsPieChart(performanceMetrics = analyticsData.performanceMetrics, showCard = false) }),
+                            ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales, showCard = false) })
                         )
                     )
                 }
@@ -108,7 +108,7 @@ fun AdminAnalyticsSections(
                     // Gráficos avanzados en layout responsivo
                     ResponsiveChartRow(
                         charts = listOf(
-                            ChartItem("Ventas por Hora", { HourlySalesChart(hourlySales = analyticsData.hourlySales) }),
+                            ChartItem("Ventas por Hora", { HourlySalesChart(hourlySales = analyticsData.hourlySales, showCard = false) }),
                             ChartItem("Progreso de Metas", { GoalsProgressChart(sellerGoals = analyticsData.sellerGoals) }),
                             ChartItem("Logros", { AchievementsChart(sellerAchievements = analyticsData.sellerAchievements) })
                         )

@@ -63,22 +63,17 @@ fun SalesTrendLineChart(
     title: String = "Tendencia de Ventas",
     showPoints: Boolean = true,
     showStats: Boolean = true,
+    showCard: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var selectedPoint by remember { mutableStateOf<DailySalesData?>(null) }
     var showDetailsDialog by remember { mutableStateOf(false) }
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
+    
+    val chartContent = @Composable {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(if (showCard) 16.dp else 0.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Título del gráfico
@@ -328,6 +323,24 @@ fun SalesTrendLineChart(
                     }
                 }
             }
+        }
+    }
+
+    // Renderizar con o sin Card según el parámetro
+    if (showCard) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            chartContent()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            chartContent()
         }
     }
     
