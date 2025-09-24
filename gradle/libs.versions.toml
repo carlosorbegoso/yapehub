@@ -25,6 +25,7 @@ kotlinx-coroutines-test = "1.9.0"
 ktor = "2.3.7"
 camerax = "1.5.0"
 mlkit = "16.0.0"
+lottie-compose = "6.1.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -72,6 +73,9 @@ camerax-mlkit-vision = { module = "androidx.camera:camera-mlkit-vision", version
 
 # ML Kit for QR code detection
 mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit" }
+
+# Lottie for animations
+lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie-compose" }
 
 # Skia for image processing
 

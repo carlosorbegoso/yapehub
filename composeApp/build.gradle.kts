@@ -73,6 +73,9 @@ kotlin {
             // Material Icons - Usando la versión latest por defecto
             implementation(compose.materialIconsExtended)
 
+            // Lottie for animations
+            implementation(libs.lottie.compose)
+
             
             // Kotlinx
             implementation(libs.kotlinx.datetime)
