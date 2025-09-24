@@ -37,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,9 +70,18 @@ fun SmartCalendar(
     expanded: Boolean,
     onDismiss: () -> Unit
 ) {
-    var selectedStartDate by remember { mutableStateOf<LocalDate?>(null) }
-    var selectedEndDate by remember { mutableStateOf<LocalDate?>(null) }
-    var currentMonth by remember { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
+    var selectedStartDate by remember(expanded) { mutableStateOf<LocalDate?>(null) }
+    var selectedEndDate by remember(expanded) { mutableStateOf<LocalDate?>(null) }
+    var currentMonth by remember(expanded) { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
+    
+    // Resetear estado cuando se abre el calendario
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            selectedStartDate = null
+            selectedEndDate = null
+            currentMonth = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        }
+    }
     
     AnimatedVisibility(
         visible = expanded,

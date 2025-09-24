@@ -35,6 +35,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import org.sysarp.project.data.DailySalesData
 import org.sysarp.project.utils.formatCurrency
 
@@ -258,5 +261,149 @@ fun DailySalesBarChart(
         Box(modifier = modifier.fillMaxWidth()) {
             chartContent()
         }
+    }
+
+    // Diálogo de detalles
+    if (showDetailsDialog && selectedDay != null) {
+        DayDetailsDialog(
+            dayData = selectedDay!!,
+            onDismiss = {
+                showDetailsDialog = false
+                selectedDay = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun DayDetailsDialog(
+    dayData: DailySalesData,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Icono del día
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(30.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "📅",
+                        fontSize = 24.sp
+                    )
+                }
+
+                // Título
+                Text(
+                    text = "Detalles de ${dayData.dayName}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                // Información detallada
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    DetailRow(
+                        icon = "💰",
+                        label = "Ventas Totales",
+                        value = formatCurrency(dayData.sales),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    DetailRow(
+                        icon = "🔄",
+                        label = "Transacciones",
+                        value = "${dayData.transactions}",
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    
+                    DetailRow(
+                        icon = "📊",
+                        label = "Promedio por Transacción",
+                        value = formatCurrency(dayData.sales / dayData.transactions.coerceAtLeast(1)),
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+
+                // Botón de cerrar
+                androidx.compose.material3.Button(
+                    onClick = onDismiss,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Cerrar",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailRow(
+    icon: String,
+    label: String,
+    value: String,
+    color: Color
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = icon,
+                fontSize = 16.sp
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
     }
 }
