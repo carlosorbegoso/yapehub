@@ -2,11 +2,7 @@ package org.sysarp.project.ui.common.components.charts
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.Color
@@ -43,18 +39,17 @@ import org.sysarp.project.data.DailySalesData
 import org.sysarp.project.utils.formatCurrency
 
 /**
- * Gráfico de barras mejorado para ventas diarias con estadísticas flotantes
+ * Gráfico de barras mejorado para ventas diarias
  * 
  * @param dailySales Lista de datos de ventas diarias
  * @param title Título del gráfico (opcional)
- * @param showStats Si mostrar estadísticas adicionales (por defecto true)
+ * @param showCard Si mostrar el componente dentro de un Card
  * @param modifier Modificador para el componente
  */
 @Composable
 fun DailySalesBarChart(
     dailySales: List<DailySalesData>,
     title: String = "Ventas Diarias",
-    showStats: Boolean = true,
     showCard: Boolean = true,
     modifier: Modifier = Modifier
 ) {
