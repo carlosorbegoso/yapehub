@@ -35,34 +35,31 @@ import org.sysarp.project.utils.formatPercentage
 @Composable
 fun PredictionsChart(
     sellerForecasting: SellerForecastingData?,
+    showCard: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    if (sellerForecasting == null) {
-        EmptyChartCard(
-            title = "🔮 Predicciones de Ventas",
-            subtitle = "No hay datos de predicciones disponibles",
-            modifier = modifier
-        )
-        return
-    }
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Título y resumen
-            ChartHeader(
-                title = "🔮 Predicciones de Ventas",
-                subtitle = "Tendencias y proyecciones futuras"
-            )
+    val chartContent = @Composable {
+        if (sellerForecasting == null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 16.dp else 0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "No hay datos de predicciones disponibles",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 16.dp else 0.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
 
             // Gráfico de líneas con predicciones
             PredictionsLineChart(
@@ -73,10 +70,27 @@ fun PredictionsChart(
             // Análisis de tendencias
             TrendAnalysisSection(trendAnalysis = sellerForecasting.trendAnalysis)
 
-            // Recomendaciones
-            if (sellerForecasting.recommendations.isNotEmpty()) {
-                RecommendationsSection(recommendations = sellerForecasting.recommendations)
+                // Recomendaciones
+                if (sellerForecasting.recommendations.isNotEmpty()) {
+                    RecommendationsSection(recommendations = sellerForecasting.recommendations)
+                }
             }
+        }
+    }
+
+    // Renderizar con o sin Card según el parámetro
+    if (showCard) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            chartContent()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            chartContent()
         }
     }
 }
@@ -510,58 +524,3 @@ private fun RecommendationCard(
     }
 }
 
-@Composable
-private fun ChartHeader(
-    title: String,
-    subtitle: String
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-    }
-}
-
-@Composable
-private fun EmptyChartCard(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
-        }
-    }
-}
