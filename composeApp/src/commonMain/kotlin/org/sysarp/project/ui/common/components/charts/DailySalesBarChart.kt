@@ -92,7 +92,16 @@ fun DailySalesBarChart(
             val minValue = dailySales.minOfOrNull { it.sales } ?: 0.0
             val valueRange = maxValue - minValue
             
-            // Etiquetas de resumen semanal en la parte superior (fuera del Box)
+            // Etiquetas de resumen inteligente según el período
+            val totalDays = dailySales.size
+            val periodLabel = when {
+                totalDays <= 7 -> "Semanal"
+                totalDays <= 14 -> "Quincenal"
+                totalDays <= 30 -> "Mensual"
+                totalDays <= 60 -> "Bimestral"
+                else -> "Período Extendido"
+            }
+            
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -100,7 +109,7 @@ fun DailySalesBarChart(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Total Semanal: ${formatCurrency(dailySales.sumOf { it.sales })}",
+                    text = "Total $periodLabel: ${formatCurrency(dailySales.sumOf { it.sales })}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -116,6 +125,16 @@ fun DailySalesBarChart(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                
+                // Información adicional para períodos largos
+                if (totalDays > 7) {
+                    Text(
+                        text = "Período: ${totalDays} días",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
             
             Box(
@@ -132,6 +151,25 @@ fun DailySalesBarChart(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom
                 ) {
+                    // Calcular ancho dinámico de barras según cantidad de días
+                    val totalDays = dailySales.size
+                    val barWidth = when {
+                        totalDays <= 7 -> 35.dp
+                        totalDays <= 14 -> 25.dp
+                        totalDays <= 30 -> 18.dp
+                        totalDays <= 60 -> 12.dp
+                        else -> 8.dp
+                    }
+                    
+                    // Determinar cada cuántos días mostrar etiquetas
+                    val labelInterval = when {
+                        totalDays <= 7 -> 1  // Todos los días
+                        totalDays <= 14 -> 2  // Cada 2 días
+                        totalDays <= 30 -> 3  // Cada 3 días
+                        totalDays <= 60 -> 5  // Cada 5 días
+                        else -> 7  // Cada semana
+                    }
+                    
                     dailySales.forEachIndexed { index, dayData ->
                         val barHeight = if (valueRange > 0) {
                             ((dayData.sales - minValue) / valueRange * 0.9).coerceAtLeast(0.1)
@@ -148,12 +186,11 @@ fun DailySalesBarChart(
                                 targetValue = barHeight.toFloat(),
                                 animationSpec = tween(
                                     durationMillis = 800,
-                                    delayMillis = index * 100,
+                                    delayMillis = index * 50, // Reducido para mejor rendimiento
                                     easing = FastOutSlowInEasing
                                 )
                             )
                         }
-
 
                         val barColor = when (index % 5) {
                             0 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
@@ -164,6 +201,7 @@ fun DailySalesBarChart(
                         }
 
                         val isSelected = selectedDay == dayData
+                        val shouldShowLabel = index % labelInterval == 0 || index == totalDays - 1
 
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -171,15 +209,15 @@ fun DailySalesBarChart(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .width(35.dp)
+                                    .width(barWidth)
                                     .height((animatedHeight.value * 200).dp)
                                     .shadow(
                                         elevation = if (isSelected) 12.dp else 6.dp,
                                         shape = RoundedCornerShape(
-                                            topStart = 16.dp,
-                                            topEnd = 16.dp,
-                                            bottomStart = 6.dp,
-                                            bottomEnd = 6.dp
+                                            topStart = if (barWidth > 20.dp) 16.dp else 8.dp,
+                                            topEnd = if (barWidth > 20.dp) 16.dp else 8.dp,
+                                            bottomStart = if (barWidth > 20.dp) 6.dp else 4.dp,
+                                            bottomEnd = if (barWidth > 20.dp) 6.dp else 4.dp
                                         ),
                                         ambientColor = barColor.copy(alpha = 0.3f),
                                         spotColor = barColor.copy(alpha = 0.5f)
@@ -194,10 +232,10 @@ fun DailySalesBarChart(
                                             )
                                         ),
                                         shape = RoundedCornerShape(
-                                            topStart = 16.dp,
-                                            topEnd = 16.dp,
-                                            bottomStart = 6.dp,
-                                            bottomEnd = 6.dp
+                                            topStart = if (barWidth > 20.dp) 16.dp else 8.dp,
+                                            topEnd = if (barWidth > 20.dp) 16.dp else 8.dp,
+                                            bottomStart = if (barWidth > 20.dp) 6.dp else 4.dp,
+                                            bottomEnd = if (barWidth > 20.dp) 6.dp else 4.dp
                                         )
                                     )
                                     .clickable {
@@ -206,35 +244,49 @@ fun DailySalesBarChart(
                                     }
                             )
                             
-                            // Etiquetas informativas debajo de la barra
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(top = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                // Día de la semana
-                                Text(
-                                    text = dayData.dayName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                
-                                // Monto de ventas (más compacto)
-                                Text(
-                                    text = formatCurrency(dayData.sales).replace("S/ ", ""),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                
-                                // Número de transacciones (más compacto)
-                                Text(
-                                    text = "${dayData.transactions} tx",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            // Etiquetas informativas debajo de la barra (solo si debe mostrarse)
+                            if (shouldShowLabel) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    // Día de la semana o fecha
+                                    Text(
+                                        text = if (totalDays <= 7) {
+                                            dayData.dayName
+                                        } else {
+                                            // Para períodos largos, mostrar fecha más compacta
+                                            dayData.dayName.take(3) // Solo primeras 3 letras
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = if (barWidth < 15.dp) 10.sp else 12.sp
+                                    )
+                                    
+                                    // Monto de ventas (más compacto para barras pequeñas)
+                                    if (barWidth >= 15.dp) {
+                                        Text(
+                                            text = formatCurrency(dayData.sales).replace("S/ ", ""),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontSize = if (barWidth < 20.dp) 10.sp else 12.sp
+                                        )
+                                        
+                                        // Número de transacciones (solo para barras grandes)
+                                        if (barWidth >= 20.dp) {
+                                            Text(
+                                                text = "${dayData.transactions} tx",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
