@@ -42,34 +42,31 @@ import org.sysarp.project.data.SellerAchievementsData
 @Composable
 fun AchievementsChart(
     sellerAchievements: SellerAchievementsData?,
+    showCard: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    if (sellerAchievements == null) {
-        EmptyChartCard(
-            title = "🏆 Logros y Badges",
-            subtitle = "No hay datos de logros disponibles",
-            modifier = modifier
-        )
-        return
-    }
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Título y resumen
-            ChartHeader(
-                title = "🏆 Logros y Badges",
-                subtitle = "Tu progreso y reconocimientos"
-            )
+    val chartContent = @Composable {
+        if (sellerAchievements == null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 16.dp else 0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "No hay datos de logros disponibles",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(if (showCard) 16.dp else 0.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
 
             // Estadísticas de rachas
             StreakStats(achievements = sellerAchievements)
@@ -79,10 +76,27 @@ fun AchievementsChart(
                 BadgesSection(badges = sellerAchievements.badges)
             }
 
-            // Milestones alcanzados
-            if (sellerAchievements.milestones.isNotEmpty()) {
-                MilestonesSection(milestones = sellerAchievements.milestones)
+                // Milestones alcanzados
+                if (sellerAchievements.milestones.isNotEmpty()) {
+                    MilestonesSection(milestones = sellerAchievements.milestones)
+                }
             }
+        }
+    }
+
+    // Renderizar con o sin Card según el parámetro
+    if (showCard) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            chartContent()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            chartContent()
         }
     }
 }
@@ -322,58 +336,3 @@ private fun MilestoneItem(
     }
 }
 
-@Composable
-private fun ChartHeader(
-    title: String,
-    subtitle: String
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-    }
-}
-
-@Composable
-private fun EmptyChartCard(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
-        }
-    }
-}
