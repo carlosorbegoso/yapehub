@@ -1,5 +1,7 @@
 package org.sysarp.project.ui.screens.admin
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,15 +10,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.AnalyticsOverview
@@ -30,18 +35,31 @@ fun AdminPrimaryMetricsSection(
     data: AnalyticsOverview,
     modifier: Modifier = Modifier
 ) {
+    // Animación simple para el componente principal
+    val scaleAnimation = remember { Animatable(0f) }
+    
+    LaunchedEffect(Unit) {
+        scaleAnimation.animateTo(1f, tween(800))
+    }
+    
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Card principal de ventas - Diseño limpio y moderno
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer(
+                    scaleX = 0.9f + (0.1f * scaleAnimation.value),
+                    scaleY = 0.9f + (0.1f * scaleAnimation.value),
+                    alpha = scaleAnimation.value
+                ),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
             shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -75,7 +93,7 @@ fun AdminPrimaryMetricsSection(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.TrendingUp,
+                                imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -268,10 +286,15 @@ private fun AdminMetricItem(
     title: String,
     value: String,
     subtitle: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    animationProgress: Float = 1f
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.graphicsLayer(
+            scaleX = 0.8f + (0.2f * animationProgress),
+            scaleY = 0.8f + (0.2f * animationProgress),
+            alpha = animationProgress
+        ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),

@@ -88,7 +88,8 @@ fun AdminAnalyticsScreen(
                     onShowFiltersDialog = { state.showFiltersDialog = true },
                     onShowFinancialFiltersDialog = { state.showFinancialFiltersDialog = true },
                     onShowTransparencyFiltersDialog = { state.showTransparencyFiltersDialog = true },
-                    onShowPeriodMenu = { state.showPeriodMenu = true }
+                    onShowPeriodMenu = { state.showPeriodMenu = true },
+                    onClosePeriodMenu = { state.showPeriodMenu = false }
                 )
             }
             

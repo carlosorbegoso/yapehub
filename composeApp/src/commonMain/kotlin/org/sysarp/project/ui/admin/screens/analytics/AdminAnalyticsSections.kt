@@ -4,15 +4,24 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.AnalyticsData
@@ -46,21 +55,233 @@ fun AdminAnalyticsSections(
     showAdditionalMetrics: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Métricas principales destacadas
-        AdminPrimaryMetricsSection(data = analyticsData.overview)
+    // Detección de tamaño de pantalla para responsive design
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp
+    val isTablet = screenWidth >= 600
+    val isLargeScreen = screenWidth >= 840
+    
+    // Estados para animaciones escalonadas
+    var showMetrics by remember { mutableStateOf(false) }
+    var showBasic by remember { mutableStateOf(false) }
+    var showAdvanced by remember { mutableStateOf(false) }
+    var showPredictive by remember { mutableStateOf(false) }
+    var showAdditional by remember { mutableStateOf(false) }
+    
+    // Animaciones escalonadas
+    LaunchedEffect(Unit) {
+        showMetrics = true
+        kotlinx.coroutines.delay(100)
+        showBasic = true
+        kotlinx.coroutines.delay(200)
+        showAdvanced = true
+        kotlinx.coroutines.delay(200)
+        showPredictive = true
+        kotlinx.coroutines.delay(200)
+        showAdditional = true
+    }
+    
+    if (isLargeScreen) {
+        // Layout horizontal para pantallas grandes (tablets y desktop)
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Columna izquierda - Métricas y gráficos básicos
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Métricas principales destacadas
+                AnimatedVisibility(
+                    visible = showMetrics,
+                    enter = scaleIn(
+                        animationSpec = tween(800, easing = EaseOutCubic),
+                        initialScale = 0.8f
+                    ) + fadeIn(animationSpec = tween(800))
+                ) {
+                    AdminPrimaryMetricsSection(data = analyticsData.overview)
+                }
+                
+                // Sección de gráficos básicos
+                if (showBasicCharts) {
+                    AnimatedVisibility(
+                        visible = showBasic,
+                        enter = slideInVertically(
+                            initialOffsetY = { it / 2 },
+                            animationSpec = tween(800, easing = EaseOutCubic)
+                        ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                            animationSpec = tween(800, easing = EaseOutCubic),
+                            initialScale = 0.9f
+                        )
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = "📊 Gráficos Principales",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                            
+                            // Gráficos básicos en layout responsivo
+                            ResponsiveChartRow(
+                                charts = listOf(
+                                    ChartItem("Ventas Diarias", { DailySalesBarChart(dailySales = analyticsData.dailySales, showCard = false) }),
+                                    ChartItem("Métricas de Rendimiento", { PerformanceMetricsPieChart(performanceMetrics = analyticsData.performanceMetrics, showCard = false) }),
+                                    ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales, showCard = false) })
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Columna derecha - Gráficos avanzados y predictivos
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Sección de gráficos avanzados
+                if (showAdvancedCharts) {
+                    AnimatedVisibility(
+                        visible = showAdvanced,
+                        enter = slideInVertically(
+                            initialOffsetY = { it / 2 },
+                            animationSpec = tween(800, easing = EaseOutCubic)
+                        ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                            animationSpec = tween(800, easing = EaseOutCubic),
+                            initialScale = 0.9f
+                        )
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = "📈 Análisis Avanzado",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                            
+                            // Gráficos avanzados en layout responsivo
+                            ResponsiveChartRow(
+                                charts = listOf(
+                                    ChartItem("Ventas por Hora", { HourlySalesChart(hourlySales = analyticsData.hourlySales, showCard = false) }),
+                                    ChartItem("Progreso de Metas", { GoalsProgressChart(sellerGoals = analyticsData.sellerGoals, showCard = false) }),
+                                    ChartItem("Logros", { AchievementsChart(sellerAchievements = analyticsData.sellerAchievements, showCard = false) })
+                                )
+                            )
+                        }
+                    }
+                }
+                
+                // Sección de análisis predictivo
+                if (showPredictiveCharts) {
+                    AnimatedVisibility(
+                        visible = showPredictive,
+                        enter = slideInVertically(
+                            initialOffsetY = { it / 2 },
+                            animationSpec = tween(800, easing = EaseOutCubic)
+                        ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                            animationSpec = tween(800, easing = EaseOutCubic),
+                            initialScale = 0.9f
+                        )
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = "🔮 Análisis Predictivo",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                            
+                            // Gráficos predictivos en layout responsivo
+                            ResponsiveChartRow(
+                                charts = listOf(
+                                    ChartItem("Predicciones", { PredictionsChart(sellerForecasting = analyticsData.sellerForecasting, showCard = false) }),
+                                    ChartItem("Comparaciones", { ComparisonsChart(sellerComparisons = analyticsData.sellerComparisons, showCard = false) }),
+                                    ChartItem("Distribución", { SalesDistributionChart(salesDistribution = analyticsData.sellerAnalytics?.salesDistribution, showCard = false) })
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
         
-        // Sección de gráficos básicos - Layout horizontal para pantallas grandes
-        if (showBasicCharts) {
+        // Información adicional de métricas (ancho completo)
+        if (showAdditionalMetrics) {
+            AnimatedVisibility(
+                visible = showAdditional,
+                enter = scaleIn(
+                    animationSpec = tween(800, easing = EaseOutCubic),
+                    initialScale = 0.8f
+                ) + fadeIn(animationSpec = tween(800))
+            ) {
+                AdminAdditionalMetricsCard(data = analyticsData.overview)
+            }
+        }
+        
+        // Sección de Análisis Financiero (ancho completo)
+        financialData?.let { financial ->
             AnimatedVisibility(
                 visible = true,
                 enter = slideInVertically(
                     initialOffsetY = { it / 2 },
-                    animationSpec = tween(600, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(600))
+                    animationSpec = tween(800, easing = EaseOutCubic)
+                ) + fadeIn(animationSpec = tween(800))
+            ) {
+                FinancialAnalysisCard(data = financial)
+            }
+        }
+        
+        // Sección de Transparencia de Pagos (ancho completo)
+        transparencyData?.let { transparency ->
+            AnimatedVisibility(
+                visible = true,
+                enter = slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(800, easing = EaseOutCubic)
+                ) + fadeIn(animationSpec = tween(800))
+            ) {
+                PaymentTransparencyCard(data = transparency)
+            }
+        }
+    } else {
+        // Layout vertical para móviles y tablets pequeñas
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+        // Métricas principales destacadas
+        AnimatedVisibility(
+            visible = showMetrics,
+            enter = scaleIn(
+                animationSpec = tween(800, easing = EaseOutCubic),
+                initialScale = 0.8f
+            ) + fadeIn(animationSpec = tween(800))
+        ) {
+            AdminPrimaryMetricsSection(data = analyticsData.overview)
+        }
+        
+        // Sección de gráficos básicos - Layout horizontal para pantallas grandes
+        if (showBasicCharts) {
+            AnimatedVisibility(
+                visible = showBasic,
+                enter = slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(800, easing = EaseOutCubic)
+                ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                    animationSpec = tween(800, easing = EaseOutCubic),
+                    initialScale = 0.9f
+                )
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -69,7 +290,7 @@ fun AdminAnalyticsSections(
                         text = "📊 Gráficos Principales",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                     
@@ -88,11 +309,14 @@ fun AdminAnalyticsSections(
         // Sección de gráficos avanzados - Layout horizontal optimizado
         if (showAdvancedCharts) {
             AnimatedVisibility(
-                visible = true,
+                visible = showAdvanced,
                 enter = slideInVertically(
                     initialOffsetY = { it / 2 },
                     animationSpec = tween(800, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(800))
+                ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                    animationSpec = tween(800, easing = EaseOutCubic),
+                    initialScale = 0.9f
+                )
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -101,7 +325,7 @@ fun AdminAnalyticsSections(
                         text = "📈 Análisis Avanzado",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                     
@@ -120,11 +344,14 @@ fun AdminAnalyticsSections(
         // Sección de análisis predictivo - Layout horizontal para pantallas grandes
         if (showPredictiveCharts) {
             AnimatedVisibility(
-                visible = true,
+                visible = showPredictive,
                 enter = slideInVertically(
                     initialOffsetY = { it / 2 },
-                    animationSpec = tween(1000, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(1000))
+                    animationSpec = tween(800, easing = EaseOutCubic)
+                ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                    animationSpec = tween(800, easing = EaseOutCubic),
+                    initialScale = 0.9f
+                )
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -133,7 +360,7 @@ fun AdminAnalyticsSections(
                         text = "🔮 Análisis Predictivo",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                     
@@ -151,7 +378,15 @@ fun AdminAnalyticsSections(
 
         // Información adicional de métricas
         if (showAdditionalMetrics) {
-            AdminAdditionalMetricsCard(data = analyticsData.overview)
+            AnimatedVisibility(
+                visible = showAdditional,
+                enter = scaleIn(
+                    animationSpec = tween(800, easing = EaseOutCubic),
+                    initialScale = 0.8f
+                ) + fadeIn(animationSpec = tween(800))
+            ) {
+                AdminAdditionalMetricsCard(data = analyticsData.overview)
+            }
         }
         
         // Sección de Análisis Financiero
@@ -170,7 +405,7 @@ fun AdminAnalyticsSections(
                         text = "💰 Análisis Financiero",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                     
@@ -195,7 +430,7 @@ fun AdminAnalyticsSections(
                         text = "🔍 Transparencia de Pagos",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                     
@@ -203,5 +438,6 @@ fun AdminAnalyticsSections(
                 }
             }
         }
+    }
     }
 }

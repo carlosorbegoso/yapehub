@@ -158,24 +158,5 @@ class AdminAnalyticsControlsState {
     fun getCurrentPeriodFormatted(): String {
         return selectedPeriod
     }
-    
-    /**
-     * Verifica si el período seleccionado es válido
-     */
-    fun isValidPeriod(): Boolean {
-        return selectedPeriod.isNotBlank() && selectedPeriod.startsWith("📅")
-    }
-    
-    /**
-     * Obtiene el número de días del período seleccionado
-     */
-    fun getPeriodDays(): Int {
-        return when (selectedPeriod) {
-            "📅 Hoy" -> 1
-            "📅 7 días" -> 7
-            "📅 30 días" -> 30
-            "📅 90 días" -> 90
-            else -> 30
-        }
-    }
+
 }

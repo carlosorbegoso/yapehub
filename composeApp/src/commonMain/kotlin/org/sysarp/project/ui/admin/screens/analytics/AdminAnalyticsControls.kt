@@ -4,8 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import org.sysarp.project.ui.admin.screens.analytics.AdminAnalyticsControlsActions
-import org.sysarp.project.ui.admin.screens.analytics.AdminAnalyticsControlsContent
+import org.sysarp.project.ui.admin.screens.analytics.AdminAnalyticsControlsContainer
 import org.sysarp.project.ui.admin.screens.analytics.AdminAnalyticsControlsState
 
 /**
@@ -21,6 +20,7 @@ fun AdminAnalyticsControls(
     onShowFinancialFiltersDialog: () -> Unit,
     onShowTransparencyFiltersDialog: () -> Unit,
     onShowPeriodMenu: () -> Unit,
+    onClosePeriodMenu: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Crear el estado de los controles
@@ -35,7 +35,7 @@ fun AdminAnalyticsControls(
     }
     
     // Renderizar el contenido de los controles
-    AdminAnalyticsControlsContent(
+    AdminAnalyticsControlsContainer(
         state = controlsState,
         onPeriodChange = onPeriodChange,
         onLoadAnalytics = onLoadAnalytics,
@@ -43,17 +43,7 @@ fun AdminAnalyticsControls(
         onShowFinancialFiltersDialog = onShowFinancialFiltersDialog,
         onShowTransparencyFiltersDialog = onShowTransparencyFiltersDialog,
         onShowPeriodMenu = onShowPeriodMenu,
+        onClosePeriodMenu = onClosePeriodMenu,
         modifier = modifier
-    )
-    
-    // Manejar acciones de los controles
-    AdminAnalyticsControlsActions(
-        state = controlsState,
-        onPeriodChange = onPeriodChange,
-        onLoadAnalytics = onLoadAnalytics,
-        onShowFiltersDialog = onShowFiltersDialog,
-        onShowFinancialFiltersDialog = onShowFinancialFiltersDialog,
-        onShowTransparencyFiltersDialog = onShowTransparencyFiltersDialog,
-        onShowPeriodMenu = onShowPeriodMenu
     )
 }

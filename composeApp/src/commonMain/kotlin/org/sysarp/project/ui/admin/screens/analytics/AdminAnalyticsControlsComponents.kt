@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -38,6 +39,7 @@ fun AdminAnalyticsControlsContainer(
     onShowFinancialFiltersDialog: () -> Unit,
     onShowTransparencyFiltersDialog: () -> Unit,
     onShowPeriodMenu: () -> Unit,
+    onClosePeriodMenu: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -62,7 +64,8 @@ fun AdminAnalyticsControlsContainer(
             AdminAnalyticsCalendar(
                 state = state,
                 onPeriodChange = onPeriodChange,
-                onLoadAnalytics = onLoadAnalytics
+                onLoadAnalytics = onLoadAnalytics,
+                onClosePeriodMenu = onClosePeriodMenu
             )
         }
     }
@@ -178,7 +181,8 @@ fun AdminAnalyticsControlButton(
 fun AdminAnalyticsCalendar(
     state: AdminAnalyticsControlsState,
     onPeriodChange: (String) -> Unit,
-    onLoadAnalytics: (String?, String?) -> Unit
+    onLoadAnalytics: (String?, String?) -> Unit,
+    onClosePeriodMenu: () -> Unit
 ) {
     SmartCalendar(
         selectedPeriod = state.getCurrentPeriodFormatted(),
@@ -189,6 +193,9 @@ fun AdminAnalyticsCalendar(
             onLoadAnalytics(startDate, endDate)
         },
         expanded = state.isPeriodMenuVisible(),
-        onDismiss = { state.closePeriodMenu() }
+        onDismiss = { 
+            state.closePeriodMenu()
+            onClosePeriodMenu()
+        }
     )
 }

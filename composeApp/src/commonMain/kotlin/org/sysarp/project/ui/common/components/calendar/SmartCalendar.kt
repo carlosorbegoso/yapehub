@@ -73,12 +73,15 @@ fun SmartCalendar(
     var selectedStartDate by remember(expanded) { mutableStateOf<LocalDate?>(null) }
     var selectedEndDate by remember(expanded) { mutableStateOf<LocalDate?>(null) }
     var currentMonth by remember(expanded) { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
+    var isApplying by remember { mutableStateOf(false) }
     
     // Resetear estado cuando se abre el calendario
     LaunchedEffect(expanded) {
         if (expanded) {
+            // Resetear fechas seleccionadas y estado de aplicación
             selectedStartDate = null
             selectedEndDate = null
+            isApplying = false
             currentMonth = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         }
     }
@@ -107,6 +110,8 @@ fun SmartCalendar(
                 onMonthChange = { currentMonth = it },
                 selectedStartDate = selectedStartDate,
                 selectedEndDate = selectedEndDate,
+                isApplying = isApplying,
+                onSetApplying = { isApplying = it },
                 onDateSelected = { date ->
                     when {
                         selectedStartDate == null -> {
@@ -128,17 +133,7 @@ fun SmartCalendar(
                     }
                 },
                 onApplyRange = {
-                    // Permitir aplicar con una sola fecha o con rango
-                    if (selectedStartDate != null) {
-                        val periodText = if (selectedEndDate != null) {
-                            "${selectedStartDate!!} - ${selectedEndDate!!}"
-                        } else {
-                            selectedStartDate!!.toString()
-                        }
-                        onPeriodSelected(periodText)
-                        // Cerrar el diálogo después de aplicar
-                        onDismiss()
-                    }
+                    // Esta función ya no se usa directamente, la lógica está en el botón
                 },
                 onPeriodSelected = onPeriodSelected,
                 onDismiss = onDismiss
@@ -153,6 +148,8 @@ private fun VisualCalendarSection(
     onMonthChange: (LocalDate) -> Unit,
     selectedStartDate: LocalDate?,
     selectedEndDate: LocalDate?,
+    isApplying: Boolean,
+    onSetApplying: (Boolean) -> Unit,
     onDateSelected: (LocalDate) -> Unit,
     onApplyRange: () -> Unit,
     onPeriodSelected: (String) -> Unit,
@@ -171,8 +168,11 @@ private fun VisualCalendarSection(
             // Botones de período rápido
             QuickPeriodButtons(
                 onPeriodSelected = { period ->
+                    // Prevenir múltiples clics
+                    if (isApplying) return@QuickPeriodButtons
+                    
+                    onSetApplying(true)
                     onPeriodSelected(period)
-                    // Cerrar el diálogo después de seleccionar período rápido
                     onDismiss()
                 }
             )
@@ -204,12 +204,30 @@ private fun VisualCalendarSection(
                 ) + fadeOut(animationSpec = tween(200))
             ) {
                 Button(
-                    onClick = onApplyRange,
+                    onClick = {
+                        // Prevenir múltiples clics
+                        if (isApplying) return@Button
+                        
+                        // Aplicar el rango seleccionado
+                        if (selectedStartDate != null) {
+                            onSetApplying(true)
+                            val periodText = if (selectedEndDate != null) {
+                                "${selectedStartDate!!} - ${selectedEndDate!!}"
+                            } else {
+                                selectedStartDate!!.toString()
+                            }
+                            
+                            // Aplicar el período y cerrar
+                            onPeriodSelected(periodText)
+                            onDismiss()
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isApplying
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Check,
@@ -217,7 +235,11 @@ private fun VisualCalendarSection(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (selectedEndDate != null) "Aplicar Rango" else "Aplicar Fecha")
+                    Text(
+                        if (isApplying) "Aplicando..." 
+                        else if (selectedEndDate != null) "Aplicar Rango" 
+                        else "Aplicar Fecha"
+                    )
                 }
             }
         }
