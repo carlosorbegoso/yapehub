@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -75,15 +78,13 @@ fun ComparisonsChart(
         }
     }
 
-    // Renderizar con o sin Box según el parámetro
+    // Renderizar con o sin Card según el parámetro
     if (showCard) {
-        Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .background(
-                    color = Color.White,
-                    shape = RoundedCornerShape(16.dp)
-                )
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             chartContent()
         }
@@ -114,8 +115,14 @@ private fun ComparisonBarsChart(
             text = "📈 Comparación de Rendimiento",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
+
+        val primaryColor = MaterialTheme.colorScheme.primary
+        val secondaryColor = MaterialTheme.colorScheme.secondary
+        val tertiaryColor = MaterialTheme.colorScheme.tertiary
+        val errorColor = MaterialTheme.colorScheme.error
+        val outlineColor = MaterialTheme.colorScheme.outline
 
         Canvas(
             modifier = Modifier
@@ -125,7 +132,12 @@ private fun ComparisonBarsChart(
             drawComparisonBars(
                 sellerComparisons = sellerComparisons,
                 animationProgress = animationProgress.value,
-                canvasSize = size
+                canvasSize = size,
+                primaryColor = primaryColor,
+                secondaryColor = secondaryColor,
+                tertiaryColor = tertiaryColor,
+                errorColor = errorColor,
+                outlineColor = outlineColor
             )
         }
     }
@@ -134,13 +146,18 @@ private fun ComparisonBarsChart(
 private fun DrawScope.drawComparisonBars(
     sellerComparisons: SellerComparisonsData,
     animationProgress: Float,
-    canvasSize: Size
+    canvasSize: Size,
+    primaryColor: Color,
+    secondaryColor: Color,
+    tertiaryColor: Color,
+    errorColor: Color,
+    outlineColor: Color
 ) {
     val comparisons = listOf(
-        Triple("Semana Anterior", sellerComparisons.vsPreviousWeek, Color(0xFF4CAF50)),
-        Triple("Mes Anterior", sellerComparisons.vsPreviousMonth, Color(0xFF2196F3)),
-        Triple("Mejor Personal", sellerComparisons.vsPersonalBest, Color(0xFFFF9800)),
-        Triple("Promedio", sellerComparisons.vsAverage, Color(0xFF9C27B0))
+        Triple("Semana Anterior", sellerComparisons.vsPreviousWeek, primaryColor),
+        Triple("Mes Anterior", sellerComparisons.vsPreviousMonth, secondaryColor),
+        Triple("Mejor Personal", sellerComparisons.vsPersonalBest, tertiaryColor),
+        Triple("Promedio", sellerComparisons.vsAverage, errorColor)
     )
 
     val maxValue = comparisons.maxOfOrNull { abs(it.second.percentageChange) } ?: 0.0
@@ -160,21 +177,50 @@ private fun DrawScope.drawComparisonBars(
             centerY
         }
 
-        // Dibujar barra
+        // Dibujar barra con gradiente
         drawRect(
-            color = color,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    color.copy(alpha = 0.8f),
+                    color.copy(alpha = 0.4f)
+                ),
+                startY = y,
+                endY = y + barHeight
+            ),
             topLeft = Offset(x - barWidth * 0.3f, y),
             size = Size(barWidth * 0.6f, barHeight)
         )
 
-        // Dibujar línea de referencia en el centro
-        drawLine(
-            color = Color.Gray.copy(alpha = 0.5f),
-            start = Offset(0f, centerY),
-            end = Offset(canvasSize.width, centerY),
-            strokeWidth = 2.dp.toPx()
+        // Dibujar borde de la barra
+        drawRect(
+            color = color,
+            topLeft = Offset(x - barWidth * 0.3f, y),
+            size = Size(barWidth * 0.6f, barHeight),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
         )
+
+        // Dibujar indicador de valor en la barra (círculo pequeño)
+        if (barHeight > 20.dp.toPx()) {
+            val indicatorY = if (data.percentageChange >= 0) {
+                y - 8.dp.toPx()
+            } else {
+                y + barHeight + 8.dp.toPx()
+            }
+            drawCircle(
+                color = color,
+                radius = 4.dp.toPx(),
+                center = Offset(x, indicatorY)
+            )
+        }
     }
+
+    // Dibujar línea de referencia en el centro
+    drawLine(
+        color = outlineColor.copy(alpha = 0.5f),
+        start = Offset(0f, centerY),
+        end = Offset(canvasSize.width, centerY),
+        strokeWidth = 2.dp.toPx()
+    )
 }
 
 @Composable
@@ -188,7 +234,7 @@ private fun ComparisonSummary(
             text = "📊 Resumen de Comparaciones",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         // Comparaciones individuales
@@ -222,7 +268,7 @@ private fun ComparisonItem(
     icon: String
 ) {
     val isPositive = comparison.percentageChange >= 0
-    val color = if (isPositive) Color(0xFF4CAF50) else Color(0xFFF44336)
+    val color = if (isPositive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     val trendIcon = if (isPositive) "📈" else "📉"
 
     Box(
@@ -262,7 +308,7 @@ private fun ComparisonItem(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium
                 )
             }
