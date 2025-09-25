@@ -1,9 +1,13 @@
 package org.sysarp.project.ui.common.components.charts
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,9 +16,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -28,12 +36,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.sysarp.project.data.PerformanceMetricsData
 import org.sysarp.project.utils.formatOneDecimal
 import org.sysarp.project.utils.formatPercentage
@@ -91,76 +104,74 @@ fun PerformanceMetricsPieChart(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Gráfico circular animado
+                // Gráfico circular animado mejorado
                 val totalPayments = performanceMetrics.confirmedPayments + 
                                   performanceMetrics.pendingPayments + 
                                   performanceMetrics.rejectedPayments
                 val animationProgress = remember { Animatable(0f) }
+                val scaleAnimation = remember { Animatable(1f) }
+                val interactionSource = remember { MutableInteractionSource() }
+                val isHovered by interactionSource.collectIsHoveredAsState()
                 
-                // Animar la entrada del gráfico
+                // Animar la entrada del gráfico con efecto mejorado
                 LaunchedEffect(performanceMetrics) {
                     animationProgress.animateTo(
                         targetValue = 1f,
-                        animationSpec = tween(durationMillis = 1500, delayMillis = 300)
+                        animationSpec = tween(
+                            durationMillis = 1200,
+                            delayMillis = 200,
+                            easing = FastOutSlowInEasing
+                        )
                     )
                 }
                 
-                val surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
+                // Animar escala en hover
+                LaunchedEffect(isHovered) {
+                    scaleAnimation.animateTo(
+                        targetValue = if (isHovered) 1.05f else 1f,
+                        animationSpec = tween(200)
+                    )
+                }
+                
+                // Colores del tema Material
+                val confirmedColor = MaterialTheme.colorScheme.primary
+                val pendingColor = MaterialTheme.colorScheme.secondary
+                val rejectedColor = MaterialTheme.colorScheme.error
                 val surfaceColor = MaterialTheme.colorScheme.surface
                 
+                // Tamaño responsivo
+                val configuration = LocalConfiguration.current
+                val chartSize = if (configuration.screenWidthDp >= 600) 200.dp else 160.dp
+                
                 Box(
-                    modifier = Modifier.size(160.dp)
+                    modifier = Modifier
+                        .size(chartSize)
+                        .scale(scaleAnimation.value)
+                        .shadow(
+                            elevation = if (isHovered) 8.dp else 4.dp,
+                            shape = CircleShape
+                        )
+                        .pointerInput(Unit) {
+                            detectTapGestures {
+                                // Aquí se puede añadir lógica de click si es necesario
+                            }
+                        }
                 ) {
                     if (totalPayments > 0) {
                         Canvas(
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            val centerX = size.width / 2
-                            val centerY = size.height / 2
-                            val radius = minOf(centerX, centerY) - 15f
-                            
-                            var startAngle = -90f
-                            
-                            // Confirmados (Verde)
-                            val confirmedAngle = (performanceMetrics.confirmedPayments.toFloat() / totalPayments) * 360f * animationProgress.value
-                            drawArc(
-                                color = Color(0xFF4CAF50),
-                                startAngle = startAngle,
-                                sweepAngle = confirmedAngle,
-                                useCenter = true,
-                                topLeft = Offset(centerX - radius, centerY - radius),
-                                size = Size(radius * 2, radius * 2)
-                            )
-                            startAngle += confirmedAngle
-                            
-                            // Pendientes (Amarillo)
-                            val pendingAngle = (performanceMetrics.pendingPayments.toFloat() / totalPayments) * 360f * animationProgress.value
-                            drawArc(
-                                color = Color(0xFFFFC107),
-                                startAngle = startAngle,
-                                sweepAngle = pendingAngle,
-                                useCenter = true,
-                                topLeft = Offset(centerX - radius, centerY - radius),
-                                size = Size(radius * 2, radius * 2)
-                            )
-                            startAngle += pendingAngle
-                            
-                            // Rechazados (Rojo)
-                            val rejectedAngle = (performanceMetrics.rejectedPayments.toFloat() / totalPayments) * 360f * animationProgress.value
-                            drawArc(
-                                color = Color(0xFFF44336),
-                                startAngle = startAngle,
-                                sweepAngle = rejectedAngle,
-                                useCenter = true,
-                                topLeft = Offset(centerX - radius, centerY - radius),
-                                size = Size(radius * 2, radius * 2)
-                            )
-                            
-                            // Dibujar círculo central
-                            drawCircle(
-                                color = surfaceColor,
-                                radius = radius * 0.4f,
-                                center = Offset(centerX, centerY)
+                            drawPieChart(
+                                confirmedPayments = performanceMetrics.confirmedPayments,
+                                pendingPayments = performanceMetrics.pendingPayments,
+                                rejectedPayments = performanceMetrics.rejectedPayments,
+                                totalPayments = totalPayments,
+                                animationProgress = animationProgress.value,
+                                confirmedColor = confirmedColor,
+                                pendingColor = pendingColor,
+                                rejectedColor = rejectedColor,
+                                surfaceColor = surfaceColor,
+                                isHovered = isHovered
                             )
                         }
                         
@@ -200,92 +211,38 @@ fun PerformanceMetricsPieChart(
                     }
                 }
                 
-                // Leyenda (opcional)
+                // Leyenda mejorada (opcional)
                 if (showLegend) {
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // Confirmados
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .background(
-                                        color = Color(0xFF4CAF50),
-                                        shape = RoundedCornerShape(2.dp)
-                                    )
-                            )
-                            Column {
-                                Text(
-                                    text = "Confirmados",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "${performanceMetrics.confirmedPayments} (${formatPercentage(performanceMetrics.claimRate)})",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        LegendItem(
+                            icon = Icons.Filled.CheckCircle,
+                            label = "Confirmados",
+                            value = "${performanceMetrics.confirmedPayments}",
+                            percentage = formatPercentage(performanceMetrics.claimRate),
+                            color = confirmedColor
+                        )
                         
                         // Pendientes
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .background(
-                                        color = Color(0xFFFFC107),
-                                        shape = RoundedCornerShape(2.dp)
-                                    )
-                            )
-                            Column {
-                                Text(
-                                    text = "Pendientes",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "${performanceMetrics.pendingPayments}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        LegendItem(
+                            icon = Icons.Filled.Schedule,
+                            label = "Pendientes",
+                            value = "${performanceMetrics.pendingPayments}",
+                            percentage = formatPercentage(performanceMetrics.pendingPayments.toDouble() / totalPayments),
+                            color = pendingColor
+                        )
                         
                         // Rechazados
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .background(
-                                        color = Color(0xFFF44336),
-                                        shape = RoundedCornerShape(2.dp)
-                                    )
-                            )
-                            Column {
-                                Text(
-                                    text = "Rechazados",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "${performanceMetrics.rejectedPayments} (${formatPercentage(performanceMetrics.rejectionRate)})",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        LegendItem(
+                            icon = Icons.Filled.Error,
+                            label = "Rechazados",
+                            value = "${performanceMetrics.rejectedPayments}",
+                            percentage = formatPercentage(performanceMetrics.rejectionRate),
+                            color = rejectedColor
+                        )
                     }
                 }
             }
@@ -334,6 +291,179 @@ fun PerformanceMetricsPieChart(
     } else {
         Box(modifier = modifier.fillMaxWidth()) {
             chartContent()
+        }
+    }
+}
+
+/**
+ * Función helper para dibujar el gráfico circular con efectos mejorados
+ */
+private fun DrawScope.drawPieChart(
+    confirmedPayments: Int,
+    pendingPayments: Int,
+    rejectedPayments: Int,
+    totalPayments: Int,
+    animationProgress: Float,
+    confirmedColor: Color,
+    pendingColor: Color,
+    rejectedColor: Color,
+    surfaceColor: Color,
+    isHovered: Boolean
+) {
+    val centerX = size.width / 2
+    val centerY = size.height / 2
+    val radius = minOf(centerX, centerY) - 15f
+    val strokeWidth = if (isHovered) 3f else 2f
+    
+    var startAngle = -90f
+    
+    // Confirmados
+    if (confirmedPayments > 0) {
+        val confirmedAngle = (confirmedPayments.toFloat() / totalPayments) * 360f * animationProgress
+        drawArc(
+            color = confirmedColor,
+            startAngle = startAngle,
+            sweepAngle = confirmedAngle,
+            useCenter = true,
+            topLeft = Offset(centerX - radius, centerY - radius),
+            size = Size(radius * 2, radius * 2)
+        )
+        
+        // Borde del segmento
+        drawArc(
+            color = confirmedColor.copy(alpha = 0.8f),
+            startAngle = startAngle,
+            sweepAngle = confirmedAngle,
+            useCenter = false,
+            topLeft = Offset(centerX - radius, centerY - radius),
+            size = Size(radius * 2, radius * 2),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
+        )
+        startAngle += confirmedAngle
+    }
+    
+    // Pendientes
+    if (pendingPayments > 0) {
+        val pendingAngle = (pendingPayments.toFloat() / totalPayments) * 360f * animationProgress
+        drawArc(
+            color = pendingColor,
+            startAngle = startAngle,
+            sweepAngle = pendingAngle,
+            useCenter = true,
+            topLeft = Offset(centerX - radius, centerY - radius),
+            size = Size(radius * 2, radius * 2)
+        )
+        
+        // Borde del segmento
+        drawArc(
+            color = pendingColor.copy(alpha = 0.8f),
+            startAngle = startAngle,
+            sweepAngle = pendingAngle,
+            useCenter = false,
+            topLeft = Offset(centerX - radius, centerY - radius),
+            size = Size(radius * 2, radius * 2),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
+        )
+        startAngle += pendingAngle
+    }
+    
+    // Rechazados
+    if (rejectedPayments > 0) {
+        val rejectedAngle = (rejectedPayments.toFloat() / totalPayments) * 360f * animationProgress
+        drawArc(
+            color = rejectedColor,
+            startAngle = startAngle,
+            sweepAngle = rejectedAngle,
+            useCenter = true,
+            topLeft = Offset(centerX - radius, centerY - radius),
+            size = Size(radius * 2, radius * 2)
+        )
+        
+        // Borde del segmento
+        drawArc(
+            color = rejectedColor.copy(alpha = 0.8f),
+            startAngle = startAngle,
+            sweepAngle = rejectedAngle,
+            useCenter = false,
+            topLeft = Offset(centerX - radius, centerY - radius),
+            size = Size(radius * 2, radius * 2),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
+        )
+    }
+    
+    // Círculo central con gradiente
+    drawCircle(
+        color = surfaceColor,
+        radius = radius * 0.4f,
+        center = Offset(centerX, centerY)
+    )
+    
+    // Borde del círculo central
+    drawCircle(
+        color = Color.Gray.copy(alpha = 0.2f),
+        radius = radius * 0.4f,
+        center = Offset(centerX, centerY),
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
+    )
+}
+
+/**
+ * Componente de item de leyenda mejorado
+ */
+@Composable
+private fun LegendItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+    percentage: String,
+    color: Color
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Icono con fondo circular
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(
+                    color = color.copy(alpha = 0.15f),
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = color
+                )
+                Text(
+                    text = percentage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
