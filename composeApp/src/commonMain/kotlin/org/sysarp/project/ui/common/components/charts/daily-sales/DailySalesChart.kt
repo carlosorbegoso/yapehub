@@ -220,6 +220,10 @@ fun DailySalesChart(
                         )
                         .padding(16.dp)
                 ) {
+                    // Calcular métricas para colores inteligentes (fuera del Row)
+                    val averageSales = dailySales.map { it.sales }.average()
+                    val maxSales = dailySales.maxOfOrNull { it.sales } ?: 0.0
+                    
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -246,7 +250,7 @@ fun DailySalesChart(
                             else -> 7  // Cada semana
                         }
                         
-                        // Renderizar barras con animaciones
+                        // Renderizar barras con animaciones y colores inteligentes
                         dailySales.forEachIndexed { index, dayData ->
                             val barHeight = if (valueRange > 0) {
                                 ((dayData.sales - minValue) / valueRange * 0.9).coerceAtLeast(0.1)
@@ -269,13 +273,14 @@ fun DailySalesChart(
                                 )
                             }
 
-                            val barColor = when (index % 5) {
-                                0 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                                1 -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
-                                2 -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f)
-                                3 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                                else -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
-                            }
+                            // Colores inteligentes basados en rendimiento
+                            val barColor = calculateBarColor(
+                                dayData.sales,
+                                averageSales,
+                                maxSales,
+                                index,
+                                MaterialTheme.colorScheme
+                            )
 
                             val isSelected = selectedDay == dayData
                             val shouldShowLabel = index % labelInterval == 0 || index == totalDays - 1
@@ -377,33 +382,52 @@ fun DailySalesChart(
                                             )
                                         }
                                         
-                                        // Monto de ventas con mejor formato
+                                        // Monto de ventas con mejor formato e indicadores
                                         if (barWidth >= 12.dp) {
-                                            Text(
-                                                text = formatCurrency(dayData.sales).replace("S/ ", ""),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = barColor,
-                                                fontSize = if (barWidth < 20.dp) 9.sp else 11.sp
-                                            )
-                                            
-                                            // Número de transacciones con icono
-                                            if (barWidth >= 18.dp) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "🔄",
-                                                        fontSize = 8.sp
-                                                    )
-                                                    Text(
-                                                        text = "${dayData.transactions}",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        fontWeight = FontWeight.Medium,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        fontSize = 9.sp
-                                                    )
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                                            ) {
+                                                // Monto principal
+                                                Text(
+                                                    text = formatCurrency(dayData.sales).replace("S/ ", ""),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = barColor,
+                                                    fontSize = if (barWidth < 20.dp) 9.sp else 11.sp
+                                                )
+                                                
+                                                // Indicador de rendimiento
+                                                val performanceIndicator = when {
+                                                    dayData.sales >= averageSales * 1.2 -> "🔥"
+                                                    dayData.sales >= averageSales -> "📈"
+                                                    dayData.sales >= averageSales * 0.8 -> "📊"
+                                                    else -> "📉"
+                                                }
+                                                
+                                                Text(
+                                                    text = performanceIndicator,
+                                                    fontSize = if (barWidth < 20.dp) 8.sp else 10.sp
+                                                )
+                                                
+                                                // Número de transacciones con icono
+                                                if (barWidth >= 18.dp) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "🔄",
+                                                            fontSize = 8.sp
+                                                        )
+                                                        Text(
+                                                            text = "${dayData.transactions}",
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            fontWeight = FontWeight.Medium,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            fontSize = 9.sp
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -413,17 +437,20 @@ fun DailySalesChart(
                         }
                     }
                     
-                    // Línea de referencia horizontal para mejor visualización
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                            )
-                            .offset(y = (-20).dp)
+                    // Líneas de referencia mejoradas
+                    ReferenceLines(
+                        averageSales = averageSales,
+                        maxSales = maxSales,
+                        minValue = minValue,
+                        valueRange = valueRange,
+                        chartHeight = 180.dp
                     )
                 }
+                
+                // Leyenda de colores y símbolos
+                ChartLegend(
+                    modifier = Modifier.padding(top = 8.dp)
+                )
                 
                 // Información adicional del gráfico
                 Row(
@@ -477,6 +504,222 @@ fun DailySalesChart(
                 showDetailsDialog = false
                 selectedDay = null
             }
+        )
+    }
+}
+
+/**
+ * Calcula el color de la barra basado en el rendimiento
+ */
+private fun calculateBarColor(
+    sales: Double,
+    averageSales: Double,
+    maxSales: Double,
+    index: Int,
+    colorScheme: androidx.compose.material3.ColorScheme
+): Color {
+    return when {
+        // Día con ventas excepcionales (top 10%)
+        sales >= maxSales * 0.9 -> colorScheme.primary.copy(alpha = 0.9f)
+        
+        // Día con ventas por encima del promedio
+        sales > averageSales * 1.2 -> colorScheme.primary.copy(alpha = 0.8f)
+        
+        // Día con ventas promedio
+        sales >= averageSales * 0.8 -> colorScheme.secondary.copy(alpha = 0.8f)
+        
+        // Día con ventas por debajo del promedio
+        sales >= averageSales * 0.5 -> colorScheme.tertiary.copy(alpha = 0.8f)
+        
+        // Día con ventas muy bajas
+        else -> colorScheme.error.copy(alpha = 0.7f)
+    }
+}
+
+/**
+ * Componente para líneas de referencia en el gráfico
+ */
+@Composable
+private fun ReferenceLines(
+    averageSales: Double,
+    maxSales: Double,
+    minValue: Double,
+    valueRange: Double,
+    chartHeight: androidx.compose.ui.unit.Dp
+) {
+    val averageHeight = if (valueRange > 0) {
+        ((averageSales - minValue) / valueRange * 0.9).coerceAtLeast(0.1)
+    } else 0.15
+    
+    val maxHeight = if (valueRange > 0) {
+        ((maxSales - minValue) / valueRange * 0.9).coerceAtLeast(0.1)
+    } else 0.15
+    
+    // Línea de promedio
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(
+                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.5.dp)
+            )
+            .offset(y = (-averageHeight * chartHeight.value).dp)
+    )
+    
+    // Línea de máximo (solo si es significativamente diferente del promedio)
+    if (maxSales > averageSales * 1.5) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.5.dp)
+                )
+                .offset(y = (-maxHeight * chartHeight.value).dp)
+        )
+    }
+    
+    // Línea base
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            )
+            .offset(y = (-20).dp)
+    )
+}
+
+/**
+ * Leyenda para explicar los colores y símbolos del gráfico
+ */
+@Composable
+private fun ChartLegend(
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Título de la leyenda
+        Text(
+            text = "📊 Leyenda del Gráfico",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp
+        )
+        
+        // Colores de rendimiento
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            LegendItem(
+                color = MaterialTheme.colorScheme.primary,
+                label = "Excelente",
+                icon = "🔥"
+            )
+            LegendItem(
+                color = MaterialTheme.colorScheme.secondary,
+                label = "Bueno",
+                icon = "📈"
+            )
+            LegendItem(
+                color = MaterialTheme.colorScheme.tertiary,
+                label = "Regular",
+                icon = "📊"
+            )
+            LegendItem(
+                color = MaterialTheme.colorScheme.error,
+                label = "Bajo",
+                icon = "📉"
+            )
+        }
+        
+        // Símbolos explicativos
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            SymbolItem(
+                symbol = "🔥",
+                description = "Top 10%"
+            )
+            SymbolItem(
+                symbol = "📈",
+                description = "Sobre promedio"
+            )
+            SymbolItem(
+                symbol = "📊",
+                description = "Promedio"
+            )
+            SymbolItem(
+                symbol = "📉",
+                description = "Bajo promedio"
+            )
+        }
+    }
+}
+
+/**
+ * Item individual de la leyenda de colores
+ */
+@Composable
+private fun LegendItem(
+    color: Color,
+    label: String,
+    icon: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .background(
+                    color = color.copy(alpha = 0.8f),
+                    shape = RoundedCornerShape(2.dp)
+                )
+        )
+        Text(
+            text = icon,
+            fontSize = 10.sp
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 9.sp
+        )
+    }
+}
+
+/**
+ * Item individual de la leyenda de símbolos
+ */
+@Composable
+private fun SymbolItem(
+    symbol: String,
+    description: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = symbol,
+            fontSize = 12.sp
+        )
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 9.sp
         )
     }
 }

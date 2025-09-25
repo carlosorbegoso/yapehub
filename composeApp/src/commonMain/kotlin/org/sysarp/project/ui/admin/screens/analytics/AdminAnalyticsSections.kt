@@ -58,7 +58,7 @@ fun AdminAnalyticsSections(
     // Detección de tamaño de pantalla para responsive design
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
-    val isTablet = screenWidth >= 600
+    screenWidth >= 600
     val isLargeScreen = screenWidth >= 840
     
     // Estados para animaciones escalonadas

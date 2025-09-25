@@ -129,66 +129,7 @@ fun AdminPrimaryMetricsSection(
                 }
             }
         }
-        
-        // Métricas secundarias en grid compacto
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Promedio por transacción
-            Card(
-                modifier = Modifier.weight(1f),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = "Promedio",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = formatCurrency(data.averageTransactionValue),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-            
-            // Tasa de éxito
-            Card(
-                modifier = Modifier.weight(1f),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = "Éxito",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "95%",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        }
+
     }
 }
 
