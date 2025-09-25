@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.common.components.charts
+package org.sysarp.project.ui.common.components.charts.daily.sales
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -22,8 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -44,16 +41,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import org.sysarp.project.data.DailySalesData
 import org.sysarp.project.utils.formatCurrency
-import kotlin.math.abs
-import kotlin.math.pow
-import kotlin.math.sqrt
+import org.sysarp.project.ui.common.components.charts.daily.sales.data.analyzeSalesData
+import org.sysarp.project.ui.common.components.charts.daily.sales.components.AnalysisCard
+import org.sysarp.project.ui.common.components.charts.daily.sales.components.EnhancedMetricCard
+import org.sysarp.project.ui.common.components.charts.daily.sales.components.FloatingTooltip
+import org.sysarp.project.ui.common.components.charts.daily.sales.components.TrendIndicator
+import org.sysarp.project.ui.common.components.charts.daily.sales.dialogs.DayDetailsDialog
 
 /**
  * Gráfico de barras mejorado para ventas diarias
+ * 
+ * Características principales:
+ * - Barras dinámicas que se adaptan al número de días
+ * - Animaciones suaves y escalonadas
+ * - Efectos de hover con tooltips informativos
+ * - Análisis inteligente de tendencias y métricas
+ * - Diálogo de detalles al hacer clic en una barra
+ * - Diseño responsivo y adaptable
  * 
  * @param dailySales Lista de datos de ventas diarias
  * @param title Título del gráfico (opcional)
@@ -61,7 +67,7 @@ import kotlin.math.sqrt
  * @param modifier Modificador para el componente
  */
 @Composable
-fun DailySalesBarChart(
+fun DailySalesChart(
     dailySales: List<DailySalesData>,
     title: String = "Ventas Diarias",
     showCard: Boolean = true,
@@ -98,12 +104,10 @@ fun DailySalesBarChart(
                 }
             }
 
-            // Gráfico de barras con animaciones y efectos
+            // Análisis inteligente de datos
             val maxValue = dailySales.maxOfOrNull { it.sales } ?: 1.0
             val minValue = dailySales.minOfOrNull { it.sales } ?: 0.0
             val valueRange = maxValue - minValue
-            
-            // Análisis inteligente de datos
             val totalDays = dailySales.size
             val analysis = remember(dailySales) { analyzeSalesData(dailySales) }
             
@@ -115,6 +119,7 @@ fun DailySalesBarChart(
                 else -> "Período Extendido"
             }
             
+            // Sección de métricas principales
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -133,7 +138,6 @@ fun DailySalesBarChart(
                         color = MaterialTheme.colorScheme.primary
                     )
                     
-                    // Indicador de tendencia
                     TrendIndicator(
                         trend = analysis.trend,
                         percentage = analysis.trendPercentage
@@ -160,7 +164,7 @@ fun DailySalesBarChart(
                     )
                 }
                 
-                // Análisis inteligente
+                // Análisis inteligente de días destacados
                 if (analysis.peakDay != null || analysis.valleyDay != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -199,13 +203,13 @@ fun DailySalesBarChart(
                 }
             }
             
-            // Contenedor principal del gráfico mejorado
+            // Área principal del gráfico
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
-                // Área del gráfico con mejor espaciado
+                // Contenedor del gráfico con fondo suave
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -225,7 +229,6 @@ fun DailySalesBarChart(
                         verticalAlignment = Alignment.Bottom
                     ) {
                         // Calcular ancho dinámico de barras según cantidad de días
-                        val totalDays = dailySales.size
                         val barWidth = when {
                             totalDays <= 7 -> 35.dp
                             totalDays <= 14 -> 25.dp
@@ -243,6 +246,7 @@ fun DailySalesBarChart(
                             else -> 7  // Cada semana
                         }
                         
+                        // Renderizar barras con animaciones
                         dailySales.forEachIndexed { index, dayData ->
                             val barHeight = if (valueRange > 0) {
                                 ((dayData.sales - minValue) / valueRange * 0.9).coerceAtLeast(0.1)
@@ -259,7 +263,7 @@ fun DailySalesBarChart(
                                     targetValue = barHeight.toFloat(),
                                     animationSpec = tween(
                                         durationMillis = 800,
-                                        delayMillis = index * 50, // Reducido para mejor rendimiento
+                                        delayMillis = index * 50,
                                         easing = FastOutSlowInEasing
                                     )
                                 )
@@ -474,401 +478,5 @@ fun DailySalesBarChart(
                 selectedDay = null
             }
         )
-    }
-}
-
-@Composable
-private fun DayDetailsDialog(
-    dayData: DailySalesData,
-    onDismiss: () -> Unit
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        )
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Icono del día
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(30.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "📅",
-                        fontSize = 24.sp
-                    )
-                }
-
-                // Título
-                Text(
-                    text = "Detalles de ${dayData.dayName}",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                // Información detallada
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    DetailRow(
-                        icon = "💰",
-                        label = "Ventas Totales",
-                        value = formatCurrency(dayData.sales),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    
-                    DetailRow(
-                        icon = "🔄",
-                        label = "Transacciones",
-                        value = "${dayData.transactions}",
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                    
-                    DetailRow(
-                        icon = "📊",
-                        label = "Promedio por Transacción",
-                        value = formatCurrency(dayData.sales / dayData.transactions.coerceAtLeast(1)),
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-
-                // Botón de cerrar
-                androidx.compose.material3.Button(
-                    onClick = onDismiss,
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "Cerrar",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DetailRow(
-    icon: String,
-    label: String,
-    value: String,
-    color: Color
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = icon,
-                fontSize = 16.sp
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = color
-        )
-    }
-}
-
-// ===== FUNCIONES DE ANÁLISIS INTELIGENTE =====
-
-data class SalesAnalysis(
-    val trend: String, // "up", "down", "stable"
-    val trendPercentage: Double,
-    val peakDay: DailySalesData?,
-    val valleyDay: DailySalesData?,
-    val averageGrowth: Double,
-    val volatility: Double
-)
-
-private fun analyzeSalesData(dailySales: List<DailySalesData>): SalesAnalysis {
-    if (dailySales.isEmpty()) {
-        return SalesAnalysis("stable", 0.0, null, null, 0.0, 0.0)
-    }
-    
-    val sales = dailySales.map { it.sales }
-    val peakDay = dailySales.maxByOrNull { it.sales }
-    val valleyDay = dailySales.minByOrNull { it.sales }
-    
-    // Calcular tendencia general
-    val firstHalf = sales.take(sales.size / 2).average()
-    val secondHalf = sales.drop(sales.size / 2).average()
-    val trendPercentage = if (firstHalf > 0) {
-        ((secondHalf - firstHalf) / firstHalf) * 100
-    } else 0.0
-    
-    val trend = when {
-        trendPercentage > 5 -> "up"
-        trendPercentage < -5 -> "down"
-        else -> "stable"
-    }
-    
-    // Calcular crecimiento promedio
-    val growthRates = mutableListOf<Double>()
-    for (i in 1 until sales.size) {
-        if (sales[i-1] > 0) {
-            growthRates.add(((sales[i] - sales[i-1]) / sales[i-1]) * 100)
-        }
-    }
-    val averageGrowth = growthRates.average()
-    
-    // Calcular volatilidad
-    val mean = sales.average()
-    val variance = sales.map { (it - mean).pow(2) }.average()
-    val volatility = sqrt(variance)
-    
-    return SalesAnalysis(
-        trend = trend,
-        trendPercentage = abs(trendPercentage),
-        peakDay = peakDay,
-        valleyDay = valleyDay,
-        averageGrowth = averageGrowth,
-        volatility = volatility
-    )
-}
-
-// ===== COMPONENTES AUXILIARES =====
-
-@Composable
-private fun TrendIndicator(
-    trend: String,
-    percentage: Double
-) {
-    val (icon, color) = when (trend) {
-        "up" -> Icons.AutoMirrored.Filled.TrendingUp to MaterialTheme.colorScheme.primary
-        "down" -> Icons.AutoMirrored.Filled.TrendingDown to MaterialTheme.colorScheme.error
-        else -> Icons.Filled.Analytics to MaterialTheme.colorScheme.secondary
-    }
-    
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(16.dp)
-        )
-        Text(
-            text = "${percentage.toInt()}%",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold,
-            color = color
-        )
-    }
-}
-
-@Composable
-private fun EnhancedMetricCard(
-    icon: String,
-    label: String,
-    value: String,
-    color: Color
-) {
-    Box(
-        modifier = Modifier
-            .background(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        color.copy(alpha = 0.08f),
-                        color.copy(alpha = 0.03f)
-                    )
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(16.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Icono con fondo circular suave
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        color = color.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(20.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = icon,
-                    fontSize = 18.sp
-                )
-            }
-            
-            // Valor principal
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-            
-            // Etiqueta
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-
-@Composable
-private fun AnalysisCard(
-    icon: String,
-    label: String,
-    value: String,
-    detail: String,
-    color: Color
-) {
-    Box(
-        modifier = Modifier
-            .width(120.dp)
-            .background(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        color.copy(alpha = 0.08f),
-                        color.copy(alpha = 0.03f)
-                    )
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(12.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            // Icono con fondo circular suave
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(
-                        color = color.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(16.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = icon,
-                    fontSize = 14.sp
-                )
-            }
-            
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-            Text(
-                text = detail,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 10.sp
-            )
-        }
-    }
-}
-
-@Composable
-private fun FloatingTooltip(
-    dayData: DailySalesData,
-    trendDirection: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = dayData.dayName,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = formatCurrency(dayData.sales),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "${dayData.transactions} tx",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            // Indicador de tendencia
-            val trendIcon = when (trendDirection) {
-                "up" -> "↗️"
-                "down" -> "↘️"
-                else -> "→"
-            }
-            Text(
-                text = trendIcon,
-                fontSize = 12.sp
-            )
-        }
     }
 }

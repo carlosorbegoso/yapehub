@@ -21,7 +21,7 @@ import org.sysarp.project.ui.components.admin.ChartItem
 import org.sysarp.project.ui.components.admin.ResponsiveChartRow
 import org.sysarp.project.ui.components.charts.AchievementsChart
 import org.sysarp.project.ui.components.charts.ComparisonsChart
-import org.sysarp.project.ui.common.components.charts.DailySalesBarChart
+import org.sysarp.project.ui.common.components.charts.daily.sales.DailySalesChart
 import org.sysarp.project.ui.components.charts.GoalsProgressChart
 import org.sysarp.project.ui.components.charts.HourlySalesChart
 import org.sysarp.project.ui.common.components.charts.PerformanceMetricsPieChart
@@ -73,7 +73,7 @@ fun SellerAnalyticsSections(
                     // Gráficos básicos en layout responsivo
                     ResponsiveChartRow(
                         charts = listOf(
-                            ChartItem("Ventas Diarias", { DailySalesBarChart(dailySales = analyticsData.dailySales, showCard = false) }),
+                            ChartItem("Ventas Diarias", { DailySalesChart(dailySales = analyticsData.dailySales, showCard = false) }),
                             ChartItem("Métricas de Rendimiento", { PerformanceMetricsPieChart(performanceMetrics = analyticsData.performanceMetrics, showCard = false) }),
                             ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales, showCard = false) })
                         )
