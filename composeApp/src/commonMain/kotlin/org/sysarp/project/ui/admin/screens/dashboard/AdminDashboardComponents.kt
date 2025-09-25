@@ -111,13 +111,6 @@ fun PaymentStatusSection(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "Estado de Pagos",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                
                 PerformanceMetricsPieChart(
                     performanceMetrics = PerformanceMetricsData(
                         confirmedPayments = quickSummaryData.confirmedPayments,
