@@ -23,7 +23,7 @@ import org.sysarp.project.ui.components.charts.AchievementsChart
 import org.sysarp.project.ui.components.charts.ComparisonsChart
 import org.sysarp.project.ui.common.components.charts.daily.sales.DailySalesChart
 import org.sysarp.project.ui.components.charts.GoalsProgressChart
-import org.sysarp.project.ui.components.charts.HourlySalesChart
+import org.sysarp.project.ui.common.components.charts.hourly.sales.HourlySalesChart
 import org.sysarp.project.ui.common.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.components.charts.PredictionsChart
 import org.sysarp.project.ui.components.charts.SalesDistributionChart
