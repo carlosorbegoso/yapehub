@@ -58,6 +58,8 @@ import org.sysarp.project.data.BillingDashboard
 import org.sysarp.project.data.PaymentCode
 import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.ui.common.components.topbar.TopBarComponent
+import org.sysarp.project.ui.common.components.DateFilterComponent
+import org.sysarp.project.ui.common.components.rememberDateFilterState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,12 +75,21 @@ fun BillingDashboardScreen(
     var showTokenPurchaseDialog by remember { mutableStateOf(false) }
     var showSuccessAnimation by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
+    var shouldReload by remember { mutableStateOf(false) }
     
-    // Cargar datos del dashboard
-    LaunchedEffect(Unit) {
+    // Estado del filtro de fechas
+    val dateFilterState = rememberDateFilterState()
+    
+    // Función para cargar datos del dashboard
+    suspend fun loadBillingDashboard() {
         try {
+            isLoading = true
+            error = ""
             
-            val dashboardResult = billingService.getCurrentBillingDashboard()
+            val dashboardResult = billingService.getCurrentBillingDashboard(
+                startDate = dateFilterState.startDate,
+                endDate = dateFilterState.endDate
+            )
             dashboardResult.fold(
                 onSuccess = { dashboard ->
                     billingDashboard = dashboard
@@ -92,6 +103,26 @@ fun BillingDashboardScreen(
         } catch (e: Exception) {
             error = e.message ?: "Error inesperado"
             isLoading = false
+        }
+    }
+    
+    // Cargar datos del dashboard inicial
+    LaunchedEffect(Unit) {
+        loadBillingDashboard()
+    }
+    
+    // Recargar cuando cambien las fechas
+    LaunchedEffect(dateFilterState.startDate, dateFilterState.endDate) {
+        if (dateFilterState.startDate != null || dateFilterState.endDate != null) {
+            loadBillingDashboard()
+        }
+    }
+    
+    // Recargar cuando se presione el botón
+    LaunchedEffect(shouldReload) {
+        if (shouldReload) {
+            loadBillingDashboard()
+            shouldReload = false
         }
     }
     
@@ -118,6 +149,19 @@ fun BillingDashboardScreen(
                 )
                 .padding(paddingValues)
         ) {
+            // Filtro de fechas
+            DateFilterComponent(
+                selectedDateRange = dateFilterState.selectedDateRange,
+                onDateRangeSelected = { period ->
+                    dateFilterState.onDateRangeSelected(period)
+                },
+                showCalendar = dateFilterState.showCalendarDialog,
+                onShowCalendar = dateFilterState.onShowCalendar,
+                onDismissCalendar = dateFilterState.onDismissCalendar,
+                title = "Filtrar facturación por fecha",
+                description = "Selecciona un período para filtrar los datos de facturación"
+            )
+            
             if (isLoading) {
                 // Estado de carga mejorado con diseño elegante
                 Box(
@@ -295,9 +339,7 @@ fun BillingDashboardScreen(
                             Button(
                                 onClick = { 
                                     buttonPressed = true
-                                    isLoading = true
-                                    error = ""
-                                    // Recargar datos
+                                    shouldReload = true
                                 },
                                 modifier = Modifier.scale(buttonScale),
                                 shape = RoundedCornerShape(16.dp),

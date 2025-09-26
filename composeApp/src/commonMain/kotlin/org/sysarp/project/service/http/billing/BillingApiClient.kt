@@ -121,7 +121,12 @@ class BillingApiClient : BaseApiClient() {
     /**
      * Obtiene el dashboard completo de facturación
      */
-    suspend fun getBillingDashboard(adminId: Int, token: String): Result<BillingDashboard> {
+    suspend fun getBillingDashboard(
+        adminId: Int, 
+        startDate: String? = null,
+        endDate: String? = null,
+        token: String
+    ): Result<BillingDashboard> {
         return try {
             
             val response = client.get("$baseUrl/api/billing") {
@@ -129,6 +134,8 @@ class BillingApiClient : BaseApiClient() {
                 parameter("adminId", adminId)
                 parameter("period", "monthly")
                 parameter("include", "forecast")
+                startDate?.let { parameter("startDate", it) }
+                endDate?.let { parameter("endDate", it) }
                 header("Authorization", "Bearer $token")
             }
             

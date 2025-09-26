@@ -18,6 +18,8 @@ import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsContent
 import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsState
 import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsTabs
 import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsTopBar
+import org.sysarp.project.ui.common.components.DateFilterComponent
+import org.sysarp.project.ui.common.components.rememberDateFilterState
 
 /**
  * Pantalla de pagos del vendedor refactorizada
@@ -43,6 +45,9 @@ fun SellerPaymentsScreen(
         )
     }
     
+    // Estado del filtro de fechas
+    val dateFilterState = rememberDateFilterState()
+    
     Scaffold(
         topBar = {
             SellerPaymentsTopBar(
@@ -61,6 +66,25 @@ fun SellerPaymentsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Filtro de fechas
+            DateFilterComponent(
+                selectedDateRange = dateFilterState.selectedDateRange,
+                onDateRangeSelected = { period ->
+                    dateFilterState.onDateRangeSelected(period)
+                    state.filterByDateRange(
+                        startDate = dateFilterState.startDate,
+                        endDate = dateFilterState.endDate,
+                        onSuccess = { },
+                        onFailure = { }
+                    )
+                },
+                showCalendar = dateFilterState.showCalendarDialog,
+                onShowCalendar = dateFilterState.onShowCalendar,
+                onDismissCalendar = dateFilterState.onDismissCalendar,
+                title = "Filtrar pagos por fecha",
+                description = "Selecciona un período para filtrar tus pagos"
+            )
+            
             // Tabs
             SellerPaymentsTabs(
                 selectedTab = state.selectedTab,

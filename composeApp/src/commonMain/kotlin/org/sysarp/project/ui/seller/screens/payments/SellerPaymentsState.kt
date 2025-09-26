@@ -37,6 +37,13 @@ class SellerPaymentsState(
     var errorMessage by mutableStateOf("")
         private set
     
+    // Estados de filtros de fechas
+    var startDate by mutableStateOf<String?>(null)
+        private set
+    
+    var endDate by mutableStateOf<String?>(null)
+        private set
+    
     // Estados de usuario (se pasan como parámetros)
     var userProfile: UserProfile? = null
         private set
@@ -101,6 +108,14 @@ class SellerPaymentsState(
     }
     
     /**
+     * Establece las fechas de filtro
+     */
+    fun updateDateRange(startDate: String?, endDate: String?) {
+        this.startDate = startDate
+        this.endDate = endDate
+    }
+    
+    /**
      * Carga los pagos pendientes
      */
     fun loadPendingPayments(
@@ -116,6 +131,8 @@ class SellerPaymentsState(
                     sellerId = userProfile?.sellerId?.toInt() ?: 0,
                     page = 0,
                     limit = 50,
+                    startDate = startDate,
+                    endDate = endDate,
                     token = accessToken ?: ""
                 ).fold(
                     onSuccess = { response ->
@@ -149,6 +166,8 @@ class SellerPaymentsState(
                     sellerId = userProfile?.sellerId?.toInt() ?: 0,
                     page = 0,
                     size = 50,
+                    startDate = startDate,
+                    endDate = endDate,
                     token = accessToken ?: ""
                 ).fold(
                     onSuccess = { response ->
@@ -267,5 +286,18 @@ class SellerPaymentsState(
      */
     fun getConfirmedPaymentsCount(): Int {
         return confirmedPayments.size
+    }
+    
+    /**
+     * Filtra por rango de fechas
+     */
+    fun filterByDateRange(
+        startDate: String?,
+        endDate: String?,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        updateDateRange(startDate, endDate)
+        refreshAllPayments(onSuccess, onFailure)
     }
 }

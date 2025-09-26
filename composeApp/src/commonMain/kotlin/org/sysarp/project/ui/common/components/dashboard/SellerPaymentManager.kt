@@ -24,7 +24,7 @@ class SellerPaymentManager(
         onError: (String) -> Unit
     ) {
         try {
-            val response = paymentService.getPendingPayments(sellerId.toInt(), 0, 20, accessToken)
+            val response = paymentService.getPendingPayments(sellerId.toInt(), 0, 20, null, null, accessToken)
             
             response.fold(
                 onSuccess = { result ->
@@ -50,7 +50,7 @@ class SellerPaymentManager(
         onError: (String) -> Unit
     ) {
         try {
-            val response = paymentService.getPendingPayments(sellerId.toInt(), currentPage, 20, accessToken)
+            val response = paymentService.getPendingPayments(sellerId.toInt(), currentPage, 20, null, null, accessToken)
             
             response.fold(
                 onSuccess = { result ->

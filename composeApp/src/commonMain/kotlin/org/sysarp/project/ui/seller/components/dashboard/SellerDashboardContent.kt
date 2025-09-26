@@ -84,7 +84,7 @@ fun SellerDashboardContent(
                 val sellerId = userProfile?.sellerId?.toIntOrNull()
                 if (sellerId != null && accessToken.isNotEmpty()) {
                     // Cargar pagos pendientes
-                    val paymentsResult = paymentService.getPendingPayments(sellerId, 0, 20, accessToken)
+                    val paymentsResult = paymentService.getPendingPayments(sellerId, 0, 20, null, null, accessToken)
                     paymentsResult.fold(
                         onSuccess = { response ->
                             pendingPayments = response.data.payments

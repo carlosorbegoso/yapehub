@@ -175,7 +175,7 @@ fun SellerPaymentsSection(
                     onValueChange = onSearchQueryChange,
                     placeholder = {
                         Text(
-                            text = "Buscar por cliente, código Yape o ID...",
+                            text = "Buscar por cliente, código o ID...",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },

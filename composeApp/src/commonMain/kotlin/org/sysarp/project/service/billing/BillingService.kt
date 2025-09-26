@@ -52,7 +52,10 @@ class BillingService(
     /**
      * Obtiene el dashboard completo de facturación del usuario autenticado
      */
-    suspend fun getCurrentBillingDashboard(): Result<BillingDashboard> {
+    suspend fun getCurrentBillingDashboard(
+        startDate: String? = null,
+        endDate: String? = null
+    ): Result<BillingDashboard> {
         val userProfile = authService.userProfile.value
         val accessToken = authService.accessToken.value
         
@@ -60,7 +63,7 @@ class BillingService(
             return Result.failure(Exception("Usuario no autenticado"))
         }
         
-        return billingApiClient.getBillingDashboard(userProfile.adminId.toInt(), accessToken)
+        return billingApiClient.getBillingDashboard(userProfile.adminId.toInt(), startDate, endDate, accessToken)
     }
     
     /**

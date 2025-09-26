@@ -399,7 +399,7 @@ fun ConfirmedPaymentCard(
                 )
                 
                 PaymentInfoRow(
-                    label = "Código Yape",
+                    label = "Código",
                     value = payment.yapeCode,
                     icon = Icons.Filled.QrCode
                 )
@@ -524,7 +524,7 @@ fun PendingPaymentCardWithActions(
             ) {
                 Icon(
                     imageVector = Icons.Filled.QrCode,
-                    contentDescription = "Código Yape",
+                    contentDescription = "Código",
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )

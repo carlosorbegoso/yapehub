@@ -17,16 +17,20 @@ class PaymentApiClient(
     suspend fun getPendingPayments(
         sellerId: Int, 
         page: Int = 0, 
-        limit: Int = 20, 
+        limit: Int = 20,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
         return try {
-            logInfo("PAYMENT_API", "Obteniendo pagos pendientes del vendedor: $sellerId, página: $page, límite: $limit")
+            logInfo("PAYMENT_API", "Obteniendo pagos pendientes del vendedor: $sellerId, página: $page, límite: $limit, fechas: $startDate - $endDate")
 
             val response = httpClient.get("$baseUrl/api/payments/pending") {
                 parameter("sellerId", sellerId)
                 parameter("page", page)
                 parameter("limit", limit)
+                startDate?.let { parameter("startDate", it) }
+                endDate?.let { parameter("endDate", it) }
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }
@@ -187,16 +191,20 @@ class PaymentApiClient(
         page: Int = 0,
         size: Int = 20,
         status: String? = null,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<org.sysarp.project.data.AdminPaymentManagementResponse> {
         return try {
-            logInfo("PAYMENT_API", "Obteniendo gestión de pagos para admin: $adminId, página: $page, tamaño: $size, estado: $status")
+            logInfo("PAYMENT_API", "Obteniendo gestión de pagos para admin: $adminId, página: $page, tamaño: $size, estado: $status, fechas: $startDate - $endDate")
 
             val response = httpClient.get("$baseUrl/api/payments/admin/management") {
                 parameter("adminId", adminId)
                 parameter("page", page)
                 parameter("size", size)
                 status?.let { parameter("status", it) }
+                startDate?.let { parameter("startDate", it) }
+                endDate?.let { parameter("endDate", it) }
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }
@@ -285,16 +293,20 @@ class PaymentApiClient(
         adminId: Int,
         page: Int = 0,
         size: Int = 20,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
         return try {
-            logInfo("PAYMENT_API", "Obteniendo pagos pendientes del vendedor $sellerId para admin $adminId, página: $page, tamaño: $size")
+            logInfo("PAYMENT_API", "Obteniendo pagos pendientes del vendedor $sellerId para admin $adminId, página: $page, tamaño: $size, fechas: $startDate - $endDate")
 
             val response = httpClient.get("$baseUrl/api/payments/pending") {
                 parameter("sellerId", sellerId)
                 parameter("adminId", adminId)
                 parameter("page", page)
                 parameter("size", size)
+                startDate?.let { parameter("startDate", it) }
+                endDate?.let { parameter("endDate", it) }
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }
@@ -336,15 +348,19 @@ class PaymentApiClient(
         sellerId: Int,
         page: Int = 0,
         size: Int = 20,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
         return try {
-            logInfo("PAYMENT_API", "Obteniendo pagos confirmados del vendedor: $sellerId, página: $page, límite: $size")
+            logInfo("PAYMENT_API", "Obteniendo pagos confirmados del vendedor: $sellerId, página: $page, límite: $size, fechas: $startDate - $endDate")
 
             val response = client.get("$baseUrl/api/payments/confirmed") {
                 parameter("sellerId", sellerId)
                 parameter("page", page)
                 parameter("size", size)
+                startDate?.let { parameter("startDate", it) }
+                endDate?.let { parameter("endDate", it) }
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }

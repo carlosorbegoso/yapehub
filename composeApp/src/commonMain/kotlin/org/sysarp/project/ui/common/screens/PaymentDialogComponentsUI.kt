@@ -224,7 +224,7 @@ fun PaymentInfoCard(paymentCode: PaymentCode) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Yape",
+                    text = "Código",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -273,7 +273,7 @@ fun PaymentInstructionsCard(paymentCode: PaymentCode) {
         )
         
         val steps = listOf(
-            "Abre tu app Yape",
+            "Abre tu app de pagos",
             "Escanea QR o ingresa: ${paymentCode.yapeNumber}",
             "Monto: S/ ${paymentCode.amount}",
             "Toma captura de pantalla",

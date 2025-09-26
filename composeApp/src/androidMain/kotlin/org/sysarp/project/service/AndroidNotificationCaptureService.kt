@@ -81,17 +81,12 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
      */
     private suspend fun processNotification(sbn: StatusBarNotification) {
         try {
-            
-            
             if (isYapePackage(sbn.packageName)) {
                 val notificationText = extractNotificationText(sbn)
-                
-                
                 processYapeNotification(sbn, notificationText)
-            } else {
             }
         } catch (e: Exception) {
-            
+            // Error handling removed for production
         }
     }
     
@@ -100,7 +95,6 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             if (!isYapePackage(sbn.packageName)) {
                 return
             }
-            
             
             if (notificationText != null) {
                 
@@ -167,7 +161,6 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                     sendNotificationWithRetry(notificationRequest, 0)
                 }
                 
-            } else {
             }
         } catch (e: Exception) {
         }
@@ -197,7 +190,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             
             val mainContent = bigText ?: text
             val combinedText = listOfNotNull(title, mainContent).joinToString(" ").trim()
-            combinedText.ifEmpty { null }
+            if (combinedText.isEmpty()) null else combinedText
         } catch (e: Exception) {
             null
         }

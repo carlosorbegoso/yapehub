@@ -9,12 +9,14 @@ class PaymentService(
     suspend fun getPendingPayments(
         sellerId: Int, 
         page: Int = 0, 
-        limit: Int = 20, 
+        limit: Int = 20,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
         return try {
 
-            val result = paymentApiClient.getPendingPayments(sellerId, page, limit, token)
+            val result = paymentApiClient.getPendingPayments(sellerId, page, limit, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->
@@ -79,11 +81,13 @@ class PaymentService(
         page: Int = 0,
         size: Int = 20,
         status: String? = null,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<org.sysarp.project.data.AdminPaymentManagementResponse> {
         return try {
 
-            val result = paymentApiClient.getAdminPaymentManagement(adminId, page, size, status, token)
+            val result = paymentApiClient.getAdminPaymentManagement(adminId, page, size, status, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->
@@ -130,11 +134,13 @@ class PaymentService(
         adminId: Int,
         page: Int = 0,
         size: Int = 20,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
         return try {
 
-            val result = paymentApiClient.getSellerPendingPaymentsForAdmin(sellerId, adminId, page, size, token)
+            val result = paymentApiClient.getSellerPendingPaymentsForAdmin(sellerId, adminId, page, size, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->
@@ -156,11 +162,13 @@ class PaymentService(
         sellerId: Int,
         page: Int = 0,
         size: Int = 20,
+        startDate: String? = null,
+        endDate: String? = null,
         token: String
     ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
         return try {
 
-            val result = paymentApiClient.getConfirmedPayments(sellerId, page, size, token)
+            val result = paymentApiClient.getConfirmedPayments(sellerId, page, size, startDate, endDate, token)
 
             result.fold(
                 onSuccess = { response ->

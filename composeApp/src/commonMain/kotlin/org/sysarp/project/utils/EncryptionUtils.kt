@@ -101,7 +101,8 @@ object EncryptionUtils {
 
     // Desencriptar mensaje con clave específica
     fun decryptWithKey(encryptedMessage: String, key: String): String {
-        return xorEncrypt(encryptedMessage, key) // XOR es simétrico
+        val decoded = simpleBase64Decode(encryptedMessage)
+        return xorDecrypt(decoded, key)
     }
 
     // Encriptación XOR simple
@@ -117,6 +118,21 @@ object EncryptionUtils {
         }
         
         return simpleBase64Encode(result.toString())
+    }
+    
+    // Desencriptación XOR simple
+    private fun xorDecrypt(encryptedText: String, key: String): String {
+        val result = StringBuilder()
+        val keyBytes = key.toByteArray()
+        
+        for (i in encryptedText.indices) {
+            val encryptedByte = encryptedText[i].code
+            val keyByte = keyBytes[i % keyBytes.size].toInt()
+            val decryptedByte = encryptedByte xor keyByte
+            result.append(decryptedByte.toChar())
+        }
+        
+        return result.toString()
     }
     
     // Implementación simple de Base64 para multiplatform
@@ -136,6 +152,36 @@ object EncryptionUtils {
             result.append(chars[(combined shr 12) and 63])
             result.append(if (i + 1 < bytes.size) chars[(combined shr 6) and 63] else '=')
             result.append(if (i + 2 < bytes.size) chars[combined and 63] else '=')
+        }
+        
+        return result.toString()
+    }
+    
+    // Implementación simple de decodificación Base64 para multiplatform
+    private fun simpleBase64Decode(input: String): String {
+        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        val result = StringBuilder()
+        
+        // Remover padding
+        val cleanInput = input.replace("=", "")
+        
+        for (i in cleanInput.indices step 4) {
+            val c1 = chars.indexOf(cleanInput[i])
+            val c2 = if (i + 1 < cleanInput.length) chars.indexOf(cleanInput[i + 1]) else 0
+            val c3 = if (i + 2 < cleanInput.length) chars.indexOf(cleanInput[i + 2]) else 0
+            val c4 = if (i + 3 < cleanInput.length) chars.indexOf(cleanInput[i + 3]) else 0
+            
+            if (c1 == -1 || c2 == -1 || c3 == -1 || c4 == -1) continue
+            
+            val combined = (c1 shl 18) or (c2 shl 12) or (c3 shl 6) or c4
+            
+            result.append(((combined shr 16) and 0xFF).toChar())
+            if (i + 2 < cleanInput.length) {
+                result.append(((combined shr 8) and 0xFF).toChar())
+            }
+            if (i + 3 < cleanInput.length) {
+                result.append((combined and 0xFF).toChar())
+            }
         }
         
         return result.toString()

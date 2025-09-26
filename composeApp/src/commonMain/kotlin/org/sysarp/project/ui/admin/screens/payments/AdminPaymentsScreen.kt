@@ -17,6 +17,8 @@ import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsActions
 import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsContentHandler
 import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsState
 import org.sysarp.project.ui.common.components.topbar.TopBarComponent
+import org.sysarp.project.ui.common.components.DateFilterComponent
+import org.sysarp.project.ui.common.components.rememberDateFilterState
 
 /**
  * Pantalla de gestión de pagos del administrador refactorizada
@@ -42,6 +44,9 @@ fun AdminPaymentsScreen(
         )
     }
     
+    // Estado del filtro de fechas
+    val dateFilterState = rememberDateFilterState()
+    
     Scaffold(
         topBar = {
             TopBarComponent(
@@ -62,6 +67,25 @@ fun AdminPaymentsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Filtro de fechas
+            DateFilterComponent(
+                selectedDateRange = dateFilterState.selectedDateRange,
+                onDateRangeSelected = { period ->
+                    dateFilterState.onDateRangeSelected(period)
+                    state.filterByDateRange(
+                        startDate = dateFilterState.startDate,
+                        endDate = dateFilterState.endDate,
+                        onSuccess = { },
+                        onFailure = { }
+                    )
+                },
+                showCalendar = dateFilterState.showCalendarDialog,
+                onShowCalendar = dateFilterState.onShowCalendar,
+                onDismissCalendar = dateFilterState.onDismissCalendar,
+                title = "Filtrar pagos por fecha",
+                description = "Selecciona un período para filtrar los pagos del sistema"
+            )
+            
             AdminPaymentsContentHandler(state = state)
         }
     }

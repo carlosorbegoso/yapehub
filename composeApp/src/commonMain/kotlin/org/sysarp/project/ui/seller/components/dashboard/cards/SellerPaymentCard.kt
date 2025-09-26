@@ -114,7 +114,7 @@ fun SellerPaymentCard(
                 )
                 
                 SellerInfoRow(
-                    label = "Código Yape",
+                    label = "Código",
                     value = extractShortYapeCode(payment.yapeCode),
                     icon = Icons.Filled.CheckCircle
                 )

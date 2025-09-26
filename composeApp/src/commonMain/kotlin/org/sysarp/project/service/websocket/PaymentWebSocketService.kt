@@ -21,6 +21,17 @@ class PaymentWebSocketService(
     private val authService: AuthService
 ) {
     
+    /**
+     * Logging para WebSocket Service
+     */
+    private fun logInfo(service: String, message: String) {
+        println("[$service] INFO: $message")
+    }
+    
+    private fun logError(service: String, message: String) {
+        println("[$service] ERROR: $message")
+    }
+    
     private val webSocketClient = PaymentWebSocketClient(authService)
     private var autoStartJob: Job? = null
     
@@ -38,32 +49,45 @@ class PaymentWebSocketService(
      * Inicia el servicio WebSocket con auto-conexión
      */
     fun startAutoConnect() {
+        logInfo("WEBSOCKET_SERVICE", "🚀 Iniciando servicio WebSocket automático")
         
         autoStartJob = CoroutineScope(Dispatchers.IO).launch {
             // Observar cambios en el perfil de usuario y token
             combine(authService.userProfile, authService.accessToken) { userProfile, token ->
+                logInfo("WEBSOCKET_SERVICE", "👤 Cambio detectado en perfil de usuario o token")
+                logInfo("WEBSOCKET_SERVICE", "UserProfile: ${userProfile?.sellerId}, Token: ${if (token.isNullOrBlank()) "vacío" else "presente"}")
                 
                 if (userProfile?.sellerId != null && !token.isNullOrBlank()) {
+                    logInfo("WEBSOCKET_SERVICE", "✅ Condiciones cumplidas, conectando WebSocket para sellerId: ${userProfile.sellerId}")
                     webSocketClient.connect(userProfile.sellerId.toLong())
                 } else {
+                    logInfo("WEBSOCKET_SERVICE", "❌ Condiciones no cumplidas, desconectando WebSocket")
+                    logInfo("WEBSOCKET_SERVICE", "Razón: ${if (userProfile?.sellerId == null) "sellerId nulo" else "token vacío"}")
                     webSocketClient.disconnect()
                 }
             }.collect { }
         }
         
-        // Observar estado de conexión
+        // Observar estado de conexión (sin reconexión automática aquí para evitar conflictos)
         CoroutineScope(Dispatchers.IO).launch {
             webSocketClient.connectionState.collect { state ->
+                logInfo("WEBSOCKET_SERVICE", "🔄 Estado de conexión cambiado: $state")
                 _connectionState.value = state
                 _isConnected.value = state == WebSocketConnectionState.CONNECTED
                 
-                // Reconexión automática si se desconecta (con límite de intentos y throttling)
-                if (state == WebSocketConnectionState.DISCONNECTED) {
-                    val userProfile = authService.userProfile.value
-                    val token = authService.accessToken.value
-                    if (userProfile?.sellerId != null && !token.isNullOrBlank()) {
-                        delay(10000) // Esperar 10 segundos antes de reconectar (aumentado de 3 segundos)
-                        webSocketClient.connect(userProfile.sellerId.toLong())
+                // Solo loggear el estado, la reconexión la maneja el cliente
+                when (state) {
+                    WebSocketConnectionState.CONNECTED -> {
+                        logInfo("WEBSOCKET_SERVICE", "✅ WebSocket conectado y funcionando")
+                    }
+                    WebSocketConnectionState.DISCONNECTED -> {
+                        logInfo("WEBSOCKET_SERVICE", "❌ WebSocket desconectado - el cliente manejará la reconexión")
+                    }
+                    WebSocketConnectionState.CONNECTING -> {
+                        logInfo("WEBSOCKET_SERVICE", "🔄 WebSocket conectando...")
+                    }
+                    WebSocketConnectionState.RECONNECTING -> {
+                        logInfo("WEBSOCKET_SERVICE", "🔄 WebSocket reconectando...")
                     }
                 }
             }
@@ -74,10 +98,18 @@ class PaymentWebSocketService(
      * Detiene el servicio WebSocket
      */
     fun stop() {
+        logInfo("WEBSOCKET_SERVICE", "🛑 Deteniendo servicio WebSocket")
         
-        autoStartJob?.cancel()
-        autoStartJob = null
+        if (autoStartJob != null) {
+            logInfo("WEBSOCKET_SERVICE", "🔄 Cancelando trabajo de auto-conexión")
+            autoStartJob?.cancel()
+            autoStartJob = null
+        }
+        
+        logInfo("WEBSOCKET_SERVICE", "🔌 Desconectando cliente WebSocket")
         webSocketClient.disconnect()
+        
+        logInfo("WEBSOCKET_SERVICE", "✅ Servicio WebSocket detenido completamente")
     }
     
     
@@ -85,7 +117,9 @@ class PaymentWebSocketService(
      * Envía mensaje al servidor
      */
     suspend fun sendMessage(message: String) {
+        logInfo("WEBSOCKET_SERVICE", "📤 Enviando mensaje al servidor: ${message.take(100)}${if (message.length > 100) "..." else ""}")
         webSocketClient.sendMessage(message)
     }
+    
     
 }

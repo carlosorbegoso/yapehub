@@ -556,7 +556,7 @@ fun AdminPaymentCard(payment: AdminPayment) {
                 )
                 
                 InfoRow(
-                    label = "Código Yape",
+                    label = "Código",
                     value = extractShortYapeCode(payment.yapeCode),
                     icon = Icons.Filled.QrCode,
                     valueColor = MaterialTheme.colorScheme.primary

@@ -48,6 +48,13 @@ class AdminPaymentsState(
     var selectedStatus by mutableStateOf<String?>(null)
         private set
     
+    // Estados de filtros de fechas
+    var startDate by mutableStateOf<String?>(null)
+        private set
+    
+    var endDate by mutableStateOf<String?>(null)
+        private set
+    
     // Estados de usuario (se pasan como parámetros)
     var userProfile: UserProfile? = null
         private set
@@ -126,6 +133,14 @@ class AdminPaymentsState(
     }
     
     /**
+     * Establece las fechas de filtro
+     */
+    fun updateDateRange(startDate: String?, endDate: String?) {
+        this.startDate = startDate
+        this.endDate = endDate
+    }
+    
+    /**
      * Establece el perfil de usuario
      */
     fun updateUserProfile(profile: UserProfile?) {
@@ -158,6 +173,8 @@ class AdminPaymentsState(
                     page = 0,
                     size = 10,
                     status = selectedStatus,
+                    startDate = startDate,
+                    endDate = endDate,
                     token = accessToken ?: ""
                 ).fold(
                     onSuccess = { response ->
@@ -194,6 +211,8 @@ class AdminPaymentsState(
                     page = nextPage,
                     size = 10,
                     status = selectedStatus,
+                    startDate = startDate,
+                    endDate = endDate,
                     token = accessToken ?: ""
                 ).fold(
                     onSuccess = { response ->
@@ -226,6 +245,19 @@ class AdminPaymentsState(
     }
     
     /**
+     * Filtra por rango de fechas
+     */
+    fun filterByDateRange(
+        startDate: String?,
+        endDate: String?,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        updateDateRange(startDate, endDate)
+        loadAdminPayments(onSuccess, onFailure)
+    }
+    
+    /**
      * Verifica si se puede cargar pagos
      */
     fun canLoadPayments(): Boolean {
@@ -250,7 +282,7 @@ class AdminPaymentsState(
      * Verifica si hay un filtro activo
      */
     fun hasActiveFilter(): Boolean {
-        return selectedStatus != null
+        return selectedStatus != null || startDate != null || endDate != null
     }
     
     /**
