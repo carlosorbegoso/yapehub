@@ -5,6 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.data.AdminStatsData
 import org.sysarp.project.data.BranchInfo
 import org.sysarp.project.data.ConnectedSellersData
@@ -92,6 +97,30 @@ class AdminDashboardState(
     var showQRDialog by mutableStateOf(false)
         private set
     
+    var showCalendarDialog by mutableStateOf(false)
+        private set
+    
+    // Estados de fechas
+    var selectedDateRange by mutableStateOf("📅 30 días")
+        private set
+    
+    var startDate by mutableStateOf<String?>(null)
+        private set
+    
+    var endDate by mutableStateOf<String?>(null)
+        private set
+    
+    init {
+        // Inicializar fechas por defecto: último mes
+        val now = Clock.System.now()
+        val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val lastMonth = today.minus(30, DateTimeUnit.DAY)
+        
+        startDate = lastMonth.toString()
+        endDate = today.toString()
+        selectedDateRange = "📅 30 días"
+    }
+    
     // Datos generados
     var generatedAffiliationCode by mutableStateOf<GenerateAffiliationCodeResponse?>(null)
         private set
@@ -107,8 +136,13 @@ class AdminDashboardState(
             isLoadingStats = true
             statsError = ""
             
+            // Log de las fechas que se van a enviar
+            println("DEBUG DASHBOARD: Enviando fechas - startDate: $startDate, endDate: $endDate")
+            
             statsService.getAdminDashboard(
                 adminId = adminId,
+                startDate = startDate,
+                endDate = endDate,
                 token = accessToken
             ).fold(
                 onSuccess = { response ->
@@ -220,7 +254,7 @@ class AdminDashboardState(
                 onSuccess = { response ->
                     quickSummaryData = response.data
                 },
-                onFailure = { error ->
+                onFailure = { _ ->
                     // Error silencioso en refresh
                 }
             )
@@ -233,7 +267,7 @@ class AdminDashboardState(
                 onSuccess = { response ->
                     adminStatsData = response.data
                 },
-                onFailure = { error ->
+                onFailure = { _ ->
                     // Error silencioso en refresh
                 }
             )
@@ -328,6 +362,70 @@ class AdminDashboardState(
         showQRDialog = false
         generatedQRCode = null
         qrError = null
+    }
+    
+    /**
+     * Muestra el diálogo del calendario
+     */
+    fun showCalendarDialog() {
+        showCalendarDialog = true
+    }
+    
+    /**
+     * Cierra el diálogo del calendario
+     */
+    fun dismissCalendarDialog() {
+        showCalendarDialog = false
+    }
+    
+    /**
+     * Actualiza el rango de fechas seleccionado
+     */
+    fun updateDateRange(period: String, adminId: Int, accessToken: String) {
+        selectedDateRange = period
+        calculateDateRange(period)
+        loadQuickStats(adminId, accessToken)
+    }
+    
+    /**
+     * Calcula las fechas basadas en el período seleccionado
+     */
+    private fun calculateDateRange(period: String) {
+        val now = Clock.System.now()
+        val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        
+        when (period) {
+            "📅 Hoy" -> {
+                startDate = today.toString()
+                endDate = today.toString()
+            }
+            "📅 7 días" -> {
+                startDate = today.minus(7, DateTimeUnit.DAY).toString()
+                endDate = today.toString()
+            }
+            "📅 30 días" -> {
+                startDate = today.minus(30, DateTimeUnit.DAY).toString()
+                endDate = today.toString()
+            }
+            "📅 90 días" -> {
+                startDate = today.minus(90, DateTimeUnit.DAY).toString()
+                endDate = today.toString()
+            }
+            else -> {
+                // Para rangos personalizados, parsear las fechas
+                if (period.contains(" - ")) {
+                    val parts = period.split(" - ")
+                    if (parts.size == 2) {
+                        startDate = parts[0].trim()
+                        endDate = parts[1].trim()
+                    }
+                } else {
+                    // Fecha específica
+                    startDate = period
+                    endDate = period
+                }
+            }
+        }
     }
     
     /**

@@ -44,9 +44,11 @@ abstract class BaseApiClient {
      * Logging común para todos los servicios
      */
     protected fun logInfo(service: String, message: String) {
+        println("[$service] INFO: $message")
     }
     
     protected fun logError(service: String, message: String) {
+        println("[$service] ERROR: $message")
     }
     
 }

@@ -125,6 +125,7 @@ class StatsApiClient : BaseApiClient() {
     ): Result<QuickSummaryResponse> {
         return try {
             logInfo("STATS_API", "Obteniendo dashboard para admin: $adminId")
+            logInfo("STATS_API", "Dashboard Params: adminId=$adminId, startDate=$startDate, endDate=$endDate")
 
             val response = client.get("$baseUrl/api/stats/admin/dashboard") {
                 parameter("adminId", adminId)
@@ -133,6 +134,7 @@ class StatsApiClient : BaseApiClient() {
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }
+            
 
             if (response.status.value in 200..299) {
                 try {
@@ -191,6 +193,7 @@ class StatsApiClient : BaseApiClient() {
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }
+            
 
             if (response.status.value in 200..299) {
                 try {

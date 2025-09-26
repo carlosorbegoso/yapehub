@@ -77,9 +77,10 @@ class SellerAnalyticsDataLoader(
         onDataLoaded: (AnalyticsData) -> Unit,
         onError: (String) -> Unit
     ) {
+        // Usar fechas más amplias para incluir datos históricos
         val now = Clock.System.now()
         val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-        val startDate = now.minus(7.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+        val startDate = now.minus(30.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
         
         loadAnalytics(startDate, endDate, onLoadingChange, onDataLoaded, onError)
     }

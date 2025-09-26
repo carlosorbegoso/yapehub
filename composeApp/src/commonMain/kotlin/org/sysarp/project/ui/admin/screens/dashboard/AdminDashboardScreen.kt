@@ -86,6 +86,21 @@ fun AdminDashboardScreen(
                 businessName = userProfile?.businessName ?: "Mi Negocio"
             )
             
+            // Filtro de fechas
+            AdminDashboardDateFilter(
+                selectedDateRange = state.selectedDateRange,
+                onDateRangeSelected = { period ->
+                    val adminId = userProfile?.adminId?.toIntOrNull()
+                    val token = accessToken
+                    if (adminId != null && !token.isNullOrEmpty()) {
+                        state.updateDateRange(period, adminId, token)
+                    }
+                },
+                showCalendar = state.showCalendarDialog,
+                onShowCalendar = { state.showCalendarDialog() },
+                onDismissCalendar = { state.dismissCalendarDialog() }
+            )
+            
             // Contenido principal del dashboard
             DashboardContent(
                 quickSummaryData = state.quickSummaryData,
