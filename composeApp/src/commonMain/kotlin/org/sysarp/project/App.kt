@@ -94,6 +94,10 @@ fun YapeApp() {
         org.sysarp.project.service.websocket.PaymentWebSocketService(authService)
     }
     
+    val hybridNotificationManager = remember {
+        org.sysarp.project.service.notification.HybridNotificationManager(authService, webSocketService)
+    }
+    
     val billingService = remember {
         val billingApiClient = BillingApiClient()
         BillingService(billingApiClient, authService)
@@ -106,12 +110,23 @@ fun YapeApp() {
     }
     
     LaunchedEffect(Unit) {
-        webSocketService.startAutoConnect()
+        // Configurar callback para notificaciones híbridas
+        hybridNotificationManager.setOnNewNotificationCallback { payments ->
+            println("[APP] 🔔 Notificaciones híbridas recibidas: ${payments.size} pagos")
+            // Aquí puedes agregar lógica para mostrar notificaciones en la UI
+            payments.forEach { payment ->
+                println("[APP] 💰 Pago: ${payment.paymentId} - S/ ${payment.amount} de ${payment.senderName}")
+            }
+        }
+        
+        // Iniciar el sistema híbrido de notificaciones (incluye WebSocket)
+        hybridNotificationManager.start()
     }
     
     DisposableEffect(Unit) {
         onDispose {
-            webSocketService.stop()
+            // Detener el sistema híbrido al cerrar la app
+            hybridNotificationManager.stop()
         }
     }
     
@@ -126,6 +141,7 @@ fun YapeApp() {
         qrService = qrService,
         branchService = branchService,
         webSocketService = webSocketService,
+        hybridNotificationManager = hybridNotificationManager,
         billingService = billingService,
         credentialStorageService = credentialStorageService,
         viewModel = viewModel,

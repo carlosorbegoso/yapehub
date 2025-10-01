@@ -26,6 +26,7 @@ import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.SellerStatsData
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.websocket.WebSocketConnectionState
+import org.sysarp.project.service.notification.HybridNotificationManager
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerActionsSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerNotificationSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerPaymentListSection
@@ -45,6 +46,7 @@ fun SellerDashboardContent(
     paymentService: org.sysarp.project.service.payment.PaymentService,
     statsService: org.sysarp.project.service.stats.StatsService,
     webSocketService: org.sysarp.project.service.websocket.PaymentWebSocketService,
+    hybridNotificationManager: HybridNotificationManager,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -70,6 +72,16 @@ fun SellerDashboardContent(
     var showSuccessMessage by remember { mutableStateOf("") }
     var showErrorMessage by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Conectar con el sistema híbrido para actualizar pagos pendientes
+    LaunchedEffect(Unit) {
+        hybridNotificationManager.setOnNewNotificationCallback { newPayments ->
+            println("[SELLER_DASHBOARD_CONTENT] 🔔 Actualizando UI con ${newPayments.size} pagos híbridos")
+            // Actualizar la lista de pagos pendientes con los nuevos pagos
+            pendingPayments = newPayments
+            showSuccessMessage = "Nuevos pagos recibidos: ${newPayments.size}"
+        }
+    }
     
     // Filtrar pagos pendientes
     val filteredPayments = remember(pendingPayments, searchQuery) {

@@ -15,6 +15,7 @@ import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.service.notification.HybridNotificationManager
 import org.sysarp.project.ui.admin.screens.dashboard.AdminDashboardScreen
 import org.sysarp.project.ui.admin.screens.management.BranchManagementScreen
 import org.sysarp.project.ui.admin.screens.management.SellerManagementScreen
@@ -55,6 +56,7 @@ fun AppContent(
     qrService: QRService,
     branchService: BranchService,
     webSocketService: PaymentWebSocketService,
+    hybridNotificationManager: HybridNotificationManager,
     billingService: BillingService,
     credentialStorageService: CredentialStorageService
 ) {
@@ -222,6 +224,7 @@ fun AppContent(
                 paymentService = paymentService,
                 statsService = statsService,
                 webSocketService = webSocketService,
+                hybridNotificationManager = hybridNotificationManager,
                 onNavigateToAnalytics = { navigationManager.navigateTo(Screen.SellerAnalytics) },
                 onNavigateToPendingPayments = { navigationManager.navigateTo(Screen.SellerPayments) },
                 onNavigateToSettings = { navigationManager.navigateTo(Screen.Settings) },

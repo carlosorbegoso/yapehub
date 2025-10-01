@@ -56,6 +56,9 @@ class PaymentWebSocketClient(
     private var lastMessageTime = 0L
     private var connectionCheckJob: Job? = null
     
+    // Callback para notificar cuando se recibe un mensaje
+    private var onMessageReceivedCallback: (() -> Unit)? = null
+    
     /**
      * Conecta al WebSocket del vendedor
      */
@@ -106,12 +109,15 @@ class PaymentWebSocketClient(
                     for (frame in incoming) {
                         try {
                             when (frame) {
-                                is Frame.Text -> {
-                                    val message = frame.readText()
-                                    lastMessageTime = System.currentTimeMillis()
-                                    logInfo("WEBSOCKET", "📨 Mensaje recibido: ${message.take(100)}${if (message.length > 100) "..." else ""}")
-                                    processMessage(message)
-                                }
+                        is Frame.Text -> {
+                            val message = frame.readText()
+                            lastMessageTime = System.currentTimeMillis()
+                            logInfo("WEBSOCKET", "📨 Mensaje recibido: ${message.take(100)}${if (message.length > 100) "..." else ""}")
+                            processMessage(message)
+                            
+                            // Notificar al HybridNotificationManager que recibimos un mensaje
+                            notifyMessageReceived()
+                        }
                                 is Frame.Close -> {
                                     val reason = frame.readReason()
                                     logInfo("WEBSOCKET", "🔌 WebSocket cerrado por el servidor. Razón: ${reason?.message ?: "No especificada"}")
@@ -273,6 +279,20 @@ class PaymentWebSocketClient(
             }
             logInfo("WEBSOCKET", "🔍 Verificación de conexión detenida")
         }
+    }
+    
+    /**
+     * Establece callback para notificar cuando se recibe un mensaje
+     */
+    fun setOnMessageReceivedCallback(callback: () -> Unit) {
+        onMessageReceivedCallback = callback
+    }
+    
+    /**
+     * Notifica que se recibió un mensaje
+     */
+    private fun notifyMessageReceived() {
+        onMessageReceivedCallback?.invoke()
     }
     
     /**

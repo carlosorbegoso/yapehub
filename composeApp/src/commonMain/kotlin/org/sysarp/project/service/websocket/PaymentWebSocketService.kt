@@ -33,6 +33,9 @@ class PaymentWebSocketService(
     }
     
     private val webSocketClient = PaymentWebSocketClient(authService)
+    
+    // Callback para notificar cuando se recibe un mensaje
+    private var onMessageReceivedCallback: (() -> Unit)? = null
     private var autoStartJob: Job? = null
     
     // Estados del servicio
@@ -48,6 +51,11 @@ class PaymentWebSocketService(
     /**
      * Inicia el servicio WebSocket con auto-conexión
      */
+    fun setOnMessageReceivedCallback(callback: () -> Unit) {
+        onMessageReceivedCallback = callback
+        webSocketClient.setOnMessageReceivedCallback(callback)
+    }
+    
     fun startAutoConnect() {
         logInfo("WEBSOCKET_SERVICE", "🚀 Iniciando servicio WebSocket automático")
         

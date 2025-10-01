@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.service.notification.HybridNotificationManager
 import org.sysarp.project.ui.components.dashboard.SellerDashboardContent
 import org.sysarp.project.ui.components.dashboard.SellerDashboardTopBar
 
@@ -28,6 +29,7 @@ fun SellerDashboardScreen(
     paymentService: PaymentService,
     statsService: org.sysarp.project.service.stats.StatsService,
     webSocketService: PaymentWebSocketService,
+    hybridNotificationManager: HybridNotificationManager,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -39,6 +41,17 @@ fun SellerDashboardScreen(
     val coroutineScope = rememberCoroutineScope()
     
     var newPaymentsCount by remember { mutableStateOf(0) }
+    var hybridPaymentsCount by remember { mutableStateOf(0) }
+    
+    // Conectar con el sistema híbrido para recibir notificaciones
+    LaunchedEffect(Unit) {
+        hybridNotificationManager.setOnNewNotificationCallback { payments ->
+            println("[SELLER_DASHBOARD] 🔔 Notificaciones híbridas recibidas: ${payments.size} pagos")
+            hybridPaymentsCount += payments.size
+            // Aquí se podría actualizar la UI directamente
+        }
+    }
+    
     LaunchedEffect(userProfile?.sellerId, authService.accessToken.value) {
         val sellerId = userProfile?.sellerId
         val accessToken = authService.accessToken.value
@@ -104,6 +117,7 @@ fun SellerDashboardScreen(
             paymentService = paymentService,
             statsService = statsService,
             webSocketService = webSocketService,
+            hybridNotificationManager = hybridNotificationManager,
             onNavigateToAnalytics = onNavigateToAnalytics,
             onNavigateToPendingPayments = onNavigateToPendingPayments,
             onNavigateToSettings = onNavigateToSettings,
