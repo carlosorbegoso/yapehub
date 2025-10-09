@@ -3,6 +3,7 @@ package org.sysarp.project.ui.admin.screens.payments
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import org.sysarp.project.data.UserProfile
+import org.sysarp.project.ui.admin.screens.payments.components.AdminPaymentsContent
 
 /**
  * Acciones y handlers para AdminPaymentsScreen
