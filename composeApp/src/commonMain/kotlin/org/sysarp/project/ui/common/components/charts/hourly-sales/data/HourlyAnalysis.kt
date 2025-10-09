@@ -2,7 +2,6 @@ package org.sysarp.project.ui.common.components.charts.hourly.sales.data
 
 import org.sysarp.project.data.HourlySalesData
 import org.sysarp.project.ui.common.components.charts.hourly.sales.utils.parseHour
-import org.sysarp.project.ui.common.components.charts.hourly.sales.utils.getTimeOfDay
 
 /**
  * Análisis inteligente de datos de ventas por hora

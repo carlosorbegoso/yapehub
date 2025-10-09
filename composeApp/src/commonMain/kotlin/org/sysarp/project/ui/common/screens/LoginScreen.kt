@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import org.sysarp.project.service.CredentialStorageService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.utils.SuccessHandler
@@ -69,11 +70,12 @@ import org.sysarp.project.utils.SuccessHandler
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    authService: AuthService,
-    credentialStorageService: CredentialStorageService,
     onLoginSuccess: (String) -> Unit, // Ahora recibe el rol
     onBackPressed: () -> Unit,
-    onForgotPassword: () -> Unit
+    onForgotPassword: () -> Unit,
+    // Dependencies are now injected using Koin
+    authService: AuthService = koinInject(),
+    credentialStorageService: CredentialStorageService = koinInject()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -84,11 +86,7 @@ fun LoginScreen(
     var successMessage by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // Estados para manejo elegante de errores (solo para parsing, no para UI)
-    // var showErrorDialog by remember { mutableStateOf(false) }
-    // var currentError by remember { mutableStateOf<ErrorInfo?>(null) }
-    
+
     // Cargar credenciales guardadas al inicializar
     LaunchedEffect(Unit) {
         try {
@@ -103,13 +101,13 @@ fun LoginScreen(
             // Error silencioso al cargar credenciales
         }
     }
-    
+
     // Mostrar mensaje de éxito
     SuccessHandler.ShowSuccessMessage(
         message = successMessage,
         snackbarHostState = snackbarHostState
     )
-    
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -145,8 +143,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-            
-            // Logo o icono más compacto
+
             Card(
                 modifier = Modifier.size(80.dp),
                 colors = CardDefaults.cardColors(
@@ -166,25 +163,23 @@ fun LoginScreen(
                     )
                 }
             }
-            
-            // Título más compacto
+
             Text(
                 text = "Acceso de Administrador",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            
+
             Text(
                 text = "Ingresa tus credenciales para acceder",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
-            // Campos de entrada
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -197,7 +192,6 @@ fun LoginScreen(
                     modifier = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Header del formulario
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -222,7 +216,6 @@ fun LoginScreen(
                             modifier = Modifier.size(16.dp)
                         )
                     }
-                    // Email con validación estricta
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -276,7 +269,6 @@ fun LoginScreen(
                             )
                         )
                         
-                        // Texto de ayuda
                         Text(
                             text = "Email corporativo válido",
                             fontSize = 11.sp,
@@ -285,7 +277,6 @@ fun LoginScreen(
                         )
                     }
                     
-                    // Contraseña con validación estricta
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -351,7 +342,6 @@ fun LoginScreen(
                             )
                         )
                         
-                        // Texto de ayuda
                         Text(
                             text = "Mínimo 6 caracteres",
                             fontSize = 11.sp,
@@ -360,7 +350,6 @@ fun LoginScreen(
                         )
                     }
                     
-                    // Checkbox para recordar contraseña
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -383,7 +372,6 @@ fun LoginScreen(
                             )
                         }
                         
-                        // Botón para limpiar credenciales guardadas
                         TextButton(
                             onClick = {
                                 coroutineScope.launch {
@@ -406,7 +394,6 @@ fun LoginScreen(
                         }
                     }
                     
-                    // Mensaje de error elegante
                     if (errorMessage.isNotEmpty()) {
                         Card(
                             colors = CardDefaults.cardColors(
@@ -444,7 +431,6 @@ fun LoginScreen(
                         }
                     }
                     
-                    // Botón de iniciar sesión mejorado
                     val isFormValid = email.isNotBlank() && password.isNotBlank() && 
                                     email.contains("@") && email.contains(".") && 
                                     password.length >= 6
@@ -452,26 +438,22 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             if (isFormValid) {
-                                // Sanitización adicional antes de enviar
                                 val sanitizedEmail = email.trim().lowercase()
                                 val sanitizedPassword = password.trim()
                                 
                                 isLoading = true
                                 errorMessage = ""
                                 
-                                // Login real usando la API con manejo elegante de errores
                                 coroutineScope.launch {
                                     val (loginData, errorInfo) = authService.loginAdminWithErrorHandling(
                                         email = sanitizedEmail,
                                         password = sanitizedPassword
-                                        // deviceFingerprint y role se generan automáticamente
                                     )
                                     
                                     if (loginData != null) {
                                         isLoading = false
                                         successMessage = SuccessHandler.Messages.LOGIN_SUCCESS
                                         
-                                        // Guardar credenciales si el usuario marcó "Recordar contraseña"
                                         if (rememberPassword) {
                                             coroutineScope.launch {
                                                 val saved = credentialStorageService.saveCredentials(sanitizedEmail, sanitizedPassword)
@@ -480,7 +462,6 @@ fun LoginScreen(
                                                 }
                                             }
                                         } else {
-                                            // Eliminar credenciales si el usuario desmarcó la opción
                                             coroutineScope.launch {
                                                 credentialStorageService.clearCredentials()
                                             }
@@ -489,7 +470,6 @@ fun LoginScreen(
                                         onLoginSuccess(loginData.role)
                                     } else if (errorInfo != null) {
                                         isLoading = false
-                                        // Mostrar error inline más elegante
                                         errorMessage = errorInfo.message
                                     }
                                 }
@@ -547,7 +527,6 @@ fun LoginScreen(
                         }
                     }
                     
-                    // Mensaje de seguridad
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
@@ -574,7 +553,6 @@ fun LoginScreen(
                         }
                     }
                     
-                    // Botón de olvidé mi contraseña
                     TextButton(
                         onClick = onForgotPassword,
                         modifier = Modifier.fillMaxWidth()
@@ -586,7 +564,6 @@ fun LoginScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Información adicional más compacta
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(

@@ -20,13 +20,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.SellerStatsData
 import org.sysarp.project.data.UserProfile
-import org.sysarp.project.service.websocket.WebSocketConnectionState
 import org.sysarp.project.service.notification.HybridNotificationManager
+import org.sysarp.project.service.websocket.WebSocketConnectionState
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerActionsSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerNotificationSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerPaymentListSection
@@ -34,11 +33,13 @@ import org.sysarp.project.ui.components.seller_dashboard.sections.SellerPayments
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerProfileSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerStatsSection
 import org.sysarp.project.ui.components.seller_dashboard.utils.SellerDashboardLogic
+import kotlin.time.ExperimentalTime
 
 /**
  * Contenido principal del dashboard del vendedor
  * Versión simplificada que usa componentes modulares
  */
+@OptIn(ExperimentalTime::class)
 @Composable
 fun SellerDashboardContent(
     accessToken: String,
@@ -148,7 +149,7 @@ fun SellerDashboardContent(
                                         "paymentId": $paymentId,
                                         "sellerId": $sellerId,
                                         "status": "CONFIRMED",
-                                        "timestamp": "${Clock.System.now().toEpochMilliseconds()}",
+                                        "timestamp": "${kotlin.time.Clock.System.now().toEpochMilliseconds()}",
                                         "message": "Pago confirmado por el vendedor"
                                     }
                                 }
@@ -193,7 +194,7 @@ fun SellerDashboardContent(
                                         "paymentId": $paymentId,
                                         "sellerId": $sellerId,
                                         "status": "REJECTED",
-                                        "timestamp": "${Clock.System.now().toEpochMilliseconds()}",
+                                        "timestamp": "${kotlin.time.Clock.System.now().toEpochMilliseconds()}",
                                         "message": "Pago rechazado por el vendedor",
                                         "reason": "Rechazado por el vendedor"
                                     }
@@ -252,13 +253,14 @@ fun SellerDashboardContent(
                                             "paymentId": ${notification.paymentId},
                                             "sellerId": $sellerId,
                                             "status": "CONFIRMED",
-                                            "timestamp": "${Clock.System.now().toEpochMilliseconds()}",
+                                            "timestamp": "${kotlin.time.Clock.System.now().toEpochMilliseconds()}",
                                             "message": "Pago confirmado por el vendedor desde notificación"
                                         }
                                     }
                                     """.trimIndent()
                                     webSocketService.sendMessage(websocketMessage)
                                 } catch (e: Exception) {
+
                                 }
                             },
                             onFailure = { error ->
@@ -300,7 +302,7 @@ fun SellerDashboardContent(
                                             "paymentId": ${notification.paymentId},
                                             "sellerId": $sellerId,
                                             "status": "REJECTED",
-                                            "timestamp": "${Clock.System.now().toEpochMilliseconds()}",
+                                            "timestamp": "${kotlin.time.Clock.System.now().toEpochMilliseconds()}",
                                             "message": "Pago rechazado por el vendedor desde notificación",
                                             "reason": "Rechazado por el vendedor"
                                         }

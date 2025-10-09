@@ -1,12 +1,11 @@
 package org.sysarp.project.data
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
-/**
- * Representa una notificación de Yape capturada antes de ser procesada
- */
-data class YapeNotification(
+
+data class YapeNotification @OptIn(ExperimentalTime::class) constructor(
     val id: Long = 0,
     val packageName: String,
     val notificationTitle: String?,
@@ -24,7 +23,7 @@ data class YapeNotification(
     val isClearable: Boolean = true,
     val isOngoing: Boolean = false,
     val userHandle: String?,
-    val createdAt: Instant,
+    val createdAt: Instant, // Changed from Instant to String
     val isProcessed: Boolean = false,
     val processingError: String? = null
 )

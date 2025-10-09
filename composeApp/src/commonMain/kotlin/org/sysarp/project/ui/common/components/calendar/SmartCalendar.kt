@@ -51,18 +51,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
 
 /**
  * Componente de calendario inteligente y elegante
  * Permite selección visual directa de rangos de fechas con navegación por meses
  */
+@OptIn(ExperimentalTime::class)
 @Composable
 fun SmartCalendar(
     selectedPeriod: String,
@@ -72,7 +73,7 @@ fun SmartCalendar(
 ) {
     var selectedStartDate by remember(expanded) { mutableStateOf<LocalDate?>(null) }
     var selectedEndDate by remember(expanded) { mutableStateOf<LocalDate?>(null) }
-    var currentMonth by remember(expanded) { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
+    var currentMonth by remember(expanded) { mutableStateOf(kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
     var isApplying by remember { mutableStateOf(false) }
     
     // Resetear estado cuando se abre el calendario
@@ -82,7 +83,7 @@ fun SmartCalendar(
             selectedStartDate = null
             selectedEndDate = null
             isApplying = false
-            currentMonth = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            currentMonth = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         }
     }
     
@@ -284,7 +285,7 @@ private fun MonthHeader(
         }
     }
 }
-
+@OptIn(ExperimentalTime::class)
 @Composable
 private fun VisualCalendarGrid(
     currentMonth: LocalDate,
@@ -292,7 +293,7 @@ private fun VisualCalendarGrid(
     selectedEndDate: LocalDate?,
     onDateSelected: (LocalDate) -> Unit
 ) {
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val today = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val firstDayOfMonth = LocalDate(currentMonth.year, currentMonth.monthNumber, 1)
     val lastDayOfMonth = currentMonth.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.ordinal
@@ -405,8 +406,7 @@ private fun CalendarDay(
 private fun QuickPeriodButtons(
     onPeriodSelected: (String) -> Unit
 ) {
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-    
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -499,42 +499,3 @@ private fun QuickPeriodButtons(
     }
 }
 
-/**
- * Función para obtener el rango de fechas del período seleccionado
- */
-private fun getPeriodDateRange(period: String): String {
-    val now = Clock.System.now()
-    val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
-    
-    return when (period) {
-        "🕐 Hoy" -> {
-            val todayStr = today.toString()
-            "Hoy: $todayStr"
-        }
-        "📅 7 días" -> {
-            val endDate = today.toString()
-            "Últimos 7 días hasta $endDate"
-        }
-        "📆 30 días" -> {
-            val endDate = today.toString()
-            "Últimos 30 días hasta $endDate"
-        }
-        "🗓️ 3 meses" -> {
-            val endDate = today.toString()
-            "Últimos 3 meses hasta $endDate"
-        }
-        "📊 1 año" -> {
-            val endDate = today.toString()
-            "Último año hasta $endDate"
-        }
-        "⚙️ Rango personalizado" -> "Selecciona fechas específicas"
-        "🎯 Día específico" -> "Selecciona un día específico"
-        else -> {
-            if (period.contains(" - ")) {
-                "Rango: $period"
-            } else {
-                "Período no definido"
-            }
-        }
-    }
-}

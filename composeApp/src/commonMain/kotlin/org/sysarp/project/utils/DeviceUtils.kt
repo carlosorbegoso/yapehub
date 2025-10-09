@@ -2,11 +2,12 @@ package org.sysarp.project.utils
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Utilidades para obtener información única del dispositivo
  */
+@OptIn(ExperimentalTime::class)
 object DeviceUtils {
     
     /**
@@ -26,7 +27,7 @@ object DeviceUtils {
             return@withContext fingerprint
             
         } catch (e: Exception) {
-            return@withContext "yapechamo_fallback_${Clock.System.now().toEpochMilliseconds()}"
+            return@withContext "yapechamo_fallback_${kotlin.time.Clock.System.now().toEpochMilliseconds()}"
         }
     }
     
@@ -42,7 +43,7 @@ object DeviceUtils {
      * Genera fingerprint de fallback para plataformas no-Android
      */
     private suspend fun generateFallbackFingerprint(): String {
-        val timestamp = Clock.System.now().toEpochMilliseconds()
+        val timestamp = kotlin.time.Clock.System.now().toEpochMilliseconds()
         val randomSuffix = (1000..9999).random()
         
         return buildString {
@@ -50,7 +51,7 @@ object DeviceUtils {
             append("${timestamp}_") // Timestamp de creación
             append("${randomSuffix}_") // Número aleatorio
             append("mobile_") // Tipo de dispositivo
-            append("${Clock.System.now().toEpochMilliseconds().hashCode()}") // Hash del tiempo actual
+            append("${kotlin.time.Clock.System.now().toEpochMilliseconds().hashCode()}") // Hash del tiempo actual
         }
     }
     
@@ -58,7 +59,7 @@ object DeviceUtils {
      * Genera un fingerprint más simple para casos donde no se necesita complejidad
      */
     fun generateSimpleFingerprint(): String {
-        return "yapechamo_${Clock.System.now().toEpochMilliseconds()}_${(1000..9999).random()}"
+        return "yapechamo_${kotlin.time.Clock.System.now().toEpochMilliseconds()}_${(1000..9999).random()}"
     }
     
     /**

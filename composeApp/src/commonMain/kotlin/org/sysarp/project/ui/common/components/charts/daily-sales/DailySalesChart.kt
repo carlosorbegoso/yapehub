@@ -42,13 +42,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.sysarp.project.data.DailySalesData
-import org.sysarp.project.utils.formatCurrency
-import org.sysarp.project.ui.common.components.charts.daily.sales.data.analyzeSalesData
 import org.sysarp.project.ui.common.components.charts.daily.sales.components.AnalysisCard
 import org.sysarp.project.ui.common.components.charts.daily.sales.components.EnhancedMetricCard
 import org.sysarp.project.ui.common.components.charts.daily.sales.components.FloatingTooltip
 import org.sysarp.project.ui.common.components.charts.daily.sales.components.TrendIndicator
+import org.sysarp.project.ui.common.components.charts.daily.sales.data.analyzeSalesData
 import org.sysarp.project.ui.common.components.charts.daily.sales.dialogs.DayDetailsDialog
+import org.sysarp.project.utils.formatCurrency
 
 /**
  * Gráfico de barras mejorado para ventas diarias

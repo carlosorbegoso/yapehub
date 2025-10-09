@@ -6,18 +6,12 @@ import android.os.Build
 import android.provider.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 import java.security.MessageDigest
 
-/**
- * Utilidades Android-específicas para obtener identificadores únicos del dispositivo
- */
+
 object AndroidDeviceUtils {
     
-    /**
-     * Genera un fingerprint único usando identificadores disponibles del dispositivo Android
-     * Sin usar permisos privilegiados del sistema
-     */
+
     suspend fun generateDeviceFingerprint(context: Context): String = withContext(Dispatchers.IO) {
         try {
             
@@ -49,7 +43,8 @@ object AndroidDeviceUtils {
                 val androidId = getAndroidId(context)
                 "yapechamo_${androidId}_fallback"
             } catch (fallbackError: Exception) {
-                "yapechamo_unknown_device_${Clock.System.now().toEpochMilliseconds()}"
+
+                "yapechamo_unknown_device_${System.currentTimeMillis()}"
             }
         }
     }
@@ -99,7 +94,8 @@ object AndroidDeviceUtils {
             val androidId = getAndroidId(context)
             "yapechamo_${androidId}_simple"
         } catch (e: Exception) {
-            "yapechamo_simple_${Clock.System.now().toEpochMilliseconds()}"
+
+            "yapechamo_simple_${System.currentTimeMillis()}"
         }
     }
     

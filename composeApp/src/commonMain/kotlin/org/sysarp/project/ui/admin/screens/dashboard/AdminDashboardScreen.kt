@@ -11,27 +11,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import org.koin.compose.koinInject
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.billing.BillingService
+import org.sysarp.project.service.branch.BranchService
+import org.sysarp.project.service.qr.QRService
+import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 
 /**
  * Pantalla principal del dashboard de administración
- * Refactorizada para usar componentes modulares
+ * Refactorizada para usar Koin para inyección de dependencias
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
-    authService: AuthService,
-    sellerService: SellerService,
-    statsService: org.sysarp.project.service.stats.StatsService,
-    affiliationService: AffiliationService,
-    qrService: org.sysarp.project.service.qr.QRService,
-    branchService: org.sysarp.project.service.branch.BranchService,
-    webSocketService: PaymentWebSocketService,
-    billingService: org.sysarp.project.service.billing.BillingService,
+    // Navigation callbacks remain as parameters
     onNavigateToBranchManagement: () -> Unit,
     onNavigateToSellerManagement: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
@@ -40,13 +38,22 @@ fun AdminDashboardScreen(
     onNavigateToDeactivationRequests: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToBilling: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    // Dependencies are now injected by Koin
+    authService: AuthService = koinInject(),
+    sellerService: SellerService = koinInject(),
+    statsService: StatsService = koinInject(),
+    affiliationService: AffiliationService = koinInject(),
+    qrService: QRService = koinInject(),
+    branchService: BranchService = koinInject(),
+    webSocketService: PaymentWebSocketService = koinInject(),
+    billingService: BillingService = koinInject()
 ) {
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    
-    // Crear el estado del dashboard
+
+    // The state holder receives the injected dependencies
     val state = remember {
         AdminDashboardState(
             authService = authService,
@@ -60,7 +67,7 @@ fun AdminDashboardScreen(
             coroutineScope = coroutineScope
         )
     }
-    
+
     Scaffold(
         topBar = {
             TopBarComponent(
@@ -85,7 +92,7 @@ fun AdminDashboardScreen(
             BusinessHeaderCard(
                 businessName = userProfile?.businessName ?: "Mi Negocio"
             )
-            
+
             // Filtro de fechas
             AdminDashboardDateFilter(
                 selectedDateRange = state.selectedDateRange,
@@ -100,7 +107,7 @@ fun AdminDashboardScreen(
                 onShowCalendar = { state.showCalendarDialog() },
                 onDismissCalendar = { state.dismissCalendarDialog() }
             )
-            
+
             // Contenido principal del dashboard
             DashboardContent(
                 quickSummaryData = state.quickSummaryData,
@@ -117,11 +124,11 @@ fun AdminDashboardScreen(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToDeactivationRequests = onNavigateToDeactivationRequests,
                 onNavigateToBilling = onNavigateToBilling,
-                billingService = billingService
+                billingService = billingService // This can also be injected inside DashboardContent if needed
             )
         }
     }
-    
+
     // Manejar acciones y efectos secundarios
     AdminDashboardActions(
         authService = authService,

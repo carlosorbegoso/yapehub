@@ -22,15 +22,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.ui.components.calendar.SmartCalendar
 import kotlin.time.Duration.Companion.days
+import kotlin.time.ExperimentalTime
 
 /**
  * Componente de controles para SellerAnalyticsScreen
  */
+@OptIn(ExperimentalTime::class)
 @Composable
 fun SellerAnalyticsControls(
     state: SellerAnalyticsState,
@@ -126,22 +127,22 @@ fun SellerAnalyticsControls(
                 // Cargar analytics cuando se selecciona un período
                 when (period) {
                     "📅 Hoy" -> {
-                        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                        val today = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                         onLoadAnalytics(today, today)
                     }
                     "📅 7 días" -> {
-                        val endDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                        val startDate = Clock.System.now().minus(7.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                        val endDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                        val startDate = kotlin.time.Clock.System.now().minus(7.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                         onLoadAnalytics(startDate, endDate)
                     }
                     "📅 30 días" -> {
-                        val endDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                        val startDate = Clock.System.now().minus(30.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                        val endDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                        val startDate = kotlin.time.Clock.System.now().minus(30.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                         onLoadAnalytics(startDate, endDate)
                     }
                     "📅 90 días" -> {
-                        val endDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-                        val startDate = Clock.System.now().minus(90.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                        val endDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                        val startDate = kotlin.time.Clock.System.now().minus(90.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                         onLoadAnalytics(startDate, endDate)
                     }
                 }

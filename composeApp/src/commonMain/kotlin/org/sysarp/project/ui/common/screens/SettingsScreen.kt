@@ -32,14 +32,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.koin.compose.koinInject
 import org.sysarp.project.viewmodel.YapeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    viewModel: YapeViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToUserManagement: () -> Unit
+    onNavigateToUserManagement: () -> Unit,
+    viewModel: YapeViewModel = koinInject() // Koin provides the ViewModel
 ) {
     val currentUser by viewModel.currentUser.collectAsState()
     

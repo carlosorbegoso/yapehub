@@ -2,7 +2,6 @@ package org.sysarp.project.ui.screens.admin
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.sysarp.project.data.AnalyticsData
@@ -11,10 +10,11 @@ import org.sysarp.project.data.PaymentTransparencyData
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import kotlin.time.Duration.Companion.days
+import kotlin.time.ExperimentalTime
 
 /**
  * Funciones para cargar datos en AdminAnalyticsScreen
- */
+ */@OptIn(ExperimentalTime::class)
 class AdminAnalyticsDataLoader(
     private val authService: AuthService,
     private val statsService: StatsService,
@@ -80,7 +80,7 @@ class AdminAnalyticsDataLoader(
         onError: (String) -> Unit
     ) {
         // Usar fechas más amplias para incluir datos históricos
-        val now = Clock.System.now()
+        val now = kotlin.time.Clock.System.now()
         val endDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
         val startDate = now.minus(30.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
         

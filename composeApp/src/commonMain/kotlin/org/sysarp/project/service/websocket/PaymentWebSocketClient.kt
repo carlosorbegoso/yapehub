@@ -1,7 +1,6 @@
 package org.sysarp.project.service.websocket
 
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
@@ -28,7 +27,7 @@ class PaymentWebSocketClient(
         println("[$service] ERROR: $message")
     }
     
-    private val httpClient = HttpClient(CIO) {
+    private val httpClient = HttpClient {
         install(WebSockets)
     }
     
@@ -99,8 +98,8 @@ class PaymentWebSocketClient(
                 logInfo("WEBSOCKET", "Estado de conexión: CONNECTED")
                 logInfo("WEBSOCKET", "🔄 Intentos de reconexión reseteados a 0")
                 
-                lastHeartbeatTime = System.currentTimeMillis()
-                lastMessageTime = System.currentTimeMillis()
+                lastHeartbeatTime = getCurrentTimeMillis()
+                lastMessageTime = getCurrentTimeMillis()
                 startHeartbeat()
                 startConnectionCheck()
                 
@@ -111,7 +110,7 @@ class PaymentWebSocketClient(
                             when (frame) {
                         is Frame.Text -> {
                             val message = frame.readText()
-                            lastMessageTime = System.currentTimeMillis()
+                            lastMessageTime = getCurrentTimeMillis()
                             logInfo("WEBSOCKET", "📨 Mensaje recibido: ${message.take(100)}${if (message.length > 100) "..." else ""}")
                             processMessage(message)
                             
@@ -128,15 +127,15 @@ class PaymentWebSocketClient(
                                 }
                                 is Frame.Ping -> {
                                     logInfo("WEBSOCKET", "🏓 Ping recibido del servidor")
-                                    lastMessageTime = System.currentTimeMillis()
+                                    lastMessageTime = getCurrentTimeMillis()
                                 }
                                 is Frame.Pong -> {
                                     logInfo("WEBSOCKET", "🏓 Pong recibido del servidor")
-                                    lastMessageTime = System.currentTimeMillis()
+                                    lastMessageTime = getCurrentTimeMillis()
                                 }
                                 else -> {
                                     logInfo("WEBSOCKET", "📦 Frame recibido: ${frame::class.simpleName}")
-                                    lastMessageTime = System.currentTimeMillis()
+                                    lastMessageTime = getCurrentTimeMillis()
                                 }
                             }
                         } catch (frameException: Exception) {
@@ -231,7 +230,7 @@ class PaymentWebSocketClient(
                     logInfo("WEBSOCKET", "💓 Heartbeat - conexión activa")
                     // Enviar ping para mantener conexión
                     webSocketSession?.send(Frame.Ping(ByteArray(0)))
-                    lastHeartbeatTime = System.currentTimeMillis()
+                    lastHeartbeatTime = getCurrentTimeMillis()
                 } catch (e: Exception) {
                     logError("WEBSOCKET", "❌ Error en heartbeat: ${e.message}")
                     _connectionState.value = WebSocketConnectionState.DISCONNECTED
@@ -254,7 +253,7 @@ class PaymentWebSocketClient(
             while (_connectionState.value == WebSocketConnectionState.CONNECTED) {
                 delay(30000) // Verificar cada 30 segundos
                 
-                val currentTime = System.currentTimeMillis()
+                val currentTime = getCurrentTimeMillis()
                 val timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
                 val timeSinceLastMessage = currentTime - lastMessageTime
                 
@@ -304,7 +303,7 @@ class PaymentWebSocketClient(
             return
         }
         
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         
         if (currentTime - lastReconnectTime < minTimeBetweenReconnects) {
             val remainingTime = (minTimeBetweenReconnects - (currentTime - lastReconnectTime)) / 1000
@@ -326,7 +325,7 @@ class PaymentWebSocketClient(
             
             currentSellerId?.let { sellerId ->
                 logInfo("WEBSOCKET", "🔄 Intentando reconexión #$reconnectAttempts para sellerId: $sellerId")
-                lastReconnectTime = System.currentTimeMillis()
+                lastReconnectTime = getCurrentTimeMillis()
                 connect(sellerId)
             } ?: run {
                 logError("WEBSOCKET", "❌ No hay sellerId disponible para reconexión")
@@ -401,6 +400,11 @@ class PaymentWebSocketClient(
     }
     
 }
+
+/**
+ * Función multiplataforma para obtener el tiempo actual en milisegundos
+ */
+internal expect fun getCurrentTimeMillis(): Long
 
 /**
  * Estados de conexión WebSocket

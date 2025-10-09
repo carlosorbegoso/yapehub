@@ -1,7 +1,5 @@
 package org.sysarp.project.data
 
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -15,8 +13,8 @@ data class YapeTransaction(
     val message: String? = null,
     val transactionType: TransactionType,
     val businessName: String? = null,
-    @Contextual val createdAt: Instant,
-    @Contextual val processedAt: Instant? = null,
+    val createdAt: TimestampString, // Changed from Instant
+    val processedAt: TimestampString? = null, // Changed from Instant?
     val isProcessed: Boolean = false,
     val rawNotification: String? = null,
     val securityCode: String? = null // Código de seguridad de Yape

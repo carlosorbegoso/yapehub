@@ -4,6 +4,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import org.koin.compose.koinInject
 import org.sysarp.project.repository.UserProfileRepository
 import org.sysarp.project.service.CredentialStorageService
 import org.sysarp.project.service.SellerService
@@ -11,14 +12,16 @@ import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.service.branch.BranchService
+import org.sysarp.project.service.notification.HybridNotificationManager
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
-import org.sysarp.project.service.notification.HybridNotificationManager
 import org.sysarp.project.ui.admin.screens.dashboard.AdminDashboardScreen
 import org.sysarp.project.ui.admin.screens.management.BranchManagementScreen
 import org.sysarp.project.ui.admin.screens.management.SellerManagementScreen
+import org.sysarp.project.ui.admin.screens.management.UserManagementScreen
+import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsScreen
 import org.sysarp.project.ui.admin.screens.profile.AdminProfileScreen
 import org.sysarp.project.ui.common.screens.BillingDashboardScreen
 import org.sysarp.project.ui.common.screens.DeactivationRequestScreen
@@ -32,9 +35,7 @@ import org.sysarp.project.ui.common.screens.SettingsScreen
 import org.sysarp.project.ui.common.screens.SplashScreen
 import org.sysarp.project.ui.common.screens.SubscriptionScreen
 import org.sysarp.project.ui.screens.admin.AdminAnalyticsScreen
-import org.sysarp.project.ui.screens.admin.AdminPaymentsScreen
 import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
-import org.sysarp.project.ui.admin.screens.management.UserManagementScreen
 import org.sysarp.project.ui.screens.seller.SellerAnalyticsScreen
 import org.sysarp.project.ui.screens.seller.SellerDashboardScreen
 import org.sysarp.project.ui.screens.seller.SellerNotificationsScreen
@@ -45,20 +46,7 @@ import org.sysarp.project.viewmodel.YapeViewModel
 
 @Composable
 fun AppContent(
-    navigationManager: NavigationManager,
-    viewModel: YapeViewModel,
-    userProfileRepository: UserProfileRepository,
-    authService: AuthService,
-    sellerService: SellerService,
-    paymentService: PaymentService,
-    statsService: StatsService,
-    affiliationService: AffiliationService,
-    qrService: QRService,
-    branchService: BranchService,
-    webSocketService: PaymentWebSocketService,
-    hybridNotificationManager: HybridNotificationManager,
-    billingService: BillingService,
-    credentialStorageService: CredentialStorageService
+    navigationManager: NavigationManager
 ) {
     val currentScreen by navigationManager.currentScreen.collectAsState()
     
@@ -69,6 +57,7 @@ fun AppContent(
             )
         }
         is Screen.Settings -> {
+            val viewModel: YapeViewModel = koinInject()
             SettingsScreen(
                 viewModel = viewModel,
                 onNavigateBack = navigationManager::navigateBack,
@@ -77,12 +66,12 @@ fun AppContent(
         }
         is Screen.PendingPayments -> {
             AdminPaymentsScreen(
-                authService = authService,
-                paymentService = paymentService,
                 onNavigateBack = navigationManager::navigateBack
             )
         }
         is Screen.SellerPayments -> {
+            val authService: AuthService = koinInject()
+            val paymentService: PaymentService = koinInject()
             SellerPaymentsScreen(
                 authService = authService,
                 paymentService = paymentService,
@@ -90,12 +79,14 @@ fun AppContent(
             )
         }
         is Screen.UserManagement -> {
+            val userProfileRepository: UserProfileRepository = koinInject()
             UserManagementScreen(
                 userProfileRepository = userProfileRepository,
                 onNavigateBack = navigationManager::navigateBack
             )
         }
         is Screen.ProfileSelection -> {
+            val authService: AuthService = koinInject()
             ProfileSelectionScreen(
                 authService = authService,
                 onAdminLogin = { navigationManager.navigateToLogin() },
@@ -105,6 +96,9 @@ fun AppContent(
             )
         }
         is Screen.Login -> {
+            val authService: AuthService = koinInject()
+            val credentialStorageService: CredentialStorageService = koinInject()
+            val viewModel: YapeViewModel = koinInject()
             LoginScreen(
                 authService = authService,
                 credentialStorageService = credentialStorageService,
@@ -130,6 +124,7 @@ fun AppContent(
             )
         }
         is Screen.ForgotPassword -> {
+            val authService: AuthService = koinInject()
             ForgotPasswordScreen(
                 authService = authService,
                 onNavigateBack = { navigationManager.navigateBack() },
@@ -137,6 +132,7 @@ fun AppContent(
             )
         }
         is Screen.AdminRegistration -> {
+            val authService: AuthService = koinInject()
             AdminRegistrationScreen(
                 authService = authService,
                 onRegistrationSuccess = { navigationManager.navigateToAdminDashboard() },
@@ -144,6 +140,11 @@ fun AppContent(
             )
         }
         is Screen.SellerLogin -> {
+            val sellerService: SellerService = koinInject()
+            val authService: AuthService = koinInject()
+            val statsService: StatsService = koinInject()
+            val webSocketService: PaymentWebSocketService = koinInject()
+            val viewModel: YapeViewModel = koinInject()
             SellerUnifiedScreen(
                 sellerService = sellerService,
                 authService = authService,
@@ -162,6 +163,11 @@ fun AppContent(
             )
         }
         is Screen.SellerRegistration -> {
+            val sellerService: SellerService = koinInject()
+            val authService: AuthService = koinInject()
+            val statsService: StatsService = koinInject()
+            val webSocketService: PaymentWebSocketService = koinInject()
+            val viewModel: YapeViewModel = koinInject()
             SellerUnifiedScreen(
                 sellerService = sellerService,
                 authService = authService,
@@ -180,6 +186,10 @@ fun AppContent(
             )
         }
         is Screen.SellerAffiliation -> {
+            val sellerService: SellerService = koinInject()
+            val authService: AuthService = koinInject()
+            val statsService: StatsService = koinInject()
+            val webSocketService: PaymentWebSocketService = koinInject()
             SellerUnifiedScreen(
                 sellerService = sellerService,
                 authService = authService,
@@ -191,6 +201,14 @@ fun AppContent(
             )
         }
         is Screen.AdminDashboard -> {
+            val authService: AuthService = koinInject()
+            val sellerService: SellerService = koinInject()
+            val statsService: StatsService = koinInject()
+            val affiliationService: AffiliationService = koinInject()
+            val qrService: QRService = koinInject()
+            val branchService: BranchService = koinInject()
+            val webSocketService: PaymentWebSocketService = koinInject()
+            val billingService: BillingService = koinInject()
             AdminDashboardScreen(
                 authService = authService,
                 sellerService = sellerService,
@@ -212,6 +230,8 @@ fun AppContent(
             )
         }
         is Screen.SellerManagement -> {
+            val sellerService: SellerService = koinInject()
+            val authService: AuthService = koinInject()
             SellerManagementScreen(
                 sellerService = sellerService,
                 authService = authService,
@@ -219,6 +239,11 @@ fun AppContent(
             )
         }
         is Screen.SellerDashboard -> {
+            val authService: AuthService = koinInject()
+            val paymentService: PaymentService = koinInject()
+            val statsService: StatsService = koinInject()
+            val webSocketService: PaymentWebSocketService = koinInject()
+            val hybridNotificationManager: HybridNotificationManager = koinInject()
             SellerDashboardScreen(
                 authService = authService,
                 paymentService = paymentService,
@@ -234,6 +259,8 @@ fun AppContent(
             )
         }
         is Screen.SellerAnalytics -> {
+            val authService: AuthService = koinInject()
+            val statsService: StatsService = koinInject()
             SellerAnalyticsScreen(
                 authService = authService,
                 statsService = statsService,
@@ -241,6 +268,8 @@ fun AppContent(
             )
         }
         is Screen.BranchManagement -> {
+            val authService: AuthService = koinInject()
+            val branchService: BranchService = koinInject()
             val userProfile by authService.userProfile.collectAsState()
             val accessToken by authService.accessToken.collectAsState()
             
@@ -269,6 +298,8 @@ fun AppContent(
             }
         }
         is Screen.Analytics -> {
+            val authService: AuthService = koinInject()
+            val statsService: StatsService = koinInject()
             AdminAnalyticsScreen(
                 authService = authService,
                 statsService = statsService,
@@ -285,6 +316,8 @@ fun AppContent(
             )
         }
         is Screen.DeactivationRequest -> {
+            val authService: AuthService = koinInject()
+            val sellerService: SellerService = koinInject()
             DeactivationRequestScreen(
                 authService = authService,
                 sellerService = sellerService,
@@ -292,6 +325,7 @@ fun AppContent(
             )
         }
         is Screen.AdminProfile -> {
+            val authService: AuthService = koinInject()
             AdminProfileScreen(
                 authService = authService,
                 onNavigateBack = { navigationManager.navigateBack() },
@@ -299,6 +333,7 @@ fun AppContent(
             )
         }
         is Screen.SellerNotifications -> {
+            val authService: AuthService = koinInject()
             SellerNotificationsScreen(
                 authService = authService,
                 onNavigateBack = { navigationManager.navigateBack() }
@@ -306,6 +341,8 @@ fun AppContent(
         }
         is Screen.SellerSpecificPayments -> {
             val sellerSpecificScreen = currentScreen as Screen.SellerSpecificPayments
+            val paymentService: PaymentService = koinInject()
+            val authService: AuthService = koinInject()
             SellerSpecificPaymentsScreen(
                 sellerId = sellerSpecificScreen.sellerId,
                 sellerName = sellerSpecificScreen.sellerName,
@@ -315,6 +352,7 @@ fun AppContent(
             )
         }
         is Screen.QRScanner -> {
+            val authService: AuthService = koinInject()
             QRScannerScreen(
                 onNavigateBack = { navigationManager.navigateBack() },
                 onQRScanned = { qrData ->
@@ -331,6 +369,7 @@ fun AppContent(
             )
         }
         is Screen.BillingDashboard -> {
+            val billingService: BillingService = koinInject()
             BillingDashboardScreen(
                 billingService = billingService,
                 onNavigateBack = navigationManager::navigateBack,
@@ -341,6 +380,7 @@ fun AppContent(
             )
         }
         is Screen.Subscriptions -> {
+            val billingService: BillingService = koinInject()
             SubscriptionScreen(
                 billingService = billingService,
                 onNavigateBack = navigationManager::navigateBack,
@@ -350,6 +390,7 @@ fun AppContent(
             )
         }
         is Screen.PaymentDialog -> {
+            val billingService: BillingService = koinInject()
             PaymentDialog(
                 paymentCode = (currentScreen as Screen.PaymentDialog).paymentCode,
                 billingService = billingService,

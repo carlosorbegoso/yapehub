@@ -1,27 +1,46 @@
 package org.sysarp.project.ui.common.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.sysarp.project.ui.components.calendar.SmartCalendar
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
+import org.sysarp.project.ui.components.calendar.SmartCalendar
+import kotlin.time.ExperimentalTime
 
 /**
  * Componente reutilizable para filtros de fechas
  * Proporciona una interfaz consistente para seleccionar rangos de fechas
  */
+@OptIn(ExperimentalTime::class)
 @Composable
 fun DateFilterComponent(
     selectedDateRange: String,
@@ -186,13 +205,14 @@ fun CompactDateFilterComponent(
  * Hook para manejar el estado del filtro de fechas
  * Proporciona lógica común para todos los componentes que usan filtros de fechas
  */
+@OptIn(ExperimentalTime::class)
 @Composable
 fun rememberDateFilterState(
     initialStartDate: String? = null,
     initialEndDate: String? = null,
     initialSelectedRange: String = "📅 30 días"
 ): DateFilterState {
-    val now = Clock.System.now()
+    val now = kotlin.time.Clock.System.now()
     val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
     val lastMonth = today.minus(30, DateTimeUnit.DAY)
     
@@ -240,11 +260,12 @@ data class DateFilterState(
 /**
  * Calcula las fechas de inicio y fin basado en el período seleccionado
  */
+@OptIn(ExperimentalTime::class)
 private fun calculateDateRange(
     period: String,
     onDatesCalculated: (startDate: String, endDate: String) -> Unit
 ) {
-    val now = Clock.System.now()
+    val now = kotlin.time.Clock.System.now()
     val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
     
     when (period) {

@@ -111,16 +111,7 @@ object SecurityUtils {
     fun cleanPhoneNumber(phone: String): String {
         return phone.replace(Regex("[^0-9+]"), "")
     }
-    
-    /**
-     * Limpia un RUC/DNI para almacenamiento
-     * @param ruc RUC/DNI a limpiar
-     * @return RUC/DNI limpio
-     */
-    fun cleanRucOrDni(ruc: String): String {
-        return ruc.replace(Regex("[^0-9]"), "")
-    }
-    
+
     /**
      * Normaliza un email para almacenamiento
      * @param email Email a normalizar

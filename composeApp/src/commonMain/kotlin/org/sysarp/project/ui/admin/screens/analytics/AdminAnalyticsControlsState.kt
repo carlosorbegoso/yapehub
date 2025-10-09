@@ -3,14 +3,15 @@ package org.sysarp.project.ui.admin.screens.analytics
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Duration.Companion.days
+import kotlin.time.ExperimentalTime
 
 /**
  * Estado y lógica de negocio para AdminAnalyticsControls
  */
+@OptIn(ExperimentalTime::class)
 class AdminAnalyticsControlsState {
     // Estados de UI
     var showPeriodMenu by mutableStateOf(false)
@@ -68,26 +69,26 @@ class AdminAnalyticsControlsState {
      * Obtiene las fechas correspondientes al período seleccionado
      */
     fun getPeriodDates(): Pair<String, String> {
-        val endDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+        val endDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
         
         return when (selectedPeriod) {
             "📅 Hoy" -> {
                 Pair(endDate, endDate)
             }
             "📅 7 días" -> {
-                val startDate = Clock.System.now().minus(7.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                val startDate = kotlin.time.Clock.System.now().minus(7.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                 Pair(startDate, endDate)
             }
             "📅 30 días" -> {
-                val startDate = Clock.System.now().minus(30.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                val startDate = kotlin.time.Clock.System.now().minus(30.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                 Pair(startDate, endDate)
             }
             "📅 90 días" -> {
-                val startDate = Clock.System.now().minus(90.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                val startDate = kotlin.time.Clock.System.now().minus(90.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                 Pair(startDate, endDate)
             }
             else -> {
-                val startDate = Clock.System.now().minus(30.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                val startDate = kotlin.time.Clock.System.now().minus(30.days).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                 Pair(startDate, endDate)
             }
         }

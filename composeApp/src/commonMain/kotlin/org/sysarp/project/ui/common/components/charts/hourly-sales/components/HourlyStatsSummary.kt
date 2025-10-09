@@ -12,8 +12,8 @@ import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.HourlySalesData
 import org.sysarp.project.ui.common.components.charts.daily.sales.components.EnhancedMetricCard
 import org.sysarp.project.ui.common.components.charts.hourly.sales.data.analyzeHourlySales
-import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.ui.common.components.charts.hourly.sales.utils.formatHour
+import org.sysarp.project.utils.formatCurrency
 
 /**
  * Componente de resumen de estadísticas para ventas por hora

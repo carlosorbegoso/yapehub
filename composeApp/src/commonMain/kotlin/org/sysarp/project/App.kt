@@ -6,26 +6,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import io.ktor.client.HttpClient
+import org.koin.compose.KoinContext
+import org.koin.compose.koinInject
 import org.sysarp.project.navigation.AppContent
 import org.sysarp.project.navigation.rememberNavigationManager
-import org.sysarp.project.repository.UserProfileRepository
-import org.sysarp.project.service.CredentialStorageService
-import org.sysarp.project.service.SellerService
-import org.sysarp.project.service.SimpleNotificationService
-import org.sysarp.project.service.affiliation.AffiliationService
-import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.service.billing.BillingService
-import org.sysarp.project.service.branch.BranchService
-import org.sysarp.project.service.http.PaymentApiClient
-import org.sysarp.project.service.http.StatsApiClient
-import org.sysarp.project.service.http.billing.BillingApiClient
-import org.sysarp.project.service.payment.PaymentService
-import org.sysarp.project.service.stats.StatsService
+import org.sysarp.project.service.notification.HybridNotificationManager
 import org.sysarp.project.ui.theme.YapeHubTheme
-import org.sysarp.project.viewmodel.YapeViewModel
 
 @Composable
 fun App() {
@@ -34,117 +21,39 @@ fun App() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            YapeApp()
+            // Wrap the app content with KoinContext
+            KoinContext {
+                YapeApp()
+            }
         }
     }
 }
+
 @Composable
 fun YapeApp() {
-    val userProfileRepository = remember {
-        UserProfileRepository()
-    }
-    
+    // Koin will provide the dependencies. No more manual creation!
+    val hybridNotificationManager: HybridNotificationManager = koinInject()
+    val navigationManager = rememberNavigationManager()
 
-
-    val notificationService = remember {
-        object : SimpleNotificationService {
-            override fun startCapture() {
-            }
-            override fun stopCapture() {
-            }
-            override fun isCapturing(): Boolean = false
-        }
-    }
-    
-    val httpClient = remember {
-        HttpClient()
-    }
-    
-    val authService = remember {
-        AuthService.getInstance()
-    }
-    
-    val sellerService = remember {
-        SellerService(authService)
-    }
-    
-    val affiliationService = remember {
-        AffiliationService()
-    }
-    
-    val qrService = remember {
-        org.sysarp.project.service.qr.QRService()
-    }
-    
-    val branchService = remember {
-        BranchService()
-    }
-    
-    val paymentService = remember {
-        val paymentApiClient = PaymentApiClient(httpClient)
-        PaymentService(paymentApiClient)
-    }
-    
-    val statsService = remember {
-        val statsApiClient = StatsApiClient()
-        StatsService(statsApiClient)
-    }
-    
-    val webSocketService = remember {
-        org.sysarp.project.service.websocket.PaymentWebSocketService(authService)
-    }
-    
-    val hybridNotificationManager = remember {
-        org.sysarp.project.service.notification.HybridNotificationManager(authService, webSocketService)
-    }
-    
-    val billingService = remember {
-        val billingApiClient = BillingApiClient()
-        BillingService(billingApiClient, authService)
-    }
-    
-    val credentialStorageService = CredentialStorageService
-    
-    val viewModel = remember {
-        YapeViewModel(notificationService, userProfileRepository)
-    }
-    
     LaunchedEffect(Unit) {
-        // Configurar callback para notificaciones híbridas
+        // Configure and start the notification manager
         hybridNotificationManager.setOnNewNotificationCallback { payments ->
-            println("[APP] 🔔 Notificaciones híbridas recibidas: ${payments.size} pagos")
-            // Aquí puedes agregar lógica para mostrar notificaciones en la UI
+            println("[APP] 🔔 Hybrid notifications received: ${payments.size} payments")
             payments.forEach { payment ->
-                println("[APP] 💰 Pago: ${payment.paymentId} - S/ ${payment.amount} de ${payment.senderName}")
+                println("[APP] 💰 Payment: ${payment.paymentId} - S/ ${payment.amount} from ${payment.senderName}")
             }
         }
-        
-        // Iniciar el sistema híbrido de notificaciones (incluye WebSocket)
         hybridNotificationManager.start()
     }
-    
+
     DisposableEffect(Unit) {
         onDispose {
-            // Detener el sistema híbrido al cerrar la app
+            // Stop the manager when the app closes
             hybridNotificationManager.stop()
         }
     }
-    
-    val navigationManager = rememberNavigationManager()
-    AppContent(
-        navigationManager = navigationManager,
-        authService = authService,
-        sellerService = sellerService,
-        paymentService = paymentService,
-        statsService = statsService,
-        affiliationService = affiliationService,
-        qrService = qrService,
-        branchService = branchService,
-        webSocketService = webSocketService,
-        hybridNotificationManager = hybridNotificationManager,
-        billingService = billingService,
-        credentialStorageService = credentialStorageService,
-        viewModel = viewModel,
-        userProfileRepository = userProfileRepository
-    )
+
+    // AppContent is now much cleaner!
+    // Screens inside AppContent can now use koinInject() to get their own dependencies.
+    AppContent(navigationManager = navigationManager)
 }

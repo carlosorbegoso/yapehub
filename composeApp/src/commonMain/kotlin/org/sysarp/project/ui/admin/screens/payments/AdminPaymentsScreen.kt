@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.admin
+package org.sysarp.project.ui.admin.screens.payments
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,30 +11,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import org.koin.compose.koinInject
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
-import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsActions
-import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsContentHandler
-import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsState
-import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 import org.sysarp.project.ui.common.components.DateFilterComponent
 import org.sysarp.project.ui.common.components.rememberDateFilterState
+import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 
 /**
  * Pantalla de gestión de pagos del administrador refactorizada
- * Usa componentes modulares para mejor mantenibilidad
+ * Usa componentes modulares y Koin para DI.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPaymentsScreen(
-    authService: AuthService,
-    paymentService: PaymentService,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    // Dependencies are now injected by Koin
+    authService: AuthService = koinInject(),
+    paymentService: PaymentService = koinInject()
 ) {
     val coroutineScope = rememberCoroutineScope()
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()
-    
+
     // Crear el estado del screen
     val state = remember {
         AdminPaymentsState(
@@ -43,10 +42,10 @@ fun AdminPaymentsScreen(
             coroutineScope = coroutineScope
         )
     }
-    
+
     // Estado del filtro de fechas
     val dateFilterState = rememberDateFilterState()
-    
+
     Scaffold(
         topBar = {
             TopBarComponent(
@@ -85,11 +84,11 @@ fun AdminPaymentsScreen(
                 title = "Filtrar pagos por fecha",
                 description = "Selecciona un período para filtrar los pagos del sistema"
             )
-            
+
             AdminPaymentsContentHandler(state = state)
         }
     }
-    
+
     // Manejar acciones del screen
     AdminPaymentsActions(
         state = state,

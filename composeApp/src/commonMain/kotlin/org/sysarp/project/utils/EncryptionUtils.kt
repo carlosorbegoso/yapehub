@@ -1,96 +1,45 @@
 package org.sysarp.project.utils
 
-import kotlinx.datetime.Clock
-import kotlinx.serialization.encodeToString
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.serialization.json.Json
-import org.sysarp.project.data.YapeNotification
-import java.security.MessageDigest
-import javax.crypto.Cipher
-import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
+import kotlin.time.ExperimentalTime
 
+/**
+ * Implementación multiplataforma de SHA-256
+ */
+internal expect fun sha256Hash(input: String): String
+
+@OptIn(ExperimentalTime::class)
 object EncryptionUtils {
     
     private val json = Json { ignoreUnknownKeys = true }
     
     // Clave de encriptación (en producción debería estar en variables de entorno)
     private const val ENCRYPTION_KEY = "YapeChamo2024SecretKey"
-    
+
     /**
-     * Encripta una notificación de Yape
-     */
-    fun encryptYapeNotification(notification: YapeNotification): String {
-        try {
-            // Convertir la notificación a JSON
-            val jsonString = json.encodeToString(notification)
-            
-            // Generar clave de encriptación
-            val key = generateKey()
-            
-            // Encriptar el JSON
-            val encryptedData = encrypt(jsonString, key)
-            
-            // Crear el payload encriptado con metadata
-            val encryptedPayload = mapOf(
-                "data" to encryptedData,
-                "key" to key,
-                "timestamp" to Clock.System.now().toEpochMilliseconds(),
-                "checksum" to generateChecksum(jsonString)
-            )
-            
-            return json.encodeToString(encryptedPayload)
-        } catch (e: Exception) {
-            throw Exception("Error al encriptar notificación: ${e.message}")
-        }
-    }
-    
-    /**
-     * Genera una clave de encriptación única
-     */
-    private fun generateKey(): String {
-        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-        return (1..16).map { chars[Random.nextInt(chars.length)] }.joinToString("")
-    }
-    
-    /**
-     * Encripta texto usando AES
-     */
-    private fun encrypt(text: String, key: String): String {
-        val secretKey = SecretKeySpec(key.toByteArray(), "AES")
-        val cipher = Cipher.getInstance("AES")
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-        val encryptedBytes = cipher.doFinal(text.toByteArray())
-        return android.util.Base64.encodeToString(encryptedBytes, android.util.Base64.DEFAULT)
-    }
-    
-    /**
-     * Genera un checksum para verificar integridad
+     * Genera un checksum para verificar integridad usando implementación multiplataforma
      */
     private fun generateChecksum(data: String): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hash = digest.digest(data.toByteArray())
-        return hash.joinToString("") { "%02x".format(it) }
+        return sha256Hash(data)
     }
     
     /**
      * Genera un fingerprint único del dispositivo
      */
     fun generateDeviceFingerprint(): String {
-        val timestamp = Clock.System.now().toEpochMilliseconds()
+        val timestamp = kotlin.time.Clock.System.now().toEpochMilliseconds()
         val random = Random.nextLong()
-        val nanos = System.nanoTime()
-        val deviceInfo = "device_${timestamp}_${random}_${nanos}_1.0.0"
+        val deviceInfo = "device_${timestamp}_${random}_1.0.0"
         return generateChecksum(deviceInfo).take(16)
     }
     
     // Generar fingerprint único para cada notificación
     fun generateUniqueNotificationFingerprint(): String {
-        val timestamp = Clock.System.now().toEpochMilliseconds()
+        val timestamp = kotlin.time.Clock.System.now().toEpochMilliseconds()
         val random = Random.nextLong()
-        val nanos = System.nanoTime()
-        val threadHash = Thread.currentThread().name.hashCode()
-        val objectHash = hashCode()
-        val uniqueInfo = "notif_${timestamp}_${random}_${nanos}_${threadHash}_${objectHash}"
+        val uniqueInfo = "notif_${timestamp}_${random}_${hashCode()}"
         return generateChecksum(uniqueInfo).take(16)
     }
 

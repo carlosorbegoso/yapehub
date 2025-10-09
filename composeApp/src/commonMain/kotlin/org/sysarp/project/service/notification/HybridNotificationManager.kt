@@ -97,7 +97,7 @@ class HybridNotificationManager(
                 when (state) {
                     org.sysarp.project.service.websocket.WebSocketConnectionState.CONNECTED -> {
                         println("[HYBRID_MANAGER] ✅ WebSocket conectado")
-                        lastMessageTime = System.currentTimeMillis()
+                        lastMessageTime = getCurrentTimeMillis()
                     }
                     org.sysarp.project.service.websocket.WebSocketConnectionState.DISCONNECTED -> {
                         println("[HYBRID_MANAGER] ❌ WebSocket desconectado")
@@ -114,8 +114,8 @@ class HybridNotificationManager(
     }
     
     private fun shouldUsePolling(): Boolean {
-        val timeSinceLastMessage = System.currentTimeMillis() - lastMessageTime
-        val timeSinceLastPolling = System.currentTimeMillis() - lastPollingTime
+        val timeSinceLastMessage = getCurrentTimeMillis() - lastMessageTime
+        val timeSinceLastPolling = getCurrentTimeMillis() - lastPollingTime
         
         // Usar polling si:
         // 1. No hay mensajes del WebSocket en 2 minutos
@@ -126,14 +126,19 @@ class HybridNotificationManager(
     
     // Método para actualizar el tiempo del último mensaje (llamado desde WebSocket)
     fun updateLastMessageTime() {
-        lastMessageTime = System.currentTimeMillis()
+        lastMessageTime = getCurrentTimeMillis()
         println("[HYBRID_MANAGER] 📨 Mensaje recibido via WebSocket - actualizando timestamp")
     }
     
     fun getStatus(): String {
-        val timeSinceLastMessage = (System.currentTimeMillis() - lastMessageTime) / 1000
-        val timeSinceLastPolling = (System.currentTimeMillis() - lastPollingTime) / 1000
+        val timeSinceLastMessage = (getCurrentTimeMillis() - lastMessageTime) / 1000
+        val timeSinceLastPolling = (getCurrentTimeMillis() - lastPollingTime) / 1000
         
         return "WebSocket: ${timeSinceLastMessage}s, Polling: ${timeSinceLastPolling}s, Activo: $isPollingActive"
     }
 }
+
+/**
+ * Función multiplataforma para obtener el tiempo actual en milisegundos
+ */
+internal expect fun getCurrentTimeMillis(): Long

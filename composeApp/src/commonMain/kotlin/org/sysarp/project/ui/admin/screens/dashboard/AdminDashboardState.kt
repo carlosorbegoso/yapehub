@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
@@ -24,10 +23,12 @@ import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
+import kotlin.time.ExperimentalTime
 
 /**
  * Estado y lógica de negocio para AdminDashboardScreen
  */
+@OptIn(ExperimentalTime::class)
 class AdminDashboardState(
     private val authService: AuthService,
     private val sellerService: SellerService,
@@ -112,7 +113,7 @@ class AdminDashboardState(
     
     init {
         // Inicializar fechas por defecto: último mes
-        val now = Clock.System.now()
+        val now = kotlin.time.Clock.System.now()
         val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
         val lastMonth = today.minus(30, DateTimeUnit.DAY)
         
@@ -391,7 +392,7 @@ class AdminDashboardState(
      * Calcula las fechas basadas en el período seleccionado
      */
     private fun calculateDateRange(period: String) {
-        val now = Clock.System.now()
+        val now = kotlin.time.Clock.System.now()
         val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
         
         when (period) {

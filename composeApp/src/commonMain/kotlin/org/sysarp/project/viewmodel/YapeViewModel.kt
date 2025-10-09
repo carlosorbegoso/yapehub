@@ -2,8 +2,7 @@ package org.sysarp.project.viewmodel
 
 // Imports de funciones iOS eliminados - no se necesitan para Android
 // PendingPayment eliminado - no se utiliza
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,10 +37,13 @@ enum class CaptureStatus {
     ERROR
 }
 
+/**
+ * Implementación común del ViewModel multiplataforma
+ */
 class YapeViewModel(
     private val notificationService: SimpleNotificationService,
     private val userProfileRepository: UserProfileRepository
-) : ViewModel() {
+) {
     
     private val _uiState = MutableStateFlow(YapeUiState())
     val uiState: StateFlow<YapeUiState> = _uiState.asStateFlow()
@@ -63,36 +65,38 @@ class YapeViewModel(
     private var isObservingRepository = false
 
     
-    fun setCurrentUser(user: UserProfile) {
-        _currentUser.value = user
-        userProfileRepository.setCurrentUser(user)
-        
-        if (!isObservingRepository) {
-            isObservingRepository = true
-            viewModelScope.launch {
-                _transactions.value = emptyList()
-                updateBusinessReports(emptyList())
-                updateDailyReports(emptyList())
+    fun setCurrentUser(user: UserProfile?) {
+        if (user != null) {
+            _currentUser.value = user
+            userProfileRepository.setCurrentUser(user)
+            
+            if (!isObservingRepository) {
+                isObservingRepository = true
+                GlobalScope.launch {
+                    _transactions.value = emptyList()
+                    updateBusinessReports(emptyList())
+                    updateDailyReports(emptyList())
+                }
             }
-        }
-        
-        if (user.role == UserRole.ADMIN) {
-            viewModelScope.launch {
-                requestPermissions()
-                notificationService.startCapture()
-                kotlinx.coroutines.delay(3000)
-                checkPermissions()
-            }
-        } else {
-            viewModelScope.launch {
-                notificationService.stopCapture()
-                _uiState.value = _uiState.value.copy(
-                    isCapturing = false,
-                    permissionState = PermissionState.UNKNOWN,
-                    captureStatus = CaptureStatus.INACTIVE,
-                    permissionMessage = "",
-                    captureMessage = "Esperando confirmaciones de pago"
-                )
+            
+            if (user.role == UserRole.ADMIN) {
+                GlobalScope.launch {
+                    requestPermissions()
+                    notificationService.startCapture()
+                    kotlinx.coroutines.delay(3000)
+                    checkPermissions()
+                }
+            } else {
+                GlobalScope.launch {
+                    notificationService.stopCapture()
+                    _uiState.value = _uiState.value.copy(
+                        isCapturing = false,
+                        permissionState = PermissionState.UNKNOWN,
+                        captureStatus = CaptureStatus.INACTIVE,
+                        permissionMessage = "",
+                        captureMessage = "Esperando confirmaciones de pago"
+                    )
+                }
             }
         }
     }
@@ -115,7 +119,7 @@ class YapeViewModel(
         val reports = transactions
             .filter { it.isProcessed }
             .groupBy { 
-                val date = it.createdAt.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+                val date = it.createdAt.toLocalDateTime()
                 "${date.year}-${date.monthNumber}-${date.dayOfMonth}"
             }
             .flatMap { (date, dateTransactions) ->

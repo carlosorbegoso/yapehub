@@ -10,10 +10,8 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-// WorkManager removido por ahora - usando solo coroutines
 import org.sysarp.project.MainActivity
-import org.sysarp.project.R
-import java.util.concurrent.TimeUnit
+
 
 class NotificationForegroundService : Service() {
 
