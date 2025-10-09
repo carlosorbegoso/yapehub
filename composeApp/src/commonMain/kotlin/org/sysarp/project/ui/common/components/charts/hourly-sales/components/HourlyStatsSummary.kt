@@ -13,6 +13,7 @@ import org.sysarp.project.data.HourlySalesData
 import org.sysarp.project.ui.common.components.charts.daily.sales.components.EnhancedMetricCard
 import org.sysarp.project.ui.common.components.charts.hourly.sales.data.analyzeHourlySales
 import org.sysarp.project.utils.formatCurrency
+import org.sysarp.project.ui.common.components.charts.hourly.sales.utils.formatHour
 
 /**
  * Componente de resumen de estadísticas para ventas por hora
@@ -36,7 +37,7 @@ fun HourlyStatsSummary(
             EnhancedMetricCard(
                 icon = "🕐",
                 label = "Hora Pico",
-                value = analysis.peakHour?.hour?.substring(0, 2) ?: "N/A",
+                value = analysis.peakHour?.hour?.formatHour() ?: "N/A",
                 color = MaterialTheme.colorScheme.primary
             )
         }

@@ -40,11 +40,14 @@ data class SellerStatsResponse(
 
 @Serializable
 data class SellerStatsData(
-    val sellerId: Int,
-    val sellerName: String,
-    val period: StatsPeriod,
-    val summary: SellerSummary,
-    val dailyStats: List<SellerDailyStats>
+    val sellerId: Int? = null, // Campo opcional ya que no viene en la respuesta real
+    val sellerName: String? = null, // Campo opcional ya que no viene en la respuesta real
+    val period: StatsPeriod? = null, // Campo opcional ya que no viene en la respuesta real
+    val summary: SellerSummary? = null, // Campo opcional ya que no viene en la respuesta real
+    val dailyStats: List<SellerDailyStats>? = null, // Campo opcional ya que no viene en la respuesta real
+    val performanceMetrics: PerformanceMetricsData, // ✅ Campo agregado para la respuesta real de la API
+    val dailySales: List<DailySalesData>, // ✅ Campo agregado para la respuesta real de la API
+    val overview: SellerOverviewSummaryData // ✅ Campo corregido para usar SellerOverviewSummaryData que coincide con la API
 )
 
 @Serializable
@@ -167,7 +170,7 @@ data class AnalyticsOverview(
 @Serializable
 data class DailySalesData(
     val date: String,
-    val dayName: String,  // "Lun", "Mar", "Mié", etc.
+    val dayName: String,  // "MONDAY", "TUESDAY", etc. (en inglés)
     val sales: Double,
     val transactions: Int
 )
@@ -202,14 +205,14 @@ data class HourlySalesData(
 
 @Serializable
 data class WeeklySalesData(
-    val week: String,
+    val week: String, // "2025-04-07" formato de fecha
     val sales: Double,
     val transactions: Int
 )
 
 @Serializable
 data class MonthlySalesData(
-    val month: String,
+    val month: String, // "2025-04" formato YYYY-MM
     val sales: Double,
     val transactions: Int
 )
@@ -367,37 +370,36 @@ data class BranchAnalyticsData(
 data class BranchPerformanceData(
     val branchId: Int,
     val branchName: String,
-    val branchCode: String,
+    val branchLocation: String? = null, // Nuevo campo observado en la respuesta
     val totalSales: Double,
     val totalTransactions: Int,
     val activeSellers: Int,
     val inactiveSellers: Int,
     val averageSalesPerSeller: Double,
     val performanceScore: Double,
-    val growthRate: Double,
-    val lastActivity: String
+    val lastActivity: String // ISO formato "2025-10-03T01:34:45.819403"
 )
 
 @Serializable
 data class BranchComparisonData(
     val topPerformingBranch: BranchSummaryData,
     val lowestPerformingBranch: BranchSummaryData,
-    val averageBranchPerformance: BranchAverageData
+    val averagePerformance: BranchAverageData // Cambio de nombre según respuesta real
 )
 
 @Serializable
 data class BranchSummaryData(
-    val branchId: Int,
-    val branchName: String,
-    val sales: Double,
-    val growth: Double
+    val branchName: String, // Sin branchId en la respuesta real
+    val totalSales: Double, // Renombrado desde 'sales'
+    val totalTransactions: Int, // Nuevo campo
+    val performanceScore: Double // Nuevo campo
 )
 
 @Serializable
 data class BranchAverageData(
-    val sales: Double,
-    val transactions: Int,
-    val sellers: Int
+    val averageSales: Double, // Renombrado según respuesta real
+    val averageTransactions: Double, // Renombrado y tipo cambiado
+    val averagePerformanceScore: Double // Nuevo campo
 )
 
 @Serializable
@@ -405,6 +407,16 @@ data class SellerManagementData(
     val sellerOverview: SellerOverviewData,
     val sellerPerformanceDistribution: SellerPerformanceDistributionData,
     val sellerActivity: SellerActivityData
+)
+
+@Serializable
+data class SellerOverviewSummaryData(
+    val totalSales: Double,
+    val totalTransactions: Int,
+    val averageTransactionValue: Double,
+    val salesGrowth: Double,
+    val transactionGrowth: Double,
+    val averageGrowth: Double
 )
 
 @Serializable
@@ -473,10 +485,10 @@ data class UserEngagementData(
 
 @Serializable
 data class FeatureUsageData(
-    val qrScanner: Double,
-    val paymentManagement: Double,
-    val analytics: Double,
-    val notifications: Double
+    val qrScannerUsage: Double,
+    val paymentManagementUsage: Double,
+    val analyticsUsage: Double,
+    val notificationsUsage: Double
 )
 
 @Serializable
@@ -489,11 +501,11 @@ data class AdministrativeInsightsData(
 @Serializable
 data class ManagementAlertData(
     val type: String,
-    val severity: String,
+    val severity: String, // Cambiado: puede ser "Meta semanal alcanzada", "Alto volumen de transacciones"
     val message: String,
     val affectedBranch: String,
     val affectedSellers: List<String>,
-    val recommendation: String
+    val recommendation: String // Puede ser fecha o texto
 )
 
 @Serializable
@@ -521,7 +533,7 @@ data class RevenueBreakdownData(
 data class RevenueByBranchData(
     val branchId: Int,
     val branchName: String,
-    val revenue: Double,
+    val revenue: Double, // Mantener revenue según respuesta real
     val percentage: Double
 )
 

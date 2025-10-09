@@ -15,7 +15,7 @@ class HybridNotificationManager(
 ) {
     
     private val pollingService = NotificationPollingService()
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
     
     private var pollingJob: Job? = null
     private var lastMessageTime = 0L

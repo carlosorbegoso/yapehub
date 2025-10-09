@@ -26,8 +26,8 @@ class SellerStatsManager(
             response.fold(
                 onSuccess = { result ->
                     val summary = result.data.summary
-                    val confirmedCount = summary.confirmedPayments
-                    val totalAmount = summary.totalSales
+                    val confirmedCount = summary?.confirmedPayments ?: 0
+                    val totalAmount = summary?.totalSales ?: 0.0
                     
                     onSuccess(confirmedCount, totalAmount)
                 },

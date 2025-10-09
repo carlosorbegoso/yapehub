@@ -13,7 +13,7 @@ object DeviceUtils {
      * Genera un fingerprint único del dispositivo
      * En Android usará identificadores reales, en otras plataformas un fallback
      */
-    suspend fun generateDeviceFingerprint(): String = withContext(Dispatchers.IO) {
+    suspend fun generateDeviceFingerprint(): String = withContext(Dispatchers.Default) {
         try {
             
             // Intentar usar AndroidDeviceUtils si está disponible

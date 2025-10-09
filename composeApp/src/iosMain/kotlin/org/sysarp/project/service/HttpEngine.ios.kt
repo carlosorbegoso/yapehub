@@ -4,5 +4,5 @@ import io.ktor.client.engine.*
 import io.ktor.client.engine.darwin.*
 
 actual fun createHttpEngine(): HttpClientEngineFactory<HttpClientEngineConfig> {
-    return Darwin
+    return Darwin.create()
 }

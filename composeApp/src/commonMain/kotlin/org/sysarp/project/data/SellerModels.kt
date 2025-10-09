@@ -29,7 +29,7 @@ data class MySeller(
     val email: String,
     val phone: String,
     val branchId: Int,
-    val branchName: String,
+    val branchName: String? = null, // Puede ser null en la respuesta real
     val isActive: Boolean,
     val isOnline: Boolean,
     val totalPayments: Int,
@@ -58,8 +58,13 @@ data class SellersData(
 data class PaginationData(
     val currentPage: Int,
     val totalPages: Int,
-    val totalItems: Int,
-    val itemsPerPage: Int
+    val totalElements: Int,        // Cambiado de totalItems
+    val pageSize: Int,             // Cambiado de itemsPerPage
+    val hasNext: Boolean,          // Nuevo campo
+    val hasPrevious: Boolean,      // Nuevo campo
+    val empty: Boolean,             // Nuevo campo
+    val firstPage: Boolean,        // Nuevo campo
+    val lastPage: Boolean          // Nuevo campo
 )
 
 // Modelos para registro de vendedores

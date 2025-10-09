@@ -1,12 +1,13 @@
 package org.sysarp.project.service
 
 import kotlinx.serialization.Serializable
+import org.sysarp.project.utils.getCurrentTimeMillis
 
 @Serializable
 data class SavedCredentials(
     val email: String,
     val password: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 /**

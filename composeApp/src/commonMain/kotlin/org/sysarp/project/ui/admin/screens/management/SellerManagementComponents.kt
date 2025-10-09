@@ -177,7 +177,7 @@ fun SellerStatsRow(state: SellerManagementState) {
     ) {
         SellerStatCard(
             title = "Total Vendedores",
-            value = state.sellersData?.data?.pagination?.totalItems?.toString() ?: "0",
+            value = state.sellersData?.data?.pagination?.totalElements?.toString() ?: "0",
             icon = Icons.Filled.People,
             modifier = Modifier.weight(1f)
         )

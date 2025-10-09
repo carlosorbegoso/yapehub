@@ -176,6 +176,7 @@ class StatsApiClient : BaseApiClient() {
         metric: String? = null, // "sales", "transactions", "performance", "all"
         confidence: Double? = null, // 0.90, 0.95, 0.99
         days: Int? = null, // días para forecast
+        granularity: String? = null, // "daily", "hourly", "weekly", "monthly"
         token: String
     ): Result<AnalyticsResponse> {
         return try {
@@ -190,6 +191,7 @@ class StatsApiClient : BaseApiClient() {
                 metric?.let { parameter("metric", it) }
                 confidence?.let { parameter("confidence", it) }
                 days?.let { parameter("days", it) }
+                granularity?.let { parameter("granularity", it) }
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }
@@ -200,7 +202,8 @@ class StatsApiClient : BaseApiClient() {
                     // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
                     val responseBody = response.body<String>()
                     logInfo("STATS_API", "Respuesta raw: $responseBody")
-                    val analyticsResponse = Json.decodeFromString<AnalyticsResponse>(responseBody)
+                    val json = Json { ignoreUnknownKeys = true }
+                    val analyticsResponse = json.decodeFromString<AnalyticsResponse>(responseBody)
                     logInfo("STATS_API", "Analytics obtenidos exitosamente")
                     Result.success(analyticsResponse)
                 } catch (e: Exception) {
@@ -235,6 +238,7 @@ class StatsApiClient : BaseApiClient() {
         metric: String? = null, // "sales", "transactions", "performance", "all"
         confidence: Double? = null, // 0.90, 0.95, 0.99
         days: Int? = null, // días para forecast
+        granularity: String? = null, // "daily", "hourly", "weekly", "monthly"
         token: String
     ): Result<AnalyticsResponse> {
         return try {
@@ -249,6 +253,7 @@ class StatsApiClient : BaseApiClient() {
                 metric?.let { parameter("metric", it) }
                 confidence?.let { parameter("confidence", it) }
                 days?.let { parameter("days", it) }
+                granularity?.let { parameter("granularity", it) }
                 header("Authorization", "Bearer $token")
                 header("accept", "application/json")
             }
@@ -258,7 +263,8 @@ class StatsApiClient : BaseApiClient() {
                     // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
                     val responseBody = response.body<String>()
                     logInfo("STATS_API", "Respuesta raw: $responseBody")
-                    val analyticsResponse = Json.decodeFromString<AnalyticsResponse>(responseBody)
+                    val json = Json { ignoreUnknownKeys = true }
+                    val analyticsResponse = json.decodeFromString<AnalyticsResponse>(responseBody)
                     logInfo("STATS_API", "Analytics de vendedor obtenidos exitosamente")
                     Result.success(analyticsResponse)
                 } catch (e: Exception) {

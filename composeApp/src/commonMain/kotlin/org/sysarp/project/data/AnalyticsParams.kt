@@ -21,6 +21,14 @@ enum class AnalyticsPeriod(val value: String) {
     YEARLY("yearly")
 }
 
+// Granularidad de datos
+enum class AnalyticsGranularity(val value: String) {
+    DAILY("daily"),
+    HOURLY("hourly"),
+    WEEKLY("weekly"),
+    MONTHLY("monthly")
+}
+
 // Métricas específicas
 enum class AnalyticsMetric(val value: String) {
     SALES("sales"),
@@ -92,6 +100,16 @@ object AnalyticsConfigs {
         confidence = AnalyticsConfidence.HIGH,
         days = 90
     )
+    
+    // Configuración específica para el endpoint actual
+    val SPECIFIC_INCLUDE = AnalyticsConfig(
+        include = AnalyticsInclude.TRENDS, // Para dailySales,hourlySales,sellerGoals
+        period = AnalyticsPeriod.WEEKLY,
+        metric = AnalyticsMetric.SALES,
+        confidence = AnalyticsConfidence.MEDIUM,
+        days = 62,
+        granularity = AnalyticsGranularity.DAILY
+    )
 }
 
 // Clase de configuración para analytics
@@ -100,7 +118,8 @@ data class AnalyticsConfig(
     val period: AnalyticsPeriod,
     val metric: AnalyticsMetric,
     val confidence: AnalyticsConfidence,
-    val days: Int
+    val days: Int,
+    val granularity: AnalyticsGranularity = AnalyticsGranularity.DAILY
 ) {
     fun toParams(): AnalyticsParams {
         return AnalyticsParams(
@@ -108,7 +127,8 @@ data class AnalyticsConfig(
             period = period.value,
             metric = metric.value,
             confidence = confidence.value,
-            days = days
+            days = days,
+            granularity = granularity.value
         )
     }
 }
@@ -119,5 +139,6 @@ data class AnalyticsParams(
     val period: String? = null,
     val metric: String? = null,
     val confidence: Double? = null,
-    val days: Int? = null
+    val days: Int? = null,
+    val granularity: String? = null // "daily", "hourly", "weekly", "monthly"
 )

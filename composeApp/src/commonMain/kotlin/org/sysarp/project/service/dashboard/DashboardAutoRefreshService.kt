@@ -2,7 +2,6 @@ package org.sysarp.project.service.dashboard
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +13,7 @@ import org.sysarp.project.data.UserRole
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.utils.getCurrentTimeMillis
 
 /**
  * Servicio para actualización automática de dashboards basado en eventos
@@ -25,13 +25,13 @@ class DashboardAutoRefreshService(
 ) {
     
     private var refreshJob: Job? = null
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
     
     // Estados para controlar las actualizaciones
     private val _isAutoRefreshEnabled = MutableStateFlow(true)
     val isAutoRefreshEnabled: StateFlow<Boolean> = _isAutoRefreshEnabled.asStateFlow()
     
-    private val _lastRefreshTime = MutableStateFlow(System.currentTimeMillis())
+    private val _lastRefreshTime = MutableStateFlow(getCurrentTimeMillis())
     val lastRefreshTime: StateFlow<Long> = _lastRefreshTime.asStateFlow()
     
     // Callbacks para actualizar dashboards
@@ -104,7 +104,7 @@ class DashboardAutoRefreshService(
      * Maneja las notificaciones de pago del WebSocket
      */
     private suspend fun handlePaymentNotification(notification: PaymentNotificationData) {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         
         if (currentTime - lastNotificationTime < minTimeBetweenNotifications) {
             return
@@ -126,7 +126,7 @@ class DashboardAutoRefreshService(
      * Realiza una actualización periódica
      */
     private suspend fun performPeriodicRefresh() {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         
         if (currentTime - lastPeriodicRefreshTime < minTimeBetweenPeriodicRefresh) {
             return
@@ -156,7 +156,7 @@ class DashboardAutoRefreshService(
                 }
             }
             
-            _lastRefreshTime.value = System.currentTimeMillis()
+            _lastRefreshTime.value = getCurrentTimeMillis()
             
         } catch (e: Exception) {
         }

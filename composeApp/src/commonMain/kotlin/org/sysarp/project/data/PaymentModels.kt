@@ -20,8 +20,13 @@ data class PendingPaymentsData(
 data class PaymentPagination(
     val currentPage: Int,
     val totalPages: Int,
-    val totalItems: Int,
-    val itemsPerPage: Int
+    val totalElements: Int,        // Cambiado de totalItems
+    val pageSize: Int,             // Cambiado de itemsPerPage
+    val hasNext: Boolean,          // Nuevo campo
+    val hasPrevious: Boolean,      // Nuevo campo
+    val empty: Boolean,            // Nuevo campo
+    val firstPage: Boolean,        // Nuevo campo
+    val lastPage: Boolean          // Nuevo campo
 )
 
 @Serializable
@@ -132,7 +137,8 @@ data class PaymentSummary(
     val rejectedCount: Int,
     val totalAmount: Double,
     val confirmedAmount: Double,
-    val pendingAmount: Double
+    val pendingAmount: Double,
+    val empty: Boolean  // Campo adicional de la API real
 )
 
 // Modelos para WebSocket
@@ -196,11 +202,12 @@ data class SellerConnectionStatusResponse(
 @Serializable
 data class SellerConnectionStatusData(
     val sellerId: Int,
-    val sellerName: String,
+    val websocketEndpoint: String, // ✅ Campo agregado para la respuesta real de la API
     val isConnected: Boolean,
     val lastSeen: String,
+    val sellerName: String? = null, // Campo opcional ya que no viene en la respuesta real
     val connectionDuration: Long? = null,
-    val totalConnections: Int,
+    val totalConnections: Int? = null,
     val averageSessionDuration: Double? = null,
-    val status: String // "ONLINE", "OFFLINE", "AWAY"
+    val status: String? = null // "ONLINE", "OFFLINE", "AWAY"
 )

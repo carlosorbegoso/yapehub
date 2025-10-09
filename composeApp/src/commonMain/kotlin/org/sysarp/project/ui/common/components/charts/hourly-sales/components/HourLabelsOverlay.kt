@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.sysarp.project.data.HourlySalesData
+import org.sysarp.project.ui.common.components.charts.hourly.sales.utils.formatHour
 
 /**
  * Componente para mostrar etiquetas de horas superpuestas en el gráfico
@@ -34,7 +35,7 @@ fun HourLabelsOverlay(
         hourlySales.forEachIndexed { index, hourData ->
             if (index % 3 == 0) { // Mostrar cada 3 horas
                 Text(
-                    text = hourData.hour.substring(0, 2),
+                    text = hourData.hour.formatHour(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,

@@ -1,6 +1,8 @@
 package org.sysarp.project.ui.common.components.charts.hourly.sales.data
 
 import org.sysarp.project.data.HourlySalesData
+import org.sysarp.project.ui.common.components.charts.hourly.sales.utils.parseHour
+import org.sysarp.project.ui.common.components.charts.hourly.sales.utils.getTimeOfDay
 
 /**
  * Análisis inteligente de datos de ventas por hora
@@ -49,22 +51,22 @@ fun analyzeHourlySales(hourlySales: List<HourlySalesData>): HourlyAnalysis {
 
     // Distribución por períodos del día
     val morningSales = hourlySales.filter { 
-        val hour = it.hour.substring(0, 2).toIntOrNull() ?: 0
+        val hour = it.hour.parseHour()
         hour in 6..11 
     }.sumOf { it.sales }
     
     val afternoonSales = hourlySales.filter { 
-        val hour = it.hour.substring(0, 2).toIntOrNull() ?: 0
+        val hour = it.hour.parseHour()
         hour in 12..17 
     }.sumOf { it.sales }
     
     val eveningSales = hourlySales.filter { 
-        val hour = it.hour.substring(0, 2).toIntOrNull() ?: 0
+        val hour = it.hour.parseHour()
         hour in 18..23 
     }.sumOf { it.sales }
     
     val nightSales = hourlySales.filter { 
-        val hour = it.hour.substring(0, 2).toIntOrNull() ?: 0
+        val hour = it.hour.parseHour()
         hour in 0..5 
     }.sumOf { it.sales }
 
@@ -101,18 +103,6 @@ fun calculateBarColor(sales: Double, maxSales: Double, primaryColor: androidx.co
     }
 }
 
-/**
- * Determina el período del día basado en la hora
- */
-fun getTimeOfDay(hour: String): String {
-    val hourInt = hour.substring(0, 2).toIntOrNull() ?: 0
-    return when (hourInt) {
-        in 6..11 -> "Mañana"
-        in 12..17 -> "Tarde"
-        in 18..23 -> "Noche"
-        else -> "Madrugada"
-    }
-}
 
 /**
  * Calcula métricas de rendimiento por hora

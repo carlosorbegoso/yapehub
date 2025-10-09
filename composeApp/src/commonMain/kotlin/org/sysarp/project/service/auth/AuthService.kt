@@ -8,6 +8,8 @@ import org.sysarp.project.service.http.AuthApiClient
 import org.sysarp.project.utils.ErrorInfo
 import org.sysarp.project.utils.ErrorManager
 import org.sysarp.project.utils.UserProfileFactory
+import org.sysarp.project.utils.Volatile
+import org.sysarp.project.utils.synchronized
 
 /**
  * Servicio de autenticación simplificado

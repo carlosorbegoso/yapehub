@@ -242,7 +242,7 @@ fun BranchSellersDialog(
                                         PaginationControls(
                                             currentPage = pagination.currentPage,
                                             totalPages = pagination.totalPages,
-                                            totalItems = pagination.totalItems,
+                                            totalItems = pagination.totalElements,
                                             onPageChange = { page ->
                                                 currentPage = page
                                             }

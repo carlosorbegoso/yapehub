@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import org.sysarp.project.data.HourlySalesData
-import org.sysarp.project.ui.common.components.charts.hourly.sales.data.getTimeOfDay
+import org.sysarp.project.ui.common.components.charts.hourly.sales.utils.getTimeOfDay
+import org.sysarp.project.ui.common.components.charts.hourly.sales.utils.parseHour
 import org.sysarp.project.utils.formatCurrency
 
 /**
@@ -197,7 +198,7 @@ private fun DetailRow(
  * Obtiene el emoji apropiado para la hora
  */
 private fun getHourEmoji(hour: String): String {
-    val hourInt = hour.substring(0, 2).toIntOrNull() ?: 0
+    val hourInt = hour.parseHour()
     return when (hourInt) {
         in 6..11 -> "🌅"  // Mañana
         in 12..17 -> "☀️" // Tarde

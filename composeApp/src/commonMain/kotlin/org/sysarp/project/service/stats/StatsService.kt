@@ -96,7 +96,7 @@ class StatsService(
     ): Result<AnalyticsResponse> {
         return try {
 
-            val result = statsApiClient.getAnalytics(adminId, startDate, endDate, include, period, metric, confidence, days, token)
+            val result = statsApiClient.getAnalytics(adminId, startDate, endDate, include, period, metric, confidence, days, null, token)
 
             result.fold(
                 onSuccess = { response ->
@@ -124,7 +124,7 @@ class StatsService(
     ): Result<AnalyticsResponse> {
         return try {
 
-            val result = statsApiClient.getSellerAnalytics(sellerId, startDate, endDate, include, period, metric, confidence, days, token)
+            val result = statsApiClient.getSellerAnalytics(sellerId, startDate, endDate, include, period, metric, confidence, days, null, token)
 
             result.fold(
                 onSuccess = { response ->
