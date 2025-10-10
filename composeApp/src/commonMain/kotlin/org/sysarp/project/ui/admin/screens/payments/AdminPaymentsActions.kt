@@ -1,12 +1,11 @@
 package org.sysarp.project.ui.admin.screens.payments
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import org.sysarp.project.data.UserProfile
-import org.sysarp.project.ui.admin.screens.payments.components.AdminPaymentsContent
 
 /**
  * Acciones y handlers para AdminPaymentsScreen
+ * Simplificado ya que la inicialización se maneja en AdminPaymentsScreen
  */
 
 @Composable
@@ -16,31 +15,6 @@ fun AdminPaymentsActions(
     accessToken: String?,
     onNavigateBack: () -> Unit
 ) {
-    // Actualizar el estado con los valores del usuario
-    LaunchedEffect(userProfile, accessToken) {
-        state.updateUserProfile(userProfile)
-        state.updateAccessToken(accessToken)
-        
-        if (state.canLoadPayments()) {
-            state.loadAdminPayments(
-                onSuccess = { },
-                onFailure = { }
-            )
-        }
-    }
-}
-
-@Composable
-fun AdminPaymentsContentHandler(
-    state: AdminPaymentsState
-) {
-    AdminPaymentsContent(
-        state = state,
-        onLoadMore = {
-            state.loadMorePayments(
-                onSuccess = { },
-                onFailure = { }
-            )
-        }
-    )
+    // La inicialización ahora se maneja en AdminPaymentsScreen
+    // Este componente se mantiene para futuras acciones específicas
 }

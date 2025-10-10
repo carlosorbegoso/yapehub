@@ -131,13 +131,6 @@ fun AdminPaymentsScreenEnhanced(
                                     onFailure = { }
                                 )
                             },
-                            onStatusFilterChange = { status ->
-                                state.filterByStatus(
-                                    status = status,
-                                    onSuccess = { },
-                                    onFailure = { }
-                                )
-                            },
                             onPaymentAction = { paymentId, action ->
                                 // Manejar acciones de pago
                             }

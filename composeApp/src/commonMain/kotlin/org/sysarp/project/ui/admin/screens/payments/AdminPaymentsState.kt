@@ -10,6 +10,7 @@ import org.sysarp.project.data.PaymentSummary
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.ui.admin.screens.payments.components.AdvancedFilters
 
 /**
  * Estado y lógica de negocio para AdminPaymentsScreen
@@ -55,6 +56,14 @@ class AdminPaymentsState(
     var endDate by mutableStateOf<String?>(null)
         private set
     
+    // Estados de filtros avanzados
+    var advancedFilters by mutableStateOf(AdvancedFilters())
+        private set
+    
+    // Estados de pagos filtrados (para mostrar en la UI)
+    var filteredPayments by mutableStateOf<List<AdminPayment>>(emptyList())
+        private set
+    
     // Estados de usuario (se pasan como parámetros)
     var userProfile: UserProfile? = null
         private set
@@ -67,6 +76,12 @@ class AdminPaymentsState(
      */
     fun updatePayments(payments: List<AdminPayment>) {
         this.payments = payments
+        // Inicializar filteredPayments con todos los pagos si no hay filtros activos
+        if (!advancedFilters.hasActiveFilters()) {
+            filteredPayments = payments
+        } else {
+            applyAdvancedFilters() // Aplicar filtros a los nuevos pagos
+        }
     }
     
     /**
@@ -74,6 +89,12 @@ class AdminPaymentsState(
      */
     fun addMorePayments(morePayments: List<AdminPayment>) {
         this.payments = this.payments + morePayments
+        // Inicializar filteredPayments con todos los pagos si no hay filtros activos
+        if (!advancedFilters.hasActiveFilters()) {
+            filteredPayments = this.payments
+        } else {
+            applyAdvancedFilters() // Aplicar filtros a los pagos actualizados
+        }
     }
     
     /**
@@ -161,8 +182,11 @@ class AdminPaymentsState(
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
+        println("ADMIN_PAYMENTS_STATE: loadAdminPayments - accessToken: ${accessToken != null}, adminId: ${userProfile?.adminId}")
+        
         if (accessToken != null && userProfile?.adminId != null) {
             coroutineScope.launch {
+                println("ADMIN_PAYMENTS_STATE: Iniciando carga de pagos...")
                 updateLoading(true)
                 clearErrorMessage()
                 updateCurrentPage(0)
@@ -178,6 +202,7 @@ class AdminPaymentsState(
                     token = accessToken ?: ""
                 ).fold(
                     onSuccess = { response ->
+                        println("ADMIN_PAYMENTS_STATE: Pagos cargados - ${response.data.payments.size} pagos")
                         updatePayments(response.data.payments)
                         updatePaymentSummary(response.data.summary)
                         updateHasMorePayments(response.data.pagination.currentPage < response.data.pagination.totalPages - 1)
@@ -185,12 +210,17 @@ class AdminPaymentsState(
                         onSuccess()
                     },
                     onFailure = { error ->
+                        println("ADMIN_PAYMENTS_STATE: Error cargando pagos: ${error.message}")
                         updateErrorMessage(error.message ?: "Error cargando gestión de pagos")
                         updateLoading(false)
                         onFailure(errorMessage)
                     }
                 )
             }
+        } else {
+            println("ADMIN_PAYMENTS_STATE: No se pueden cargar pagos - faltan credenciales")
+            updateErrorMessage("No se pueden cargar pagos: faltan credenciales de usuario")
+            onFailure("No se pueden cargar pagos: faltan credenciales de usuario")
         }
     }
     
@@ -289,10 +319,108 @@ class AdminPaymentsState(
      * Obtiene el mensaje de estado vacío
      */
     fun getEmptyStateMessage(): String {
-        return if (hasActiveFilter()) {
-            "No hay pagos con el estado seleccionado"
+        return if (hasActiveFilter() || advancedFilters.hasActiveFilters()) {
+            "No hay pagos que coincidan con los filtros aplicados"
         } else {
             "No hay pagos registrados"
         }
+    }
+    
+    /**
+     * Actualiza los filtros avanzados
+     */
+    fun updateAdvancedFilters(filters: AdvancedFilters) {
+        advancedFilters = filters
+        applyAdvancedFilters()
+    }
+    
+    /**
+     * Aplica los filtros avanzados a los pagos cargados con optimización
+     */
+    private fun applyAdvancedFilters() {
+        // Solo recalcular si hay filtros activos
+        if (!advancedFilters.hasActiveFilters()) {
+            filteredPayments = payments
+            return
+        }
+
+        filteredPayments = payments.filter { payment ->
+            // Filtro por estado
+            if (advancedFilters.status != null && payment.status != advancedFilters.status) {
+                return@filter false
+            }
+
+            // Filtro por vendedor (usando sellerName ya que AdminPayment no tiene sellerId)
+            if (advancedFilters.sellerName.isNotEmpty() &&
+                !payment.sellerName.contains(advancedFilters.sellerName, ignoreCase = true)) {
+                return@filter false
+            }
+
+            // Filtro por sucursal
+            if (advancedFilters.branchName != null && payment.branchName != advancedFilters.branchName) {
+                return@filter false
+            }
+
+            // Filtro por rango de montos
+            val minAmount = advancedFilters.minAmount
+            val maxAmount = advancedFilters.maxAmount
+            if (minAmount != null && payment.amount < minAmount) {
+                return@filter false
+            }
+            if (maxAmount != null && payment.amount > maxAmount) {
+                return@filter false
+            }
+
+            // Filtro por código Yape
+            if (advancedFilters.yapeCode.isNotEmpty() &&
+                !payment.yapeCode.contains(advancedFilters.yapeCode, ignoreCase = true)) {
+                return@filter false
+            }
+
+            // Filtro por nombre del cliente
+            if (advancedFilters.customerName.isNotEmpty() &&
+                !payment.senderName.contains(advancedFilters.customerName, ignoreCase = true)) {
+                return@filter false
+            }
+
+            true
+        }
+    }
+    
+    /**
+     * Limpia todos los filtros avanzados
+     */
+    fun clearAdvancedFilters() {
+        advancedFilters = AdvancedFilters()
+        filteredPayments = payments
+    }
+    
+    /**
+     * Obtiene los pagos filtrados para mostrar en la UI
+     */
+    fun getDisplayPayments(): List<AdminPayment> {
+        return if (advancedFilters.hasActiveFilters()) {
+            filteredPayments
+        } else {
+            payments
+        }
+    }
+    
+    /**
+     * Verifica si hay filtros avanzados activos
+     */
+    fun hasAdvancedFilters(): Boolean {
+        return advancedFilters.hasActiveFilters()
+    }
+    
+    /**
+     * Obtiene el conteo de filtros activos
+     */
+    fun getActiveFiltersCount(): Int {
+        var count = 0
+        if (startDate != null) count++
+        if (endDate != null) count++
+        count += advancedFilters.getActiveFiltersCount()
+        return count
     }
 }

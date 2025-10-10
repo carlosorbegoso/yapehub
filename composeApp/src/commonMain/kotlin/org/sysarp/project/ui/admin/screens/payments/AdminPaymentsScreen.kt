@@ -5,11 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import org.koin.compose.koinInject
 import org.sysarp.project.service.auth.AuthService
@@ -42,6 +38,30 @@ fun AdminPaymentsScreen(
             paymentService = paymentService,
             coroutineScope = coroutineScope
         )
+    }
+
+    // Inicializar el estado con los datos del usuario
+    LaunchedEffect(userProfile, accessToken) {
+        println("ADMIN_PAYMENTS: Inicializando con userProfile: $userProfile, accessToken: ${accessToken?.take(10)}...")
+        
+        state.updateUserProfile(userProfile)
+        state.updateAccessToken(accessToken)
+        
+        println("ADMIN_PAYMENTS: canLoadPayments: ${state.canLoadPayments()}")
+        
+        if (state.canLoadPayments()) {
+            println("ADMIN_PAYMENTS: Cargando pagos...")
+            state.loadAdminPayments(
+                onSuccess = { 
+                    println("ADMIN_PAYMENTS: Pagos cargados exitosamente")
+                },
+                onFailure = { error ->
+                    println("ADMIN_PAYMENTS: Error cargando pagos: $error")
+                }
+            )
+        } else {
+            println("ADMIN_PAYMENTS: No se pueden cargar pagos - userProfile: $userProfile, accessToken: ${accessToken != null}")
+        }
     }
 
     // Estado del filtro de fechas
@@ -86,25 +106,21 @@ fun AdminPaymentsScreen(
                 description = "Selecciona un período para filtrar los pagos del sistema"
             )
 
-            AdminPaymentsContent(
-                state = state,
-                onLoadMore = {
-                    state.loadMorePayments(
-                        onSuccess = { },
-                        onFailure = { }
-                    )
-                },
-                onStatusFilterChange = { status ->
-                    state.filterByStatus(
-                        status = status,
-                        onSuccess = { },
-                        onFailure = { }
-                    )
-                },
-                onPaymentAction = { paymentId, action ->
-                    // Manejar acciones de pago
-                }
-            )
+                   AdminPaymentsContent(
+                       state = state,
+                       onLoadMore = {
+                           state.loadMorePayments(
+                               onSuccess = { },
+                               onFailure = { }
+                           )
+                       },
+                       onAdvancedFiltersChanged = { filters ->
+                           state.updateAdvancedFilters(filters)
+                       },
+                       onPaymentAction = { paymentId, action ->
+                           // Manejar acciones de pago
+                       }
+                   )
         }
     }
 
