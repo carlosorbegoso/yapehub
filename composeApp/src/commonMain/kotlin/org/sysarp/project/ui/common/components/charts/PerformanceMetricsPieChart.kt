@@ -2,6 +2,7 @@ package org.sysarp.project.ui.common.components.charts
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
@@ -16,24 +17,31 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Help
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -41,6 +49,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
@@ -48,6 +57,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import org.sysarp.project.data.PerformanceMetricsData
 import org.sysarp.project.utils.formatOneDecimal
 import org.sysarp.project.utils.formatPercentage
@@ -114,8 +126,13 @@ fun PerformanceMetricsPieChart(
                 val animationProgress = remember { Animatable(0f) }
                 val scaleAnimation = remember { Animatable(1f) }
                 val counterAnimation = remember { Animatable(0f) }
+                val rotationAnimation = remember { Animatable(0f) }
+                val pulseAnimation = remember { Animatable(1f) }
                 val interactionSource = remember { MutableInteractionSource() }
                 val isHovered by interactionSource.collectIsHoveredAsState()
+                
+                // Estado para tooltips
+                var hoveredSegment by remember { mutableStateOf<String?>(null) }
                 
                 // Animar la entrada del gráfico con efecto mejorado
                 LaunchedEffect(performanceMetrics) {
@@ -141,11 +158,37 @@ fun PerformanceMetricsPieChart(
                     )
                 }
                 
-                // Animar escala en hover
+                // Animar rotación del gráfico con efecto más elegante
+                LaunchedEffect(performanceMetrics) {
+                    rotationAnimation.animateTo(
+                        targetValue = 720f, // Rotación completa más suave
+                        animationSpec = tween(
+                            durationMillis = 3000, // Más tiempo para rotación suave
+                            delayMillis = 500,
+                            easing = FastOutSlowInEasing // Easing más natural
+                        )
+                    )
+                }
+                
+                // Animar pulsación continua más elegante
+                LaunchedEffect(Unit) {
+                    pulseAnimation.animateTo(
+                        targetValue = 1.02f, // Pulsación más sutil
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(2000), // Más lento y elegante
+                            repeatMode = RepeatMode.Reverse
+                        )
+                    )
+                }
+                
+                // Animar escala en hover más sutil
                 LaunchedEffect(isHovered) {
                     scaleAnimation.animateTo(
-                        targetValue = if (isHovered) 1.05f else 1f,
-                        animationSpec = tween(200)
+                        targetValue = if (isHovered) 1.02f else 1f, // Zoom más sutil
+                        animationSpec = tween(
+                            durationMillis = 300, // Más tiempo para transición suave
+                            easing = FastOutSlowInEasing
+                        )
                     )
                 }
                 
@@ -191,11 +234,27 @@ fun PerformanceMetricsPieChart(
                                     rejectedPayments = performanceMetrics.rejectedPayments,
                                     totalPayments = totalPayments,
                                     animationProgress = animationProgress.value,
+                                    rotationProgress = rotationAnimation.value,
+                                    pulseProgress = pulseAnimation.value,
                                     confirmedColor = confirmedColor,
                                     pendingColor = pendingColor,
                                     rejectedColor = rejectedColor,
                                     surfaceColor = surfaceColor,
-                                    isHovered = isHovered
+                                    isHovered = isHovered,
+                                    hoveredSegment = hoveredSegment,
+                                    onSegmentHover = { segment -> hoveredSegment = segment }
+                                )
+                            }
+                            
+                            // Tooltip flotante
+                            hoveredSegment?.let { segment ->
+                                TooltipComponent(
+                                    segmentType = segment,
+                                    performanceMetrics = performanceMetrics,
+                                    totalPayments = totalPayments,
+                                    confirmedColor = confirmedColor,
+                                    pendingColor = pendingColor,
+                                    rejectedColor = rejectedColor
                                 )
                             }
                             
@@ -312,7 +371,7 @@ fun PerformanceMetricsPieChart(
 }
 
 /**
- * Función helper para dibujar el gráfico circular con efectos mejorados
+ * Función helper para dibujar el gráfico circular con efectos mejorados avanzados
  */
 private fun DrawScope.drawPieChart(
     confirmedPayments: Int,
@@ -320,93 +379,175 @@ private fun DrawScope.drawPieChart(
     rejectedPayments: Int,
     totalPayments: Int,
     animationProgress: Float,
+    rotationProgress: Float,
+    pulseProgress: Float,
     confirmedColor: Color,
     pendingColor: Color,
     rejectedColor: Color,
     surfaceColor: Color,
-    isHovered: Boolean
+    isHovered: Boolean,
+    hoveredSegment: String?,
+    onSegmentHover: (String?) -> Unit
 ) {
     val centerX = size.width / 2
     val centerY = size.height / 2
-    val radius = minOf(centerX, centerY) - 30f // Aumentar margen para mejor forma circular
-    val strokeWidth = if (isHovered) 1.5f else 1f
+    val baseRadius = minOf(centerX, centerY) - 30f
+    val radius = baseRadius * pulseProgress // Aplicar efecto de pulsación
+    val strokeWidth = if (isHovered) 2f else 1f
     
-    // Dibujar sombra suave del círculo completo (solo si hay segmentos)
-    val totalPayments = confirmedPayments + pendingPayments + rejectedPayments
+    // Dibujar sombra dinámica del círculo completo
     if (totalPayments > 0) {
+        val shadowAlpha = if (isHovered) 0.2f else 0.1f
+        val shadowOffset = if (isHovered) 3f else 2f
         drawCircle(
-            color = Color.Black.copy(alpha = if (isHovered) 0.15f else 0.08f),
-            radius = radius + 2f,
-            center = Offset(centerX + 1f, centerY + 1f)
+            color = Color.Black.copy(alpha = shadowAlpha),
+            radius = radius + shadowOffset,
+            center = Offset(centerX + shadowOffset, centerY + shadowOffset)
         )
     }
     
-    var startAngle = -90f
+    var startAngle = -90f + (rotationProgress * 0.05f) // Rotación más sutil y elegante
     
-    // Crear lista de segmentos para renderizado más preciso
-    val segments = mutableListOf<Triple<Float, Color, String>>()
+    // Crear gradientes para cada segmento
+    val confirmedGradient = Brush.radialGradient(
+        colors = listOf(
+            confirmedColor.copy(alpha = 0.8f),
+            confirmedColor,
+            confirmedColor.copy(alpha = 0.9f)
+        ),
+        radius = radius
+    )
+    
+    val pendingGradient = Brush.radialGradient(
+        colors = listOf(
+            pendingColor.copy(alpha = 0.8f),
+            pendingColor,
+            pendingColor.copy(alpha = 0.9f)
+        ),
+        radius = radius
+    )
+    
+    val rejectedGradient = Brush.radialGradient(
+        colors = listOf(
+            rejectedColor.copy(alpha = 0.8f),
+            rejectedColor,
+            rejectedColor.copy(alpha = 0.9f)
+        ),
+        radius = radius
+    )
+    
+    // Crear lista de segmentos con información completa
+    val segments = mutableListOf<SegmentData>()
     
     if (confirmedPayments > 0) {
         val confirmedAngle = (confirmedPayments.toFloat() / totalPayments) * 360f * animationProgress
-        segments.add(Triple(confirmedAngle, confirmedColor, "confirmed"))
+        segments.add(SegmentData(
+            angle = confirmedAngle,
+            gradient = confirmedGradient,
+            color = confirmedColor,
+            type = "confirmed",
+            count = confirmedPayments,
+            percentage = (confirmedPayments.toFloat() / totalPayments) * 100f
+        ))
     }
     
     if (pendingPayments > 0) {
         val pendingAngle = (pendingPayments.toFloat() / totalPayments) * 360f * animationProgress
-        segments.add(Triple(pendingAngle, pendingColor, "pending"))
+        segments.add(SegmentData(
+            angle = pendingAngle,
+            gradient = pendingGradient,
+            color = pendingColor,
+            type = "pending",
+            count = pendingPayments,
+            percentage = (pendingPayments.toFloat() / totalPayments) * 100f
+        ))
     }
     
     if (rejectedPayments > 0) {
         val rejectedAngle = (rejectedPayments.toFloat() / totalPayments) * 360f * animationProgress
-        segments.add(Triple(rejectedAngle, rejectedColor, "rejected"))
+        segments.add(SegmentData(
+            angle = rejectedAngle,
+            gradient = rejectedGradient,
+            color = rejectedColor,
+            type = "rejected",
+            count = rejectedPayments,
+            percentage = (rejectedPayments.toFloat() / totalPayments) * 100f
+        ))
     }
     
-    // Dibujar cada segmento con precisión mejorada
-    segments.forEach { (angle, color, _) ->
-        // Solo dibujar si el ángulo es significativo (evita renderizado de segmentos muy pequeños)
-        if (angle > 0.5f) {
+    // Dibujar cada segmento con gradientes y efectos mejorados
+    segments.forEach { segment ->
+        if (segment.angle > 0.5f) {
+            val isHoveredSegment = hoveredSegment == segment.type
+            val segmentRadius = if (isHoveredSegment) radius * 1.05f else radius
+            
             drawArc(
-                color = color,
+                brush = segment.gradient,
                 startAngle = startAngle,
-                sweepAngle = angle,
+                sweepAngle = segment.angle,
                 useCenter = true,
-                topLeft = Offset(centerX - radius, centerY - radius),
-                size = Size(radius * 2, radius * 2)
+                topLeft = Offset(centerX - segmentRadius, centerY - segmentRadius),
+                size = Size(segmentRadius * 2, segmentRadius * 2)
             )
+            
+            // Dibujar porcentaje en el centro de cada segmento
+            if (segment.angle > 20f) { // Solo si el segmento es lo suficientemente grande
+                val labelAngle = startAngle + segment.angle / 2
+                val labelRadius = radius * 0.7f
+                val labelX = centerX + cos(labelAngle * PI / 180).toFloat() * labelRadius
+                val labelY = centerY + sin(labelAngle * PI / 180).toFloat() * labelRadius
+                
+                // Fondo para el texto
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.9f),
+                    radius = 12f,
+                    center = Offset(labelX, labelY)
+                )
+                
+                // Texto del porcentaje (simulado con círculo de color)
+                drawCircle(
+                    color = segment.color,
+                    radius = 8f,
+                    center = Offset(labelX, labelY)
+                )
+            }
         }
-        startAngle += angle
+        startAngle += segment.angle
     }
     
-    // Dibujar borde exterior suave del círculo completo solo si hay segmentos
+    // Dibujar borde exterior dinámico
     if (segments.isNotEmpty()) {
         drawCircle(
-            color = Color.Black.copy(alpha = 0.08f),
+            color = Color.Black.copy(alpha = if (isHovered) 0.15f else 0.08f),
             radius = radius,
             center = Offset(centerX, centerY),
             style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
         )
     }
-
-    // Círculo central con renderizado mejorado para evitar puntas
+    
+    // Círculo central mejorado con efecto de pulsación
     val innerRadius = radius * 0.35f
     
-
+    // Múltiples capas para suavizado
     drawCircle(
         color = surfaceColor.copy(alpha = 0.98f),
         radius = innerRadius + 1.5f,
         center = Offset(centerX, centerY)
     )
-
-    // Círculo principal
+    
     drawCircle(
         color = surfaceColor,
         radius = innerRadius,
         center = Offset(centerX, centerY)
     )
-
-
-
-    // Borde exterior muy sutil
+    
+    drawCircle(
+        color = surfaceColor.copy(alpha = 0.9f),
+        radius = innerRadius - 1f,
+        center = Offset(centerX, centerY)
+    )
+    
+    // Borde sutil del círculo central
     drawCircle(
         color = Color.Black.copy(alpha = 0.05f),
         radius = innerRadius,
@@ -606,6 +747,124 @@ private fun formatAnimatedCounter(currentValue: Float, totalValue: Int): String 
                 rounded >= 1000000 -> "${rounded / 1000000}M"
                 rounded >= 1000 -> "${rounded / 1000}K"
                 else -> rounded.toString()
+            }
+        }
+    }
+}
+
+// Clase de datos para segmentos
+private data class SegmentData(
+    val angle: Float,
+    val gradient: Brush,
+    val color: Color,
+    val type: String,
+    val count: Int,
+    val percentage: Float
+)
+
+// Clase de datos para tooltip
+private data class Quadruple<A, B, C, D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
+)
+
+/**
+ * Componente de tooltip flotante para mostrar información detallada del segmento
+ */
+@Composable
+private fun TooltipComponent(
+    segmentType: String,
+    performanceMetrics: PerformanceMetricsData,
+    totalPayments: Int,
+    confirmedColor: Color,
+    pendingColor: Color,
+    rejectedColor: Color
+) {
+    val (label, count, color, icon) = when (segmentType) {
+        "confirmed" -> Quadruple(
+            "Confirmados",
+            performanceMetrics.confirmedPayments,
+            confirmedColor,
+            Icons.Filled.CheckCircle
+        )
+        "pending" -> Quadruple(
+            "Pendientes", 
+            performanceMetrics.pendingPayments,
+            pendingColor,
+            Icons.Filled.Schedule
+        )
+        "rejected" -> Quadruple(
+            "Rechazados",
+            performanceMetrics.rejectedPayments,
+            rejectedColor,
+            Icons.Filled.Cancel
+        )
+        else -> Quadruple("", 0, Color.Gray, Icons.Filled.Help)
+    }
+    
+    val percentage = if (totalPayments > 0) {
+        (count.toFloat() / totalPayments) * 100f
+    } else 0f
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.TopEnd
+    ) {
+        Card(
+            modifier = Modifier
+                .width(200.dp)
+                .alpha(0.95f),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Text(
+                    text = "$count pagos",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = color
+                )
+                
+                Text(
+                    text = "${formatPercentage(percentage)} del total",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                // Barra de progreso visual
+                LinearProgressIndicator(
+                    progress = percentage / 100f,
+                    modifier = Modifier.height(4.dp),
+                    color = color,
+                    trackColor = color.copy(alpha = 0.2f)
+                )
             }
         }
     }
