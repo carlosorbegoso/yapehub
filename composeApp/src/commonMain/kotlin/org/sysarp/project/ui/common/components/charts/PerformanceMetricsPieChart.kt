@@ -113,6 +113,7 @@ fun PerformanceMetricsPieChart(
                                   performanceMetrics.rejectedPayments
                 val animationProgress = remember { Animatable(0f) }
                 val scaleAnimation = remember { Animatable(1f) }
+                val counterAnimation = remember { Animatable(0f) }
                 val interactionSource = remember { MutableInteractionSource() }
                 val isHovered by interactionSource.collectIsHoveredAsState()
                 
@@ -121,7 +122,19 @@ fun PerformanceMetricsPieChart(
                     animationProgress.animateTo(
                         targetValue = 1f,
                         animationSpec = tween(
-                            durationMillis = 1200,
+                            durationMillis = 1000,
+                            delayMillis = 100,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                }
+                
+                // Animar el contador del número total
+                LaunchedEffect(totalPayments) {
+                    counterAnimation.animateTo(
+                        targetValue = totalPayments.toFloat(),
+                        animationSpec = tween(
+                            durationMillis = 1500,
                             delayMillis = 200,
                             easing = FastOutSlowInEasing
                         )
@@ -152,10 +165,6 @@ fun PerformanceMetricsPieChart(
                     modifier = Modifier
                         .size(chartSize)
                         .scale(scaleAnimation.value)
-                        .shadow(
-                            elevation = if (isHovered) 8.dp else 4.dp,
-                            shape = CircleShape
-                        )
                         .pointerInput(Unit) {
                             detectTapGestures {
                                 // Aquí se puede añadir lógica de click si es necesario
@@ -190,7 +199,7 @@ fun PerformanceMetricsPieChart(
                                 )
                             }
                             
-                            // Texto central animado
+                            // Texto central animado con contador
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -199,7 +208,7 @@ fun PerformanceMetricsPieChart(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
-                                        text = "$totalPayments",
+                                        text = formatAnimatedCounter(counterAnimation.value, totalPayments),
                                         style = MaterialTheme.typography.headlineSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -319,98 +328,90 @@ private fun DrawScope.drawPieChart(
 ) {
     val centerX = size.width / 2
     val centerY = size.height / 2
-    val radius = minOf(centerX, centerY) - 15f
-    val strokeWidth = if (isHovered) 3f else 2f
+    val radius = minOf(centerX, centerY) - 30f // Aumentar margen para mejor forma circular
+    val strokeWidth = if (isHovered) 1.5f else 1f
+    
+    // Dibujar sombra suave del círculo completo (solo si hay segmentos)
+    val totalPayments = confirmedPayments + pendingPayments + rejectedPayments
+    if (totalPayments > 0) {
+        drawCircle(
+            color = Color.Black.copy(alpha = if (isHovered) 0.15f else 0.08f),
+            radius = radius + 2f,
+            center = Offset(centerX + 1f, centerY + 1f)
+        )
+    }
     
     var startAngle = -90f
     
-    // Confirmados
+    // Crear lista de segmentos para renderizado más preciso
+    val segments = mutableListOf<Triple<Float, Color, String>>()
+    
     if (confirmedPayments > 0) {
         val confirmedAngle = (confirmedPayments.toFloat() / totalPayments) * 360f * animationProgress
-        drawArc(
-            color = confirmedColor,
-            startAngle = startAngle,
-            sweepAngle = confirmedAngle,
-            useCenter = true,
-            topLeft = Offset(centerX - radius, centerY - radius),
-            size = Size(radius * 2, radius * 2)
-        )
-        
-        // Borde del segmento
-        drawArc(
-            color = confirmedColor.copy(alpha = 0.8f),
-            startAngle = startAngle,
-            sweepAngle = confirmedAngle,
-            useCenter = false,
-            topLeft = Offset(centerX - radius, centerY - radius),
-            size = Size(radius * 2, radius * 2),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
-        )
-        startAngle += confirmedAngle
+        segments.add(Triple(confirmedAngle, confirmedColor, "confirmed"))
     }
     
-    // Pendientes
     if (pendingPayments > 0) {
         val pendingAngle = (pendingPayments.toFloat() / totalPayments) * 360f * animationProgress
-        drawArc(
-            color = pendingColor,
-            startAngle = startAngle,
-            sweepAngle = pendingAngle,
-            useCenter = true,
-            topLeft = Offset(centerX - radius, centerY - radius),
-            size = Size(radius * 2, radius * 2)
-        )
-        
-        // Borde del segmento
-        drawArc(
-            color = pendingColor.copy(alpha = 0.8f),
-            startAngle = startAngle,
-            sweepAngle = pendingAngle,
-            useCenter = false,
-            topLeft = Offset(centerX - radius, centerY - radius),
-            size = Size(radius * 2, radius * 2),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
-        )
-        startAngle += pendingAngle
+        segments.add(Triple(pendingAngle, pendingColor, "pending"))
     }
     
-    // Rechazados
     if (rejectedPayments > 0) {
         val rejectedAngle = (rejectedPayments.toFloat() / totalPayments) * 360f * animationProgress
-        drawArc(
-            color = rejectedColor,
-            startAngle = startAngle,
-            sweepAngle = rejectedAngle,
-            useCenter = true,
-            topLeft = Offset(centerX - radius, centerY - radius),
-            size = Size(radius * 2, radius * 2)
-        )
-        
-        // Borde del segmento
-        drawArc(
-            color = rejectedColor.copy(alpha = 0.8f),
-            startAngle = startAngle,
-            sweepAngle = rejectedAngle,
-            useCenter = false,
-            topLeft = Offset(centerX - radius, centerY - radius),
-            size = Size(radius * 2, radius * 2),
+        segments.add(Triple(rejectedAngle, rejectedColor, "rejected"))
+    }
+    
+    // Dibujar cada segmento con precisión mejorada
+    segments.forEach { (angle, color, _) ->
+        // Solo dibujar si el ángulo es significativo (evita renderizado de segmentos muy pequeños)
+        if (angle > 0.5f) {
+            drawArc(
+                color = color,
+                startAngle = startAngle,
+                sweepAngle = angle,
+                useCenter = true,
+                topLeft = Offset(centerX - radius, centerY - radius),
+                size = Size(radius * 2, radius * 2)
+            )
+        }
+        startAngle += angle
+    }
+    
+    // Dibujar borde exterior suave del círculo completo solo si hay segmentos
+    if (segments.isNotEmpty()) {
+        drawCircle(
+            color = Color.Black.copy(alpha = 0.08f),
+            radius = radius,
+            center = Offset(centerX, centerY),
             style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
         )
     }
+
+    // Círculo central con renderizado mejorado para evitar puntas
+    val innerRadius = radius * 0.35f
     
-    // Círculo central con gradiente
+
     drawCircle(
-        color = surfaceColor,
-        radius = radius * 0.4f,
+        color = surfaceColor.copy(alpha = 0.98f),
+        radius = innerRadius + 1.5f,
         center = Offset(centerX, centerY)
     )
-    
-    // Borde del círculo central
+
+    // Círculo principal
     drawCircle(
-        color = Color.Gray.copy(alpha = 0.2f),
-        radius = radius * 0.4f,
+        color = surfaceColor,
+        radius = innerRadius,
+        center = Offset(centerX, centerY)
+    )
+
+
+
+    // Borde exterior muy sutil
+    drawCircle(
+        color = Color.Black.copy(alpha = 0.05f),
+        radius = innerRadius,
         center = Offset(centerX, centerY),
-        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 0.2f)
     )
 }
 
@@ -576,6 +577,36 @@ private fun EmptyState(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
+        }
+    }
+}
+
+/**
+ * Función helper para formatear el contador animado con saltos inteligentes
+ */
+private fun formatAnimatedCounter(currentValue: Float, totalValue: Int): String {
+    val currentInt = currentValue.toInt()
+    
+    return when {
+        totalValue < 10 -> currentInt.toString()
+        totalValue < 100 -> {
+            val step = 10
+            val rounded = (currentInt / step) * step
+            rounded.toString()
+        }
+        totalValue < 1000 -> {
+            val step = 100
+            val rounded = (currentInt / step) * step
+            rounded.toString()
+        }
+        else -> {
+            val step = 1000
+            val rounded = (currentInt / step) * step
+            when {
+                rounded >= 1000000 -> "${rounded / 1000000}M"
+                rounded >= 1000 -> "${rounded / 1000}K"
+                else -> rounded.toString()
+            }
         }
     }
 }
