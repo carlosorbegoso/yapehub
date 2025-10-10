@@ -101,8 +101,8 @@ fun AdminPaymentsContent(
         }
     }
 
-    // Diálogo de confirmación de acción
-    PaymentActionDialog(
+    // Diálogo de acción para administradores
+    AdminPaymentActionDialog(
         payment = selectedPayment,
         action = selectedAction,
         isVisible = isDialogVisible,
@@ -113,7 +113,6 @@ fun AdminPaymentsContent(
                 selectedAction?.let { action ->
                     onPaymentAction(payment.paymentId, action)
                     // Simular procesamiento (en una implementación real, esto sería una llamada a la API)
-                    // Por ahora, solo cerramos el diálogo después de un delay
                     kotlinx.coroutines.GlobalScope.launch {
                         kotlinx.coroutines.delay(1000) // Simular delay de API
                         isProcessingAction = false

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Clock
@@ -26,6 +28,7 @@ import org.sysarp.project.data.AdminPayment
 import org.sysarp.project.utils.extractShortYapeCode
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatDateTime
+import org.sysarp.project.utils.calculatePreciseTimeElapsed
 import kotlin.time.ExperimentalTime
 
 /**
@@ -51,10 +54,10 @@ fun AdminPaymentCard(
         else -> Icons.Filled.Payment
     }
 
-    // Calcular tiempo transcurrido con memoización
+    // Calcular tiempo transcurrido preciso con memoización
     val timeElapsed by remember(payment.createdAt) {
         derivedStateOf {
-            calculateTimeElapsed(payment.createdAt)
+            calculatePreciseTimeElapsed(payment.createdAt)
         }
     }
 
@@ -127,20 +130,16 @@ fun AdminPaymentCard(
                     }
                 }
                 
-                // Estado mejorado
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = statusColor.copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                // Estado mejorado con indicadores visuales
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = payment.status,
-                        color = statusColor,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    // Badge de estado
+                    StatusBadge(status = payment.status, statusColor = statusColor)
+                    
+                    // Indicador de tiempo transcurrido
+                    TimeIndicator(timeElapsed = timeElapsed)
                 }
             }
             
@@ -148,27 +147,51 @@ fun AdminPaymentCard(
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Monto destacado simplificado
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                // Monto destacado mejorado
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = "Monto del Pago",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = formatCurrency(payment.amount),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "Monto del Pago",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = formatCurrency(payment.amount),
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        // Icono de moneda
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AttachMoney,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .padding(8.dp)
+                            )
+                        }
                     }
                 }
                 
@@ -223,65 +246,16 @@ fun AdminPaymentCard(
                     icon = Icons.Filled.Schedule,
                     iconColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                
+                // Información de procesamiento (si aplica)
+                ProcessingInfoSection(payment = payment)
             }
             
-            // Botones de acción mejorados (si el pago está pendiente)
-            if (payment.status == "PENDING") {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = { onAction("CONFIRM") },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.CheckCircle,
-                                contentDescription = "Confirmar pago ${payment.paymentId}",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Confirmar",
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        
-                        OutlinedButton(
-                            onClick = { onAction("REJECT") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Cancel,
-                                contentDescription = "Rechazar pago ${payment.paymentId}",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Rechazar",
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
+            // Acciones contextuales mejoradas
+            ContextualActionsSection(
+                payment = payment,
+                onAction = onAction
+            )
         }
     }
 }
@@ -340,20 +314,292 @@ private fun EnhancedInfoRow(
 }
 
 /**
- * Calcula el tiempo transcurrido desde la creación del pago
+ * Sección de información de procesamiento
  */
-private fun calculateTimeElapsed(createdAt: String): String {
-    return try {
-        // Parsear la fecha de creación
-        val createdDate = createdAt.substring(0, 10) // Obtener solo la fecha
-        val currentDate = java.time.LocalDate.now().toString()
-
-        if (createdDate == currentDate) {
-            "Hoy"
-        } else {
-            "Reciente"
+@Composable
+private fun ProcessingInfoSection(payment: AdminPayment) {
+    when (payment.status) {
+        "CONFIRMED" -> {
+            if (payment.confirmedBy != null && payment.confirmedAt != null) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    EnhancedInfoRow(
+                        label = "Confirmado por",
+                        value = "Admin #${payment.confirmedBy}",
+                        icon = Icons.Filled.CheckCircle,
+                        iconColor = MaterialTheme.colorScheme.primary
+                    )
+                    EnhancedInfoRow(
+                        label = "Fecha de confirmación",
+                        value = formatDateTime(payment.confirmedAt),
+                        icon = Icons.Filled.Schedule,
+                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
-    } catch (e: Exception) {
-        "Desconocido"
+        "REJECTED_BY_SELLER" -> {
+            if (payment.rejectedBy != null && payment.rejectedAt != null) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    EnhancedInfoRow(
+                        label = "Rechazado por",
+                        value = "Admin #${payment.rejectedBy}",
+                        icon = Icons.Filled.Cancel,
+                        iconColor = MaterialTheme.colorScheme.error
+                    )
+                    EnhancedInfoRow(
+                        label = "Fecha de rechazo",
+                        value = formatDateTime(payment.rejectedAt),
+                        icon = Icons.Filled.Schedule,
+                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (payment.rejectionReason != null) {
+                        EnhancedInfoRow(
+                            label = "Razón",
+                            value = payment.rejectionReason,
+                            icon = Icons.Filled.Info,
+                            iconColor = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Sección de acciones contextuales para ADMINISTRADORES
+ * Los admins NO pueden confirmar/rechazar pagos, solo supervisar
+ */
+@Composable
+private fun ContextualActionsSection(
+    payment: AdminPayment,
+    onAction: (String) -> Unit
+) {
+    when (payment.status) {
+        "PENDING" -> {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Información para admin
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Pago pendiente de confirmación por el vendedor",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    
+                    // Solo información, sin acciones redundantes
+                    Text(
+                        text = "Los administradores pueden supervisar pero no intervenir en pagos pendientes.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+        "CONFIRMED" -> {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Información de confirmación
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Pago confirmado por el vendedor",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    
+                    // Solo acción útil para administradores
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        OutlinedButton(
+                            onClick = { onAction("ADD_NOTE") },
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Note,
+                                contentDescription = "Agregar nota administrativa",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Agregar Nota", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+            }
+        }
+        "REJECTED_BY_SELLER" -> {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Información de rechazo
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Cancel,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Pago rechazado por el vendedor",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    
+                    // Solo acción útil para administradores
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        OutlinedButton(
+                            onClick = { onAction("VIEW_REASON") },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Info,
+                                contentDescription = "Ver razón de rechazo",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Ver Razón", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Badge de estado mejorado
+ */
+@Composable
+private fun StatusBadge(
+    status: String,
+    statusColor: Color
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = statusColor.copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Punto indicador
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(statusColor, CircleShape)
+            )
+            
+            Text(
+                text = when (status) {
+                    "PENDING" -> "Pendiente"
+                    "CONFIRMED" -> "Confirmado"
+                    "REJECTED_BY_SELLER" -> "Rechazado"
+                    else -> status
+                },
+                color = statusColor,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+    }
+}
+
+/**
+ * Indicador de tiempo transcurrido
+ */
+@Composable
+private fun TimeIndicator(timeElapsed: String) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Schedule,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(12.dp)
+            )
+            Text(
+                text = timeElapsed,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
     }
 }

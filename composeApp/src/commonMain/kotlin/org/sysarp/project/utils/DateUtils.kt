@@ -145,3 +145,55 @@ fun formatDateTime(dateTimeString: String): String {
         }
     }
 }
+
+/**
+ * Calcula el tiempo transcurrido de forma precisa usando kotlinx-datetime
+ * @param createdAt Timestamp en formato ISO (ej: "2024-01-15T14:30:00.000Z")
+ * @return Tiempo relativo como "hace 2 horas" o "hace 3 días" o "desconocido" si falla
+ */
+@OptIn(kotlin.time.ExperimentalTime::class)
+fun calculatePreciseTimeElapsed(createdAt: String): String {
+    return try {
+        val createdInstant = kotlinx.datetime.Instant.parse(createdAt)
+        val now = kotlin.time.Clock.System.now()
+        val duration = now - createdInstant
+        
+        when {
+            duration.inWholeSeconds < 60 -> "Ahora mismo"
+            duration.inWholeMinutes < 60 -> "Hace ${duration.inWholeMinutes} min"
+            duration.inWholeHours < 24 -> "Hace ${duration.inWholeHours} h"
+            duration.inWholeDays < 7 -> "Hace ${duration.inWholeDays} días"
+            duration.inWholeDays < 30 -> "Hace ${duration.inWholeDays / 7} sem"
+            duration.inWholeDays < 365 -> "Hace ${duration.inWholeDays / 30} mes"
+            else -> "Hace ${duration.inWholeDays / 365} año"
+        }
+    } catch (e: Exception) {
+        try {
+            // Fallback al cálculo básico
+            val createdDate = createdAt.substring(0, 10)
+            val currentDate = java.time.LocalDate.now().toString()
+            
+            if (createdDate == currentDate) {
+                "Hoy"
+            } else {
+                "Reciente"
+            }
+        } catch (e2: Exception) {
+            "Desconocido"
+        }
+    }
+}
+
+/**
+ * Formatea el tiempo transcurrido con formato específico
+ * @param createdAt Timestamp en formato ISO
+ * @param showExact Si true, muestra fecha y hora exacta
+ * @return Tiempo formateado
+ */
+fun formatTimeElapsed(createdAt: String, showExact: Boolean = false): String {
+    return if (showExact) {
+        formatDateTime(createdAt)
+    } else {
+        calculatePreciseTimeElapsed(createdAt)
+    }
+}
