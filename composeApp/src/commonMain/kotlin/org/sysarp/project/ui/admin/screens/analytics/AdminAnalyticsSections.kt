@@ -20,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.AnalyticsData
@@ -55,10 +54,9 @@ fun AdminAnalyticsSections(
     modifier: Modifier = Modifier
 ) {
     // Detección de tamaño de pantalla para responsive design
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
-    screenWidth >= 600
-    val isLargeScreen = screenWidth >= 840
+    // Usar valores fijos para multiplataforma
+    val screenWidth = 400.dp // Valor por defecto
+    val isLargeScreen = screenWidth >= 840.dp
     
     // Estados para animaciones escalonadas
     var showMetrics by remember { mutableStateOf(false) }

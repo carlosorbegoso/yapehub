@@ -44,7 +44,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -144,8 +143,10 @@ fun PerformanceMetricsPieChart(
                 val surfaceColor = MaterialTheme.colorScheme.surface
                 
                 // Tamaño responsivo
-                val configuration = LocalConfiguration.current
-                val chartSize = if (configuration.screenWidthDp >= 600) 200.dp else 160.dp
+                // Usar valores fijos para multiplataforma
+                val screenWidth = 400.dp // Valor por defecto
+                val isLargeScreen = screenWidth >= 840.dp
+                val chartSize = if (isLargeScreen) 200.dp else 160.dp
                 
                 Box(
                     modifier = Modifier

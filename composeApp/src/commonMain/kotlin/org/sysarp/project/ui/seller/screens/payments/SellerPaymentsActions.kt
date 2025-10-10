@@ -2,6 +2,7 @@ package org.sysarp.project.ui.seller.screens.payments
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import org.sysarp.project.ui.seller.screens.payments.components.SellerPaymentsContent
 
 /**
  * Acciones y handlers para SellerPaymentsScreen
@@ -33,12 +34,12 @@ fun SellerPaymentsActions(
 }
 
 @Composable
-fun SellerPaymentsContent(
+fun SellerPaymentsContentHandler(
     state: SellerPaymentsState,
     onNavigateBack: () -> Unit
 ) {
     when (state.selectedTab) {
-        0 -> PendingPaymentsContent(
+        0 -> SellerPaymentsContent(
             payments = state.pendingPayments,
             isLoading = state.isLoading,
             errorMessage = state.errorMessage,
@@ -51,11 +52,12 @@ fun SellerPaymentsContent(
             userProfile = state.userProfile,
             accessToken = state.accessToken,
             paymentService = state.paymentService,
-            onError = { error ->
+            onError = { error: String ->
                 state.updateErrorMessage(error)
-            }
+            },
+            isPendingTab = true
         )
-        1 -> ConfirmedPaymentsContent(
+        1 -> SellerPaymentsContent(
             payments = state.confirmedPayments,
             isLoading = state.isLoading,
             errorMessage = state.errorMessage,
@@ -64,7 +66,14 @@ fun SellerPaymentsContent(
                     onSuccess = { },
                     onFailure = { }
                 )
-            }
+            },
+            userProfile = state.userProfile,
+            accessToken = state.accessToken,
+            paymentService = state.paymentService,
+            onError = { error: String ->
+                state.updateErrorMessage(error)
+            },
+            isPendingTab = false
         )
     }
 }

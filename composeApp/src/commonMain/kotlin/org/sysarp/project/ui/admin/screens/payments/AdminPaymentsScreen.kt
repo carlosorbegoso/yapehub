@@ -17,6 +17,7 @@ import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.ui.common.components.DateFilterComponent
 import org.sysarp.project.ui.common.components.rememberDateFilterState
 import org.sysarp.project.ui.common.components.topbar.TopBarComponent
+import org.sysarp.project.ui.admin.screens.payments.components.AdminPaymentsContent
 
 /**
  * Pantalla de gestión de pagos del administrador refactorizada
@@ -85,7 +86,25 @@ fun AdminPaymentsScreen(
                 description = "Selecciona un período para filtrar los pagos del sistema"
             )
 
-            AdminPaymentsContentHandler(state = state)
+            AdminPaymentsContent(
+                state = state,
+                onLoadMore = {
+                    state.loadMorePayments(
+                        onSuccess = { },
+                        onFailure = { }
+                    )
+                },
+                onStatusFilterChange = { status ->
+                    state.filterByStatus(
+                        status = status,
+                        onSuccess = { },
+                        onFailure = { }
+                    )
+                },
+                onPaymentAction = { paymentId, action ->
+                    // Manejar acciones de pago
+                }
+            )
         }
     }
 

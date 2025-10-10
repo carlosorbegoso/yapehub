@@ -39,7 +39,7 @@ import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
 import org.sysarp.project.ui.screens.seller.SellerAnalyticsScreen
 import org.sysarp.project.ui.screens.seller.SellerDashboardScreen
 import org.sysarp.project.ui.screens.seller.SellerNotificationsScreen
-import org.sysarp.project.ui.screens.seller.SellerPaymentsScreen
+import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsScreen
 import org.sysarp.project.ui.screens.seller.SellerSpecificPaymentsScreen
 import org.sysarp.project.ui.screens.seller.SellerUnifiedScreen
 import org.sysarp.project.viewmodel.YapeViewModel

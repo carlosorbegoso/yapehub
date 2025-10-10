@@ -415,7 +415,7 @@ fun ProfessionalBackground() {
         // Dibujar hexágono decorativo
         val hexRadius = 100f * pulse
         val hexPoints = (0..5).map { i ->
-            val angle = (i * 60f + rotation) * (Math.PI / 180f)
+            val angle = (i * 60f + rotation) * (kotlin.math.PI / 180f)
             Offset(
                 centerX + hexRadius * cos(angle).toFloat(),
                 centerY + hexRadius * sin(angle).toFloat()

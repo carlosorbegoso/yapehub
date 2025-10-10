@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.seller
+package org.sysarp.project.ui.seller.screens.payments
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,11 +15,7 @@ import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.ui.common.components.DateFilterComponent
 import org.sysarp.project.ui.common.components.rememberDateFilterState
-import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsActions
-import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsContent
-import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsState
-import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsTabs
-import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsTopBar
+import org.sysarp.project.ui.seller.screens.payments.components.SellerPaymentsComponents
 
 /**
  * Pantalla de pagos del vendedor refactorizada
@@ -48,64 +44,30 @@ fun SellerPaymentsScreen(
     // Estado del filtro de fechas
     val dateFilterState = rememberDateFilterState()
     
-    Scaffold(
-        topBar = {
-            SellerPaymentsTopBar(
-                onNavigateBack = onNavigateBack,
-                onRefresh = {
-                    state.refreshAllPayments(
-                        onSuccess = { },
-                        onFailure = { }
-                    )
-                }
+    // Usar el componente refactorizado
+    SellerPaymentsComponents(
+        pendingPayments = state.pendingPayments,
+        confirmedPayments = state.confirmedPayments,
+        isLoadingPending = state.isLoading,
+        isLoadingConfirmed = state.isLoading,
+        errorMessagePending = state.errorMessage,
+        errorMessageConfirmed = state.errorMessage,
+        selectedTab = state.selectedTab,
+        onTabSelected = { tabIndex ->
+            state.changeSelectedTab(tabIndex)
+        },
+        onRefresh = {
+            state.refreshAllPayments(
+                onSuccess = { },
+                onFailure = { }
             )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // Filtro de fechas
-            DateFilterComponent(
-                selectedDateRange = dateFilterState.selectedDateRange,
-                onDateRangeSelected = { period ->
-                    dateFilterState.onDateRangeSelected(period)
-                    state.filterByDateRange(
-                        startDate = dateFilterState.startDate,
-                        endDate = dateFilterState.endDate,
-                        onSuccess = { },
-                        onFailure = { }
-                    )
-                },
-                showCalendar = dateFilterState.showCalendarDialog,
-                onShowCalendar = dateFilterState.onShowCalendar,
-                onDismissCalendar = dateFilterState.onDismissCalendar,
-                title = "Filtrar pagos por fecha",
-                description = "Selecciona un período para filtrar tus pagos"
-            )
-            
-            // Tabs
-            SellerPaymentsTabs(
-                selectedTab = state.selectedTab,
-                onTabSelected = { tabIndex ->
-                    state.changeSelectedTab(tabIndex)
-                }
-            )
-
-            // Contenido según tab seleccionado
-            SellerPaymentsContent(
-                state = state,
-                onNavigateBack = onNavigateBack
-            )
-        }
-    }
-    
-    // Manejar acciones del screen
-    SellerPaymentsActions(
-        state = state,
+        },
+        onNavigateBack = onNavigateBack,
         userProfile = userProfile,
         accessToken = accessToken,
-        onNavigateBack = onNavigateBack
+        paymentService = paymentService,
+        onError = { error ->
+            state.updateErrorMessage(error)
+        }
     )
 }

@@ -15,7 +15,7 @@ object ErrorManager {
      */
     fun parseException(exception: Throwable): ErrorInfo {
         return when (exception) {
-            is java.net.UnknownHostException -> ErrorInfo(
+            is kotlinx.coroutines.CancellationException -> ErrorInfo(
                 type = ErrorType.NETWORK,
                 title = "Sin Conexión",
                 message = "No se pudo conectar al servidor",
@@ -23,7 +23,7 @@ object ErrorManager {
                 canRetry = true
             )
             
-            is java.net.SocketTimeoutException -> ErrorInfo(
+            is kotlinx.coroutines.TimeoutCancellationException -> ErrorInfo(
                 type = ErrorType.NETWORK,
                 title = "Tiempo Agotado",
                 message = "La conexión tardó demasiado",
@@ -31,7 +31,7 @@ object ErrorManager {
                 canRetry = true
             )
             
-            is java.net.ConnectException -> ErrorInfo(
+            is kotlinx.coroutines.CancellationException -> ErrorInfo(
                 type = ErrorType.NETWORK,
                 title = "Sin Conexión",
                 message = "No se pudo conectar al servidor",

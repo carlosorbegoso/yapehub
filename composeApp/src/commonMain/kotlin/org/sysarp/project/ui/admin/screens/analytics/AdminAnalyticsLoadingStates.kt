@@ -25,7 +25,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 
 /**
@@ -36,9 +35,9 @@ import androidx.compose.ui.unit.dp
 fun AdminAnalyticsSkeleton(
     modifier: Modifier = Modifier
 ) {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
-    val isLargeScreen = screenWidth >= 840
+    // Usar valores fijos para multiplataforma
+    val screenWidth = 400.dp // Valor por defecto
+    val isLargeScreen = screenWidth >= 840.dp
     
     if (isLargeScreen) {
         // Layout horizontal para pantallas grandes
