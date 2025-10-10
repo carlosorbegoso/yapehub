@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -271,14 +273,15 @@ private fun StatusFilterSection(
                     .fillMaxWidth()
                     .menuAnchor(),
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
-                    focusedContainerColor = androidx.compose.ui.graphics.Color.White,
-                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.White
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
                 )
             )
 
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color.White)
             ) {
                 DropdownMenuItem(
                     text = { Text("Todos los estados") },
@@ -340,7 +343,8 @@ private fun SellerFilterSection(
             
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color.White)
             ) {
                 DropdownMenuItem(
                     text = { Text("Todos los vendedores") },
@@ -402,7 +406,8 @@ private fun BranchFilterSection(
             
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color.White)
             ) {
                 DropdownMenuItem(
                     text = { Text("Todas las sucursales") },

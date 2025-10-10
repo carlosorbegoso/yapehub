@@ -76,8 +76,11 @@ fun AdminPaymentsContent(
                 }
             }
             else -> {
-                // Lista de pagos
-                items(state.getDisplayPayments()) { payment ->
+                // Lista de pagos con keys estables para mejor performance
+                items(
+                    items = state.getDisplayPayments(),
+                    key = { payment -> payment.paymentId }
+                ) { payment ->
                     AdminPaymentCard(
                         payment = payment,
                         onAction = { action ->
