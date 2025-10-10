@@ -128,6 +128,8 @@ fun PerformanceMetricsPieChart(
                 val counterAnimation = remember { Animatable(0f) }
                 val rotationAnimation = remember { Animatable(0f) }
                 val pulseAnimation = remember { Animatable(1f) }
+                val textScaleAnimation = remember { Animatable(1f) }
+                val textGlowAnimation = remember { Animatable(0f) }
                 val interactionSource = remember { MutableInteractionSource() }
                 val isHovered by interactionSource.collectIsHoveredAsState()
                 
@@ -146,13 +148,44 @@ fun PerformanceMetricsPieChart(
                     )
                 }
                 
-                // Animar el contador del número total
+                // Animar el contador del número total con efecto de typing
                 LaunchedEffect(totalPayments) {
                     counterAnimation.animateTo(
                         targetValue = totalPayments.toFloat(),
                         animationSpec = tween(
-                            durationMillis = 1500,
+                            durationMillis = 2000, // Más tiempo para efecto de typing
+                            delayMillis = 500,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                }
+                
+                // Animar escala del texto con efecto de entrada
+                LaunchedEffect(totalPayments) {
+                    textScaleAnimation.animateTo(
+                        targetValue = 1.1f,
+                        animationSpec = tween(
+                            durationMillis = 300,
                             delayMillis = 200,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                    textScaleAnimation.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = 200,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                }
+                
+                // Animar efecto de brillo del texto
+                LaunchedEffect(totalPayments) {
+                    textGlowAnimation.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = 1000,
+                            delayMillis = 800,
                             easing = FastOutSlowInEasing
                         )
                     )
@@ -192,10 +225,24 @@ fun PerformanceMetricsPieChart(
                     )
                 }
                 
-                // Colores del tema Material
-                val confirmedColor = MaterialTheme.colorScheme.primary
-                val pendingColor = MaterialTheme.colorScheme.secondary
-                val rejectedColor = MaterialTheme.colorScheme.error
+                // Colores dinámicos que cambian según los datos
+                val confirmedColor = when {
+                    performanceMetrics.confirmedPayments > 50 -> Color(0xFF4CAF50) // Verde vibrante
+                    performanceMetrics.confirmedPayments > 20 -> Color(0xFF8BC34A) // Verde medio
+                    else -> MaterialTheme.colorScheme.primary
+                }
+                
+                val pendingColor = when {
+                    performanceMetrics.pendingPayments > 30 -> Color(0xFFFF9800) // Naranja vibrante
+                    performanceMetrics.pendingPayments > 10 -> Color(0xFFFFC107) // Amarillo dorado
+                    else -> MaterialTheme.colorScheme.secondary
+                }
+                
+                val rejectedColor = when {
+                    performanceMetrics.rejectedPayments > 10 -> Color(0xFFE91E63) // Rosa vibrante
+                    performanceMetrics.rejectedPayments > 5 -> Color(0xFFF44336) // Rojo vibrante
+                    else -> MaterialTheme.colorScheme.error
+                }
                 val surfaceColor = MaterialTheme.colorScheme.surface
                 
                 // Tamaño responsivo
@@ -258,24 +305,48 @@ fun PerformanceMetricsPieChart(
                                 )
                             }
                             
-                            // Texto central animado con contador
+                            // Texto central con efectos visuales espectaculares
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
+                                // Efecto de resplandor de fondo
+                                Box(
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                                    Color.Transparent
+                                                ),
+                                                radius = 60f
+                                            ),
+                                            shape = CircleShape
+                                        )
+                                )
+                                
                                 Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.scale(textScaleAnimation.value)
                                 ) {
+                                    // Número principal con efectos de brillo animados
                                     Text(
                                         text = formatAnimatedCounter(counterAnimation.value, totalPayments),
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        style = MaterialTheme.typography.headlineLarge,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.alpha(textGlowAnimation.value)
                                     )
+                                    
+                                    // Etiqueta "Total" con efectos sutiles y animación
                                     Text(
                                         text = "Total",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                        modifier = Modifier.alpha(0.9f * textGlowAnimation.value)
                                     )
                                 }
                             }
@@ -408,32 +479,38 @@ private fun DrawScope.drawPieChart(
     
     var startAngle = -90f + (rotationProgress * 0.05f) // Rotación más sutil y elegante
     
-    // Crear gradientes para cada segmento
-    val confirmedGradient = Brush.radialGradient(
+    // Crear gradientes sofisticados con múltiples colores y efectos
+    val confirmedGradient = Brush.sweepGradient(
         colors = listOf(
-            confirmedColor.copy(alpha = 0.8f),
+            confirmedColor.copy(alpha = 0.6f),
+            confirmedColor.copy(alpha = 0.9f),
             confirmedColor,
-            confirmedColor.copy(alpha = 0.9f)
+            confirmedColor.copy(alpha = 0.8f),
+            confirmedColor.copy(alpha = 0.7f)
         ),
-        radius = radius
+        center = Offset(centerX, centerY)
     )
     
-    val pendingGradient = Brush.radialGradient(
+    val pendingGradient = Brush.sweepGradient(
         colors = listOf(
-            pendingColor.copy(alpha = 0.8f),
+            pendingColor.copy(alpha = 0.6f),
+            pendingColor.copy(alpha = 0.9f),
             pendingColor,
-            pendingColor.copy(alpha = 0.9f)
+            pendingColor.copy(alpha = 0.8f),
+            pendingColor.copy(alpha = 0.7f)
         ),
-        radius = radius
+        center = Offset(centerX, centerY)
     )
     
-    val rejectedGradient = Brush.radialGradient(
+    val rejectedGradient = Brush.sweepGradient(
         colors = listOf(
-            rejectedColor.copy(alpha = 0.8f),
+            rejectedColor.copy(alpha = 0.6f),
+            rejectedColor.copy(alpha = 0.9f),
             rejectedColor,
-            rejectedColor.copy(alpha = 0.9f)
+            rejectedColor.copy(alpha = 0.8f),
+            rejectedColor.copy(alpha = 0.7f)
         ),
-        radius = radius
+        center = Offset(centerX, centerY)
     )
     
     // Crear lista de segmentos con información completa
@@ -481,6 +558,26 @@ private fun DrawScope.drawPieChart(
             val isHoveredSegment = hoveredSegment == segment.type
             val segmentRadius = if (isHoveredSegment) radius * 1.05f else radius
             
+            // Efecto de resplandor exterior
+            if (isHoveredSegment) {
+                drawArc(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            segment.color.copy(alpha = 0.3f),
+                            segment.color.copy(alpha = 0.1f),
+                            Color.Transparent
+                        ),
+                        radius = segmentRadius * 1.3f
+                    ),
+                    startAngle = startAngle,
+                    sweepAngle = segment.angle,
+                    useCenter = true,
+                    topLeft = Offset(centerX - segmentRadius * 1.3f, centerY - segmentRadius * 1.3f),
+                    size = Size(segmentRadius * 2.6f, segmentRadius * 2.6f)
+                )
+            }
+            
+            // Segmento principal con gradiente sofisticado
             drawArc(
                 brush = segment.gradient,
                 startAngle = startAngle,
@@ -488,6 +585,23 @@ private fun DrawScope.drawPieChart(
                 useCenter = true,
                 topLeft = Offset(centerX - segmentRadius, centerY - segmentRadius),
                 size = Size(segmentRadius * 2, segmentRadius * 2)
+            )
+            
+            // Efecto de brillo interior
+            drawArc(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.4f),
+                        Color.White.copy(alpha = 0.1f),
+                        Color.Transparent
+                    ),
+                    radius = segmentRadius * 0.6f
+                ),
+                startAngle = startAngle,
+                sweepAngle = segment.angle,
+                useCenter = true,
+                topLeft = Offset(centerX - segmentRadius * 0.6f, centerY - segmentRadius * 0.6f),
+                size = Size(segmentRadius * 1.2f, segmentRadius * 1.2f)
             )
             
             // Dibujar porcentaje en el centro de cada segmento
@@ -525,34 +639,58 @@ private fun DrawScope.drawPieChart(
         )
     }
     
-    // Círculo central mejorado con efecto de pulsación
+    // Círculo central con efecto glassmorphism avanzado
     val innerRadius = radius * 0.35f
     
-    // Múltiples capas para suavizado
+    // Efecto de cristal con múltiples capas
+    // Capa base con gradiente suave
     drawCircle(
-        color = surfaceColor.copy(alpha = 0.98f),
-        radius = innerRadius + 1.5f,
+        brush = Brush.radialGradient(
+            colors = listOf(
+                surfaceColor.copy(alpha = 0.95f),
+                surfaceColor.copy(alpha = 0.85f),
+                surfaceColor.copy(alpha = 0.75f)
+            ),
+            radius = innerRadius + 3f
+        ),
+        radius = innerRadius + 3f,
         center = Offset(centerX, centerY)
     )
     
+    // Círculo principal con efecto de cristal
     drawCircle(
-        color = surfaceColor,
+        brush = Brush.radialGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.2f),
+                surfaceColor.copy(alpha = 0.9f),
+                surfaceColor.copy(alpha = 0.7f)
+            ),
+            radius = innerRadius
+        ),
         radius = innerRadius,
         center = Offset(centerX, centerY)
     )
     
+    // Efecto de brillo superior
     drawCircle(
-        color = surfaceColor.copy(alpha = 0.9f),
-        radius = innerRadius - 1f,
-        center = Offset(centerX, centerY)
+        brush = Brush.radialGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.6f),
+                Color.White.copy(alpha = 0.2f),
+                Color.Transparent
+            ),
+            radius = innerRadius * 0.7f
+        ),
+        radius = innerRadius * 0.7f,
+        center = Offset(centerX - innerRadius * 0.2f, centerY - innerRadius * 0.2f)
     )
     
-    // Borde sutil del círculo central
+    // Borde con efecto de cristal
     drawCircle(
-        color = Color.Black.copy(alpha = 0.05f),
+        color = Color.White.copy(alpha = 0.3f),
         radius = innerRadius,
         center = Offset(centerX, centerY),
-        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 0.2f)
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
     )
 }
 
