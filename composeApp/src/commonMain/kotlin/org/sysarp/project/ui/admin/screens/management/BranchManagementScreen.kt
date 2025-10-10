@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import org.sysarp.project.data.BranchInfo
 import org.sysarp.project.service.branch.BranchService
+import org.sysarp.project.ui.components.branch.CreateBranchDialog
 import org.sysarp.project.ui.components.branch.EditBranchDialog
 
 @Composable
@@ -90,10 +91,23 @@ fun BranchManagementScreen(
             componentsState.toggleFilters()
         },
         onAddBranch = {
-            onNavigateToAddBranch()
+            showAddBranchDialog = true
         },
         onNavigateBack = onBackClick
     )
+    
+    // Diálogo de creación de sucursal
+    if (showAddBranchDialog) {
+        CreateBranchDialog(
+            onDismiss = {
+                showAddBranchDialog = false
+            },
+            onCreate = { name, code, address ->
+                state.createBranch(name, code, address)
+                showAddBranchDialog = false
+            }
+        )
+    }
     
     // Diálogo de edición de sucursal
     showEditDialog?.let { branch ->
