@@ -11,6 +11,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -378,13 +379,19 @@ private fun VisualCalendarGrid(
                         val isInRange = selectedStartDate != null && selectedEndDate != null && 
                                        date > selectedStartDate && date < selectedEndDate
                         val isToday = date == today
+                        val isFuture = date > today
                         
                         CalendarDay(
                             day = dayNumber.toString(),
                             isSelected = isSelected,
                             isInRange = isInRange,
                             isToday = isToday,
-                            onClick = { onDateSelected(date) }
+                            isFuture = isFuture,
+                            onClick = { 
+                                if (!isFuture) {
+                                    onDateSelected(date)
+                                }
+                            }
                         )
                     }
                 }
@@ -400,18 +407,21 @@ private fun CalendarDay(
     isSelected: Boolean,
     isInRange: Boolean,
     isToday: Boolean,
+    isFuture: Boolean = false,
     onClick: () -> Unit
 ) {
     val backgroundColor = when {
         isSelected -> MaterialTheme.colorScheme.primary
         isInRange -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
         isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+        isFuture -> MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
     
     val textColor = when {
         isSelected -> Color.White
         isToday -> MaterialTheme.colorScheme.primary
+        isFuture -> MaterialTheme.colorScheme.outline
         else -> Color.Black
     }
     
@@ -430,7 +440,7 @@ private fun CalendarDay(
                 backgroundColor,
                 CircleShape
             )
-            .clickable { onClick() },
+            .clickable(enabled = !isFuture) { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Text(
