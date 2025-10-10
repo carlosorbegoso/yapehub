@@ -117,6 +117,7 @@ android {
     compileSdk = 36
     namespace = "com.yapechamo.composeapp"
     defaultConfig {
-        minSdk = 23
+        minSdk = 24
+        targetSdk = 36
     }
 }

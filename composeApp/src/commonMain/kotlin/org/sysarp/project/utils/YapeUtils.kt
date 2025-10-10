@@ -3,14 +3,19 @@ package org.sysarp.project.utils
 /**
  * Extrae el código corto de Yape del código completo
  * Ejemplo: "YAPE_1757840346620_123456_751" -> "751"
+ * Ejemplo: "YAPE_210" -> "210"
  */
 fun extractShortYapeCode(fullYapeCode: String): String {
     return try {
-        val parts = fullYapeCode.split("_")
-        if (parts.size >= 4) {
+        // Si contiene guiones bajos, extraer la última parte
+        if (fullYapeCode.contains("_")) {
+            val parts = fullYapeCode.split("_")
             parts.last() // Retorna la última parte (el número corto)
         } else {
-            fullYapeCode // Si no se puede parsear, retorna el código completo
+            // Si no contiene guiones bajos, buscar números al final
+            val regex = Regex("\\d+$")
+            val match = regex.find(fullYapeCode)
+            match?.value ?: fullYapeCode
         }
     } catch (e: Exception) {
         fullYapeCode // En caso de error, retorna el código completo

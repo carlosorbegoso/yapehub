@@ -92,12 +92,6 @@ fun AdminPaymentsScreen(
                 selectedDateRange = dateFilterState.selectedDateRange,
                 onDateRangeSelected = { period ->
                     dateFilterState.onDateRangeSelected(period)
-                    state.filterByDateRange(
-                        startDate = dateFilterState.startDate,
-                        endDate = dateFilterState.endDate,
-                        onSuccess = { },
-                        onFailure = { }
-                    )
                 },
                 showCalendar = dateFilterState.showCalendarDialog,
                 onShowCalendar = dateFilterState.onShowCalendar,
@@ -105,6 +99,16 @@ fun AdminPaymentsScreen(
                 title = "Filtrar pagos por fecha",
                 description = "Selecciona un período para filtrar los pagos del sistema"
             )
+
+            // Aplicar filtros cuando cambien las fechas
+            LaunchedEffect(dateFilterState.startDate, dateFilterState.endDate) {
+                state.filterByDateRange(
+                    startDate = dateFilterState.startDate,
+                    endDate = dateFilterState.endDate,
+                    onSuccess = { },
+                    onFailure = { }
+                )
+            }
 
                    AdminPaymentsContent(
                        state = state,

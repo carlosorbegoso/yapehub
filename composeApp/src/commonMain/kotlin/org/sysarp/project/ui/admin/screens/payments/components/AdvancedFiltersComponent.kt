@@ -46,7 +46,6 @@ fun AdvancedFiltersComponent(
         derivedStateOf {
             payments.map { it.branchName }
                 .distinct()
-                .filterNotNull()
                 .sorted()
         }
     }

@@ -36,139 +36,113 @@ fun PaymentSummaryCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header compacto
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Icono con fondo circular
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Payment,
                         contentDescription = "Icono de resumen de pagos",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(28.dp)
-                            .padding(8.dp)
+                        modifier = Modifier.size(20.dp)
                     )
-                }
-                
-                Column {
                     Text(
                         text = "Resumen de Pagos",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Text(
-                        text = "Estadísticas del sistema de pagos",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                
+                // Monto total destacado en el header
+                Text(
+                    text = formatCurrency(summary.totalAmount),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Estadísticas compactas en dos filas
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Primera fila: Total y Pendientes
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    CompactStatItem(
+                        value = "${summary.totalPayments}",
+                        label = "Total",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        onClick = { onStatusClick(null) }
+                    )
+                    
+                    CompactStatItem(
+                        value = "${summary.pendingCount}",
+                        label = "Pendientes",
+                        color = MaterialTheme.colorScheme.error,
+                        onClick = { onStatusClick("PENDING") }
+                    )
+                }
+                
+                // Segunda fila: Confirmados y Rechazados
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    CompactStatItem(
+                        value = "${summary.confirmedCount}",
+                        label = "Confirmados",
+                        color = MaterialTheme.colorScheme.primary,
+                        onClick = { onStatusClick("CONFIRMED") }
+                    )
+                    
+                    CompactStatItem(
+                        value = "${summary.rejectedCount}",
+                        label = "Rechazados",
+                        color = MaterialTheme.colorScheme.error,
+                        onClick = { onStatusClick("REJECTED") }
                     )
                 }
             }
             
-            // Estadísticas principales interactivas
+            // Monto pendiente destacado
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                InteractiveStatItem(
-                    value = "${summary.totalPayments}",
-                    label = "Total",
-                    icon = Icons.Filled.Payment,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    onClick = { onStatusClick(null) }
+                Text(
+                    text = "Monto Pendiente",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
-                InteractiveStatItem(
-                    value = "${summary.pendingCount}",
-                    label = "Pendientes",
-                    icon = Icons.Filled.Schedule,
-                    color = MaterialTheme.colorScheme.error,
-                    onClick = { onStatusClick("PENDING") }
+                Text(
+                    text = formatCurrency(summary.pendingAmount),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error
                 )
-                
-                InteractiveStatItem(
-                    value = "${summary.confirmedCount}",
-                    label = "Confirmados",
-                    icon = Icons.Filled.CheckCircle,
-                    color = MaterialTheme.colorScheme.primary,
-                    onClick = { onStatusClick("CONFIRMED") }
-                )
-                
-                InteractiveStatItem(
-                    value = "${summary.rejectedCount}",
-                    label = "Rechazados",
-                    icon = Icons.Filled.Cancel,
-                    color = MaterialTheme.colorScheme.error,
-                    onClick = { onStatusClick("REJECTED") }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            // Montos con mejor diseño
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            text = "Monto Total",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            text = formatCurrency(summary.totalAmount),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    
-                    Column(
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Text(
-                            text = "Pendiente",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            text = formatCurrency(summary.pendingAmount),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
             }
         }
     }
 }
 
 @Composable
-private fun InteractiveStatItem(
+private fun CompactStatItem(
     value: String,
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
     color: androidx.compose.ui.graphics.Color,
     onClick: () -> Unit
 ) {
@@ -176,25 +150,9 @@ private fun InteractiveStatItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable { onClick() }
     ) {
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = color.copy(alpha = 0.1f)
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = "Icono de $label",
-                tint = color,
-                modifier = Modifier
-                    .size(32.dp)
-                    .padding(8.dp)
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = color
         )

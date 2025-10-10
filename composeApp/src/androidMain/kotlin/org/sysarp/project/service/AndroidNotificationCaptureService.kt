@@ -27,6 +27,12 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     private var deviceFingerprint: String? = null
     private var audioService: AudioService? = null
     
+    // Service state management
+    @Volatile
+    private var isServiceBound = false
+    @Volatile
+    private var isServiceDestroyed = false
+    
     // Queue para notificaciones pendientes
     private val pendingNotifications = mutableListOf<YapeNotificationRequest>()
     private val maxRetries = 2 // Reducido de 3 a 2 para evitar duplicados
@@ -39,15 +45,21 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     override fun onCreate() {
         super.onCreate()
         
-        
-                // Generar device fingerprint único usando identificadores reales del dispositivo
-                serviceScope.launch {
-                    deviceFingerprint = AndroidDeviceUtils.generateDeviceFingerprint(this@AndroidNotificationCaptureService)
-
-                }
-        
-        // Inicializar AuthService con contexto disponible
         try {
+            isServiceBound = true
+            isServiceDestroyed = false
+            
+            // Generar device fingerprint único usando identificadores reales del dispositivo
+            serviceScope.launch {
+                try {
+                    deviceFingerprint = AndroidDeviceUtils.generateDeviceFingerprint(this@AndroidNotificationCaptureService)
+                } catch (e: Exception) {
+                    // Fallback to simple fingerprint if generation fails
+                    deviceFingerprint = AndroidDeviceUtils.generateSimpleFingerprint(this@AndroidNotificationCaptureService)
+                }
+            }
+            
+            // Inicializar AuthService con contexto disponible
             authService = org.sysarp.project.service.auth.AuthService.getInstance()
             // Inicializar NotificationService con dependencias reales
             val notificationApiClient = org.sysarp.project.service.http.NotificationApiClient()
@@ -58,21 +70,33 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             audioService?.initialize(this@AndroidNotificationCaptureService)
             
         } catch (e: Exception) {
-            // Error handling removed for production
+            // Log error but don't crash the service
+            android.util.Log.e("AndroidNotificationCaptureService", "Error in onCreate: ${e.message}", e)
         }
-
-        // Services initialized
     }
     
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
-        serviceScope.launch {
-            processNotification(sbn)
+        
+        // Only process notifications if service is properly bound and not destroyed
+        if (isServiceBound && !isServiceDestroyed) {
+            serviceScope.launch {
+                try {
+                    processNotification(sbn)
+                } catch (e: Exception) {
+                    android.util.Log.e("AndroidNotificationCaptureService", "Error processing notification: ${e.message}", e)
+                }
+            }
         }
     }
     
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         super.onNotificationRemoved(sbn)
+        
+        // Only process removals if service is properly bound and not destroyed
+        if (isServiceBound && !isServiceDestroyed) {
+            // Handle notification removal if needed
+        }
     }
     
     /**
@@ -81,17 +105,29 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
      */
     private suspend fun processNotification(sbn: StatusBarNotification) {
         try {
+            // Check if service is still valid before processing
+            if (!isServiceValid()) {
+                android.util.Log.w("AndroidNotificationCaptureService", "Service not valid, skipping notification processing")
+                return
+            }
+            
             if (isYapePackage(sbn.packageName)) {
                 val notificationText = extractNotificationText(sbn)
                 processYapeNotification(sbn, notificationText)
             }
         } catch (e: Exception) {
-            // Error handling removed for production
+            android.util.Log.e("AndroidNotificationCaptureService", "Error processing notification: ${e.message}", e)
         }
     }
     
     private suspend fun processYapeNotification(sbn: StatusBarNotification, notificationText: String?) {
         try {
+            // Check if service is still valid before processing
+            if (!isServiceValid()) {
+                android.util.Log.w("AndroidNotificationCaptureService", "Service not valid, skipping Yape notification processing")
+                return
+            }
+            
             if (!isYapePackage(sbn.packageName)) {
                 return
             }
@@ -371,7 +407,57 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     }
     
     override fun onDestroy() {
-        super.onDestroy()
-        serviceScope.cancel()
+        try {
+            // Mark service as destroyed first to prevent new operations
+            isServiceDestroyed = true
+            isServiceBound = false
+            
+            // Cancel all pending operations
+            serviceScope.cancel()
+            
+            // Clean up resources
+            notificationService = null
+            authService = null
+            audioService = null
+            
+            // Clear pending notifications to prevent memory leaks
+            pendingNotifications.clear()
+            sentNotifications.clear()
+            
+        } catch (e: Exception) {
+            android.util.Log.e("AndroidNotificationCaptureService", "Error in onDestroy: ${e.message}", e)
+        } finally {
+            super.onDestroy()
+        }
+    }
+    
+    /**
+     * Safely checks if the service is in a valid state for operations
+     */
+    private fun isServiceValid(): Boolean {
+        return isServiceBound && !isServiceDestroyed
+    }
+    
+    /**
+     * Gracefully handles service binding state changes
+     */
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        try {
+            isServiceBound = true
+            android.util.Log.d("AndroidNotificationCaptureService", "Notification listener connected")
+        } catch (e: Exception) {
+            android.util.Log.e("AndroidNotificationCaptureService", "Error in onListenerConnected: ${e.message}", e)
+        }
+    }
+    
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        try {
+            isServiceBound = false
+            android.util.Log.d("AndroidNotificationCaptureService", "Notification listener disconnected")
+        } catch (e: Exception) {
+            android.util.Log.e("AndroidNotificationCaptureService", "Error in onListenerDisconnected: ${e.message}", e)
+        }
     }
 }

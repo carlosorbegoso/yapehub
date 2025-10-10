@@ -68,11 +68,10 @@ class MainActivity : ComponentActivity() {
      */
     private suspend fun initializeCriticalServices() {
         try {
-            val serviceIntent = android.content.Intent(this@MainActivity, org.sysarp.project.service.AndroidNotificationCaptureService::class.java)
-            startService(serviceIntent)
-            
+            // Use the service manager for safer service lifecycle management
+            org.sysarp.project.service.NotificationServiceManager.startNotificationService(this@MainActivity)
         } catch (e: Exception) {
-            // Error handling removed for production
+            android.util.Log.e("MainActivity", "Error starting notification service: ${e.message}", e)
         }
     }
     

@@ -45,9 +45,7 @@ class AdminPaymentsState(
     var hasMorePayments by mutableStateOf(true)
         private set
     
-    // Estados de filtros
-    var selectedStatus by mutableStateOf<String?>(null)
-        private set
+    // Estados de filtros (removido selectedStatus - ahora se usa advancedFilters.status)
     
     // Estados de filtros de fechas
     var startDate by mutableStateOf<String?>(null)
@@ -147,10 +145,11 @@ class AdminPaymentsState(
     }
     
     /**
-     * Establece el estado seleccionado para filtrar
+     * Establece el estado seleccionado para filtrar (ahora se usa advancedFilters.status)
      */
     fun updateSelectedStatus(status: String?) {
-        selectedStatus = status
+        advancedFilters = advancedFilters.copy(status = status)
+        applyAdvancedFilters()
     }
     
     /**
@@ -196,7 +195,7 @@ class AdminPaymentsState(
                     adminId = userProfile?.adminId?.toInt() ?: 0,
                     page = 0,
                     size = 10,
-                    status = selectedStatus,
+                    status = advancedFilters.status,
                     startDate = startDate,
                     endDate = endDate,
                     token = accessToken ?: ""
@@ -240,7 +239,7 @@ class AdminPaymentsState(
                     adminId = userProfile?.adminId?.toInt() ?: 0,
                     page = nextPage,
                     size = 10,
-                    status = selectedStatus,
+                    status = advancedFilters.status,
                     startDate = startDate,
                     endDate = endDate,
                     token = accessToken ?: ""
@@ -312,7 +311,7 @@ class AdminPaymentsState(
      * Verifica si hay un filtro activo
      */
     fun hasActiveFilter(): Boolean {
-        return selectedStatus != null || startDate != null || endDate != null
+        return advancedFilters.status != null || startDate != null || endDate != null || advancedFilters.hasActiveFilters()
     }
     
     /**

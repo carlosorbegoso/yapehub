@@ -97,31 +97,23 @@ fun DateFilterComponent(
                     )
                 }
                 
-                Icon(
-                    imageVector = Icons.Filled.CalendarToday,
-                    contentDescription = "Calendario",
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                IconButton(
+                    onClick = onShowCalendar,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CalendarToday,
+                        contentDescription = "Abrir calendario para cambiar período",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
         
-        // Botón para abrir calendario
-        Button(
-            onClick = onShowCalendar,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            ),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.CalendarToday,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Cambiar período")
-        }
         
         // Información adicional
         Text(

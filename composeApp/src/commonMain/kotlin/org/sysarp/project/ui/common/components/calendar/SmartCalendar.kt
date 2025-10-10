@@ -296,7 +296,16 @@ private fun VisualCalendarGrid(
     val today = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val firstDayOfMonth = LocalDate(currentMonth.year, currentMonth.monthNumber, 1)
     val lastDayOfMonth = currentMonth.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.ordinal
+    // Calcular correctamente el día de la semana (Lunes = 0)
+    val firstDayOfWeek = when (firstDayOfMonth.dayOfWeek) {
+        kotlinx.datetime.DayOfWeek.MONDAY -> 0
+        kotlinx.datetime.DayOfWeek.TUESDAY -> 1
+        kotlinx.datetime.DayOfWeek.WEDNESDAY -> 2
+        kotlinx.datetime.DayOfWeek.THURSDAY -> 3
+        kotlinx.datetime.DayOfWeek.FRIDAY -> 4
+        kotlinx.datetime.DayOfWeek.SATURDAY -> 5
+        kotlinx.datetime.DayOfWeek.SUNDAY -> 6
+    }
     val daysInMonth = lastDayOfMonth.dayOfMonth
     
     Column {
@@ -319,38 +328,39 @@ private fun VisualCalendarGrid(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Días del mes
-        var dayCounter = 1
-        repeat(6) { week ->
+        // Días del mes - mostrar todos los días del mes correctamente
+        val totalWeeks = ((firstDayOfWeek + daysInMonth - 1) / 7) + 1
+        
+        repeat(totalWeeks) { week ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 repeat(7) { dayOfWeek ->
-                    if (week == 0 && dayOfWeek < firstDayOfWeek) {
-                        // Espacios vacíos antes del primer día del mes
+                    val dayPosition = week * 7 + dayOfWeek
+                    val currentDay = dayPosition - firstDayOfWeek + 1
+                    
+                    if (currentDay < 1 || currentDay > daysInMonth) {
+                        // Espacios vacíos antes del primer día del mes o después del último
                         Spacer(modifier = Modifier.size(32.dp))
-                    } else if (dayCounter <= daysInMonth) {
-                        val date = LocalDate(currentMonth.year, currentMonth.monthNumber, dayCounter)
+                    } else {
+                        val date = LocalDate(currentMonth.year, currentMonth.monthNumber, currentDay)
                         val isSelected = date == selectedStartDate || date == selectedEndDate
                         val isInRange = selectedStartDate != null && selectedEndDate != null && 
                                        date > selectedStartDate && date < selectedEndDate
                         val isToday = date == today
                         
                         CalendarDay(
-                            day = dayCounter.toString(),
+                            day = currentDay.toString(),
                             isSelected = isSelected,
                             isInRange = isInRange,
                             isToday = isToday,
                             onClick = { onDateSelected(date) }
                         )
-                        dayCounter++
-                    } else {
-                        Spacer(modifier = Modifier.size(32.dp))
                     }
                 }
             }
-            if (week < 5) Spacer(modifier = Modifier.height(4.dp))
+            if (week < totalWeeks - 1) Spacer(modifier = Modifier.height(4.dp))
         }
     }
 }
