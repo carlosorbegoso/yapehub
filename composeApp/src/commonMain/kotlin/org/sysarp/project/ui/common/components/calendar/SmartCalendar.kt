@@ -295,7 +295,20 @@ private fun VisualCalendarGrid(
 ) {
     val today = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val firstDayOfMonth = LocalDate(currentMonth.year, currentMonth.monthNumber, 1)
-    val lastDayOfMonth = currentMonth.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+    // Calcular correctamente el último día del mes
+    val lastDayOfMonth = when (currentMonth.monthNumber) {
+        1, 3, 5, 7, 8, 10, 12 -> LocalDate(currentMonth.year, currentMonth.monthNumber, 31)
+        4, 6, 9, 11 -> LocalDate(currentMonth.year, currentMonth.monthNumber, 30)
+        2 -> {
+            // Febrero - verificar si es año bisiesto
+            if (currentMonth.year % 4 == 0 && (currentMonth.year % 100 != 0 || currentMonth.year % 400 == 0)) {
+                LocalDate(currentMonth.year, currentMonth.monthNumber, 29)
+            } else {
+                LocalDate(currentMonth.year, currentMonth.monthNumber, 28)
+            }
+        }
+        else -> LocalDate(currentMonth.year, currentMonth.monthNumber, 30)
+    }
     // Calcular correctamente el día de la semana (Lunes = 0)
     val firstDayOfWeek = when (firstDayOfMonth.dayOfWeek) {
         kotlinx.datetime.DayOfWeek.MONDAY -> 0
@@ -307,6 +320,13 @@ private fun VisualCalendarGrid(
         kotlinx.datetime.DayOfWeek.SUNDAY -> 6
     }
     val daysInMonth = lastDayOfMonth.dayOfMonth
+    
+    // Debug: imprimir información del calendario
+    println("CALENDAR_DEBUG: Mes: ${currentMonth.monthNumber}/${currentMonth.year}")
+    println("CALENDAR_DEBUG: Primer día del mes: $firstDayOfMonth (${firstDayOfMonth.dayOfWeek})")
+    println("CALENDAR_DEBUG: Último día del mes: $lastDayOfMonth")
+    println("CALENDAR_DEBUG: Días en el mes: $daysInMonth")
+    println("CALENDAR_DEBUG: Primer día de la semana: $firstDayOfWeek")
     
     Column {
         // Días de la semana
@@ -329,7 +349,14 @@ private fun VisualCalendarGrid(
         Spacer(modifier = Modifier.height(8.dp))
         
         // Días del mes - mostrar todos los días del mes correctamente
+        // Crear una lista de todos los días del mes
+        val allDays = (1..daysInMonth).toList()
+        
+        // Calcular cuántas semanas necesitamos
         val totalWeeks = ((firstDayOfWeek + daysInMonth - 1) / 7) + 1
+        
+        println("CALENDAR_DEBUG: Total semanas: $totalWeeks")
+        println("CALENDAR_DEBUG: Días del mes: $allDays")
         
         repeat(totalWeeks) { week ->
             Row(
@@ -337,21 +364,23 @@ private fun VisualCalendarGrid(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 repeat(7) { dayOfWeek ->
-                    val dayPosition = week * 7 + dayOfWeek
-                    val currentDay = dayPosition - firstDayOfWeek + 1
+                    val dayIndex = week * 7 + dayOfWeek
+                    val dayNumber = dayIndex - firstDayOfWeek + 1
                     
-                    if (currentDay < 1 || currentDay > daysInMonth) {
+                    println("CALENDAR_DEBUG: Semana $week, Día $dayOfWeek, Índice $dayIndex, Número $dayNumber")
+                    
+                    if (dayNumber < 1 || dayNumber > daysInMonth) {
                         // Espacios vacíos antes del primer día del mes o después del último
                         Spacer(modifier = Modifier.size(32.dp))
                     } else {
-                        val date = LocalDate(currentMonth.year, currentMonth.monthNumber, currentDay)
+                        val date = LocalDate(currentMonth.year, currentMonth.monthNumber, dayNumber)
                         val isSelected = date == selectedStartDate || date == selectedEndDate
                         val isInRange = selectedStartDate != null && selectedEndDate != null && 
                                        date > selectedStartDate && date < selectedEndDate
                         val isToday = date == today
                         
                         CalendarDay(
-                            day = currentDay.toString(),
+                            day = dayNumber.toString(),
                             isSelected = isSelected,
                             isInRange = isInRange,
                             isToday = isToday,
@@ -427,8 +456,9 @@ private fun QuickPeriodButtons(
             color = Color.Black
         )
         
+        // Botones de período rápido en una sola fila
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // Botón Hoy
             Button(
@@ -439,11 +469,11 @@ private fun QuickPeriodButtons(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 ),
-                contentPadding = PaddingValues(8.dp)
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "📅 Hoy",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "Hoy",
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -457,19 +487,15 @@ private fun QuickPeriodButtons(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 ),
-                contentPadding = PaddingValues(8.dp)
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "📅 7 días",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "7d",
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-        }
-        
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+            
             // Botón 30 días
             Button(
                 onClick = {
@@ -479,11 +505,11 @@ private fun QuickPeriodButtons(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 ),
-                contentPadding = PaddingValues(8.dp)
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "📅 30 días",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "30d",
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -497,11 +523,11 @@ private fun QuickPeriodButtons(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 ),
-                contentPadding = PaddingValues(8.dp)
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "📅 90 días",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "90d",
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
