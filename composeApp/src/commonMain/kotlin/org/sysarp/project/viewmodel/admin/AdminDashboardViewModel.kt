@@ -7,11 +7,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.data.QuickSummaryData
+import org.sysarp.project.data.BillingDashboard
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.branch.BranchService
+import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 
 /**
@@ -36,6 +38,7 @@ class AdminDashboardViewModel(
     private val statsService: StatsService,
     private val affiliationService: AffiliationService,
     private val branchService: BranchService,
+    private val billingService: BillingService,
     private val webSocketService: PaymentWebSocketService
 ) {
 
@@ -47,6 +50,9 @@ class AdminDashboardViewModel(
 
     private val _dashboardStats = MutableStateFlow(DashboardStats(0, 0, 0, 0, 0.0, 0))
     val dashboardStats: StateFlow<DashboardStats> = _dashboardStats.asStateFlow()
+
+    private val _billingDashboard = MutableStateFlow<BillingDashboard?>(null)
+    val billingDashboard: StateFlow<BillingDashboard?> = _billingDashboard.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -115,6 +121,9 @@ class AdminDashboardViewModel(
                         
                         // Cargar datos adicionales en background (lazy loading)
                         loadAdditionalData(userProfile, accessToken)
+                        
+                        // Cargar datos de facturación
+                        loadBillingData()
                     },
                     onFailure = { error ->
                         _errorMessage.value = "Error cargando estadísticas: ${error.message}"
@@ -168,6 +177,27 @@ class AdminDashboardViewModel(
             } catch (e: Exception) {
                 _errorMessage.value = "Error cargando datos adicionales: ${e.message}"
                 _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * Cargar datos de facturación del dashboard
+     */
+    fun loadBillingData() {
+        coroutineScope.launch {
+            try {
+                val billingResult = billingService.getCurrentBillingDashboard()
+                billingResult.fold(
+                    onSuccess = { billingDashboard ->
+                        _billingDashboard.value = billingDashboard
+                    },
+                    onFailure = { error ->
+                        _errorMessage.value = "Error cargando datos de facturación: ${error.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Error inesperado cargando facturación: ${e.message}"
             }
         }
     }

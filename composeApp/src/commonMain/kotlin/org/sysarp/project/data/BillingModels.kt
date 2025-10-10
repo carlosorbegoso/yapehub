@@ -31,7 +31,7 @@ data class SubscriptionStatus(
     val currency: String,
     val billingCycle: String,
     val maxSellers: Int,
-    val tokensIncluded: Int,
+    val tokensIncluded: Int? = null,
     val startDate: String? = null,
     val endDate: String? = null,
     val isActive: Boolean,
@@ -76,7 +76,7 @@ data class PaymentStatus(
 @Serializable
 data class BillingDashboard(
     val adminId: Int,
-    val tokenStatus: TokenStatusResponse,
+    val tokenStatus: TokenStatusResponse? = null,
     val subscriptionStatus: SubscriptionStatus,
     val recentPayments: List<PaymentStatus> = emptyList(),
     val monthlyUsage: MonthlyUsage,

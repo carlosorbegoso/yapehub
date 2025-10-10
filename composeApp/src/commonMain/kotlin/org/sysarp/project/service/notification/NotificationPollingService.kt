@@ -64,40 +64,69 @@ class NotificationPollingService {
             val userProfile = authService.userProfile.value
             val accessToken = authService.accessToken.value
             
-            if (userProfile?.sellerId == null || accessToken.isNullOrBlank()) {
-                println("[POLLING_SERVICE] ❌ No hay sellerId o token disponible")
+            if (accessToken.isNullOrBlank()) {
+                println("[POLLING_SERVICE] ❌ No hay token disponible")
                 return
             }
             
-            val sellerId = userProfile.sellerId.toInt()
-            println("[POLLING_SERVICE] 📱 Polling para sellerId: $sellerId")
+            // Verificar si es un seller o un admin
+            val sellerId = userProfile?.sellerId
+            val adminId = userProfile?.adminId
             
-            val response = paymentService.getPendingPayments(
-                sellerId = sellerId,
-                page = 0,
-                limit = 50,
-                startDate = null,
-                endDate = null,
-                token = accessToken
-            )
-            
-            response.fold(
-                onSuccess = { pendingPayments ->
-                    val payments = pendingPayments.data.payments
-                    println("[POLLING_SERVICE] 📨 Encontrados ${payments.size} pagos pendientes")
-                    
-                    if (payments.isNotEmpty()) {
-                        showNewNotifications(payments)
-                    }
-                },
-                onFailure = { error ->
-                    println("[POLLING_SERVICE] ❌ Error en polling: ${error.message}")
+            when {
+                sellerId != null -> {
+                    // Usuario es un seller
+                    println("[POLLING_SERVICE] 📱 Polling para sellerId: $sellerId")
+                    checkSellerNotifications(sellerId.toInt(), accessToken)
                 }
-            )
+                adminId != null -> {
+                    // Usuario es un admin - obtener notificaciones de todos sus sellers
+                    println("[POLLING_SERVICE] 👨‍💼 Polling para adminId: $adminId")
+                    checkAdminNotifications(adminId.toInt(), accessToken)
+                }
+                else -> {
+                    println("[POLLING_SERVICE] ❌ No hay sellerId ni adminId disponible")
+                    return
+                }
+            }
             
         } catch (e: Exception) {
             println("[POLLING_SERVICE] ❌ Excepción en polling: ${e.message}")
         }
+    }
+    
+    private suspend fun checkSellerNotifications(sellerId: Int, accessToken: String) {
+        val response = paymentService.getPendingPayments(
+            sellerId = sellerId,
+            page = 0,
+            limit = 50,
+            startDate = null,
+            endDate = null,
+            token = accessToken
+        )
+        
+        response.fold(
+            onSuccess = { pendingPayments ->
+                val payments = pendingPayments.data.payments
+                println("[POLLING_SERVICE] 📨 Encontrados ${payments.size} pagos pendientes para seller $sellerId")
+                
+                if (payments.isNotEmpty()) {
+                    showNewNotifications(payments)
+                }
+            },
+            onFailure = { error ->
+                println("[POLLING_SERVICE] ❌ Error en polling para seller $sellerId: ${error.message}")
+            }
+        )
+    }
+    
+    private suspend fun checkAdminNotifications(adminId: Int, accessToken: String) {
+        // Para admins, podríamos implementar una lógica diferente
+        // Por ahora, simplemente logueamos que es un admin
+        println("[POLLING_SERVICE] ℹ️ Admin $adminId - Polling de notificaciones no implementado para admins")
+        
+        // TODO: Implementar lógica específica para admins si es necesario
+        // Por ejemplo, obtener notificaciones de todos los sellers bajo este admin
     }
     
     private fun showNewNotifications(payments: List<SellerPendingPayment>) {

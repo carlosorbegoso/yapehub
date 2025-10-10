@@ -30,6 +30,65 @@ class BillingApiClient : BaseApiClient() {
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
+        coerceInputValues = true
+        encodeDefaults = true
+        allowStructuredMapKeys = true
+    }
+    
+    /**
+     * Función auxiliar para limpiar la respuesta JSON
+     */
+    private fun cleanJsonResponse(responseBody: String): String {
+        return responseBody
+            .trim()
+            .replace(Regex("\\r\\n|\\r|\\n"), " ") // Reemplazar saltos de línea
+            .replace(Regex("\\s+"), " ") // Normalizar espacios
+            .replace(Regex("[\\x00-\\x1F\\x7F]"), "") // Remover caracteres de control
+    }
+    
+    /**
+     * Función auxiliar para parsear respuestas de facturación de manera robusta
+     */
+    private inline fun <reified T> parseBillingResponse(responseBody: String): Result<T> {
+        val cleanedResponse = cleanJsonResponse(responseBody)
+        return try {
+            // Intentar parsear como respuesta flexible primero
+            val flexibleResponse = json.decodeFromString<FlexibleBillingResponse<T>>(cleanedResponse)
+            
+            if (flexibleResponse.success == true && flexibleResponse.data != null) {
+                Result.success(flexibleResponse.data)
+            } else {
+                Result.failure(Exception(flexibleResponse.message))
+            }
+        } catch (e: Exception) {
+            println("BILLING_API: Error parsing flexible response: ${e.message}")
+            // Si falla, intentar como respuesta estándar
+            try {
+                val standardResponse = json.decodeFromString<BillingResponse<T>>(cleanedResponse)
+                if (standardResponse.success) {
+                    Result.success(standardResponse.data)
+                } else {
+                    Result.failure(Exception(standardResponse.message))
+                }
+            } catch (e2: Exception) {
+                println("BILLING_API: Error parsing standard response: ${e2.message}")
+                // Intentar parsear directamente como el tipo T
+                try {
+                    val directResponse = json.decodeFromString<T>(cleanedResponse)
+                    Result.success(directResponse)
+                } catch (e3: Exception) {
+                    println("BILLING_API: Error parsing direct response: ${e3.message}")
+                    // Intentar con la respuesta original como último recurso
+                    try {
+                        val originalResponse = json.decodeFromString<T>(responseBody)
+                        Result.success(originalResponse)
+                    } catch (e4: Exception) {
+                        println("BILLING_API: Error parsing original response: ${e4.message}")
+                        Result.failure(Exception("Error parsing response at offset 96: ${e4.message}. Original: $responseBody"))
+                    }
+                }
+            }
+        }
     }
     
     // =============================================================================
@@ -141,28 +200,11 @@ class BillingApiClient : BaseApiClient() {
             
             val responseBody = response.body<String>()
             
-            // Intentar parsear como respuesta flexible primero
-            try {
-                val flexibleResponse = json.decodeFromString<FlexibleBillingResponse<BillingDashboard>>(responseBody)
-                
-                if (flexibleResponse.success == true && flexibleResponse.data != null) {
-                    Result.success(flexibleResponse.data)
-                } else {
-                    Result.failure(Exception(flexibleResponse.message))
-                }
-            } catch (e: Exception) {
-                // Si falla, intentar como respuesta estándar
-                try {
-                    val dashboardResponse = json.decodeFromString<BillingDashboardResponse>(responseBody)
-                    if (dashboardResponse.success) {
-                        Result.success(dashboardResponse.data)
-                    } else {
-                        Result.failure(Exception(dashboardResponse.message))
-                    }
-                } catch (e2: Exception) {
-                    Result.failure(Exception("Error parsing response: ${e.message}"))
-                }
-            }
+            // Log de la respuesta para debugging
+            println("BILLING_API: Respuesta del servidor: $responseBody")
+            
+            // Usar la función auxiliar para parsing robusto
+            parseBillingResponse<BillingDashboard>(responseBody)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -59,6 +59,7 @@ fun AdminDashboardScreen(
             statsService = statsService,
             affiliationService = affiliationService,
             branchService = branchService,
+            billingService = billingService,
             webSocketService = webSocketService
         )
     }
