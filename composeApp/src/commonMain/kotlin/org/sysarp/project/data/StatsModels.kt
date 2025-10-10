@@ -13,10 +13,10 @@ data class AdminStatsResponse(
 
 @Serializable
 data class AdminStatsData(
-    val period: StatsPeriod,
-    val summary: AdminSummary,
-    val dailyStats: List<DailyStats>,
-    val sellerStats: List<SellerStats>
+    val dailySales: List<DailySalesData>,
+    val performanceMetrics: PerformanceMetricsData,
+    val topSellers: List<TopSellerData>,
+    val overview: SellerOverviewSummaryData
 )
 
 @Serializable

@@ -2,6 +2,7 @@ package org.sysarp.project.service
 
 import kotlinx.serialization.json.Json
 import org.sysarp.project.utils.SecurityUtils
+import org.sysarp.project.utils.getCurrentTimeMillis
 import platform.Foundation.NSUserDefaults
 
 /**
@@ -21,7 +22,7 @@ actual object CredentialStorageService {
             val credentials = SavedCredentials(
                 email = SecurityUtils.normalizeEmail(email),
                 password = SecurityUtils.sanitizeInput(password),
-                timestamp = System.currentTimeMillis()
+                timestamp = getCurrentTimeMillis()
             )
             
             val credentialsJson = json.encodeToString(SavedCredentials.serializer(), credentials)
@@ -70,7 +71,7 @@ actual object CredentialStorageService {
     actual suspend fun areCredentialsValid(maxAgeDays: Int): Boolean {
         val credentials = getSavedCredentials() ?: return false
         
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         val maxAgeMillis = maxAgeDays * 24 * 60 * 60 * 1000L
         
         return (currentTime - credentials.timestamp) <= maxAgeMillis

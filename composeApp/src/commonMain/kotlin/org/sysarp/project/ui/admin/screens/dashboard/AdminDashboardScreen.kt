@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -21,6 +22,7 @@ import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.ui.common.components.topbar.TopBarComponent
+import org.sysarp.project.viewmodel.admin.AdminDashboardViewModel
 
 /**
  * Pantalla principal del dashboard de administración
@@ -49,24 +51,31 @@ fun AdminDashboardScreen(
     webSocketService: PaymentWebSocketService = koinInject(),
     billingService: BillingService = koinInject()
 ) {
-    val userProfile by authService.userProfile.collectAsState()
-    val accessToken by authService.accessToken.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
-
-    // The state holder receives the injected dependencies
-    val state = remember {
-        AdminDashboardState(
+    // Crear el ViewModel con las dependencias inyectadas
+    val viewModel = remember {
+        AdminDashboardViewModel(
             authService = authService,
             sellerService = sellerService,
             statsService = statsService,
             affiliationService = affiliationService,
-            qrService = qrService,
             branchService = branchService,
-            billingService = billingService,
-            webSocketService = webSocketService,
-            coroutineScope = coroutineScope
+            webSocketService = webSocketService
         )
     }
+    
+    // Observar estados del ViewModel
+    val userProfile by viewModel.userProfile.collectAsState()
+    val accessToken by viewModel.accessToken.collectAsState()
+    val dashboardStats by viewModel.dashboardStats.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
+    // Inicializar el ViewModel
+    LaunchedEffect(Unit) {
+        viewModel.initialize()
+    }
+    
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -74,10 +83,10 @@ fun AdminDashboardScreen(
                 title = "Dashboard Admin",
                 subtitle = "Panel de administración",
                 menuItems = createTopBarMenuItems(
-                    onShowAffiliationDialog = { state.showAffiliationDialog() },
+                    onShowAffiliationDialog = { /* TODO: Implementar diálogo de afiliación */ },
                     onNavigateToProfile = onNavigateToProfile,
                     onNavigateToSettings = onNavigateToSettings,
-                    onLogout = { handleLogout(authService, coroutineScope, onLogout) }
+                    onLogout = { handleLogout(viewModel, coroutineScope, onLogout) }
                 ),
                 showMenu = true
             )
@@ -93,30 +102,15 @@ fun AdminDashboardScreen(
                 businessName = userProfile?.businessName ?: "Mi Negocio"
             )
 
-            // Filtro de fechas
-            AdminDashboardDateFilter(
-                selectedDateRange = state.selectedDateRange,
-                onDateRangeSelected = { period ->
-                    val adminId = userProfile?.adminId?.toIntOrNull()
-                    val token = accessToken
-                    if (adminId != null && !token.isNullOrEmpty()) {
-                        state.updateDateRange(period, adminId, token)
-                    }
-                },
-                showCalendar = state.showCalendarDialog,
-                onShowCalendar = { state.showCalendarDialog() },
-                onDismissCalendar = { state.dismissCalendarDialog() }
-            )
-
-            // Contenido principal del dashboard
+            // Contenido principal del dashboard usando el ViewModel
             DashboardContent(
-                quickSummaryData = state.quickSummaryData,
-                isLoadingStats = state.isLoadingStats,
-                statsError = state.statsError,
-                connectedSellersData = state.connectedSellersData,
-                isLoadingSellers = state.isLoadingSellers,
-                sellersError = state.sellersError,
-                pendingRequestsCount = state.pendingRequests.size,
+                quickSummaryData = viewModel.getQuickSummaryData(),
+                isLoadingStats = isLoading,
+                statsError = errorMessage ?: "",
+                connectedSellersData = null, // TODO: Implementar en el ViewModel
+                isLoadingSellers = false, // TODO: Implementar en el ViewModel
+                sellersError = "",
+                pendingRequestsCount = 0, // TODO: Implementar en el ViewModel
                 onNavigateToBranchManagement = onNavigateToBranchManagement,
                 onNavigateToSellerManagement = onNavigateToSellerManagement,
                 onNavigateToAnalytics = onNavigateToAnalytics,
@@ -124,19 +118,8 @@ fun AdminDashboardScreen(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToDeactivationRequests = onNavigateToDeactivationRequests,
                 onNavigateToBilling = onNavigateToBilling,
-                billingService = billingService // This can also be injected inside DashboardContent if needed
+                billingService = billingService
             )
         }
     }
-
-    // Manejar acciones y efectos secundarios
-    AdminDashboardActions(
-        authService = authService,
-        state = state,
-        userProfile = userProfile,
-        accessToken = accessToken,
-        onLogout = onLogout,
-        onNavigateToProfile = onNavigateToProfile,
-        onNavigateToSettings = onNavigateToSettings
-    )
 }

@@ -35,6 +35,9 @@ kotlin {
             implementation(libs.accompanist.permissions)
             implementation(libs.androidx.security.crypto)
             
+            // AndroidX Startup para resolver NoClassDefFoundError
+            implementation("androidx.startup:startup-runtime:1.1.1")
+            
             // Ktor Android
             implementation(libs.ktor.client.android)
             implementation(libs.ktor.client.cio)
@@ -52,6 +55,9 @@ kotlin {
 
             // Koin for Android
             implementation(libs.koin.android)
+            
+            // AndroidX Startup - explicitly add to resolve version conflicts
+            implementation(libs.androidx.startup.runtime)
         }
         
         commonMain.dependencies {

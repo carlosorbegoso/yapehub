@@ -44,7 +44,8 @@ class StatsApiClient : BaseApiClient() {
                     // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
                     val responseBody = response.body<String>()
                     logInfo("STATS_API", "Respuesta del servidor: $responseBody")
-                    val adminStatsResponse = kotlinx.serialization.json.Json.decodeFromString<AdminStatsResponse>(responseBody)
+                    val json = Json { ignoreUnknownKeys = true }
+                    val adminStatsResponse = json.decodeFromString<AdminStatsResponse>(responseBody)
                     logInfo("STATS_API", "Estadísticas de admin obtenidas exitosamente")
                     Result.success(adminStatsResponse)
                 } catch (e: Exception) {

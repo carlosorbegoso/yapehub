@@ -1,7 +1,8 @@
 package org.sysarp.project.service
 
-import java.text.SimpleDateFormat
-import java.util.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 actual class ImagePickerService {
     
@@ -38,7 +39,7 @@ actual class ImagePickerService {
     }
     
     private fun getCurrentTimestamp(): String {
-        val sdf = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-        return sdf.format(Date())
+        // Usar timestamp simple para iOS
+        return "ios_${kotlin.random.Random.nextLong(100000, 999999)}"
     }
 }
