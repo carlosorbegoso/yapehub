@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import org.sysarp.project.data.BranchInfo
 import org.sysarp.project.service.branch.BranchService
+import org.sysarp.project.ui.components.branch.EditBranchDialog
 
 @Composable
 fun BranchManagementScreen(
@@ -26,6 +27,7 @@ fun BranchManagementScreen(
     // Estados para diálogos y acciones
     var showDeleteDialog by remember { mutableStateOf<BranchInfo?>(null) }
     var showAddBranchDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf<BranchInfo?>(null) }
     
     // Crear el estado principal de gestión de sucursales
     val state = remember {
@@ -63,7 +65,7 @@ fun BranchManagementScreen(
     BranchManagementComponents(
         state = componentsState,
         onEditBranch = { branch -> 
-            onNavigateToEditBranch(branch)
+            showEditDialog = branch
         },
         onViewSellers = { branch -> 
             onNavigateToSellers(branch)
@@ -92,6 +94,26 @@ fun BranchManagementScreen(
         },
         onNavigateBack = onBackClick
     )
+    
+    // Diálogo de edición de sucursal
+    showEditDialog?.let { branch ->
+        EditBranchDialog(
+            branch = branch,
+            onDismiss = {
+                showEditDialog = null
+            },
+            onUpdate = { name, code, address, isActive ->
+                state.updateBranch(
+                    branchId = branch.branchId,
+                    name = name,
+                    code = code,
+                    address = address,
+                    isActive = isActive
+                )
+                showEditDialog = null
+            }
+        )
+    }
     
     // Diálogo de confirmación para eliminar sucursal
     showDeleteDialog?.let { branch ->

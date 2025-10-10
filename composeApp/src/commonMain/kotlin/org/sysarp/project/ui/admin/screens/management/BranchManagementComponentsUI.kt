@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -140,51 +142,160 @@ fun BranchFiltersSection(
     onFilterChange: (String?) -> Unit
 ) {
     if (state.areFiltersVisible()) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            // Filtros modernos con chips
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                listOf("Todas", "Activas", "Inactivas").forEach { filter ->
-                    FilterChip(
-                        onClick = { 
-                            onFilterChange(when (filter) {
-                                "Todas" -> null
-                                "Activas" -> "active"
-                                "Inactivas" -> "inactive"
-                                else -> null
-                            })
-                        },
-                        label = { 
-                            Text(
-                                text = filter,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                        },
-                        selected = when (filter) {
-                            "Todas" -> !state.hasActiveFilter()
-                            "Activas" -> state.getCurrentFilterStatus() == "active"
-                            "Inactivas" -> state.getCurrentFilterStatus() == "inactive"
-                            else -> false
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = when (filter) {
-                                    "Todas" -> Icons.Filled.Business
-                                    "Activas" -> Icons.Filled.CheckCircle
-                                    "Inactivas" -> Icons.Filled.PauseCircle
-                                    else -> Icons.Filled.Business
-                                },
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        shape = RoundedCornerShape(20.dp)
+                // Header de filtros
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Filtros de Sucursales",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+                    
+                    // Contador de filtros activos
+                    if (state.hasActiveFilter()) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "1",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                }
+                
+                // Filtros por estado
+                Column {
+                    Text(
+                        text = "Estado",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("Todas", "Activas", "Inactivas").forEach { filter ->
+                            FilterChip(
+                                onClick = { 
+                                    onFilterChange(when (filter) {
+                                        "Todas" -> null
+                                        "Activas" -> "active"
+                                        "Inactivas" -> "inactive"
+                                        else -> null
+                                    })
+                                },
+                                label = { 
+                                    Text(
+                                        text = filter,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                selected = when (filter) {
+                                    "Todas" -> !state.hasActiveFilter()
+                                    "Activas" -> state.getCurrentFilterStatus() == "active"
+                                    "Inactivas" -> state.getCurrentFilterStatus() == "inactive"
+                                    else -> false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = when (filter) {
+                                            "Todas" -> Icons.Filled.Business
+                                            "Activas" -> Icons.Filled.CheckCircle
+                                            "Inactivas" -> Icons.Filled.PauseCircle
+                                            else -> Icons.Filled.Business
+                                        },
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                        }
+                    }
+                }
+                
+                // Filtros por número de vendedores
+                Column {
+                    Text(
+                        text = "Vendedores",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("Todas", "Con vendedores", "Sin vendedores").forEach { filter ->
+                            FilterChip(
+                                onClick = { 
+                                    onFilterChange(when (filter) {
+                                        "Todas" -> null
+                                        "Con vendedores" -> "with_sellers"
+                                        "Sin vendedores" -> "without_sellers"
+                                        else -> null
+                                    })
+                                },
+                                label = { 
+                                    Text(
+                                        text = filter,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                selected = when (filter) {
+                                    "Todas" -> !state.hasActiveFilter()
+                                    "Con vendedores" -> state.getCurrentFilterStatus() == "with_sellers"
+                                    "Sin vendedores" -> state.getCurrentFilterStatus() == "without_sellers"
+                                    else -> false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = when (filter) {
+                                            "Todas" -> Icons.Filled.Business
+                                            "Con vendedores" -> Icons.Filled.People
+                                            "Sin vendedores" -> Icons.Filled.PauseCircle
+                                            else -> Icons.Filled.Business
+                                        },
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -200,30 +311,8 @@ fun BranchListSection(
     onDelete: (BranchInfo) -> Unit,
     onViewDetails: (BranchInfo) -> Unit
 ) {
-    Column(
-        modifier = Modifier.padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Contenido de la lista
-        if (!state.hasBranches() && !state.isCurrentlyLoading()) {
-            EmptyBranchesCard()
-        } else {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                state.getFilteredBranches().forEach { branch ->
-                    BranchCardV2(
-                        branch = branch,
-                        onEdit = { onEdit(branch) },
-                        onViewSellers = { onViewSellers(branch) },
-                        onToggleStatus = { onToggleStatus(branch) },
-                        onDelete = { onDelete(branch) },
-                        onViewDetails = { onViewDetails(branch) }
-                    )
-                }
-            }
-        }
-    }
+    // Esta función ya no es necesaria ya que la lista se maneja directamente en BranchManagementComponents
+    // Se mantiene por compatibilidad pero no se usa
 }
 
 @Composable
@@ -357,144 +446,225 @@ fun BranchCardV2(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 6.dp
+            defaultElevation = 4.dp,
+            pressedElevation = 8.dp
         )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Indicador de estado circular (como en la lista de tareas)
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = if (branch.isActive) 
-                            MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+            // Header con estado y información principal
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (branch.isActive) {
-                    Icon(
-                        imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = "Operativa",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Filled.PauseCircle,
-                        contentDescription = "Inactiva",
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(24.dp)
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Indicador de estado mejorado
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(
+                                color = if (branch.isActive) 
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = if (branch.isActive) Icons.Filled.CheckCircle else Icons.Filled.PauseCircle,
+                                contentDescription = if (branch.isActive) "Activa" else "Inactiva",
+                                tint = if (branch.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            
+                            Text(
+                                text = branch.sellersCount.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (branch.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+                    
+                    Column {
+                        Text(
+                            text = branch.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Código: ${branch.code}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                
+                // Badge de estado
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (branch.isActive) 
+                            MaterialTheme.colorScheme.primaryContainer 
+                        else MaterialTheme.colorScheme.errorContainer
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(
+                                    color = if (branch.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                    shape = CircleShape
+                                )
+                        )
+                        
+                        Text(
+                            text = if (branch.isActive) "Activa" else "Inactiva",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (branch.isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                 }
             }
             
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // Información de la sucursal
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = branch.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = branch.address,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                
-                Spacer(modifier = Modifier.height(6.dp))
-                
-                // Estado con estilo minimalista
-                Text(
-                    text = if (branch.isActive) "Operativa" else "Inactiva",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (branch.isActive) 
-                        MaterialTheme.colorScheme.primary 
-                    else MaterialTheme.colorScheme.outline,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            
-            // Acciones en el lado derecho (como en la lista de tareas)
+            // Información detallada
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Botón de eliminar (icono de papelera)
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Eliminar",
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                
-                // Botón de expandir/ver detalles
-                IconButton(
-                    onClick = onViewDetails,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ExpandMore,
-                        contentDescription = "Ver detalles",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
-        
-        // Acciones secundarias (aparecen al expandir)
-        if (false) { // TODO: Implementar estado de expansión
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
-            ) {
+                // Dirección
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Botón de vendedores
-                    ModernActionButton(
-                        icon = Icons.Filled.People,
-                        label = "Vendedores",
-                        onClick = onViewSellers,
-                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.weight(1f)
+                    Icon(
+                        imageVector = Icons.Filled.Business,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
                     )
                     
-                    // Botón de editar
-                    ModernActionButton(
-                        icon = Icons.Filled.Edit,
-                        label = "Editar",
-                        onClick = onEdit,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.weight(1f)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Dirección",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = branch.address,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+                
+                // Vendedores
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.People,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Vendedores",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${branch.sellersCount} vendedores",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+            
+            // Acciones mejoradas
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Ver vendedores (si hay vendedores)
+                if (branch.sellersCount > 0) {
+                    OutlinedButton(
+                        onClick = onViewSellers,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.People,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Vendedores", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+                
+                // Editar
+                OutlinedButton(
+                    onClick = onEdit,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Editar", style = MaterialTheme.typography.labelMedium)
+                }
+                
+                // Toggle status
+                Button(
+                    onClick = onToggleStatus,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (branch.isActive) 
+                            MaterialTheme.colorScheme.error 
+                        else MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = if (branch.isActive) Icons.Filled.PauseCircle else Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (branch.isActive) "Desactivar" else "Activar",
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
             }

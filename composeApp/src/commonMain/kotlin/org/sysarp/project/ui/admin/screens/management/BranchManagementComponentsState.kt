@@ -1,8 +1,6 @@
 package org.sysarp.project.ui.admin.screens.management
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import org.sysarp.project.data.BranchInfo
 
 /**
@@ -271,7 +269,7 @@ class BranchManagementComponentsState {
     }
     
     /**
-     * Obtiene las sucursales filtradas
+     * Obtiene las sucursales filtradas con filtros avanzados
      */
     fun getFilteredBranches(): List<BranchInfo> {
         return if (filterStatus == null) {
@@ -281,6 +279,8 @@ class BranchManagementComponentsState {
                 when (filterStatus) {
                     "active" -> branch.isActive == true
                     "inactive" -> branch.isActive == false
+                    "with_sellers" -> branch.sellersCount > 0
+                    "without_sellers" -> branch.sellersCount == 0
                     else -> true
                 }
             }
