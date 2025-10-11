@@ -7,7 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import org.sysarp.project.service.ImagePickerService
 import org.sysarp.project.ui.theme.YapeHubTheme
+import timber.log.Timber
 
 class MainActivity : ComponentActivity() {
     
@@ -16,11 +18,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Establecer el contexto global
         ContextProvider.setContext(this)
-        
-        // Inicializar el servicio de selección de imágenes
-        org.sysarp.project.service.ImagePickerService().setContext(this)
+
+      ImagePickerService().setContext(this)
         
         AppLifecycleManager.initialize(application)
         
@@ -30,16 +30,12 @@ class MainActivity : ComponentActivity() {
                 App()
             }
         }
-        
-        // Inicialización asíncrona mejorada
         lifecycleScope.launch {
             initializeAppAsync()
         }
     }
     
-    /**
-     * Inicialización asíncrona mejorada con manejo de errores
-     */
+
     private suspend fun initializeAppAsync() {
         try {
             initializeDeviceFingerprint()
@@ -58,6 +54,7 @@ class MainActivity : ComponentActivity() {
     private suspend fun initializeDeviceFingerprint() {
         try {
             val fingerprint = org.sysarp.project.utils.AndroidDeviceUtils.generateDeviceFingerprint(this@MainActivity)
+            //Todo: Usar el fingerprint si es necesario
         } catch (e: Exception) {
             // Error handling removed for production
         }
@@ -66,32 +63,26 @@ class MainActivity : ComponentActivity() {
     /**
      * Inicializa servicios críticos de forma asíncrona
      */
-    private suspend fun initializeCriticalServices() {
+    private fun initializeCriticalServices() {
         try {
             // Use the service manager for safer service lifecycle management
             org.sysarp.project.service.NotificationServiceManager.startNotificationService(this@MainActivity)
         } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Error starting notification service: ${e.message}", e)
+            Timber.tag("MainActivity").e(e, "Error starting notification service: ${e.message}")
         }
     }
-    
-    /**
-     * Solicita permisos de forma crítica para el negocio
-     * Los permisos de notificaciones son esenciales para capturar Yape
-     */
+
     private suspend fun requestPermissionsAsync() {
         try {
-            // Delay mínimo para permitir que la UI se cargue
             kotlinx.coroutines.delay(500)
             
             val hasNotificationPermission = org.sysarp.project.service.AndroidNotificationCaptureService.isNotificationServiceEnabled(this@MainActivity)
             
             if (!hasNotificationPermission) {
-                // Solicitar permiso inmediatamente
                 requestNotificationPermission(this@MainActivity)
                 
                 kotlinx.coroutines.delay(2000)
-                val stillMissing = !org.sysarp.project.service.AndroidNotificationCaptureService.isNotificationServiceEnabled(this@MainActivity)
+                !org.sysarp.project.service.AndroidNotificationCaptureService.isNotificationServiceEnabled(this@MainActivity)
             }
             
         } catch (e: Exception) {
@@ -113,8 +104,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         fun requestNotificationPermission(context: android.content.Context) {
             val hasNotificationPermission = org.sysarp.project.service.AndroidNotificationCaptureService.isNotificationServiceEnabled(context)
-            
-            // Solo abrir configuración si falta el permiso
+
             if (!hasNotificationPermission) {
                 org.sysarp.project.service.AndroidNotificationCaptureService.requestNotificationPermission(context)
             }

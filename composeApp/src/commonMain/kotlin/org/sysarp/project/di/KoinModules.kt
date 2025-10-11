@@ -34,7 +34,7 @@ val appModule = module {
     single { StatsApiClient() }
     single { StatsService(get()) } // Koin will inject StatsApiClient
     single { PaymentWebSocketService(get()) } // Koin will inject AuthService
-    single { HybridNotificationManager(get(), get()) } // Injects AuthService and PaymentWebSocketService
+    single { HybridNotificationManager(get()) } // Injects AuthService and PaymentWebSocketService
     single { BillingApiClient() }
     single { BillingService(get(), get()) } // Injects BillingApiClient and AuthService
     single { CredentialStorageService } // Assuming it's an object

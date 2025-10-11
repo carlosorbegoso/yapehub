@@ -1,5 +1,6 @@
 package org.sysarp.project.service
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.content.ComponentName
 import android.content.Context
@@ -13,11 +14,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import org.sysarp.project.data.ServiceStatus
 import org.sysarp.project.data.YapeNotificationRequest
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.utils.AndroidDeviceUtils
 import org.sysarp.project.utils.EncryptionUtils
+import timber.log.Timber
 
 class AndroidNotificationCaptureService : NotificationListenerService() {
     
@@ -60,10 +61,10 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             }
             
             // Inicializar AuthService con contexto disponible
-            authService = org.sysarp.project.service.auth.AuthService.getInstance()
+            authService = AuthService.getInstance()
             // Inicializar NotificationService con dependencias reales
             val notificationApiClient = org.sysarp.project.service.http.NotificationApiClient()
-            notificationService = org.sysarp.project.service.NotificationService(notificationApiClient, authService!!)
+            notificationService = NotificationService(notificationApiClient, authService!!)
             
             // Inicializar AudioService
             audioService = AudioService()
@@ -71,7 +72,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             
         } catch (e: Exception) {
             // Log error but don't crash the service
-            android.util.Log.e("AndroidNotificationCaptureService", "Error in onCreate: ${e.message}", e)
+            Timber.tag("AndroidNotificationCapt").e(e, "Error in onCreate: ${e.message}")
         }
     }
     
@@ -84,7 +85,8 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 try {
                     processNotification(sbn)
                 } catch (e: Exception) {
-                    android.util.Log.e("AndroidNotificationCaptureService", "Error processing notification: ${e.message}", e)
+                    Timber.tag("AndroidNotificationCapt")
+                        .e(e, "Error processing notification: ${e.message}")
                 }
             }
         }
@@ -99,15 +101,12 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         }
     }
     
-    /**
-     * Procesa notificaciones de Yape
-     * Solo envía notificaciones de aplicaciones de Yape para evitar errores 400 del servidor
-     */
+
+    @SuppressLint("LogNotTimber")
     private suspend fun processNotification(sbn: StatusBarNotification) {
         try {
             // Check if service is still valid before processing
             if (!isServiceValid()) {
-                android.util.Log.w("AndroidNotificationCaptureService", "Service not valid, skipping notification processing")
                 return
             }
             
@@ -116,7 +115,8 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 processYapeNotification(sbn, notificationText)
             }
         } catch (e: Exception) {
-            android.util.Log.e("AndroidNotificationCaptureService", "Error processing notification: ${e.message}", e)
+            Timber.tag("AndroidNotificationCapt")
+                .e(e, "Error processing notification: ${e.message}")
         }
     }
     
@@ -124,7 +124,8 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         try {
             // Check if service is still valid before processing
             if (!isServiceValid()) {
-                android.util.Log.w("AndroidNotificationCaptureService", "Service not valid, skipping Yape notification processing")
+                Timber.tag("AndroidNotificationCapt")
+                    .w("Service not valid, skipping Yape notification processing")
                 return
             }
             
@@ -329,36 +330,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             }
         }
     }
-    
-    /**
-     * Procesa notificaciones pendientes en la queue
-     */
-    private suspend fun processPendingNotifications() {
-        if (pendingNotifications.isNotEmpty()) {
-            
-            val notificationsToProcess = pendingNotifications.toList()
-            pendingNotifications.clear()
-            
-            for (notification in notificationsToProcess) {
-                sendNotificationWithRetry(notification, 0)
-                kotlinx.coroutines.delay(1000) // Delay entre notificaciones
-            }
-        }
-    }
-    
-    /**
-     * Obtiene el estado del servicio
-     */
-    fun getServiceStatus(): ServiceStatus {
-        return ServiceStatus(
-            isRunning = true,
-            isCapturing = true,
-            pendingNotificationsCount = pendingNotifications.size,
-            deviceFingerprint = deviceFingerprint?.take(20) ?: "No disponible",
-            lastError = null
-        )
-    }
-    
+
     companion object {
         fun isNotificationServiceEnabled(context: Context): Boolean {
             val pkgName = context.packageName
@@ -385,25 +357,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             context.startActivity(intent)
         }
-        
-        /**
-         * Limpia notificaciones antiguas del sistema para evitar acumulación
-         * Solo funciona si el servicio de notificaciones está habilitado
-         */
-        fun cleanupSystemNotifications(context: Context) {
-            try {
-                if (isNotificationServiceEnabled(context)) {
-                    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-                    
-                    // Limpiar notificaciones activas de la app
-                    notificationManager.cancelAll()
-                    
-                    
-                } else {
-                }
-            } catch (e: Exception) {
-            }
-        }
+
     }
     
     override fun onDestroy() {
@@ -425,7 +379,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             sentNotifications.clear()
             
         } catch (e: Exception) {
-            android.util.Log.e("AndroidNotificationCaptureService", "Error in onDestroy: ${e.message}", e)
+            Timber.tag("AndroidNotificationCapt").e(e, "Error in onDestroy: ${e.message}")
         } finally {
             super.onDestroy()
         }
@@ -445,9 +399,10 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         super.onListenerConnected()
         try {
             isServiceBound = true
-            android.util.Log.d("AndroidNotificationCaptureService", "Notification listener connected")
+            Timber.tag("AndroidNotificationCapt").d("Notification listener connected")
         } catch (e: Exception) {
-            android.util.Log.e("AndroidNotificationCaptureService", "Error in onListenerConnected: ${e.message}", e)
+            Timber.tag("AndroidNotificationCapt")
+                .e(e, "Error in onListenerConnected: ${e.message}")
         }
     }
     
@@ -455,9 +410,10 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         super.onListenerDisconnected()
         try {
             isServiceBound = false
-            android.util.Log.d("AndroidNotificationCaptureService", "Notification listener disconnected")
+            Timber.tag("AndroidNotificationCapt").d("Notification listener disconnected")
         } catch (e: Exception) {
-            android.util.Log.e("AndroidNotificationCaptureService", "Error in onListenerDisconnected: ${e.message}", e)
+            Timber.tag("AndroidNotificationCapt")
+                .e(e, "Error in onListenerDisconnected: ${e.message}")
         }
     }
 }

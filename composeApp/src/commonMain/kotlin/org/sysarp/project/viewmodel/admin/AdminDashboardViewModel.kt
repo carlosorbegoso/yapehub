@@ -5,7 +5,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.sysarp.project.data.AffiliationCodeData
 import org.sysarp.project.data.BillingDashboard
+import org.sysarp.project.data.BranchInfo
+import org.sysarp.project.data.GenerateAffiliationCodeResponse
 import org.sysarp.project.data.QuickSummaryData
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.SellerService
@@ -59,6 +62,22 @@ class AdminDashboardViewModel(
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    // Estados de afiliación
+    private val _showAffiliationDialog = MutableStateFlow(false)
+    val showAffiliationDialog: StateFlow<Boolean> = _showAffiliationDialog.asStateFlow()
+    
+    private val _isLoadingAffiliation = MutableStateFlow(false)
+    val isLoadingAffiliation: StateFlow<Boolean> = _isLoadingAffiliation.asStateFlow()
+    
+    private val _affiliationError = MutableStateFlow<String?>(null)
+    val affiliationError: StateFlow<String?> = _affiliationError.asStateFlow()
+    
+    private val _generatedAffiliationCode = MutableStateFlow<AffiliationCodeData?>(null)
+    val generatedAffiliationCode: StateFlow<AffiliationCodeData?> = _generatedAffiliationCode.asStateFlow()
+    
+    private val _branches = MutableStateFlow<List<BranchInfo>>(emptyList())
+    val branches: StateFlow<List<BranchInfo>> = _branches.asStateFlow()
 
     // Estados adicionales para cálculos avanzados
     private val _previousStats = MutableStateFlow<DashboardStats?>(null)
@@ -347,5 +366,103 @@ class AdminDashboardViewModel(
      */
     suspend fun logout() {
         authService.logout()
+    }
+    
+    /**
+     * Mostrar diálogo de afiliación
+     */
+    fun showAffiliationDialog() {
+        _showAffiliationDialog.value = true
+        loadBranches()
+    }
+    
+    /**
+     * Cerrar diálogo de afiliación
+     */
+    fun dismissAffiliationDialog() {
+        _showAffiliationDialog.value = false
+        _generatedAffiliationCode.value = null
+        _affiliationError.value = null
+    }
+    
+    /**
+     * Cargar sucursales para el diálogo de afiliación
+     */
+    private fun loadBranches() {
+        coroutineScope.launch {
+            val userProfile = authService.userProfile.value
+            val accessToken = authService.accessToken.value
+            
+            if (userProfile != null && accessToken != null) {
+                try {
+                    val branchesResult = branchService.getBranches(
+                        userProfile.adminId!!.toInt(),
+                        accessToken
+                    )
+                    
+                    branchesResult.fold(
+                        onSuccess = { response ->
+                            _branches.value = response.branches
+                        },
+                        onFailure = { error ->
+                            _affiliationError.value = "Error cargando sucursales: ${error.message}"
+                        }
+                    )
+                } catch (e: Exception) {
+                    _affiliationError.value = "Error inesperado: ${e.message}"
+                }
+            }
+        }
+    }
+    
+    /**
+     * Generar código de afiliación
+     */
+    fun generateAffiliationCode(
+        branchId: Int,
+        expirationHours: Int,
+        maxUses: Int,
+        notes: String?
+    ) {
+        coroutineScope.launch {
+            val userProfile = authService.userProfile.value
+            val accessToken = authService.accessToken.value
+            
+            if (userProfile != null && accessToken != null) {
+                _isLoadingAffiliation.value = true
+                _affiliationError.value = null
+                
+                try {
+                    val result = affiliationService.generateAffiliationCode(
+                        adminId = userProfile.adminId!!.toInt(),
+                        branchId = branchId,
+                        expirationHours = expirationHours,
+                        maxUses = maxUses,
+                        notes = notes ?: "",
+                        accessToken = accessToken
+                    )
+                    
+                    result.fold(
+                        onSuccess = { response ->
+                            if (response.success && response.data != null) {
+                                _generatedAffiliationCode.value = response.data
+                            } else {
+                                _affiliationError.value = response.message ?: "Error generando código"
+                            }
+                            _isLoadingAffiliation.value = false
+                        },
+                        onFailure = { error ->
+                            _affiliationError.value = error.message ?: "Error generando código de afiliación"
+                            _isLoadingAffiliation.value = false
+                        }
+                    )
+                } catch (e: Exception) {
+                    _affiliationError.value = "Error inesperado: ${e.message}"
+                    _isLoadingAffiliation.value = false
+                }
+            } else {
+                _affiliationError.value = "Sesión no válida"
+            }
+        }
     }
 }

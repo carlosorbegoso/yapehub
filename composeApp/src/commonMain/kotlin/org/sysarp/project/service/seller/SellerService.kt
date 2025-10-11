@@ -101,7 +101,9 @@ class SellerService(private val authService: AuthService) {
 
     /**
      * Login de vendedor por teléfono y código de afiliación
+     * @deprecated Usar SellerAuthUnifiedService.authenticateSeller() en su lugar
      */
+    @Deprecated("Usar SellerAuthUnifiedService.authenticateSeller() para manejo automático de login/registro")
     suspend fun loginSellerByPhone(phone: String, affiliationCode: String): Result<org.sysarp.project.data.SellerLoginByPhoneResponse> {
         return try {
             
@@ -202,6 +204,23 @@ class SellerService(private val authService: AuthService) {
                     Result.failure(error)
                 }
             )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Autenticación unificada de seller (login o registro automático)
+     */
+    suspend fun authenticateSellerUnified(
+        phone: String,
+        affiliationCode: String,
+        sellerName: String? = null
+    ): Result<org.sysarp.project.service.seller.SellerAuthUnifiedService.SellerAuthResult> {
+        return try {
+            val unifiedService = org.sysarp.project.service.seller.SellerAuthUnifiedService(authService)
+            val result = unifiedService.authenticateSeller(phone, affiliationCode, sellerName)
+            Result.success(result)
         } catch (e: Exception) {
             Result.failure(e)
         }

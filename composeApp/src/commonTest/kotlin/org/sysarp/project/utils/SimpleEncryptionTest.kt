@@ -48,7 +48,7 @@ class SimpleEncryptionTest {
             }
         """.trimIndent()
         
-        val deviceFingerprint = "yapechamo_1758866622_abc123"
+        val deviceFingerprint = "yapehub_1758866622_abc123"
         
         // When
         val encrypted = EncryptionUtils.encryptWithKey(yapeNotification, deviceFingerprint)

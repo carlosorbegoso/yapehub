@@ -19,20 +19,7 @@ class NotificationForegroundService : Service() {
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "yape_notification_channel"
         private const val WORK_NAME = "yape_notification_polling"
-        
-        fun startService(context: Context) {
-            val intent = Intent(context, NotificationForegroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
-        }
-        
-        fun stopService(context: Context) {
-            val intent = Intent(context, NotificationForegroundService::class.java)
-            context.stopService(intent)
-        }
+
     }
 
     override fun onCreate() {

@@ -27,7 +27,7 @@ object DeviceUtils {
             return@withContext fingerprint
             
         } catch (e: Exception) {
-            return@withContext "yapechamo_fallback_${kotlin.time.Clock.System.now().toEpochMilliseconds()}"
+            return@withContext "yapehub_fallback_${kotlin.time.Clock.System.now().toEpochMilliseconds()}"
         }
     }
     
@@ -47,7 +47,7 @@ object DeviceUtils {
         val randomSuffix = (1000..9999).random()
         
         return buildString {
-            append("yapechamo_") // Prefijo de la app
+            append("yapehub_") // Prefijo de la app
             append("${timestamp}_") // Timestamp de creación
             append("${randomSuffix}_") // Número aleatorio
             append("mobile_") // Tipo de dispositivo
@@ -59,13 +59,13 @@ object DeviceUtils {
      * Genera un fingerprint más simple para casos donde no se necesita complejidad
      */
     fun generateSimpleFingerprint(): String {
-        return "yapechamo_${kotlin.time.Clock.System.now().toEpochMilliseconds()}_${(1000..9999).random()}"
+        return "yapehub_${kotlin.time.Clock.System.now().toEpochMilliseconds()}_${(1000..9999).random()}"
     }
     
     /**
      * Valida si un fingerprint tiene el formato correcto
      */
     fun isValidFingerprint(fingerprint: String): Boolean {
-        return fingerprint.startsWith("yapechamo_") && fingerprint.length > 20
+        return fingerprint.startsWith("yapehub_") && fingerprint.length > 20
     }
 }

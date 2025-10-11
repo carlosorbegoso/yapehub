@@ -11,9 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 
-/**
- * Implementación de AudioService para Android
- */
+
 actual class AudioService {
     
     private var context: Context? = null

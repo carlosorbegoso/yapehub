@@ -47,14 +47,14 @@ object SellerFormActions {
     }
     
     /**
-     * Procesa registro y login automáticamente
+     * Procesa registro y login automáticamente usando el servicio unificado
      * @param coroutineScope Scope de corrutinas
      * @param sellerService Servicio de vendedores
      * @param authService Servicio de autenticación
      * @param affiliationCode Código de afiliación
      * @param sellerName Nombre del vendedor
      * @param phone Teléfono
-     * @param isExistingSeller Si es un vendedor existente
+     * @param isExistingSeller Si es un vendedor existente (deprecated, se maneja automáticamente)
      * @param onLoadingChange Callback para cambiar estado de carga
      * @param onError Callback para manejar errores
      * @param onSuccess Callback para manejar éxito
@@ -66,7 +66,7 @@ object SellerFormActions {
         affiliationCode: String,
         sellerName: String,
         phone: String,
-        isExistingSeller: Boolean,
+        isExistingSeller: Boolean, // Deprecated, se maneja automáticamente
         onLoadingChange: (Boolean) -> Unit,
         onError: (String) -> Unit,
         onSuccess: (String) -> Unit
@@ -74,48 +74,93 @@ object SellerFormActions {
         coroutineScope.launch {
             onLoadingChange(true)
             try {
-                // Intentar registro primero (tu lógica es correcta)
-                val registerResult = sellerService.registerSeller(
+                // Usar el nuevo servicio unificado que maneja automáticamente login/registro
+                val authResult = sellerService.authenticateSellerUnified(
+                    phone = phone,
                     affiliationCode = affiliationCode,
-                    sellerName = sellerName,
-                    phone = phone
+                    sellerName = sellerName
                 )
                 
-                registerResult.fold(
-                    onSuccess = { registrationResponse ->
-                        // Registro exitoso, el servidor ya devuelve el token directamente
-                        onSuccess("¡Registro exitoso! Bienvenido a YapeChamo")
+                authResult.fold(
+                    onSuccess = { result: org.sysarp.project.service.seller.SellerAuthUnifiedService.SellerAuthResult ->
+                        when (result) {
+                            is org.sysarp.project.service.seller.SellerAuthUnifiedService.SellerAuthResult.Success -> {
+                                val message = if (result.isNewUser) {
+                                    "¡Registro exitoso! Bienvenido a YapeHub"
+                                } else {
+                                    "¡Bienvenido de vuelta!"
+                                }
+                                onSuccess(message)
+                            }
+                            is org.sysarp.project.service.seller.SellerAuthUnifiedService.SellerAuthResult.Error -> {
+                                onError(result.message)
+                            }
+                        }
                         onLoadingChange(false)
                     },
-                    onFailure = { registerError ->
-                        // Verificar si el error es porque el vendedor ya existe
-                        val isSellerAlreadyExists = registerError.message?.let { message ->
-                            message.contains("already exists", ignoreCase = true) ||
-                            message.contains("duplicate", ignoreCase = true) ||
-                            message.contains("phone already registered", ignoreCase = true) ||
-                            message.contains("seller already exists", ignoreCase = true) ||
-                            message.contains("ya está registrado", ignoreCase = true)
-                        } ?: false
-                        
-                        if (isSellerAlreadyExists) {
-                            // El vendedor ya existe, intentar login directamente
-                            val loginResult = sellerService.loginSellerByPhone(phone, affiliationCode)
-                            
-                            loginResult.fold(
-                                onSuccess = { loginResponse ->
-                                    onSuccess("¡Bienvenido de vuelta!")
-                                    onLoadingChange(false)
-                                },
-                                onFailure = { loginError ->
-                                    onError("Error de acceso: ${loginError.message}")
-                                    onLoadingChange(false)
+                    onFailure = { error: Throwable ->
+                        onError("Error de conexión: ${error.message}")
+                        onLoadingChange(false)
+                    }
+                )
+            } catch (e: Exception) {
+                onError("Error inesperado: ${e.message}")
+                onLoadingChange(false)
+            }
+        }
+    }
+    
+    /**
+     * Procesa registro y login automáticamente usando el servicio unificado (versión simplificada)
+     * @param coroutineScope Scope de corrutinas
+     * @param sellerService Servicio de vendedores
+     * @param affiliationCode Código de afiliación
+     * @param sellerName Nombre del vendedor
+     * @param phone Teléfono
+     * @param onLoadingChange Callback para cambiar estado de carga
+     * @param onError Callback para manejar errores
+     * @param onSuccess Callback para manejar éxito
+     */
+    fun processSellerActionUnified(
+        coroutineScope: CoroutineScope,
+        sellerService: SellerService,
+        affiliationCode: String,
+        sellerName: String,
+        phone: String,
+        onLoadingChange: (Boolean) -> Unit,
+        onError: (String) -> Unit,
+        onSuccess: (String) -> Unit
+    ) {
+        coroutineScope.launch {
+            onLoadingChange(true)
+            try {
+                // Usar el nuevo servicio unificado que maneja automáticamente login/registro
+                val authResult = sellerService.authenticateSellerUnified(
+                    phone = phone,
+                    affiliationCode = affiliationCode,
+                    sellerName = sellerName
+                )
+                
+                authResult.fold(
+                    onSuccess = { result: org.sysarp.project.service.seller.SellerAuthUnifiedService.SellerAuthResult ->
+                        when (result) {
+                            is org.sysarp.project.service.seller.SellerAuthUnifiedService.SellerAuthResult.Success -> {
+                                val message = if (result.isNewUser) {
+                                    "¡Registro exitoso! Bienvenido a YapeHub"
+                                } else {
+                                    "¡Bienvenido de vuelta!"
                                 }
-                            )
-                        } else {
-                            // Mostrar directamente el mensaje del servidor
-                            onError("Error en el registro: ${registerError.message}")
-                            onLoadingChange(false)
+                                onSuccess(message)
+                            }
+                            is org.sysarp.project.service.seller.SellerAuthUnifiedService.SellerAuthResult.Error -> {
+                                onError(result.message)
+                            }
                         }
+                        onLoadingChange(false)
+                    },
+                    onFailure = { error: Throwable ->
+                        onError("Error de conexión: ${error.message}")
+                        onLoadingChange(false)
                     }
                 )
             } catch (e: Exception) {

@@ -6,11 +6,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.SellerPendingPayment
-import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.service.websocket.WebSocketConnectionState
 
 class HybridNotificationManager(
-    private val authService: AuthService,
     private val webSocketService: PaymentWebSocketService
 ) {
     
@@ -30,14 +29,10 @@ class HybridNotificationManager(
     }
     
     fun start() {
-        println("[HYBRID_MANAGER] 🚀 Iniciando Hybrid Notification Manager")
-        
-        // Configurar callback para mensajes del WebSocket
         webSocketService.setOnMessageReceivedCallback {
             updateLastMessageTime()
         }
-        
-        // Configurar callback para notificaciones del polling
+
         pollingService.setOnNewNotificationCallback { payments ->
             onNewNotification?.invoke(payments)
         }
@@ -71,13 +66,11 @@ class HybridNotificationManager(
                     
                     if (shouldUsePolling()) {
                         if (!isPollingActive) {
-                            println("[HYBRID_MANAGER] 🔄 Activando polling - WebSocket inactivo")
                             isPollingActive = true
                             pollingService.start()
                         }
                     } else {
                         if (isPollingActive) {
-                            println("[HYBRID_MANAGER] ✅ Desactivando polling - WebSocket activo")
                             isPollingActive = false
                             pollingService.stop()
                         }
@@ -95,17 +88,17 @@ class HybridNotificationManager(
             // Monitorear el estado del WebSocket
             webSocketService.connectionState.collect { state ->
                 when (state) {
-                    org.sysarp.project.service.websocket.WebSocketConnectionState.CONNECTED -> {
+                    WebSocketConnectionState.CONNECTED -> {
                         println("[HYBRID_MANAGER] ✅ WebSocket conectado")
                         lastMessageTime = getCurrentTimeMillis()
                     }
-                    org.sysarp.project.service.websocket.WebSocketConnectionState.DISCONNECTED -> {
+                    WebSocketConnectionState.DISCONNECTED -> {
                         println("[HYBRID_MANAGER] ❌ WebSocket desconectado")
                     }
-                    org.sysarp.project.service.websocket.WebSocketConnectionState.CONNECTING -> {
+                    WebSocketConnectionState.CONNECTING -> {
                         println("[HYBRID_MANAGER] 🔄 WebSocket conectando...")
                     }
-                    org.sysarp.project.service.websocket.WebSocketConnectionState.RECONNECTING -> {
+                    WebSocketConnectionState.RECONNECTING -> {
                         println("[HYBRID_MANAGER] 🔄 WebSocket reconectando...")
                     }
                 }
@@ -116,10 +109,7 @@ class HybridNotificationManager(
     private fun shouldUsePolling(): Boolean {
         val timeSinceLastMessage = getCurrentTimeMillis() - lastMessageTime
         val timeSinceLastPolling = getCurrentTimeMillis() - lastPollingTime
-        
-        // Usar polling si:
-        // 1. No hay mensajes del WebSocket en 2 minutos
-        // 2. O no hemos hecho polling en 5 minutos
+
         return timeSinceLastMessage > 120000 || timeSinceLastPolling > 300000
     }
     
@@ -127,7 +117,6 @@ class HybridNotificationManager(
     // Método para actualizar el tiempo del último mensaje (llamado desde WebSocket)
     fun updateLastMessageTime() {
         lastMessageTime = getCurrentTimeMillis()
-        println("[HYBRID_MANAGER] 📨 Mensaje recibido via WebSocket - actualizando timestamp")
     }
     
     fun getStatus(): String {

@@ -7,14 +7,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.UserProfile
-import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
 
 /**
  * Estado y lógica de negocio para SellerPaymentsScreen
  */
 class SellerPaymentsState(
-    private val authService: AuthService,
     val paymentService: PaymentService,
     private val coroutineScope: CoroutineScope
 ) {
@@ -184,7 +182,7 @@ class SellerPaymentsState(
             }
         }
     }
-    
+
     /**
      * Confirma un pago
      */
@@ -220,7 +218,7 @@ class SellerPaymentsState(
             }
         }
     }
-    
+
     /**
      * Recarga todos los pagos
      */

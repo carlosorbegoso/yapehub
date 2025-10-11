@@ -49,9 +49,7 @@ import org.sysarp.project.ui.components.charts.SalesTrendLineChart
 import org.sysarp.project.ui.components.financial.FinancialAnalysisCard
 import org.sysarp.project.ui.components.financial.PaymentTransparencyCard
 
-/**
- * Componente para las secciones de analytics del administrador
- */
+
 @Composable
 fun AdminAnalyticsSections(
     analyticsData: AnalyticsData,
@@ -186,83 +184,39 @@ fun AdminAnalyticsSections(
                     }
                 }
                 
-        // Sección de análisis predictivo
-        if (showPredictiveCharts) {
-            AnimatedVisibility(
-                visible = showPredictive,
-                enter = slideInVertically(
-                    initialOffsetY = { it / 2 },
-                    animationSpec = tween(800, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(800)) + scaleIn(
-                    animationSpec = tween(800, easing = EaseOutCubic),
-                    initialScale = 0.9f
-                )
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "🔮 Análisis Predictivo",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    
-                    // Gráficos predictivos en layout responsivo
-                    ResponsiveChartRow(
-                        charts = listOf(
-                            ChartItem("Predicciones", { PredictionsChart(sellerForecasting = analyticsData.sellerForecasting, showCard = false) }),
-                            ChartItem("Comparaciones", { ComparisonsChart(sellerComparisons = analyticsData.sellerComparisons, showCard = false) }),
-                            ChartItem("Distribución", { SalesDistributionChart(salesDistribution = analyticsData.sellerAnalytics?.salesDistribution, showCard = false) })
+                // Sección de análisis predictivo
+                if (showPredictiveCharts) {
+                    AnimatedVisibility(
+                        visible = showPredictive,
+                        enter = slideInVertically(
+                            initialOffsetY = { it / 2 },
+                            animationSpec = tween(800, easing = EaseOutCubic)
+                        ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                            animationSpec = tween(800, easing = EaseOutCubic),
+                            initialScale = 0.9f
                         )
-                    )
-                }
-            }
-        }
-        
-                // Sección de Analytics Avanzados - Mejorada
-                AnimatedVisibility(
-                    visible = showAdvancedCharts,
-                    enter = slideInVertically(
-                        initialOffsetY = { it / 2 },
-                        animationSpec = tween(1000, easing = EaseOutCubic)
-                    ) + fadeIn(animationSpec = tween(1000))
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            text = "🚀 Analytics Avanzados",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                        
-                        // Gráfico de tendencias mejorado
-                        SalesTrendLineChart(
-                            dailySales = analyticsData.dailySales,
-                            showCard = true
-                        )
-                        
-                        // Gráfico de comparaciones mejorado
-                        ComparisonsChart(
-                            sellerComparisons = analyticsData.sellerComparisons,
-                            showCard = true
-                        )
-                        
-                        // Gráfico de distribución de ventas
-                        SalesDistributionChart(
-                            salesDistribution = analyticsData.sellerAnalytics?.salesDistribution,
-                            showCard = true
-                        )
-                        
-                        // Gráfico de logros
-                        AchievementsChart(
-                            sellerAchievements = analyticsData.sellerAchievements,
-                            showCard = true
-                        )
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = "🔮 Análisis Predictivo",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                            
+                            // Gráficos predictivos y avanzados en layout responsivo
+                            ResponsiveChartRow(
+                                charts = listOf(
+                                    ChartItem("Predicciones", { PredictionsChart(sellerForecasting = analyticsData.sellerForecasting, showCard = false) }),
+                                    ChartItem("Comparaciones", { ComparisonsChart(sellerComparisons = analyticsData.sellerComparisons, showCard = false) }),
+                                    ChartItem("Distribución", { SalesDistributionChart(salesDistribution = analyticsData.sellerAnalytics?.salesDistribution, showCard = false) }),
+                                    ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales, showCard = false) })
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -312,229 +266,183 @@ fun AdminAnalyticsSections(
             modifier = modifier,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-        // Métricas principales destacadas
-        AnimatedVisibility(
-            visible = showMetrics,
-            enter = scaleIn(
-                animationSpec = tween(800, easing = EaseOutCubic),
-                initialScale = 0.8f
-            ) + fadeIn(animationSpec = tween(800))
-        ) {
-            AdminPrimaryMetricsSection(data = analyticsData.overview)
-        }
-        
-        // Sección de gráficos básicos - Layout horizontal para pantallas grandes
-        if (showBasicCharts) {
+            // Métricas principales destacadas
             AnimatedVisibility(
-                visible = showBasic,
-                enter = slideInVertically(
-                    initialOffsetY = { it / 2 },
-                    animationSpec = tween(800, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(800)) + scaleIn(
-                    animationSpec = tween(800, easing = EaseOutCubic),
-                    initialScale = 0.9f
-                )
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "📊 Gráficos Principales",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    
-                    // Gráficos básicos en layout responsivo
-                    ResponsiveChartRow(
-                        charts = listOf(
-                            ChartItem("Ventas Diarias", { DailySalesChart(dailySales = analyticsData.dailySales, showCard = false) }),
-                            ChartItem("Métricas de Rendimiento", { PerformanceMetricsPieChart(performanceMetrics = analyticsData.performanceMetrics, showCard = false) }),
-                            ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales, showCard = false) })
-                        )
-                    )
-                }
-            }
-        }
-
-        // Sección de gráficos avanzados - Layout horizontal optimizado
-        if (showAdvancedCharts) {
-            AnimatedVisibility(
-                visible = showAdvanced,
-                enter = slideInVertically(
-                    initialOffsetY = { it / 2 },
-                    animationSpec = tween(800, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(800)) + scaleIn(
-                    animationSpec = tween(800, easing = EaseOutCubic),
-                    initialScale = 0.9f
-                )
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "📈 Análisis Avanzado",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    
-                    // Gráficos avanzados en layout responsivo
-                    ResponsiveChartRow(
-                        charts = listOf(
-                            ChartItem("Ventas por Hora", { HourlySalesChart(hourlySales = analyticsData.hourlySales, showCard = false) }),
-                            ChartItem("Progreso de Metas", { GoalsProgressChart(sellerGoals = analyticsData.sellerGoals, showCard = false) }),
-                            ChartItem("Logros", { AchievementsChart(sellerAchievements = analyticsData.sellerAchievements, showCard = false) })
-                        )
-                    )
-                }
-            }
-        }
-
-        // Sección de análisis predictivo - Layout horizontal para pantallas grandes
-        if (showPredictiveCharts) {
-            AnimatedVisibility(
-                visible = showPredictive,
-                enter = slideInVertically(
-                    initialOffsetY = { it / 2 },
-                    animationSpec = tween(800, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(800)) + scaleIn(
-                    animationSpec = tween(800, easing = EaseOutCubic),
-                    initialScale = 0.9f
-                )
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "🔮 Análisis Predictivo",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    
-                    // Gráficos de análisis avanzado en layout responsivo
-                    ResponsiveChartRow(
-                        charts = listOf(
-                            ChartItem("Predicciones", { PredictionsChart(sellerForecasting = analyticsData.sellerForecasting, showCard = false) }),
-                            ChartItem("Distribución", { SalesDistributionChart(salesDistribution = analyticsData.sellerAnalytics?.salesDistribution, showCard = false) }),
-                            ChartItem("Comparaciones", { ComparisonsChart(sellerComparisons = analyticsData.sellerComparisons, showCard = false) })
-                        )
-                    )
-                }
-            }
-        }
-        
-        // Sección de Analytics Avanzados - Layout móvil mejorado
-        AnimatedVisibility(
-            visible = showAdvancedCharts,
-            enter = slideInVertically(
-                initialOffsetY = { it / 2 },
-                animationSpec = tween(1000, easing = EaseOutCubic)
-            ) + fadeIn(animationSpec = tween(1000))
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "🚀 Analytics Avanzados",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                
-                // Gráfico de tendencias mejorado
-                SalesTrendLineChart(
-                    dailySales = analyticsData.dailySales,
-                    showCard = true
-                )
-                
-                // Gráfico de comparaciones mejorado
-                ComparisonsChart(
-                    sellerComparisons = analyticsData.sellerComparisons,
-                    showCard = true
-                )
-                
-                // Gráfico de distribución de ventas
-                SalesDistributionChart(
-                    salesDistribution = analyticsData.sellerAnalytics?.salesDistribution,
-                    showCard = true
-                )
-                
-                // Gráfico de logros
-                AchievementsChart(
-                    sellerAchievements = analyticsData.sellerAchievements,
-                    showCard = true
-                )
-            }
-        }
-
-        // Información adicional de métricas
-        if (showAdditionalMetrics) {
-            AnimatedVisibility(
-                visible = showAdditional,
+                visible = showMetrics,
                 enter = scaleIn(
                     animationSpec = tween(800, easing = EaseOutCubic),
                     initialScale = 0.8f
                 ) + fadeIn(animationSpec = tween(800))
             ) {
-                AdminAdditionalMetricsCard(data = analyticsData.overview)
+                AdminPrimaryMetricsSection(data = analyticsData.overview)
             }
-        }
-        
-        // Sección de Análisis Financiero
-        financialData?.let { financial ->
-            AnimatedVisibility(
-                visible = true,
-                enter = slideInVertically(
-                    initialOffsetY = { it / 2 },
-                    animationSpec = tween(1200, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(1200))
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "💰 Análisis Financiero",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+            
+            // Sección de gráficos básicos - Layout horizontal para pantallas grandes
+            if (showBasicCharts) {
+                AnimatedVisibility(
+                    visible = showBasic,
+                    enter = slideInVertically(
+                        initialOffsetY = { it / 2 },
+                        animationSpec = tween(800, easing = EaseOutCubic)
+                    ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                        animationSpec = tween(800, easing = EaseOutCubic),
+                        initialScale = 0.9f
                     )
-                    
-                    FinancialAnalysisCard(data = financial)
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "📊 Gráficos Principales",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        
+                        // Gráficos básicos en layout responsivo
+                        ResponsiveChartRow(
+                            charts = listOf(
+                                ChartItem("Ventas Diarias", { DailySalesChart(dailySales = analyticsData.dailySales, showCard = false) }),
+                                ChartItem("Métricas de Rendimiento", { PerformanceMetricsPieChart(performanceMetrics = analyticsData.performanceMetrics, showCard = false) }),
+                                ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales, showCard = false) })
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Sección de gráficos avanzados - Layout horizontal optimizado
+            if (showAdvancedCharts) {
+                AnimatedVisibility(
+                    visible = showAdvanced,
+                    enter = slideInVertically(
+                        initialOffsetY = { it / 2 },
+                        animationSpec = tween(800, easing = EaseOutCubic)
+                    ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                        animationSpec = tween(800, easing = EaseOutCubic),
+                        initialScale = 0.9f
+                    )
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "📈 Análisis Avanzado",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        
+                        // Gráficos avanzados en layout responsivo
+                        ResponsiveChartRow(
+                            charts = listOf(
+                                ChartItem("Ventas por Hora", { HourlySalesChart(hourlySales = analyticsData.hourlySales, showCard = false) }),
+                                ChartItem("Progreso de Metas", { GoalsProgressChart(sellerGoals = analyticsData.sellerGoals, showCard = false) }),
+                                ChartItem("Logros", { AchievementsChart(sellerAchievements = analyticsData.sellerAchievements, showCard = false) })
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Sección de análisis predictivo - Layout horizontal para pantallas grandes
+            if (showPredictiveCharts) {
+                AnimatedVisibility(
+                    visible = showPredictive,
+                    enter = slideInVertically(
+                        initialOffsetY = { it / 2 },
+                        animationSpec = tween(800, easing = EaseOutCubic)
+                    ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                        animationSpec = tween(800, easing = EaseOutCubic),
+                        initialScale = 0.9f
+                    )
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "🔮 Análisis Predictivo",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        
+                        // Gráficos de análisis avanzado en layout responsivo
+                        ResponsiveChartRow(
+                            charts = listOf(
+                                ChartItem("Predicciones", { PredictionsChart(sellerForecasting = analyticsData.sellerForecasting, showCard = false) }),
+                                ChartItem("Comparaciones", { ComparisonsChart(sellerComparisons = analyticsData.sellerComparisons, showCard = false) }),
+                                ChartItem("Distribución", { SalesDistributionChart(salesDistribution = analyticsData.sellerAnalytics?.salesDistribution, showCard = false) }),
+                                ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales, showCard = false) })
+                            )
+                        )
+                    }
+                }
+            }
+            
+            // Información adicional de métricas
+            if (showAdditionalMetrics) {
+                AnimatedVisibility(
+                    visible = showAdditional,
+                    enter = scaleIn(
+                        animationSpec = tween(800, easing = EaseOutCubic),
+                        initialScale = 0.8f
+                    ) + fadeIn(animationSpec = tween(800))
+                ) {
+                    AdminAdditionalMetricsCard(data = analyticsData.overview)
+                }
+            }
+
+            financialData?.let { financial ->
+                AnimatedVisibility(
+                    visible = true,
+                    enter = slideInVertically(
+                        initialOffsetY = { it / 2 },
+                        animationSpec = tween(1200, easing = EaseOutCubic)
+                    ) + fadeIn(animationSpec = tween(1200))
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "💰 Análisis Financiero",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        
+                        FinancialAnalysisCard(data = financial)
+                    }
+                }
+            }
+
+            transparencyData?.let { transparency ->
+                AnimatedVisibility(
+                    visible = true,
+                    enter = slideInVertically(
+                        initialOffsetY = { it / 2 },
+                        animationSpec = tween(1400, easing = EaseOutCubic)
+                    ) + fadeIn(animationSpec = tween(1400))
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "🔍 Transparencia de Pagos",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        
+                        PaymentTransparencyCard(data = transparency)
+                    }
                 }
             }
         }
-        
-        // Sección de Transparencia de Pagos
-        transparencyData?.let { transparency ->
-            AnimatedVisibility(
-                visible = true,
-                enter = slideInVertically(
-                    initialOffsetY = { it / 2 },
-                    animationSpec = tween(1400, easing = EaseOutCubic)
-                ) + fadeIn(animationSpec = tween(1400))
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "🔍 Transparencia de Pagos",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    
-                    PaymentTransparencyCard(data = transparency)
-                }
-            }
-        }
-    }
     }
 }

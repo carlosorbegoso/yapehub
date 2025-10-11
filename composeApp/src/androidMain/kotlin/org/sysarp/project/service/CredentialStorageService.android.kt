@@ -97,11 +97,16 @@ actual object CredentialStorageService {
             false
         }
     }
-    
+
     actual suspend fun hasSavedCredentials(): Boolean {
-        return sharedPreferences?.contains("saved_credentials") ?: false
+        return try {
+            val prefs = sharedPreferences ?: return false
+            prefs.getString("saved_credentials", null) != null
+        } catch (e: Exception) {
+            false
+        }
     }
-    
+
     actual suspend fun areCredentialsValid(maxAgeDays: Int): Boolean {
         val credentials = getSavedCredentials() ?: return false
         

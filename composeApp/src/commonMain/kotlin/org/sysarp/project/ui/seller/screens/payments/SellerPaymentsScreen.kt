@@ -29,7 +29,6 @@ fun SellerPaymentsScreen(
     // Crear el estado del screen
     val state = remember {
         SellerPaymentsState(
-            authService = authService,
             paymentService = paymentService,
             coroutineScope = coroutineScope
         )

@@ -47,31 +47,8 @@ class VoiceService(private val context: Context) {
             }
         })
     }
-    
-    /**
-     * Reproduce "Pago Recibido" usando TTS
-     */
-    fun speakPaymentReceived() {
-        speakText("Pago recibido", "payment_received")
-    }
-    
-    /**
-     * Reproduce "Nuevo Pago" usando TTS
-     */
-    fun speakNewPayment() {
-        speakText("Nuevo pago", "new_payment")
-    }
-    
-    /**
-     * Reproduce "Dinero Recibido" usando TTS
-     */
-    fun speakMoneyReceived() {
-        speakText("Dinero recibido", "money_received")
-    }
-    
-    /**
-     * Reproduce texto personalizado usando TTS
-     */
+
+
     fun speakText(text: String, utteranceId: String = "custom") {
         if (!isInitialized) {
             initializeTTS()
@@ -83,26 +60,5 @@ class VoiceService(private val context: Context) {
         } catch (e: Exception) {
         }
     }
-    
-    /**
-     * Detiene la reproducción actual
-     */
-    fun stopSpeaking() {
-        tts?.stop()
-    }
-    
-    /**
-     * Libera recursos del TTS
-     */
-    fun release() {
-        tts?.stop()
-        tts?.shutdown()
-    }
-    
-    /**
-     * Verifica si TTS está disponible
-     */
-    fun isAvailable(): Boolean {
-        return isInitialized && tts != null
-    }
+
 }

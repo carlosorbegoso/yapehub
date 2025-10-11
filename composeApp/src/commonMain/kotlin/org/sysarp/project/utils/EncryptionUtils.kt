@@ -1,7 +1,6 @@
 package org.sysarp.project.utils
 
 import io.ktor.utils.io.core.toByteArray
-import kotlinx.serialization.json.Json
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 
@@ -12,9 +11,7 @@ internal expect fun sha256Hash(input: String): String
 
 @OptIn(ExperimentalTime::class)
 object EncryptionUtils {
-    
-    private val json = Json { ignoreUnknownKeys = true }
-    
+
     // Clave de encriptación (en producción debería estar en variables de entorno)
     private const val ENCRYPTION_KEY = "YapeChamo2024SecretKey"
 

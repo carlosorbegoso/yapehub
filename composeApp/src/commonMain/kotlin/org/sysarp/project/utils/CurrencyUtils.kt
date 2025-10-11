@@ -76,23 +76,8 @@ fun formatAmount(value: Double): String {
     return value.formatToDecimalPlaces(2)
 }
 
-/**
- * Formatea un valor numérico como moneda sin símbolo (versión con Int)
- * @param value Valor entero a formatear
- * @return String formateado como "XX.XX"
- */
-fun formatAmount(value: Int): String {
-    return value.toDouble().formatToDecimalPlaces(2)
-}
 
-/**
- * Formatea un valor numérico como moneda sin símbolo (versión con Float)
- * @param value Valor flotante a formatear
- * @return String formateado como "XX.XX"
- */
-fun formatAmount(value: Float): String {
-    return value.toDouble().formatToDecimalPlaces(2)
-}
+
 
 /**
  * Formatea un valor numérico como moneda con símbolo personalizado
@@ -178,31 +163,3 @@ fun formatOneDecimal(value: Double): String {
     return value.formatToDecimalPlaces(1)
 }
 
-/**
- * Formatea un valor numérico con un decimal (versión con Float)
- * @param value Valor flotante a formatear
- * @return String formateado como "XX.X"
- */
-fun formatOneDecimal(value: Float): String {
-    return value.toDouble().formatToDecimalPlaces(1)
-}
-
-/**
- * Formatea un valor numérico con un decimal y unidad
- * @param value Valor numérico a formatear
- * @param unit Unidad (ej: "min", "seg", etc.)
- * @return String formateado como "XX.X unit"
- */
-fun formatOneDecimalWithUnit(value: Double, unit: String): String {
-    return "${value.formatToDecimalPlaces(1)} $unit"
-}
-
-/**
- * Formatea un valor numérico con un decimal y unidad (versión con Float)
- * @param value Valor flotante a formatear
- * @param unit Unidad (ej: "min", "seg", etc.)
- * @return String formateado como "XX.X unit"
- */
-fun formatOneDecimalWithUnit(value: Float, unit: String): String {
-    return "${value.toDouble().formatToDecimalPlaces(1)} $unit"
-}

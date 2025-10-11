@@ -29,47 +29,7 @@ fun formatTimestamp(timestamp: String): String {
     }
 }
 
-/**
- * Formatea un timestamp ISO a formato dd/MM/yyyy
- * @param timestamp Timestamp en formato ISO (ej: "2024-01-15T14:30:00.000Z")
- * @return Fecha formateada como "15/01/2024" o "N/A" si falla
- */
-fun formatDateOnly(timestamp: String): String {
-    return try {
-        // Formatear fecha ISO a formato dd/MM/yyyy
-        val datePart = timestamp.substringBefore("T")
-        val dateComponents = datePart.split("-")
-        
-        if (dateComponents.size >= 3) {
-            "${dateComponents[2]}/${dateComponents[1]}/${dateComponents[0]}"
-        } else {
-            "N/A"
-        }
-    } catch (e: Exception) {
-        "N/A"
-    }
-}
 
-/**
- * Formatea un timestamp ISO a formato dd/MM
- * @param timestamp Timestamp en formato ISO (ej: "2024-01-15T14:30:00.000Z")
- * @return Fecha formateada como "15/01" o "N/A" si falla
- */
-fun formatShortDate(timestamp: String): String {
-    return try {
-        // Formatear fecha ISO a formato dd/MM
-        val datePart = timestamp.substringBefore("T")
-        val dateComponents = datePart.split("-")
-        
-        if (dateComponents.size >= 3) {
-            "${dateComponents[2]}/${dateComponents[1]}"
-        } else {
-            "N/A"
-        }
-    } catch (e: Exception) {
-        "N/A"
-    }
-}
 
 /**
  * Formatea un timestamp ISO a formato HH:mm
@@ -184,16 +144,4 @@ fun calculatePreciseTimeElapsed(createdAt: String): String {
     }
 }
 
-/**
- * Formatea el tiempo transcurrido con formato específico
- * @param createdAt Timestamp en formato ISO
- * @param showExact Si true, muestra fecha y hora exacta
- * @return Tiempo formateado
- */
-fun formatTimeElapsed(createdAt: String, showExact: Boolean = false): String {
-    return if (showExact) {
-        formatDateTime(createdAt)
-    } else {
-        calculatePreciseTimeElapsed(createdAt)
-    }
-}
+

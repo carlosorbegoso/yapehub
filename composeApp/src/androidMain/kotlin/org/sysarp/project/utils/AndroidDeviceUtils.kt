@@ -14,8 +14,7 @@ object AndroidDeviceUtils {
 
     suspend fun generateDeviceFingerprint(context: Context): String = withContext(Dispatchers.IO) {
         try {
-            
-            // Obtener identificadores únicos del dispositivo (sin permisos privilegiados)
+
             val androidId = getAndroidId(context)
             val deviceModel = Build.MODEL
             val deviceBrand = Build.BRAND
@@ -25,7 +24,7 @@ object AndroidDeviceUtils {
             
             // Crear fingerprint combinando identificadores únicos disponibles
             val deviceInfo = buildString {
-                append("yapechamo_") // Prefijo de la app
+                append("yapehub_") // Prefijo de la app
                 append("${androidId}_") // Android ID (único por dispositivo)
                 append("${deviceBrand}_") // Marca del dispositivo
                 append("${deviceModel}_") // Modelo del dispositivo
@@ -41,17 +40,14 @@ object AndroidDeviceUtils {
         } catch (e: Exception) {
             try {
                 val androidId = getAndroidId(context)
-                "yapechamo_${androidId}_fallback"
+                "yapehub_${androidId}_fallback"
             } catch (fallbackError: Exception) {
 
-                "yapechamo_unknown_device_${System.currentTimeMillis()}"
+                "yapehub_unknown_device_${System.currentTimeMillis()}"
             }
         }
     }
-    
-    /**
-     * Obtiene el Android ID único del dispositivo
-     */
+
     @SuppressLint("HardwareIds")
     private fun getAndroidId(context: Context): String {
         return try {
@@ -92,17 +88,11 @@ object AndroidDeviceUtils {
     fun generateSimpleFingerprint(context: Context): String {
         return try {
             val androidId = getAndroidId(context)
-            "yapechamo_${androidId}_simple"
+            "yapehub_${androidId}_simple"
         } catch (e: Exception) {
 
-            "yapechamo_simple_${System.currentTimeMillis()}"
+            "yapehub_simple_${System.currentTimeMillis()}"
         }
     }
-    
-    /**
-     * Valida si un fingerprint tiene el formato correcto
-     */
-    fun isValidFingerprint(fingerprint: String): Boolean {
-        return fingerprint.startsWith("yapechamo_") && fingerprint.length >= 20
-    }
+
 }

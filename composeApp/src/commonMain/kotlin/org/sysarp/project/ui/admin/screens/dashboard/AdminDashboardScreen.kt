@@ -21,6 +21,7 @@ import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
 import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 import org.sysarp.project.viewmodel.admin.AdminDashboardViewModel
 
@@ -70,6 +71,13 @@ fun AdminDashboardScreen(
     val dashboardStats by viewModel.dashboardStats.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    
+    // Estados de afiliación
+    val showAffiliationDialog by viewModel.showAffiliationDialog.collectAsState()
+    val isLoadingAffiliation by viewModel.isLoadingAffiliation.collectAsState()
+    val affiliationError by viewModel.affiliationError.collectAsState()
+    val generatedAffiliationCode by viewModel.generatedAffiliationCode.collectAsState()
+    val branches by viewModel.branches.collectAsState()
 
     // Inicializar el ViewModel
     LaunchedEffect(Unit) {
@@ -84,7 +92,7 @@ fun AdminDashboardScreen(
                 title = "Dashboard Admin",
                 subtitle = "Panel de administración",
                 menuItems = createTopBarMenuItems(
-                    onShowAffiliationDialog = { /* TODO: Implementar diálogo de afiliación */ },
+                    onShowAffiliationDialog = { viewModel.showAffiliationDialog() },
                     onNavigateToProfile = onNavigateToProfile,
                     onNavigateToSettings = onNavigateToSettings,
                     onLogout = { handleLogout(viewModel, coroutineScope, onLogout) }
@@ -122,5 +130,19 @@ fun AdminDashboardScreen(
                 billingService = billingService
             )
         }
+        
+        // Diálogo de generación de código de afiliación
+        GenerateAffiliationCodeDialog(
+            isVisible = showAffiliationDialog,
+            onDismiss = { viewModel.dismissAffiliationDialog() },
+            onGenerate = { expirationHours: Int, maxUses: Int, branchId: Int, notes: String? ->
+                viewModel.generateAffiliationCode(branchId, expirationHours, maxUses, notes)
+            },
+            branches = branches,
+            isLoading = isLoadingAffiliation,
+            generatedCode = generatedAffiliationCode,
+            errorMessage = affiliationError,
+            authService = authService
+        )
     }
 }

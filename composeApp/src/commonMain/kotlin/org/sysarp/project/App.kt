@@ -21,7 +21,7 @@ fun App() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            // Wrap the app content with KoinContext
+
             KoinContext {
                 YapeApp()
             }

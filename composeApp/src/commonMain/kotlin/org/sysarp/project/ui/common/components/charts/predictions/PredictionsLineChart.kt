@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -51,10 +52,7 @@ import org.sysarp.project.data.TrendAnalysisData
 import org.sysarp.project.utils.formatCurrency
 import kotlin.math.pow
 
-/**
- * Gráfico de líneas mejorado para predicciones de ventas
- * Incluye animaciones, interactividad y análisis de tendencias
- */
+
 @Composable
 fun PredictionsLineChart(
     predictedSales: List<PredictedSalesData>,
@@ -80,7 +78,7 @@ fun PredictionsLineChart(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.TrendingUp,
+                        imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                         contentDescription = "Tendencia",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
@@ -93,11 +91,10 @@ fun PredictionsLineChart(
                     )
                 }
                 
-                // Indicador de tendencia
+
                 TrendIndicator(trendAnalysis = trendAnalysis)
             }
-            
-            // Gráfico principal con animaciones
+
             EnhancedPredictionsChart(
                 predictedSales = predictedSales,
                 trendAnalysis = trendAnalysis

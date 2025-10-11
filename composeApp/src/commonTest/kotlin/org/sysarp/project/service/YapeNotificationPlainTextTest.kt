@@ -29,7 +29,7 @@ class YapeNotificationPlainTextTest {
             }
         """.trimIndent()
         
-        val deviceFingerprint = "yapechamo_1758866622_abc123"
+        val deviceFingerprint = "yapehub_1758866622_abc123"
 
         // When - Encriptar el texto plano (como lo hace actualmente)
         val encryptedNotification = org.sysarp.project.utils.EncryptionUtils.encryptWithKey(plainTextNotification, deviceFingerprint)
