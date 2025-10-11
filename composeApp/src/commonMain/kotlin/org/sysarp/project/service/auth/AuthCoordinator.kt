@@ -2,12 +2,11 @@ package org.sysarp.project.service.auth
 
 import kotlinx.coroutines.flow.StateFlow
 import org.sysarp.project.data.AuthState
+import org.sysarp.project.data.ForgotPasswordData
 import org.sysarp.project.data.LoginUserData
 import org.sysarp.project.data.SellerLoginByPhoneResponse
-import org.sysarp.project.data.ForgotPasswordData
-import org.sysarp.project.data.ValidateAffiliationCodeResponse
 import org.sysarp.project.data.UserProfile
-import org.sysarp.project.service.http.AuthApiClient
+import org.sysarp.project.data.ValidateAffiliationCodeResponse
 
 /**
  * Coordinador principal de autenticación

@@ -1,9 +1,15 @@
 package org.sysarp.project.ui.common.components.charts.daily.sales.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,22 +46,18 @@ fun DailySalesChartLegend(
             LegendItem(
                 color = MaterialTheme.colorScheme.primary,
                 label = "Excelente",
-                icon = "🔥"
             )
             LegendItem(
                 color = MaterialTheme.colorScheme.secondary,
                 label = "Bueno",
-                icon = "📈"
             )
             LegendItem(
                 color = MaterialTheme.colorScheme.tertiary,
                 label = "Regular",
-                icon = "📊"
             )
             LegendItem(
                 color = MaterialTheme.colorScheme.error,
                 label = "Bajo",
-                icon = "📉"
             )
         }
         
@@ -90,8 +92,7 @@ fun DailySalesChartLegend(
 @Composable
 private fun LegendItem(
     color: Color,
-    label: String,
-    icon: String
+    label: String
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -106,10 +107,6 @@ private fun LegendItem(
                 )
         )
         Text(
-            text = icon,
-            fontSize = 10.sp
-        )
-        Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -118,9 +115,7 @@ private fun LegendItem(
     }
 }
 
-/**
- * Item individual de la leyenda de símbolos
- */
+
 @Composable
 private fun SymbolItem(
     symbol: String,

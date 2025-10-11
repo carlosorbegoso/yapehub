@@ -9,8 +9,17 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,12 +38,12 @@ import org.sysarp.project.data.PaymentTransparencyData
 import org.sysarp.project.ui.common.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.common.components.charts.daily.sales.DailySalesChart
 import org.sysarp.project.ui.common.components.charts.hourly.sales.HourlySalesChart
+import org.sysarp.project.ui.common.components.charts.predictions.PredictionsChart
 import org.sysarp.project.ui.components.admin.ChartItem
 import org.sysarp.project.ui.components.admin.ResponsiveChartRow
 import org.sysarp.project.ui.components.charts.AchievementsChart
 import org.sysarp.project.ui.components.charts.ComparisonsChart
 import org.sysarp.project.ui.components.charts.GoalsProgressChart
-import org.sysarp.project.ui.common.components.charts.predictions.PredictionsChart
 import org.sysarp.project.ui.components.charts.SalesDistributionChart
 import org.sysarp.project.ui.components.charts.SalesTrendLineChart
 import org.sysarp.project.ui.components.financial.FinancialAnalysisCard
@@ -176,38 +186,83 @@ fun AdminAnalyticsSections(
                     }
                 }
                 
-                // Sección de análisis predictivo
-                if (showPredictiveCharts) {
-                    AnimatedVisibility(
-                        visible = showPredictive,
-                        enter = slideInVertically(
-                            initialOffsetY = { it / 2 },
-                            animationSpec = tween(800, easing = EaseOutCubic)
-                        ) + fadeIn(animationSpec = tween(800)) + scaleIn(
-                            animationSpec = tween(800, easing = EaseOutCubic),
-                            initialScale = 0.9f
+        // Sección de análisis predictivo
+        if (showPredictiveCharts) {
+            AnimatedVisibility(
+                visible = showPredictive,
+                enter = slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(800, easing = EaseOutCubic)
+                ) + fadeIn(animationSpec = tween(800)) + scaleIn(
+                    animationSpec = tween(800, easing = EaseOutCubic),
+                    initialScale = 0.9f
+                )
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "🔮 Análisis Predictivo",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    
+                    // Gráficos predictivos en layout responsivo
+                    ResponsiveChartRow(
+                        charts = listOf(
+                            ChartItem("Predicciones", { PredictionsChart(sellerForecasting = analyticsData.sellerForecasting, showCard = false) }),
+                            ChartItem("Comparaciones", { ComparisonsChart(sellerComparisons = analyticsData.sellerComparisons, showCard = false) }),
+                            ChartItem("Distribución", { SalesDistributionChart(salesDistribution = analyticsData.sellerAnalytics?.salesDistribution, showCard = false) })
                         )
+                    )
+                }
+            }
+        }
+        
+                // Sección de Analytics Avanzados - Mejorada
+                AnimatedVisibility(
+                    visible = showAdvancedCharts,
+                    enter = slideInVertically(
+                        initialOffsetY = { it / 2 },
+                        animationSpec = tween(1000, easing = EaseOutCubic)
+                    ) + fadeIn(animationSpec = tween(1000))
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Text(
-                                text = "🔮 Análisis Predictivo",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                            
-                            // Gráficos predictivos en layout responsivo
-                            ResponsiveChartRow(
-                                charts = listOf(
-                                    ChartItem("Predicciones", { PredictionsChart(sellerForecasting = analyticsData.sellerForecasting, showCard = false) }),
-                                    ChartItem("Comparaciones", { ComparisonsChart(sellerComparisons = analyticsData.sellerComparisons, showCard = false) }),
-                                    ChartItem("Distribución", { SalesDistributionChart(salesDistribution = analyticsData.sellerAnalytics?.salesDistribution, showCard = false) })
-                                )
-                            )
-                        }
+                        Text(
+                            text = "🚀 Analytics Avanzados",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        
+                        // Gráfico de tendencias mejorado
+                        SalesTrendLineChart(
+                            dailySales = analyticsData.dailySales,
+                            showCard = true
+                        )
+                        
+                        // Gráfico de comparaciones mejorado
+                        ComparisonsChart(
+                            sellerComparisons = analyticsData.sellerComparisons,
+                            showCard = true
+                        )
+                        
+                        // Gráfico de distribución de ventas
+                        SalesDistributionChart(
+                            salesDistribution = analyticsData.sellerAnalytics?.salesDistribution,
+                            showCard = true
+                        )
+                        
+                        // Gráfico de logros
+                        AchievementsChart(
+                            sellerAchievements = analyticsData.sellerAchievements,
+                            showCard = true
+                        )
                     }
                 }
             }
@@ -370,6 +425,51 @@ fun AdminAnalyticsSections(
                         )
                     )
                 }
+            }
+        }
+        
+        // Sección de Analytics Avanzados - Layout móvil mejorado
+        AnimatedVisibility(
+            visible = showAdvancedCharts,
+            enter = slideInVertically(
+                initialOffsetY = { it / 2 },
+                animationSpec = tween(1000, easing = EaseOutCubic)
+            ) + fadeIn(animationSpec = tween(1000))
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "🚀 Analytics Avanzados",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                
+                // Gráfico de tendencias mejorado
+                SalesTrendLineChart(
+                    dailySales = analyticsData.dailySales,
+                    showCard = true
+                )
+                
+                // Gráfico de comparaciones mejorado
+                ComparisonsChart(
+                    sellerComparisons = analyticsData.sellerComparisons,
+                    showCard = true
+                )
+                
+                // Gráfico de distribución de ventas
+                SalesDistributionChart(
+                    salesDistribution = analyticsData.sellerAnalytics?.salesDistribution,
+                    showCard = true
+                )
+                
+                // Gráfico de logros
+                AchievementsChart(
+                    sellerAchievements = analyticsData.sellerAchievements,
+                    showCard = true
+                )
             }
         }
 

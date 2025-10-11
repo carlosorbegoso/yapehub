@@ -20,12 +20,12 @@ import org.sysarp.project.data.SellerFinancialAnalysisData
 import org.sysarp.project.ui.common.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.common.components.charts.daily.sales.DailySalesChart
 import org.sysarp.project.ui.common.components.charts.hourly.sales.HourlySalesChart
+import org.sysarp.project.ui.common.components.charts.predictions.PredictionsChart
 import org.sysarp.project.ui.components.admin.ChartItem
 import org.sysarp.project.ui.components.admin.ResponsiveChartRow
 import org.sysarp.project.ui.components.charts.AchievementsChart
 import org.sysarp.project.ui.components.charts.ComparisonsChart
 import org.sysarp.project.ui.components.charts.GoalsProgressChart
-import org.sysarp.project.ui.common.components.charts.predictions.PredictionsChart
 import org.sysarp.project.ui.components.charts.SalesDistributionChart
 import org.sysarp.project.ui.components.charts.SalesTrendLineChart
 import org.sysarp.project.ui.components.financial.SellerFinancialAnalysisCard

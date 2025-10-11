@@ -6,9 +6,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.LoginUserData
-import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.CredentialStorageService
-import org.sysarp.project.utils.ErrorInfo
+import org.sysarp.project.service.auth.AuthService
 
 /**
  * ViewModel específico para la pantalla de Login

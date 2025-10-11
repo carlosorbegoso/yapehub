@@ -51,7 +51,7 @@ import org.sysarp.project.utils.formatRelativeTime
 fun StatCard(
     title: String,
     value: String,
-    icon: ImageVector,
+    icon: ImageVector?,
     color: androidx.compose.ui.graphics.Color
 ) {
     Card(
@@ -67,13 +67,14 @@ fun StatCard(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(32.dp)
-            )
-            
+            icon?.let {
+                Icon(
+                    imageVector = it,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
@@ -445,7 +446,7 @@ fun QuickSummaryData.toStatCards(): List<QuickStat> {
         QuickStat(
             title = "Total Vendido",
             value = formatCurrency(this.totalSales),
-            icon = Icons.Filled.AttachMoney,
+            icon = null,
             color = MaterialTheme.colorScheme.primary
         ),
         QuickStat(
@@ -472,6 +473,6 @@ fun QuickSummaryData.toStatCards(): List<QuickStat> {
 data class QuickStat(
     val title: String,
     val value: String,
-    val icon: ImageVector,
+    val icon: ImageVector?,
     val color: androidx.compose.ui.graphics.Color
 )
