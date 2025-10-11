@@ -13,6 +13,7 @@ data class PendingPaymentsResponse(
 @Serializable
 data class PendingPaymentsData(
     val payments: List<SellerPendingPayment>,
+    val summary: PaymentSummary? = null,
     val pagination: PaymentPagination
 )
 

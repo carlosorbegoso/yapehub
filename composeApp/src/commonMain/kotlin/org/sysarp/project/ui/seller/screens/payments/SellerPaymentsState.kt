@@ -74,10 +74,15 @@ class SellerPaymentsState(
         private set
     
     /**
-     * Cambia el tab seleccionado
+     * Cambia el tab seleccionado y recarga los datos automáticamente
      */
     fun changeSelectedTab(tabIndex: Int) {
         selectedTab = tabIndex
+        // Recargar datos automáticamente cuando se cambia de pestaña
+        loadPaymentsWithFilters(
+            onSuccess = { },
+            onFailure = { }
+        )
     }
     
     /**

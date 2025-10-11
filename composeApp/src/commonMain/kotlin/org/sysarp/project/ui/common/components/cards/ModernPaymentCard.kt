@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.SellerPendingPayment
+import org.sysarp.project.utils.extractShortYapeCode
 import org.sysarp.project.utils.formatCurrency
 
 
@@ -152,7 +153,7 @@ fun ModernPaymentCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = payment.yapeCode,
+                    text = extractShortYapeCode(payment.yapeCode),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary

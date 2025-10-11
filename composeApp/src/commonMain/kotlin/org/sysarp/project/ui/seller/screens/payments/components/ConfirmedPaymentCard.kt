@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.SellerPendingPayment
+import org.sysarp.project.utils.extractShortYapeCode
 import org.sysarp.project.utils.formatCurrency
 
 /**
@@ -131,7 +132,7 @@ private fun PaymentInfoSection(
         
         PaymentInfoRow(
             label = "Código",
-            value = payment.yapeCode,
+            value = extractShortYapeCode(payment.yapeCode),
             icon = Icons.Filled.QrCode
         )
         
