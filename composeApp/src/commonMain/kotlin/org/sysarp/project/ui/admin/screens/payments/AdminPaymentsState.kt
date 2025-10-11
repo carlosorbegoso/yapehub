@@ -234,12 +234,9 @@ class AdminPaymentsState(
      * Inicializa los filtros por defecto
      */
     fun initializeDefaultFilters() {
-        println("ADMIN_PAYMENTS_STATE: initializeDefaultFilters - dateRangeFilter: $dateRangeFilter")
         // Inicializar filtros de fecha por defecto
         val (start, end) = convertPeriodToDates(dateRangeFilter)
-        println("ADMIN_PAYMENTS_STATE: convertPeriodToDates result - start: $start, end: $end")
         updateDateRange(start, end)
-        println("ADMIN_PAYMENTS_STATE: After updateDateRange - startDate: $startDate, endDate: $endDate")
     }
     
     /**
@@ -301,12 +298,8 @@ class AdminPaymentsState(
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
-        println("ADMIN_PAYMENTS_STATE: loadAdminPayments - accessToken: ${accessToken != null}, adminId: ${userProfile?.adminId}")
-        println("ADMIN_PAYMENTS_STATE: Filtros de fecha - startDate: $startDate, endDate: $endDate")
-        
         if (accessToken != null && userProfile?.adminId != null) {
             coroutineScope.launch {
-                println("ADMIN_PAYMENTS_STATE: Iniciando carga de pagos...")
                 updateLoading(true)
                 clearErrorMessage()
                 updateCurrentPage(0)
@@ -324,7 +317,6 @@ class AdminPaymentsState(
                     token = accessToken ?: ""
                 ).fold(
                     onSuccess = { response ->
-                        println("ADMIN_PAYMENTS_STATE: Pagos cargados - ${response.data.payments.size} pagos")
                         updatePayments(response.data.payments)
                         updatePaymentSummary(response.data.summary)
                         updateHasMorePayments(response.data.pagination.currentPage < response.data.pagination.totalPages - 1)
@@ -332,7 +324,6 @@ class AdminPaymentsState(
                         onSuccess()
                     },
                     onFailure = { error ->
-                        println("ADMIN_PAYMENTS_STATE: Error cargando pagos: ${error.message}")
                         updateErrorMessage(error.message ?: "Error cargando gestión de pagos")
                         updateLoading(false)
                         onFailure(errorMessage)
@@ -340,7 +331,6 @@ class AdminPaymentsState(
                 )
             }
         } else {
-            println("ADMIN_PAYMENTS_STATE: No se pueden cargar pagos - faltan credenciales")
             updateErrorMessage("No se pueden cargar pagos: faltan credenciales de usuario")
             onFailure("No se pueden cargar pagos: faltan credenciales de usuario")
         }

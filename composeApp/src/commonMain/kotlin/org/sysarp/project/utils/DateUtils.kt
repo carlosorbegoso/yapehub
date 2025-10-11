@@ -178,33 +178,25 @@ fun getFormattedTimestamp(): String {
  * @return Par de fechas (startDate, endDate) en formato "yyyy-MM-dd" o null si no hay filtro
  */
 fun convertPeriodToDates(period: String): Pair<String?, String?> {
-    println("DATE_UTILS: convertPeriodToDates called with period: '$period'")
     return try {
         val now = Clock.System.now()
         val todayStr = now.toString().substring(0, 10) // yyyy-MM-dd
-        println("DATE_UTILS: Current date: $todayStr")
         
-        val result = when (period) {
-            "📅 Hoy" -> {
-                println("DATE_UTILS: Processing 'Hoy'")
-                Pair(todayStr, todayStr)
-            }
+        when (period) {
+            "📅 Hoy" -> Pair(todayStr, todayStr)
             "📅 7 días" -> {
-                println("DATE_UTILS: Processing '7 días'")
                 val sevenDaysAgoMs = now.toEpochMilliseconds() - (7 * 24 * 60 * 60 * 1000L)
                 val sevenDaysAgo = Instant.fromEpochMilliseconds(sevenDaysAgoMs)
                 val sevenDaysAgoStr = sevenDaysAgo.toString().substring(0, 10)
                 Pair(sevenDaysAgoStr, todayStr)
             }
             "📅 30 días" -> {
-                println("DATE_UTILS: Processing '30 días'")
                 val thirtyDaysAgoMs = now.toEpochMilliseconds() - (30 * 24 * 60 * 60 * 1000L)
                 val thirtyDaysAgo = Instant.fromEpochMilliseconds(thirtyDaysAgoMs)
                 val thirtyDaysAgoStr = thirtyDaysAgo.toString().substring(0, 10)
                 Pair(thirtyDaysAgoStr, todayStr)
             }
             "📅 90 días" -> {
-                println("DATE_UTILS: Processing '90 días'")
                 val ninetyDaysAgoMs = now.toEpochMilliseconds() - (90 * 24 * 60 * 60 * 1000L)
                 val ninetyDaysAgo = Instant.fromEpochMilliseconds(ninetyDaysAgoMs)
                 val ninetyDaysAgoStr = ninetyDaysAgo.toString().substring(0, 10)
@@ -213,38 +205,29 @@ fun convertPeriodToDates(period: String): Pair<String?, String?> {
             else -> {
                 // Verificar si es un rango de fechas personalizado (formato: "2025-10-09 - 2025-10-10")
                 if (period.contains(" - ")) {
-                    println("DATE_UTILS: Processing custom date range: '$period'")
                     val parts = period.split(" - ")
                     if (parts.size == 2) {
                         val startDate = parts[0].trim()
                         val endDate = parts[1].trim()
-                        println("DATE_UTILS: Parsed custom range - start: $startDate, end: $endDate")
                         Pair(startDate, endDate)
                     } else {
-                        println("DATE_UTILS: Invalid custom range format, returning null")
                         Pair(null, null)
                     }
                 } else {
-                    println("DATE_UTILS: Unknown period, returning null")
                     Pair(null, null) // Sin filtro de fecha
                 }
             }
         }
-        println("DATE_UTILS: Result: $result")
-        result
     } catch (e: Exception) {
-        println("DATE_UTILS: Exception occurred: ${e.message}")
         // Fallback simple usando fechas fijas
         val todayStr = Clock.System.now().toString().substring(0, 10)
-        val fallbackResult = when (period) {
+        when (period) {
             "📅 Hoy" -> Pair(todayStr, todayStr)
             "📅 7 días" -> Pair("2024-01-01", todayStr) // Fallback
             "📅 30 días" -> Pair("2024-01-01", todayStr) // Fallback
             "📅 90 días" -> Pair("2024-01-01", todayStr) // Fallback
             else -> Pair(null, null)
         }
-        println("DATE_UTILS: Fallback result: $fallbackResult")
-        fallbackResult
     }
 }
 
