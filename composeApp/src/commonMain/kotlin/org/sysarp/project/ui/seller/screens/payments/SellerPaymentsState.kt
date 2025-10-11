@@ -30,6 +30,10 @@ class SellerPaymentsState(
     var confirmedPayments by mutableStateOf<List<SellerPendingPayment>>(emptyList())
         private set
     
+    // Estado del summary del servidor
+    var paymentSummary by mutableStateOf<org.sysarp.project.data.PaymentSummary?>(null)
+        private set
+    
     // Estados de carga
     var isLoading by mutableStateOf(false)
         private set
@@ -99,6 +103,13 @@ class SellerPaymentsState(
     fun updateConfirmedPayments(payments: List<SellerPendingPayment>) {
         confirmedPayments = payments
         applyRealTimeFilters()
+    }
+    
+    /**
+     * Establece el summary de pagos del servidor
+     */
+    fun updatePaymentSummary(summary: org.sysarp.project.data.PaymentSummary?) {
+        paymentSummary = summary
     }
     
     /**
@@ -297,6 +308,7 @@ class SellerPaymentsState(
                         
                         updatePendingPayments(pending)
                         updateConfirmedPayments(confirmed)
+                        updatePaymentSummary(response.data.summary)
                         updateLoading(false)
                         onSuccess()
                     },
@@ -355,6 +367,40 @@ class SellerPaymentsState(
                     },
                     onFailure = { error ->
                         updateErrorMessage("Error confirmando pago: ${error.message}")
+                        onFailure(errorMessage)
+                    }
+                )
+            }
+        }
+    }
+
+    /**
+     * Rechaza un pago
+     */
+    fun rejectPayment(
+        paymentId: Int,
+        reason: String = "Rechazado por vendedor",
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        if (userProfile?.sellerId != null && accessToken != null) {
+            coroutineScope.launch {
+                paymentService.rejectPayment(
+                    sellerId = userProfile?.sellerId?.toInt() ?: 0,
+                    paymentId = paymentId,
+                    reason = reason,
+                    token = accessToken ?: ""
+                ).fold(
+                    onSuccess = { response ->
+                        // Recargar con filtros actuales
+                        refreshAllPayments(
+                            onSuccess = { },
+                            onFailure = { }
+                        )
+                        onSuccess()
+                    },
+                    onFailure = { error ->
+                        updateErrorMessage("Error rechazando pago: ${error.message}")
                         onFailure(errorMessage)
                     }
                 )

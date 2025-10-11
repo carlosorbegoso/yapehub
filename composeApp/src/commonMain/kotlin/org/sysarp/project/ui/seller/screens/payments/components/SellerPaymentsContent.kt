@@ -39,7 +39,10 @@ fun SellerPaymentsContent(
     accessToken: String?,
     paymentService: PaymentService,
     onError: (String) -> Unit,
-    isPendingTab: Boolean = true
+    isPendingTab: Boolean = true,
+    onClaimPayment: (Int) -> Unit = {},
+    onRejectPayment: (Int) -> Unit = {},
+    paymentSummary: org.sysarp.project.data.PaymentSummary? = null
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -76,8 +79,16 @@ fun SellerPaymentsContent(
                     item {
                         PaymentStatsCard(
                             title = if (isPendingTab) "Pendientes" else "Confirmados",
-                            count = payments.size,
-                            totalAmount = payments.sumOf { it.amount },
+                            count = if (paymentSummary != null) {
+                                if (isPendingTab) paymentSummary.pendingCount else paymentSummary.confirmedCount
+                            } else {
+                                payments.size
+                            },
+                            totalAmount = if (paymentSummary != null) {
+                                if (isPendingTab) paymentSummary.pendingAmount else paymentSummary.confirmedAmount
+                            } else {
+                                payments.sumOf { it.amount }
+                            },
                             icon = if (isPendingTab)
                                 androidx.compose.material.icons.Icons.Filled.Schedule
                             else
@@ -91,12 +102,10 @@ fun SellerPaymentsContent(
                             ModernPaymentCardWithActions(
                                 payment = payment,
                                 onClaim = {
-                                    // Lógica de confirmación
-                                    onRefresh()
+                                    onClaimPayment(payment.paymentId)
                                 },
                                 onReject = {
-                                    // Lógica de rechazo
-                                    onRefresh()
+                                    onRejectPayment(payment.paymentId)
                                 }
                             )
                         } else {

@@ -105,9 +105,9 @@ data class PaymentRejectData(
     val status: String,
     val timestamp: String,
     val message: String,
-    val rejectedBy: Int,
-    val rejectedAt: String,
-    val rejectionReason: String
+    val rejectedBy: Int? = null,
+    val rejectedAt: String? = null,
+    val rejectionReason: String? = null
 )
 
 // Modelos para gestión de pagos del administrador

@@ -214,7 +214,14 @@ fun convertPeriodToDates(period: String): Pair<String?, String?> {
                         Pair(null, null)
                     }
                 } else {
-                    Pair(null, null) // Sin filtro de fecha
+                    // Verificar si es una fecha individual (formato: "2025-10-09")
+                    val dateRegex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
+                    if (dateRegex.matches(period.trim())) {
+                        val singleDate = period.trim()
+                        Pair(singleDate, singleDate) // Usar la misma fecha como inicio y fin
+                    } else {
+                        Pair(null, null) // Sin filtro de fecha
+                    }
                 }
             }
         }
@@ -226,7 +233,16 @@ fun convertPeriodToDates(period: String): Pair<String?, String?> {
             "📅 7 días" -> Pair("2024-01-01", todayStr) // Fallback
             "📅 30 días" -> Pair("2024-01-01", todayStr) // Fallback
             "📅 90 días" -> Pair("2024-01-01", todayStr) // Fallback
-            else -> Pair(null, null)
+            else -> {
+                // Verificar si es una fecha individual en el fallback
+                val dateRegex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
+                if (dateRegex.matches(period.trim())) {
+                    val singleDate = period.trim()
+                    Pair(singleDate, singleDate)
+                } else {
+                    Pair(null, null)
+                }
+            }
         }
     }
 }

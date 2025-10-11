@@ -65,7 +65,22 @@ fun SellerPaymentsComponents(
                     accessToken = accessToken,
                     paymentService = paymentService,
                     onError = onError,
-                    isPendingTab = true
+                    isPendingTab = true,
+                    paymentSummary = state.paymentSummary,
+                    onClaimPayment = { paymentId ->
+                        state.claimPayment(
+                            paymentId = paymentId,
+                            onSuccess = { onRefresh() },
+                            onFailure = { error -> onError(error) }
+                        )
+                    },
+                    onRejectPayment = { paymentId ->
+                        state.rejectPayment(
+                            paymentId = paymentId,
+                            onSuccess = { onRefresh() },
+                            onFailure = { error -> onError(error) }
+                        )
+                    }
                 )
             }
             1 -> {
@@ -78,7 +93,8 @@ fun SellerPaymentsComponents(
                     accessToken = accessToken,
                     paymentService = paymentService,
                     onError = onError,
-                    isPendingTab = false
+                    isPendingTab = false,
+                    paymentSummary = state.paymentSummary
                 )
             }
         }
