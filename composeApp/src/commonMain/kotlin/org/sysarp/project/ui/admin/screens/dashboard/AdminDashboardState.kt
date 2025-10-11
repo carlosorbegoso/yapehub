@@ -150,14 +150,28 @@ class AdminDashboardState(
             // Log de las fechas que se van a enviar
             println("DEBUG DASHBOARD: Enviando fechas - startDate: $startDate, endDate: $endDate")
             
-            statsService.getAdminDashboard(
+            statsService.getUnifiedStatsSummary(
                 adminId = adminId,
+                sellerId = null,
                 startDate = startDate,
                 endDate = endDate,
                 token = accessToken
             ).fold(
                 onSuccess = { response ->
-                    quickSummaryData = response.data
+                    // Convertir UnifiedStatsResponse a QuickSummaryData para mantener compatibilidad
+                    quickSummaryData = QuickSummaryData(
+                        totalSales = response.data.overview.totalSales,
+                        totalTransactions = response.data.overview.totalTransactions,
+                        averageTransactionValue = response.data.overview.averageTransactionValue,
+                        salesGrowth = response.data.overview.salesGrowth,
+                        transactionGrowth = response.data.overview.transactionGrowth,
+                        averageGrowth = response.data.overview.averageGrowth,
+                        pendingPayments = response.data.performanceMetrics.pendingPayments,
+                        confirmedPayments = response.data.performanceMetrics.confirmedPayments,
+                        rejectedPayments = response.data.performanceMetrics.rejectedPayments,
+                        claimRate = response.data.performanceMetrics.claimRate,
+                        averageConfirmationTime = response.data.performanceMetrics.averageConfirmationTime
+                    )
                     isLoadingStats = false
                 },
                 onFailure = { error ->
@@ -176,12 +190,42 @@ class AdminDashboardState(
             isLoadingAdminStats = true
             adminStatsError = ""
             
-            statsService.getAdminStatsSummary(
+            statsService.getUnifiedStatsSummary(
                 adminId = adminId,
+                sellerId = null,
+                startDate = null,
+                endDate = null,
                 token = accessToken
             ).fold(
                 onSuccess = { response ->
-                    adminStatsData = response.data
+                    // Convertir UnifiedStatsResponse a AdminStatsData para mantener compatibilidad
+                    adminStatsData = AdminStatsData(
+                        dailySales = response.data.dailySales?.map { daily ->
+                            org.sysarp.project.data.DailySalesData(
+                                date = daily.date,
+                                dayName = daily.dayName,
+                                sales = daily.sales,
+                                transactions = daily.transactions
+                            )
+                        } ?: emptyList(),
+                        performanceMetrics = org.sysarp.project.data.PerformanceMetricsData(
+                            averageConfirmationTime = response.data.performanceMetrics.averageConfirmationTime,
+                            claimRate = response.data.performanceMetrics.claimRate,
+                            rejectionRate = response.data.performanceMetrics.rejectionRate,
+                            pendingPayments = response.data.performanceMetrics.pendingPayments,
+                            confirmedPayments = response.data.performanceMetrics.confirmedPayments,
+                            rejectedPayments = response.data.performanceMetrics.rejectedPayments
+                        ),
+                        topSellers = emptyList(), // No disponible en el endpoint unificado
+                        overview = org.sysarp.project.data.SellerOverviewSummaryData(
+                            totalSales = response.data.overview.totalSales,
+                            totalTransactions = response.data.overview.totalTransactions,
+                            averageTransactionValue = response.data.overview.averageTransactionValue,
+                            salesGrowth = response.data.overview.salesGrowth,
+                            transactionGrowth = response.data.overview.transactionGrowth,
+                            averageGrowth = response.data.overview.averageGrowth
+                        )
+                    )
                     isLoadingAdminStats = false
                 },
                 onFailure = { error ->
@@ -257,26 +301,72 @@ class AdminDashboardState(
      */
     fun refreshAdminStats(adminId: Int, accessToken: String) {
         coroutineScope.launch {
-            // Recargar estadísticas rápidas
-            statsService.getAdminDashboard(
+            // Recargar estadísticas rápidas usando endpoint unificado
+            statsService.getUnifiedStatsSummary(
                 adminId = adminId,
+                sellerId = null,
+                startDate = null,
+                endDate = null,
                 token = accessToken
             ).fold(
                 onSuccess = { response ->
-                    quickSummaryData = response.data
+                    // Convertir UnifiedStatsResponse a QuickSummaryData para mantener compatibilidad
+                    quickSummaryData = QuickSummaryData(
+                        totalSales = response.data.overview.totalSales,
+                        totalTransactions = response.data.overview.totalTransactions,
+                        averageTransactionValue = response.data.overview.averageTransactionValue,
+                        salesGrowth = response.data.overview.salesGrowth,
+                        transactionGrowth = response.data.overview.transactionGrowth,
+                        averageGrowth = response.data.overview.averageGrowth,
+                        pendingPayments = response.data.performanceMetrics.pendingPayments,
+                        confirmedPayments = response.data.performanceMetrics.confirmedPayments,
+                        rejectedPayments = response.data.performanceMetrics.rejectedPayments,
+                        claimRate = response.data.performanceMetrics.claimRate,
+                        averageConfirmationTime = response.data.performanceMetrics.averageConfirmationTime
+                    )
                 },
                 onFailure = { _ ->
                     // Error silencioso en refresh
                 }
             )
             
-            // Recargar estadísticas completas
-            statsService.getAdminStatsSummary(
+            // Recargar estadísticas completas usando endpoint unificado
+            statsService.getUnifiedStatsSummary(
                 adminId = adminId,
+                sellerId = null,
+                startDate = null,
+                endDate = null,
                 token = accessToken
             ).fold(
                 onSuccess = { response ->
-                    adminStatsData = response.data
+                    // Convertir UnifiedStatsResponse a AdminStatsData para mantener compatibilidad
+                    adminStatsData = AdminStatsData(
+                        dailySales = response.data.dailySales?.map { daily ->
+                            org.sysarp.project.data.DailySalesData(
+                                date = daily.date,
+                                dayName = daily.dayName,
+                                sales = daily.sales,
+                                transactions = daily.transactions
+                            )
+                        } ?: emptyList(),
+                        performanceMetrics = org.sysarp.project.data.PerformanceMetricsData(
+                            averageConfirmationTime = response.data.performanceMetrics.averageConfirmationTime,
+                            claimRate = response.data.performanceMetrics.claimRate,
+                            rejectionRate = response.data.performanceMetrics.rejectionRate,
+                            pendingPayments = response.data.performanceMetrics.pendingPayments,
+                            confirmedPayments = response.data.performanceMetrics.confirmedPayments,
+                            rejectedPayments = response.data.performanceMetrics.rejectedPayments
+                        ),
+                        topSellers = emptyList(), // No disponible en el endpoint unificado
+                        overview = org.sysarp.project.data.SellerOverviewSummaryData(
+                            totalSales = response.data.overview.totalSales,
+                            totalTransactions = response.data.overview.totalTransactions,
+                            averageTransactionValue = response.data.overview.averageTransactionValue,
+                            salesGrowth = response.data.overview.salesGrowth,
+                            transactionGrowth = response.data.overview.transactionGrowth,
+                            averageGrowth = response.data.overview.averageGrowth
+                        )
+                    )
                 },
                 onFailure = { _ ->
                     // Error silencioso en refresh

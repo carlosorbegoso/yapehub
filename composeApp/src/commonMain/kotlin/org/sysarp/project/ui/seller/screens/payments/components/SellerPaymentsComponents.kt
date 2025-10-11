@@ -67,6 +67,14 @@ fun SellerPaymentsComponents(
                     onError = onError,
                     isPendingTab = true,
                     paymentSummary = state.paymentSummary,
+                    isLoadingMore = state.isLoadingMore,
+                    hasMorePayments = state.hasMorePayments,
+                    onLoadMore = {
+                        state.loadMorePayments(
+                            onSuccess = { },
+                            onFailure = { error -> onError(error) }
+                        )
+                    },
                     onClaimPayment = { paymentId ->
                         state.claimPayment(
                             paymentId = paymentId,
@@ -94,7 +102,15 @@ fun SellerPaymentsComponents(
                     paymentService = paymentService,
                     onError = onError,
                     isPendingTab = false,
-                    paymentSummary = state.paymentSummary
+                    paymentSummary = state.paymentSummary,
+                    isLoadingMore = state.isLoadingMore,
+                    hasMorePayments = state.hasMorePayments,
+                    onLoadMore = {
+                        state.loadMorePayments(
+                            onSuccess = { },
+                            onFailure = { error -> onError(error) }
+                        )
+                    }
                 )
             }
         }

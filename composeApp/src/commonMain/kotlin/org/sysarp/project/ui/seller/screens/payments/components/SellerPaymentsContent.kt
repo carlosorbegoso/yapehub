@@ -1,18 +1,24 @@
 package org.sysarp.project.ui.seller.screens.payments.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.SellerPendingPayment
@@ -42,7 +48,10 @@ fun SellerPaymentsContent(
     isPendingTab: Boolean = true,
     onClaimPayment: (Int) -> Unit = {},
     onRejectPayment: (Int) -> Unit = {},
-    paymentSummary: org.sysarp.project.data.PaymentSummary? = null
+    paymentSummary: org.sysarp.project.data.PaymentSummary? = null,
+    isLoadingMore: Boolean = false,
+    hasMorePayments: Boolean = false,
+    onLoadMore: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -96,8 +105,11 @@ fun SellerPaymentsContent(
                         )
                     }
                     
-                    // Lista de pagos
-                    items(payments) { payment ->
+                    // Lista de pagos con scroll infinito
+                    items(
+                        items = payments,
+                        key = { payment -> payment.paymentId }
+                    ) { payment ->
                         if (isPendingTab) {
                             ModernPaymentCardWithActions(
                                 payment = payment,
@@ -112,6 +124,32 @@ fun SellerPaymentsContent(
                             ModernPaymentCard(
                                 payment = payment
                             )
+                        }
+                    }
+                    
+                    // Indicador de carga más pagos
+                    if (isLoadingMore) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Trigger para cargar más cuando se acerca al final
+                    if (hasMorePayments && !isLoadingMore) {
+                        item {
+                            LaunchedEffect(Unit) {
+                                onLoadMore()
+                            }
                         }
                     }
                     

@@ -23,6 +23,7 @@ import org.sysarp.project.ui.seller.screens.payments.components.SellerPaymentsCo
 fun SellerPaymentsScreen(
     authService: AuthService,
     paymentService: PaymentService,
+    statsService: org.sysarp.project.service.stats.StatsService,
     onNavigateBack: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -38,6 +39,7 @@ fun SellerPaymentsScreen(
     val state = remember {
         SellerPaymentsState(
             paymentService = paymentService,
+            statsService = statsService,
             coroutineScope = coroutineScope
         )
     }
@@ -45,6 +47,8 @@ fun SellerPaymentsScreen(
     // Cargar datos iniciales cuando el usuario esté disponible
     androidx.compose.runtime.LaunchedEffect(userProfile, accessToken) {
         if (userProfile != null && accessToken != null) {
+            println("SELLER_PAYMENTS_SCREEN: Iniciando carga de datos para sellerId: ${userProfile?.sellerId}")
+            
             // Actualizar el estado con los datos del usuario
             state.updateUserProfile(userProfile)
             state.updateAccessToken(accessToken)
@@ -57,6 +61,15 @@ fun SellerPaymentsScreen(
                 onSuccess = { },
                 onFailure = { }
             )
+            
+            // Cargar estadísticas del seller
+            println("SELLER_PAYMENTS_SCREEN: Llamando a loadSellerStats...")
+            state.loadSellerStats(
+                onSuccess = { println("SELLER_PAYMENTS_SCREEN: Estadísticas cargadas exitosamente") },
+                onFailure = { error -> println("SELLER_PAYMENTS_SCREEN: Error cargando estadísticas: $error") }
+            )
+        } else {
+            println("SELLER_PAYMENTS_SCREEN: No se pueden cargar datos - userProfile: ${userProfile != null}, accessToken: ${accessToken != null}")
         }
     }
     

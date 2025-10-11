@@ -34,9 +34,9 @@ import org.sysarp.project.ui.common.screens.QRScannerScreen
 import org.sysarp.project.ui.common.screens.SettingsScreen
 import org.sysarp.project.ui.common.screens.SplashScreen
 import org.sysarp.project.ui.common.screens.SubscriptionScreen
-import org.sysarp.project.ui.screens.admin.AdminAnalyticsScreen
+import org.sysarp.project.ui.admin.screens.analytics.AdminAnalyticsScreen
+import org.sysarp.project.ui.seller.screens.analytics.SellerAnalyticsScreen
 import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
-import org.sysarp.project.ui.screens.seller.SellerAnalyticsScreen
 import org.sysarp.project.ui.screens.seller.SellerDashboardScreen
 import org.sysarp.project.ui.screens.seller.SellerNotificationsScreen
 import org.sysarp.project.ui.screens.seller.SellerSpecificPaymentsScreen
@@ -72,9 +72,11 @@ fun AppContent(
         is Screen.SellerPayments -> {
             val authService: AuthService = koinInject()
             val paymentService: PaymentService = koinInject()
+            val statsService: org.sysarp.project.service.stats.StatsService = koinInject()
             SellerPaymentsScreen(
                 authService = authService,
                 paymentService = paymentService,
+                statsService = statsService,
                 onNavigateBack = navigationManager::navigateBack
             )
         }

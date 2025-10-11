@@ -51,12 +51,14 @@ class AuthApiClient : BaseApiClient() {
             
             val response = client.post("$baseUrl/api/auth/login") {
                 contentType(ContentType.Application.Json)
-                setBody(LoginRequest(
+                val loginRequest = LoginRequest(
                     email = email, 
                     password = password,
                     deviceFingerprint = fingerprint,
                     role = role
-                ))
+                )
+                logInfo("AUTH_API", "Enviando request body: ${kotlinx.serialization.json.Json.encodeToString(loginRequest)}")
+                setBody(loginRequest)
             }
             
             if (response.status.isSuccess()) {
@@ -68,6 +70,8 @@ class AuthApiClient : BaseApiClient() {
                 val errorMessage = try {
                     val errorBody = response.body<String>()
                     logError("AUTH_API", "Error response body: $errorBody")
+                    logError("AUTH_API", "Response status: ${response.status}")
+                    logError("AUTH_API", "Response headers: ${response.headers}")
                     
                     // Parsear JSON de error si está disponible
                     val json = kotlinx.serialization.json.Json.parseToJsonElement(errorBody)

@@ -113,12 +113,13 @@ class AdminDashboardViewModel(
             _isLoading.value = true
 
             try {
-                // Cargar estadísticas básicas primero (más rápido)
-                val statsResult = statsService.getAdminStatsSummary(
-                    userProfile.adminId!!.toInt(),
-                    null,
-                    null,
-                    accessToken
+                // Cargar estadísticas básicas usando endpoint unificado
+                val statsResult = statsService.getUnifiedStatsSummary(
+                    adminId = userProfile.adminId!!.toInt(),
+                    sellerId = null,
+                    startDate = null,
+                    endDate = null,
+                    token = accessToken
                 )
 
                 statsResult.fold(

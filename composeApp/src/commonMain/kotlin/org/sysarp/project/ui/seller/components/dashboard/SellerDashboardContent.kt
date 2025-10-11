@@ -107,11 +107,45 @@ fun SellerDashboardContent(
                         }
                     )
                     
-                    // Cargar estadísticas del vendedor
-                    val statsResult = statsService.getSellerStatsSummary(sellerId, null, null, accessToken)
+                    // Cargar estadísticas del vendedor usando endpoint unificado
+                    val statsResult = statsService.getUnifiedStatsSummary(
+                        adminId = null,
+                        sellerId = sellerId,
+                        startDate = null,
+                        endDate = null,
+                        token = accessToken
+                    )
                     statsResult.fold(
                         onSuccess = { response ->
-                            sellerStats = response.data
+                            // Convertir UnifiedStatsResponse a SellerStatsData para mantener compatibilidad
+                            sellerStats = SellerStatsData(
+                                sellerId = sellerId,
+                                sellerName = userProfile?.name,
+                                performanceMetrics = org.sysarp.project.data.PerformanceMetricsData(
+                                    averageConfirmationTime = response.data.performanceMetrics.averageConfirmationTime,
+                                    claimRate = response.data.performanceMetrics.claimRate,
+                                    rejectionRate = response.data.performanceMetrics.rejectionRate,
+                                    pendingPayments = response.data.performanceMetrics.pendingPayments,
+                                    confirmedPayments = response.data.performanceMetrics.confirmedPayments,
+                                    rejectedPayments = response.data.performanceMetrics.rejectedPayments
+                                ),
+                dailySales = response.data.dailySales?.map { daily ->
+                    org.sysarp.project.data.DailySalesData(
+                        date = daily.date,
+                        dayName = daily.dayName,
+                        sales = daily.sales,
+                        transactions = daily.transactions
+                    )
+                } ?: emptyList(),
+                                overview = org.sysarp.project.data.SellerOverviewSummaryData(
+                                    totalSales = response.data.overview.totalSales,
+                                    totalTransactions = response.data.overview.totalTransactions,
+                                    averageTransactionValue = response.data.overview.averageTransactionValue,
+                                    salesGrowth = response.data.overview.salesGrowth,
+                                    transactionGrowth = response.data.overview.transactionGrowth,
+                                    averageGrowth = response.data.overview.averageGrowth
+                                )
+                            )
                         },
                         onFailure = { error ->
                             showErrorMessage = "Error cargando estadísticas: ${error.message}"

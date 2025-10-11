@@ -18,6 +18,7 @@ import org.koin.compose.koinInject
 import org.sysarp.project.data.PaymentFilterStatus
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.admin.screens.payments.components.AdminPaymentsContent
 import org.sysarp.project.ui.admin.screens.payments.components.AdminPaymentsTabs
 import org.sysarp.project.ui.components.calendar.SmartCalendar
@@ -33,7 +34,8 @@ fun AdminPaymentsScreen(
     onNavigateBack: () -> Unit,
     // Dependencies are now injected by Koin
     authService: AuthService = koinInject(),
-    paymentService: PaymentService = koinInject()
+    paymentService: PaymentService = koinInject(),
+    statsService: StatsService = koinInject()
 ) {
     val coroutineScope = rememberCoroutineScope()
     val userProfile by authService.userProfile.collectAsState()
@@ -49,6 +51,7 @@ fun AdminPaymentsScreen(
         AdminPaymentsState(
             authService = authService,
             paymentService = paymentService,
+            statsService = statsService,
             coroutineScope = coroutineScope
         )
     }
@@ -73,6 +76,17 @@ fun AdminPaymentsScreen(
                 },
                 onFailure = { error ->
                     println("ADMIN_PAYMENTS: Error cargando pagos: $error")
+                }
+            )
+            
+            // Cargar estadísticas del admin
+            println("ADMIN_PAYMENTS: Cargando estadísticas...")
+            state.loadAdminStats(
+                onSuccess = {
+                    println("ADMIN_PAYMENTS: Estadísticas cargadas exitosamente")
+                },
+                onFailure = { error ->
+                    println("ADMIN_PAYMENTS: Error cargando estadísticas: $error")
                 }
             )
         } else {

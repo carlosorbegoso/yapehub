@@ -10,8 +10,10 @@ import org.sysarp.project.data.PaymentSummary
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.data.PaymentFilterStatus
 import org.sysarp.project.data.PaymentFilterStatusUtils
+import org.sysarp.project.data.UnifiedStatsResponse
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.admin.screens.payments.components.AdvancedFilters
 import org.sysarp.project.utils.convertPeriodToDates
 
@@ -21,6 +23,7 @@ import org.sysarp.project.utils.convertPeriodToDates
 class AdminPaymentsState(
     private val authService: AuthService,
     val paymentService: PaymentService,
+    private val statsService: StatsService,
     private val coroutineScope: CoroutineScope
 ) {
     // Estados de datos
@@ -28,6 +31,12 @@ class AdminPaymentsState(
         private set
     
     var paymentSummary by mutableStateOf<PaymentSummary?>(null)
+        private set
+    
+    var adminStats by mutableStateOf<UnifiedStatsResponse?>(null)
+        private set
+    
+    var analyticsUrls by mutableStateOf<org.sysarp.project.data.UnifiedAnalyticsUrls?>(null)
         private set
     
     // Estados de carga
@@ -333,6 +342,68 @@ class AdminPaymentsState(
         } else {
             updateErrorMessage("No se pueden cargar pagos: faltan credenciales de usuario")
             onFailure("No se pueden cargar pagos: faltan credenciales de usuario")
+        }
+    }
+    
+    /**
+     * Carga las estadísticas del admin usando el endpoint unificado
+     */
+    fun loadAdminStats(
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        if (accessToken != null && userProfile?.adminId != null) {
+            coroutineScope.launch {
+                println("ADMIN_STATS: Cargando estadísticas unificadas para adminId: ${userProfile?.adminId}, fechas: $startDate - $endDate")
+                statsService.getUnifiedStatsSummary(
+                    adminId = userProfile?.adminId?.toInt() ?: 0,
+                    sellerId = null,
+                    startDate = startDate,
+                    endDate = endDate,
+                    token = accessToken ?: ""
+                ).fold(
+                    onSuccess = { response ->
+                        println("ADMIN_STATS: Estadísticas unificadas cargadas exitosamente: ${response.data}")
+                        adminStats = response
+                        analyticsUrls = response.data.urls
+                        onSuccess()
+                    },
+                    onFailure = { error ->
+                        println("ADMIN_STATS: Error cargando estadísticas unificadas: ${error.message}")
+                        updateErrorMessage("Error cargando estadísticas: ${error.message}")
+                        onFailure(errorMessage)
+                    }
+                )
+            }
+        } else {
+            println("ADMIN_STATS: No se pueden cargar estadísticas - accessToken: ${accessToken != null}, adminId: ${userProfile?.adminId}")
+        }
+    }
+    
+    /**
+     * Carga analytics específicos usando las URLs del endpoint unificado
+     */
+    fun loadAnalyticsFromUrl(
+        url: String,
+        onSuccess: (String) -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        if (accessToken != null) {
+            coroutineScope.launch {
+                println("ADMIN_ANALYTICS: Cargando analytics desde URL: $url")
+                statsService.getAnalyticsFromUrl(url, accessToken ?: "").fold(
+                    onSuccess = { response ->
+                        println("ADMIN_ANALYTICS: Analytics cargados exitosamente desde: $url")
+                        onSuccess(response)
+                    },
+                    onFailure = { error ->
+                        println("ADMIN_ANALYTICS: Error cargando analytics desde $url: ${error.message}")
+                        onFailure(error.message ?: "Error desconocido")
+                    }
+                )
+            }
+        } else {
+            println("ADMIN_ANALYTICS: No se pueden cargar analytics - accessToken: ${accessToken != null}")
         }
     }
     

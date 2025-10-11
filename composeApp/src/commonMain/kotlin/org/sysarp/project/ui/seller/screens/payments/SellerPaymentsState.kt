@@ -17,6 +17,7 @@ import org.sysarp.project.utils.convertPeriodToDates
  */
 class SellerPaymentsState(
     val paymentService: PaymentService,
+    val statsService: org.sysarp.project.service.stats.StatsService,
     private val coroutineScope: CoroutineScope
 ) {
     // Estados de tabs
@@ -34,12 +35,30 @@ class SellerPaymentsState(
     var paymentSummary by mutableStateOf<org.sysarp.project.data.PaymentSummary?>(null)
         private set
     
+    // Estado de estadísticas del seller
+    var sellerStats by mutableStateOf<org.sysarp.project.data.SellerStatsData?>(null)
+        private set
+    
+    // URLs de analytics del endpoint unificado
+    var analyticsUrls by mutableStateOf<org.sysarp.project.data.UnifiedAnalyticsUrls?>(null)
+        private set
+    
     // Estados de carga
     var isLoading by mutableStateOf(false)
         private set
     
+    var isLoadingMore by mutableStateOf(false)
+        private set
+    
     // Estados de error
     var errorMessage by mutableStateOf("")
+        private set
+    
+    // Estados de paginación
+    var currentPage by mutableStateOf(0)
+        private set
+    
+    var hasMorePayments by mutableStateOf(true)
         private set
     
     // Estados de filtros de fechas
@@ -106,6 +125,22 @@ class SellerPaymentsState(
     }
     
     /**
+     * Agrega más pagos pendientes a la lista existente
+     */
+    fun addMorePendingPayments(morePayments: List<SellerPendingPayment>) {
+        pendingPayments = pendingPayments + morePayments
+        applyRealTimeFilters()
+    }
+    
+    /**
+     * Agrega más pagos confirmados a la lista existente
+     */
+    fun addMoreConfirmedPayments(morePayments: List<SellerPendingPayment>) {
+        confirmedPayments = confirmedPayments + morePayments
+        applyRealTimeFilters()
+    }
+    
+    /**
      * Establece el summary de pagos del servidor
      */
     fun updatePaymentSummary(summary: org.sysarp.project.data.PaymentSummary?) {
@@ -113,10 +148,38 @@ class SellerPaymentsState(
     }
     
     /**
+     * Establece las estadísticas del seller
+     */
+    fun updateSellerStats(stats: org.sysarp.project.data.SellerStatsData?) {
+        sellerStats = stats
+    }
+    
+    /**
      * Establece el estado de carga
      */
     fun updateLoading(loading: Boolean) {
         isLoading = loading
+    }
+    
+    /**
+     * Establece el estado de carga de más elementos
+     */
+    fun updateLoadingMore(loading: Boolean) {
+        isLoadingMore = loading
+    }
+    
+    /**
+     * Establece la página actual
+     */
+    fun updateCurrentPage(page: Int) {
+        currentPage = page
+    }
+    
+    /**
+     * Establece si hay más pagos disponibles
+     */
+    fun updateHasMorePayments(hasMore: Boolean) {
+        hasMorePayments = hasMore
     }
     
     /**
@@ -279,7 +342,7 @@ class SellerPaymentsState(
     }
     
     /**
-     * Carga los pagos con filtros dinámicos
+     * Carga los pagos con filtros dinámicos (primera página)
      */
     fun loadPaymentsWithFilters(
         onSuccess: () -> Unit,
@@ -289,6 +352,8 @@ class SellerPaymentsState(
             coroutineScope.launch {
                 updateLoading(true)
                 clearErrorMessage()
+                updateCurrentPage(0)
+                updateHasMorePayments(true)
 
                 val statusString = getStatusString()
                 
@@ -296,7 +361,7 @@ class SellerPaymentsState(
                     sellerId = userProfile?.sellerId?.toInt() ?: 0,
                     status = statusString,
                     page = 0,
-                    size = 50,
+                    size = 20,
                     startDate = startDate,
                     endDate = endDate,
                     token = accessToken ?: ""
@@ -309,12 +374,59 @@ class SellerPaymentsState(
                         updatePendingPayments(pending)
                         updateConfirmedPayments(confirmed)
                         updatePaymentSummary(response.data.summary)
+                        updateHasMorePayments(response.data.pagination.currentPage < response.data.pagination.totalPages - 1)
                         updateLoading(false)
                         onSuccess()
                     },
                     onFailure = { error ->
                         updateErrorMessage(error.message ?: "Error cargando pagos")
                         updateLoading(false)
+                        onFailure(errorMessage)
+                    }
+                )
+            }
+        }
+    }
+    
+    /**
+     * Carga más pagos (paginación infinita)
+     */
+    fun loadMorePayments(
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        if (accessToken != null && userProfile?.sellerId != null && hasMorePayments && !isLoadingMore) {
+            coroutineScope.launch {
+                updateLoadingMore(true)
+                val nextPage = currentPage + 1
+
+                val statusString = getStatusString()
+                
+                paymentService.getPayments(
+                    sellerId = userProfile?.sellerId?.toInt() ?: 0,
+                    status = statusString,
+                    page = nextPage,
+                    size = 20,
+                    startDate = startDate,
+                    endDate = endDate,
+                    token = accessToken ?: ""
+                ).fold(
+                    onSuccess = { response ->
+                        // Separar pagos por estado
+                        val pending = response.data.payments.filter { it.status == "PENDING" }
+                        val confirmed = response.data.payments.filter { it.status == "CLAIMED" }
+                        
+                        // Agregar a las listas existentes
+                        addMorePendingPayments(pending)
+                        addMoreConfirmedPayments(confirmed)
+                        updateCurrentPage(nextPage)
+                        updateHasMorePayments(response.data.pagination.currentPage < response.data.pagination.totalPages - 1)
+                        updateLoadingMore(false)
+                        onSuccess()
+                    },
+                    onFailure = { error ->
+                        updateErrorMessage(error.message ?: "Error cargando más pagos")
+                        updateLoadingMore(false)
                         onFailure(errorMessage)
                     }
                 )
@@ -416,6 +528,97 @@ class SellerPaymentsState(
         onFailure: (String) -> Unit
     ) {
         loadPaymentsWithFilters(onSuccess, onFailure)
+    }
+    
+    /**
+     * Carga las estadísticas del seller
+     */
+    fun loadSellerStats(
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        if (accessToken != null && userProfile?.sellerId != null) {
+            coroutineScope.launch {
+                println("SELLER_STATS: Cargando estadísticas unificadas para sellerId: ${userProfile?.sellerId}, fechas: $startDate - $endDate")
+                statsService.getUnifiedStatsSummary(
+                    adminId = null,
+                    sellerId = userProfile?.sellerId?.toInt() ?: 0,
+                    startDate = startDate,
+                    endDate = endDate,
+                    token = accessToken ?: ""
+                ).fold(
+                    onSuccess = { response ->
+                        println("SELLER_STATS: Estadísticas unificadas cargadas exitosamente: ${response.data}")
+                        // Convertir UnifiedStatsData a SellerStatsData para mantener compatibilidad
+                        val sellerStatsData = org.sysarp.project.data.SellerStatsData(
+                            sellerId = userProfile?.sellerId?.toInt(),
+                            sellerName = userProfile?.name,
+                            performanceMetrics = org.sysarp.project.data.PerformanceMetricsData(
+                                averageConfirmationTime = response.data.performanceMetrics.averageConfirmationTime,
+                                claimRate = response.data.performanceMetrics.claimRate,
+                                rejectionRate = response.data.performanceMetrics.rejectionRate,
+                                pendingPayments = response.data.performanceMetrics.pendingPayments,
+                                confirmedPayments = response.data.performanceMetrics.confirmedPayments,
+                                rejectedPayments = response.data.performanceMetrics.rejectedPayments
+                            ),
+                dailySales = response.data.dailySales?.map { daily ->
+                    org.sysarp.project.data.DailySalesData(
+                        date = daily.date,
+                        dayName = daily.dayName,
+                        sales = daily.sales,
+                        transactions = daily.transactions
+                    )
+                } ?: emptyList(),
+                            overview = org.sysarp.project.data.SellerOverviewSummaryData(
+                                totalSales = response.data.overview.totalSales,
+                                totalTransactions = response.data.overview.totalTransactions,
+                                averageTransactionValue = response.data.overview.averageTransactionValue,
+                                salesGrowth = response.data.overview.salesGrowth,
+                                transactionGrowth = response.data.overview.transactionGrowth,
+                                averageGrowth = response.data.overview.averageGrowth
+                            )
+                        )
+                        updateSellerStats(sellerStatsData)
+                        analyticsUrls = response.data.urls
+                        onSuccess()
+                    },
+                    onFailure = { error ->
+                        println("SELLER_STATS: Error cargando estadísticas unificadas: ${error.message}")
+                        updateErrorMessage("Error cargando estadísticas: ${error.message}")
+                        onFailure(errorMessage)
+                    }
+                )
+            }
+        } else {
+            println("SELLER_STATS: No se pueden cargar estadísticas - accessToken: ${accessToken != null}, sellerId: ${userProfile?.sellerId}")
+        }
+    }
+    
+    /**
+     * Carga analytics específicos usando las URLs del endpoint unificado
+     */
+    fun loadAnalyticsFromUrl(
+        url: String,
+        onSuccess: (String) -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        if (accessToken != null) {
+            coroutineScope.launch {
+                println("SELLER_ANALYTICS: Cargando analytics desde URL: $url")
+                statsService.getAnalyticsFromUrl(url, accessToken ?: "").fold(
+                    onSuccess = { response ->
+                        println("SELLER_ANALYTICS: Analytics cargados exitosamente desde: $url")
+                        onSuccess(response)
+                    },
+                    onFailure = { error ->
+                        println("SELLER_ANALYTICS: Error cargando analytics desde $url: ${error.message}")
+                        onFailure(error.message ?: "Error desconocido")
+                    }
+                )
+            }
+        } else {
+            println("SELLER_ANALYTICS: No se pueden cargar analytics - accessToken: ${accessToken != null}")
+        }
     }
     
     /**

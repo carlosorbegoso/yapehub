@@ -6,13 +6,14 @@ import org.sysarp.project.service.stats.StatsService
 
 /**
  * Manager para manejar la lógica de estadísticas del vendedor
+ * Actualizado para usar solo el endpoint unificado /api/stats/summary
  */
 class SellerStatsManager(
     private val statsService: StatsService
 ) {
     
     /**
-     * Cargar estadísticas del vendedor
+     * Cargar estadísticas del vendedor usando endpoint unificado
      */
     suspend fun loadSellerStats(
         accessToken: String,
@@ -21,13 +22,18 @@ class SellerStatsManager(
         onError: (String) -> Unit
     ) {
         try {
-            val response = statsService.getSellerStatsSummary(sellerId.toInt(), null, null, accessToken)
+            val response = statsService.getUnifiedStatsSummary(
+                adminId = null,
+                sellerId = sellerId.toInt(),
+                startDate = null,
+                endDate = null,
+                token = accessToken
+            )
             
             response.fold(
                 onSuccess = { result ->
-                    val summary = result.data.summary
-                    val confirmedCount = summary?.confirmedPayments ?: 0
-                    val totalAmount = summary?.totalSales ?: 0.0
+                    val confirmedCount = result.data.performanceMetrics.confirmedPayments
+                    val totalAmount = result.data.overview.totalSales
                     
                     onSuccess(confirmedCount, totalAmount)
                 },
@@ -41,21 +47,16 @@ class SellerStatsManager(
     }
     
     /**
-     * Cargar analytics detallados del vendedor
+     * Cargar analytics específicos usando URLs del endpoint unificado
      */
-    suspend fun loadSellerAnalytics(
+    suspend fun loadAnalyticsFromUrl(
+        url: String,
         accessToken: String,
-        sellerId: Long,
-        onSuccess: (org.sysarp.project.data.AnalyticsResponse) -> Unit,
+        onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
         try {
-            val response = statsService.getSellerAnalytics(
-                sellerId = sellerId.toInt(),
-                startDate = null, // Usar fechas por defecto
-                endDate = null,
-                token = accessToken
-            )
+            val response = statsService.getAnalyticsFromUrl(url, accessToken)
             
             response.fold(
                 onSuccess = { result ->
@@ -63,70 +64,6 @@ class SellerStatsManager(
                 },
                 onFailure = { error ->
                     onError(error.message ?: "Error al cargar analytics")
-                }
-            )
-        } catch (e: Exception) {
-            onError("Error de conexión: ${e.message}")
-        }
-    }
-
-    /**
-     * Cargar analytics detallados con filtros de fecha específicos
-     */
-    suspend fun loadSellerAnalyticsWithDates(
-        accessToken: String,
-        sellerId: Long,
-        startDate: String?,
-        endDate: String?,
-        onSuccess: (org.sysarp.project.data.AnalyticsResponse) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        try {
-            val response = statsService.getSellerQuickAnalytics(
-                sellerId = sellerId.toInt(),
-                startDate = startDate,
-                endDate = endDate,
-                token = accessToken
-            )
-            
-            response.fold(
-                onSuccess = { result ->
-                    onSuccess(result)
-                },
-                onFailure = { error ->
-                    onError(error.message ?: "Error al cargar analytics")
-                }
-            )
-        } catch (e: Exception) {
-            onError("Error de conexión: ${e.message}")
-        }
-    }
-
-    /**
-     * Cargar analytics de rendimiento del vendedor
-     */
-    suspend fun loadSellerPerformanceAnalytics(
-        accessToken: String,
-        sellerId: Long,
-        startDate: String?,
-        endDate: String?,
-        onSuccess: (org.sysarp.project.data.AnalyticsResponse) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        try {
-            val response = statsService.getSellerPerformanceAnalytics(
-                sellerId = sellerId.toInt(),
-                startDate = startDate,
-                endDate = endDate,
-                token = accessToken
-            )
-            
-            response.fold(
-                onSuccess = { result ->
-                    onSuccess(result)
-                },
-                onFailure = { error ->
-                    onError(error.message ?: "Error al cargar analytics de rendimiento")
                 }
             )
         } catch (e: Exception) {
@@ -136,13 +73,9 @@ class SellerStatsManager(
 }
 
 /**
- * Composable para crear el manager de estadísticas
+ * Composable para crear una instancia del SellerStatsManager
  */
 @Composable
-fun rememberSellerStatsManager(
-    statsService: StatsService
-): SellerStatsManager {
-    return remember(statsService) {
-        SellerStatsManager(statsService)
-    }
+fun rememberSellerStatsManager(statsService: StatsService): SellerStatsManager {
+    return remember { SellerStatsManager(statsService) }
 }
