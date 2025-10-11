@@ -7,7 +7,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.UserProfile
+import org.sysarp.project.data.PaymentFilterStatus
+import org.sysarp.project.data.PaymentFilterStatusUtils
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.utils.convertPeriodToDates
 
 /**
  * Estado y lógica de negocio para SellerPaymentsScreen
@@ -42,6 +45,27 @@ class SellerPaymentsState(
     var endDate by mutableStateOf<String?>(null)
         private set
     
+    // Estados de filtros dinámicos
+    var selectedStatuses by mutableStateOf<List<PaymentFilterStatus>>(emptyList())
+        private set
+    
+    var showAdvancedFilters by mutableStateOf(false)
+        private set
+    
+    // Estados de filtros en tiempo real
+    var yapeCodeFilter by mutableStateOf("")
+        private set
+
+    var dateRangeFilter by mutableStateOf("📅 30 días") // Período por defecto
+        private set
+    
+    // Estados de pagos filtrados
+    var filteredPendingPayments by mutableStateOf<List<SellerPendingPayment>>(emptyList())
+        private set
+    
+    var filteredConfirmedPayments by mutableStateOf<List<SellerPendingPayment>>(emptyList())
+        private set
+    
     // Estados de usuario (se pasan como parámetros)
     var userProfile: UserProfile? = null
         private set
@@ -61,6 +85,7 @@ class SellerPaymentsState(
      */
     fun updatePendingPayments(payments: List<SellerPendingPayment>) {
         pendingPayments = payments
+        applyRealTimeFilters()
     }
     
     /**
@@ -68,6 +93,7 @@ class SellerPaymentsState(
      */
     fun updateConfirmedPayments(payments: List<SellerPendingPayment>) {
         confirmedPayments = payments
+        applyRealTimeFilters()
     }
     
     /**
@@ -106,6 +132,78 @@ class SellerPaymentsState(
     }
     
     /**
+     * Inicializa los filtros por defecto
+     */
+    fun initializeDefaultFilters() {
+        // Inicializar filtros de fecha por defecto
+        val (start, end) = convertPeriodToDates(dateRangeFilter)
+        updateDateRange(start, end)
+    }
+    
+    /**
+     * Actualiza el filtro de código Yape y aplica filtrado en tiempo real
+     */
+    fun updateYapeCodeFilter(filter: String) {
+        yapeCodeFilter = filter
+        applyRealTimeFilters()
+    }
+    
+    /**
+     * Actualiza el filtro de rango de fechas y aplica filtrado en tiempo real
+     */
+    fun updateDateRangeFilter(filter: String) {
+        dateRangeFilter = filter
+        // Convertir el período seleccionado en fechas específicas
+        val (start, end) = convertPeriodToDates(filter)
+        updateDateRange(start, end)
+        applyRealTimeFilters()
+    }
+    
+    /**
+     * Convierte un período del calendario en fechas específicas para la API
+     */
+    private fun convertPeriodToDates(period: String): Pair<String?, String?> {
+        return org.sysarp.project.utils.convertPeriodToDates(period)
+    }
+    
+    /**
+     * Aplica filtros en tiempo real a los pagos cargados
+     */
+    private fun applyRealTimeFilters() {
+        filteredPendingPayments = pendingPayments.filter { payment ->
+            matchesFilters(payment)
+        }
+        
+        filteredConfirmedPayments = confirmedPayments.filter { payment ->
+            matchesFilters(payment)
+        }
+    }
+    
+    /**
+     * Verifica si un pago coincide con los filtros aplicados
+     */
+    private fun matchesFilters(payment: SellerPendingPayment): Boolean {
+        // Filtro por código Yape
+        val matchesYapeCode = yapeCodeFilter.isEmpty() || 
+            payment.yapeCode.contains(yapeCodeFilter, ignoreCase = true)
+        
+        // Filtro por fecha (si está implementado)
+        val matchesDateRange = dateRangeFilter.isEmpty() || 
+            matchesDateRange(payment, dateRangeFilter)
+        
+        return matchesYapeCode && matchesDateRange
+    }
+    
+    /**
+     * Verifica si un pago coincide con el rango de fechas seleccionado
+     */
+    private fun matchesDateRange(payment: SellerPendingPayment, dateRange: String): Boolean {
+        // TODO: Implementar lógica de filtrado por fecha
+        // Por ahora retorna true para no filtrar por fecha
+        return true
+    }
+    
+    /**
      * Establece las fechas de filtro
      */
     fun updateDateRange(startDate: String?, endDate: String?) {
@@ -114,9 +212,60 @@ class SellerPaymentsState(
     }
     
     /**
-     * Carga los pagos pendientes
+     * Establece los estados de filtro seleccionados
      */
-    fun loadPendingPayments(
+    fun updateSelectedStatuses(statuses: List<PaymentFilterStatus>) {
+        selectedStatuses = statuses
+    }
+    
+    /**
+     * Alterna la visibilidad de filtros avanzados
+     */
+    fun toggleAdvancedFilters() {
+        showAdvancedFilters = !showAdvancedFilters
+    }
+    
+    /**
+     * Obtiene el string de estados para la API
+     */
+    fun getStatusString(): String {
+        return if (selectedStatuses.isEmpty()) {
+            // Si no hay filtros, usar el tab seleccionado
+            when (selectedTab) {
+                0 -> PaymentFilterStatus.PENDING.value
+                1 -> PaymentFilterStatus.CLAIMED.value
+                else -> PaymentFilterStatus.PENDING.value
+            }
+        } else {
+            PaymentFilterStatusUtils.toCommaSeparatedString(selectedStatuses)
+        }
+    }
+    
+    /**
+     * Verifica si hay filtros activos
+     */
+    fun hasActiveFilters(): Boolean {
+        return selectedStatuses.isNotEmpty() || startDate != null || endDate != null
+    }
+    
+    /**
+     * Limpia todos los filtros
+     */
+    fun clearAllFilters() {
+        selectedStatuses = emptyList()
+        startDate = null
+        endDate = null
+        showAdvancedFilters = false
+        yapeCodeFilter = ""
+        dateRangeFilter = ""
+        filteredPendingPayments = pendingPayments
+        filteredConfirmedPayments = confirmedPayments
+    }
+    
+    /**
+     * Carga los pagos con filtros dinámicos
+     */
+    fun loadPaymentsWithFilters(
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
@@ -125,21 +274,29 @@ class SellerPaymentsState(
                 updateLoading(true)
                 clearErrorMessage()
 
-                paymentService.getPendingPayments(
+                val statusString = getStatusString()
+                
+                paymentService.getPayments(
                     sellerId = userProfile?.sellerId?.toInt() ?: 0,
+                    status = statusString,
                     page = 0,
-                    limit = 50,
+                    size = 50,
                     startDate = startDate,
                     endDate = endDate,
                     token = accessToken ?: ""
                 ).fold(
                     onSuccess = { response ->
-                        updatePendingPayments(response.data.payments)
+                        // Separar pagos por estado
+                        val pending = response.data.payments.filter { it.status == "PENDING" }
+                        val confirmed = response.data.payments.filter { it.status == "CLAIMED" }
+                        
+                        updatePendingPayments(pending)
+                        updateConfirmedPayments(confirmed)
                         updateLoading(false)
                         onSuccess()
                     },
                     onFailure = { error ->
-                        updateErrorMessage(error.message ?: "Error cargando pagos pendientes")
+                        updateErrorMessage(error.message ?: "Error cargando pagos")
                         updateLoading(false)
                         onFailure(errorMessage)
                     }
@@ -149,38 +306,23 @@ class SellerPaymentsState(
     }
     
     /**
-     * Carga los pagos confirmados
+     * Carga los pagos pendientes (método de compatibilidad)
+     */
+    fun loadPendingPayments(
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        loadPaymentsWithFilters(onSuccess, onFailure)
+    }
+    
+    /**
+     * Carga los pagos confirmados (método de compatibilidad)
      */
     fun loadConfirmedPayments(
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
-        if (accessToken != null && userProfile?.sellerId != null) {
-            coroutineScope.launch {
-                updateLoading(true)
-                clearErrorMessage()
-
-                paymentService.getConfirmedPayments(
-                    sellerId = userProfile?.sellerId?.toInt() ?: 0,
-                    page = 0,
-                    size = 50,
-                    startDate = startDate,
-                    endDate = endDate,
-                    token = accessToken ?: ""
-                ).fold(
-                    onSuccess = { response ->
-                        updateConfirmedPayments(response.data.payments)
-                        updateLoading(false)
-                        onSuccess()
-                    },
-                    onFailure = { error ->
-                        updateErrorMessage(error.message ?: "Error cargando pagos confirmados")
-                        updateLoading(false)
-                        onFailure(errorMessage)
-                    }
-                )
-            }
-        }
+        loadPaymentsWithFilters(onSuccess, onFailure)
     }
 
     /**
@@ -199,12 +341,8 @@ class SellerPaymentsState(
                     token = accessToken ?: ""
                 ).fold(
                     onSuccess = { response ->
-                        // Recargar ambas listas
-                        loadPendingPayments(
-                            onSuccess = { },
-                            onFailure = { }
-                        )
-                        loadConfirmedPayments(
+                        // Recargar con filtros actuales
+                        refreshAllPayments(
                             onSuccess = { },
                             onFailure = { }
                         )
@@ -220,21 +358,13 @@ class SellerPaymentsState(
     }
 
     /**
-     * Recarga todos los pagos
+     * Recarga todos los pagos con filtros actuales
      */
     fun refreshAllPayments(
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
-        loadPendingPayments(
-            onSuccess = { },
-            onFailure = { }
-        )
-        loadConfirmedPayments(
-            onSuccess = { },
-            onFailure = { }
-        )
-        onSuccess()
+        loadPaymentsWithFilters(onSuccess, onFailure)
     }
     
     /**
@@ -287,7 +417,7 @@ class SellerPaymentsState(
     }
     
     /**
-     * Filtra por rango de fechas
+     * Filtra por rango de fechas y recarga
      */
     fun filterByDateRange(
         startDate: String?,
@@ -295,6 +425,21 @@ class SellerPaymentsState(
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
+        updateDateRange(startDate, endDate)
+        refreshAllPayments(onSuccess, onFailure)
+    }
+    
+    /**
+     * Aplica filtros avanzados y recarga
+     */
+    fun applyAdvancedFilters(
+        statuses: List<PaymentFilterStatus>,
+        startDate: String?,
+        endDate: String?,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        updateSelectedStatuses(statuses)
         updateDateRange(startDate, endDate)
         refreshAllPayments(onSuccess, onFailure)
     }

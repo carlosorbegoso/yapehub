@@ -14,21 +14,33 @@ class PaymentApiClient(
     private val httpClient: HttpClient
 ) : BaseApiClient() {
 
-    suspend fun getPendingPayments(
-        sellerId: Int, 
-        page: Int = 0, 
-        limit: Int = 20,
+    /**
+     * Obtener pagos con filtro dinámico según el rol del usuario
+     * @param sellerId ID del vendedor (requerido para SELLER, opcional para ADMIN)
+     * @param status Estados del pago: PENDING, CLAIMED, REJECTED, ALL o múltiples separados por coma (ej: "PENDING,CLAIMED")
+     * @param page Número de página
+     * @param size Tamaño de página
+     * @param startDate Fecha de inicio (opcional)
+     * @param endDate Fecha de fin (opcional)
+     * @param token Token de autenticación
+     */
+    suspend fun getPayments(
+        sellerId: Int? = null,
+        status: String,
+        page: Int = 0,
+        size: Int = 20,
         startDate: String? = null,
         endDate: String? = null,
         token: String
     ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
         return try {
-            logInfo("PAYMENT_API", "Obteniendo pagos pendientes del vendedor: $sellerId, página: $page, límite: $limit, fechas: $startDate - $endDate")
+            logInfo("PAYMENT_API", "Obteniendo pagos - sellerId: $sellerId, status: $status, página: $page, límite: $size, fechas: $startDate - $endDate")
 
-            val response = httpClient.get("$baseUrl/api/payments/pending") {
-                parameter("sellerId", sellerId)
+            val response = httpClient.get("$baseUrl/api/payments") {
+                sellerId?.let { parameter("sellerId", it) }
                 parameter("page", page)
-                parameter("limit", limit)
+                parameter("size", size)
+                parameter("status", status)
                 startDate?.let { parameter("startDate", it) }
                 endDate?.let { parameter("endDate", it) }
                 header("Authorization", "Bearer $token")
@@ -37,12 +49,11 @@ class PaymentApiClient(
 
             if (response.status.value in 200..299) {
                 try {
-                    // Usar deserialización manual directamente ya que Kotlin reflection no está disponible
                     val responseBody = response.body<String>()
                     logInfo("PAYMENT_API", "Respuesta del servidor: $responseBody")
-                    val pendingPaymentsResponse = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.PendingPaymentsResponse>(responseBody)
-                    logInfo("PAYMENT_API", "Pagos pendientes obtenidos exitosamente: ${pendingPaymentsResponse.data.payments.size} pagos en página ${pendingPaymentsResponse.data.pagination.currentPage}")
-                    Result.success(pendingPaymentsResponse)
+                    val paymentsResponse = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.PendingPaymentsResponse>(responseBody)
+                    logInfo("PAYMENT_API", "Pagos obtenidos exitosamente: ${paymentsResponse.data.payments.size} pagos en página ${paymentsResponse.data.pagination.currentPage} (status: $status)")
+                    Result.success(paymentsResponse)
                 } catch (e: Exception) {
                     logError("PAYMENT_API", "Error deserializando respuesta: ${e.message}")
                     Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
@@ -56,12 +67,12 @@ class PaymentApiClient(
                     "Error desconocido: ${e.message}"
                 }
 
-                val finalErrorMessage = "Error obteniendo pagos pendientes: ${response.status} - $errorMessage"
+                val finalErrorMessage = "Error obteniendo pagos (status: $status): ${response.status} - $errorMessage"
                 logError("PAYMENT_API", finalErrorMessage)
                 Result.failure(Exception(finalErrorMessage))
             }
         } catch (e: Exception) {
-            logError("PAYMENT_API", "Error obteniendo pagos pendientes: ${e.message}")
+            logError("PAYMENT_API", "Error obteniendo pagos (status: $status): ${e.message}")
             Result.failure(e)
         }
     }
@@ -198,7 +209,7 @@ class PaymentApiClient(
         return try {
             logInfo("PAYMENT_API", "Obteniendo gestión de pagos para admin: $adminId, página: $page, tamaño: $size, estado: $status, fechas: $startDate - $endDate")
 
-            val response = httpClient.get("$baseUrl/api/payments/admin/management") {
+            val response = httpClient.get("$baseUrl/api/payments") {
                 parameter("adminId", adminId)
                 parameter("page", page)
                 parameter("size", size)
@@ -341,57 +352,4 @@ class PaymentApiClient(
         }
     }
 
-    /**
-     * Obtener pagos confirmados de un vendedor
-     */
-    suspend fun getConfirmedPayments(
-        sellerId: Int,
-        page: Int = 0,
-        size: Int = 20,
-        startDate: String? = null,
-        endDate: String? = null,
-        token: String
-    ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
-        return try {
-            logInfo("PAYMENT_API", "Obteniendo pagos confirmados del vendedor: $sellerId, página: $page, límite: $size, fechas: $startDate - $endDate")
-
-            val response = client.get("$baseUrl/api/payments/confirmed") {
-                parameter("sellerId", sellerId)
-                parameter("page", page)
-                parameter("size", size)
-                startDate?.let { parameter("startDate", it) }
-                endDate?.let { parameter("endDate", it) }
-                header("Authorization", "Bearer $token")
-                header("accept", "application/json")
-            }
-
-            if (response.status.value in 200..299) {
-                try {
-                    val responseBody = response.body<String>()
-                    logInfo("PAYMENT_API", "Respuesta del servidor: $responseBody")
-                    val confirmedPaymentsResponse = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.PendingPaymentsResponse>(responseBody)
-                    logInfo("PAYMENT_API", "Pagos confirmados obtenidos exitosamente: ${confirmedPaymentsResponse.data.payments.size} pagos en página ${confirmedPaymentsResponse.data.pagination.currentPage}")
-                    Result.success(confirmedPaymentsResponse)
-                } catch (e: Exception) {
-                    logError("PAYMENT_API", "Error deserializando respuesta: ${e.message}")
-                    Result.failure(Exception("Error deserializando respuesta del servidor: ${e.message}"))
-                }
-            } else {
-                val errorMessage = try {
-                    val errorBody = response.body<String>()
-                    logError("PAYMENT_API", "Error body: $errorBody")
-                    errorBody
-                } catch (e: Exception) {
-                    "Error desconocido: ${e.message}"
-                }
-
-                val finalErrorMessage = "Error obteniendo pagos confirmados: ${response.status} - $errorMessage"
-                logError("PAYMENT_API", finalErrorMessage)
-                Result.failure(Exception(finalErrorMessage))
-            }
-        } catch (e: Exception) {
-            logError("PAYMENT_API", "Error obteniendo pagos confirmados: ${e.message}")
-            Result.failure(e)
-        }
-    }
 }

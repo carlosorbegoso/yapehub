@@ -7,6 +7,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.sysarp.project.service.getHttpClientEngine
 import org.sysarp.project.utils.Constants
 import org.sysarp.project.utils.getFormattedTimestamp
 import org.sysarp.project.utils.calculateDurationMs
@@ -19,7 +20,7 @@ abstract class BaseApiClient {
     
     protected val baseUrl = Constants.BASE_URL
     
-    protected val client = HttpClient {
+    protected val client = HttpClient(getHttpClientEngine()) {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true

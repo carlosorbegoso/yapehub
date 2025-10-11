@@ -416,7 +416,7 @@ fun SellerPaymentCard(
                 }
                 
                 Text(
-                    text = payment.timestamp,
+                    text = payment.getDisplayDate(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

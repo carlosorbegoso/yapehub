@@ -36,9 +36,22 @@ data class SellerPendingPayment(
     val senderName: String,
     val yapeCode: String,
     val status: String,
-    val timestamp: String,
-    val message: String
-)
+    val timestamp: String? = null,
+    val createdAt: String? = null,
+    val message: String? = null,
+    val confirmedBy: Int? = null,
+    val confirmedAt: String? = null,
+    val rejectedBy: Int? = null,
+    val rejectedAt: String? = null,
+    val rejectionReason: String? = null,
+    val sellerName: String? = null,
+    val branchName: String? = null
+) {
+    // Función helper para obtener la fecha correcta
+    fun getDisplayDate(): String {
+        return timestamp ?: createdAt ?: "Fecha no disponible"
+    }
+}
 
 @Serializable
 data class ClaimPaymentRequest(
@@ -63,8 +76,8 @@ data class PaymentClaimData(
     val status: String,
     val timestamp: String,
     val message: String,
-    val confirmedBy: Int,
-    val confirmedAt: String
+    val confirmedBy: Int? = null,
+    val confirmedAt: String? = null
 )
 
 @Serializable

@@ -8,9 +8,12 @@ import kotlinx.coroutines.launch
 import org.sysarp.project.data.AdminPayment
 import org.sysarp.project.data.PaymentSummary
 import org.sysarp.project.data.UserProfile
+import org.sysarp.project.data.PaymentFilterStatus
+import org.sysarp.project.data.PaymentFilterStatusUtils
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.ui.admin.screens.payments.components.AdvancedFilters
+import org.sysarp.project.utils.convertPeriodToDates
 
 /**
  * Estado y lógica de negocio para AdminPaymentsScreen
@@ -58,8 +61,22 @@ class AdminPaymentsState(
     var advancedFilters by mutableStateOf(AdvancedFilters())
         private set
     
+    // Estados de filtros dinámicos
+    var selectedStatuses by mutableStateOf<List<PaymentFilterStatus>>(emptyList())
+        private set
+    
+    var showAdvancedFilters by mutableStateOf(false)
+        private set
+    
     // Estados de pagos filtrados (para mostrar en la UI)
     var filteredPayments by mutableStateOf<List<AdminPayment>>(emptyList())
+        private set
+    
+    // Estados de filtros en tiempo real
+    var yapeCodeFilter by mutableStateOf("")
+        private set
+
+    var dateRangeFilter by mutableStateOf("📅 30 días") // Período por defecto
         private set
     
     // Estados de usuario (se pasan como parámetros)
@@ -74,12 +91,8 @@ class AdminPaymentsState(
      */
     fun updatePayments(payments: List<AdminPayment>) {
         this.payments = payments
-        // Inicializar filteredPayments con todos los pagos si no hay filtros activos
-        if (!advancedFilters.hasActiveFilters()) {
-            filteredPayments = payments
-        } else {
-            applyAdvancedFilters() // Aplicar filtros a los nuevos pagos
-        }
+        // Aplicar filtros en tiempo real a los nuevos pagos
+        applyRealTimeFilters()
     }
     
     /**
@@ -87,12 +100,8 @@ class AdminPaymentsState(
      */
     fun addMorePayments(morePayments: List<AdminPayment>) {
         this.payments = this.payments + morePayments
-        // Inicializar filteredPayments con todos los pagos si no hay filtros activos
-        if (!advancedFilters.hasActiveFilters()) {
-            filteredPayments = this.payments
-        } else {
-            applyAdvancedFilters() // Aplicar filtros a los pagos actualizados
-        }
+        // Aplicar filtros en tiempo real a los pagos actualizados
+        applyRealTimeFilters()
     }
     
     /**
@@ -161,6 +170,53 @@ class AdminPaymentsState(
     }
     
     /**
+     * Establece los estados de filtro seleccionados
+     */
+    fun updateSelectedStatuses(statuses: List<PaymentFilterStatus>) {
+        selectedStatuses = statuses
+    }
+    
+    /**
+     * Alterna la visibilidad de filtros avanzados
+     */
+    fun toggleAdvancedFilters() {
+        showAdvancedFilters = !showAdvancedFilters
+    }
+    
+    /**
+     * Obtiene el string de estados para la API
+     */
+    fun getStatusString(): String {
+        return if (selectedStatuses.isEmpty()) {
+            // Si no hay filtros, usar ALL para admin
+            PaymentFilterStatus.ALL.value
+        } else {
+            PaymentFilterStatusUtils.toCommaSeparatedString(selectedStatuses)
+        }
+    }
+    
+    /**
+     * Verifica si hay filtros activos
+     */
+    fun hasActiveFilters(): Boolean {
+        return selectedStatuses.isNotEmpty() || startDate != null || endDate != null || advancedFilters.hasActiveFilters()
+    }
+    
+    /**
+     * Limpia todos los filtros
+     */
+    fun clearAllFilters() {
+        selectedStatuses = emptyList()
+        startDate = null
+        endDate = null
+        showAdvancedFilters = false
+        advancedFilters = AdvancedFilters()
+        yapeCodeFilter = ""
+        dateRangeFilter = ""
+        filteredPayments = payments
+    }
+    
+    /**
      * Establece el perfil de usuario
      */
     fun updateUserProfile(profile: UserProfile?) {
@@ -175,13 +231,78 @@ class AdminPaymentsState(
     }
     
     /**
-     * Carga la gestión de pagos del administrador
+     * Inicializa los filtros por defecto
+     */
+    fun initializeDefaultFilters() {
+        println("ADMIN_PAYMENTS_STATE: initializeDefaultFilters - dateRangeFilter: $dateRangeFilter")
+        // Inicializar filtros de fecha por defecto
+        val (start, end) = convertPeriodToDates(dateRangeFilter)
+        println("ADMIN_PAYMENTS_STATE: convertPeriodToDates result - start: $start, end: $end")
+        updateDateRange(start, end)
+        println("ADMIN_PAYMENTS_STATE: After updateDateRange - startDate: $startDate, endDate: $endDate")
+    }
+    
+    /**
+     * Actualiza el filtro de código Yape y aplica filtrado en tiempo real
+     */
+    fun updateYapeCodeFilter(filter: String) {
+        yapeCodeFilter = filter
+        applyRealTimeFilters()
+    }
+    
+    /**
+     * Actualiza el filtro de rango de fechas y aplica filtrado en tiempo real
+     */
+    fun updateDateRangeFilter(filter: String) {
+        dateRangeFilter = filter
+        // Convertir el período seleccionado en fechas específicas
+        val (start, end) = convertPeriodToDates(filter)
+        updateDateRange(start, end)
+        applyRealTimeFilters()
+    }
+    
+    /**
+     * Convierte un período del calendario en fechas específicas para la API
+     */
+    private fun convertPeriodToDates(period: String): Pair<String?, String?> {
+        return org.sysarp.project.utils.convertPeriodToDates(period)
+    }
+    
+    /**
+     * Aplica filtros en tiempo real a los pagos cargados
+     */
+    private fun applyRealTimeFilters() {
+        filteredPayments = payments.filter { payment ->
+            // Filtro por código Yape
+            val matchesYapeCode = yapeCodeFilter.isEmpty() || 
+                payment.yapeCode.contains(yapeCodeFilter, ignoreCase = true)
+            
+            // Filtro por fecha (si está implementado)
+            val matchesDateRange = dateRangeFilter.isEmpty() || 
+                matchesDateRange(payment, dateRangeFilter)
+            
+            matchesYapeCode && matchesDateRange
+        }
+    }
+    
+    /**
+     * Verifica si un pago coincide con el rango de fechas seleccionado
+     */
+    private fun matchesDateRange(payment: AdminPayment, dateRange: String): Boolean {
+        // TODO: Implementar lógica de filtrado por fecha
+        // Por ahora retorna true para no filtrar por fecha
+        return true
+    }
+    
+    /**
+     * Carga la gestión de pagos del administrador con filtros dinámicos
      */
     fun loadAdminPayments(
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
         println("ADMIN_PAYMENTS_STATE: loadAdminPayments - accessToken: ${accessToken != null}, adminId: ${userProfile?.adminId}")
+        println("ADMIN_PAYMENTS_STATE: Filtros de fecha - startDate: $startDate, endDate: $endDate")
         
         if (accessToken != null && userProfile?.adminId != null) {
             coroutineScope.launch {
@@ -191,11 +312,13 @@ class AdminPaymentsState(
                 updateCurrentPage(0)
                 updateHasMorePayments(true)
 
+                val statusString = getStatusString()
+                
                 paymentService.getAdminPaymentManagement(
                     adminId = userProfile?.adminId?.toInt() ?: 0,
                     page = 0,
                     size = 10,
-                    status = advancedFilters.status,
+                    status = statusString,
                     startDate = startDate,
                     endDate = endDate,
                     token = accessToken ?: ""
@@ -239,7 +362,7 @@ class AdminPaymentsState(
                     adminId = userProfile?.adminId?.toInt() ?: 0,
                     page = nextPage,
                     size = 10,
-                    status = advancedFilters.status,
+                    status = getStatusString(),
                     startDate = startDate,
                     endDate = endDate,
                     token = accessToken ?: ""
@@ -287,6 +410,21 @@ class AdminPaymentsState(
     }
     
     /**
+     * Aplica filtros avanzados y recarga
+     */
+    fun applyAdvancedFilters(
+        statuses: List<PaymentFilterStatus>,
+        startDate: String?,
+        endDate: String?,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        updateSelectedStatuses(statuses)
+        updateDateRange(startDate, endDate)
+        loadAdminPayments(onSuccess, onFailure)
+    }
+    
+    /**
      * Verifica si se puede cargar pagos
      */
     fun canLoadPayments(): Boolean {
@@ -311,7 +449,7 @@ class AdminPaymentsState(
      * Verifica si hay un filtro activo
      */
     fun hasActiveFilter(): Boolean {
-        return advancedFilters.status != null || startDate != null || endDate != null || advancedFilters.hasActiveFilters()
+        return hasActiveFilters()
     }
     
     /**

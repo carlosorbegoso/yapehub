@@ -1,9 +1,8 @@
 package org.sysarp.project.service
 
-import io.ktor.client.engine.HttpClientEngineConfig
-import io.ktor.client.engine.HttpClientEngineFactory
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.engine.cio.CIO
 
-actual fun createHttpEngine(): HttpClientEngineFactory<HttpClientEngineConfig> {
-    // Usar el engine por defecto para iOS
-    return HttpClientEngineFactory()
+internal actual fun getHttpClientEngine(): HttpClientEngine {
+    return CIO.create()
 }

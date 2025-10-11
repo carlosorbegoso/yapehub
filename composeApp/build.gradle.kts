@@ -106,6 +106,7 @@ kotlin {
             implementation(libs.koin.androidx.compose)
         }
         iosMain.dependencies {
+            implementation(libs.ktor.client.ios)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

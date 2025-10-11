@@ -1,10 +1,6 @@
 package org.sysarp.project.utils
 
-/**
- * Extrae el código corto de Yape del código completo
- * Ejemplo: "YAPE_1757840346620_123456_751" -> "751"
- * Ejemplo: "YAPE_210" -> "210"
- */
+
 fun extractShortYapeCode(fullYapeCode: String): String {
     return try {
         // Si contiene guiones bajos, extraer la última parte

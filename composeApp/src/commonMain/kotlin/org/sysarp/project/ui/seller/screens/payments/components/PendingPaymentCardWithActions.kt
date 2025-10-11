@@ -70,10 +70,10 @@ fun PendingPaymentCardWithActions(
             PendingPaymentInfo(payment = payment)
             
             // Mensaje si existe
-            if (payment.message.isNotEmpty()) {
+            if (!payment.message.isNullOrEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = payment.message,
+                    text = payment.message ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontStyle = FontStyle.Italic
@@ -154,7 +154,7 @@ private fun PendingPaymentInfo(
         PaymentInfoRow(
             icon = Icons.Filled.Schedule,
             label = "Fecha",
-            value = formatPaymentTimestamp(payment.timestamp)
+            value = payment.getDisplayDate()
         )
     }
 }

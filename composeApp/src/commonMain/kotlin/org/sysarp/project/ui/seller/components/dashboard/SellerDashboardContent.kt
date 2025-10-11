@@ -138,7 +138,9 @@ fun SellerDashboardContent(
                     result.fold(
                         onSuccess = { response ->
                             showSuccessMessage = "Pago confirmado exitosamente"
-                            pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+                            
+                            // Refrescar la lista de pagos desde el servidor
+                            refreshData()
                             
                             // Enviar notificación WebSocket al servidor
                             try {
@@ -183,7 +185,9 @@ fun SellerDashboardContent(
                     result.fold(
                         onSuccess = { response ->
                             showSuccessMessage = "Pago rechazado exitosamente"
-                            pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+                            
+                            // Refrescar la lista de pagos desde el servidor
+                            refreshData()
                             
                             // Enviar notificación WebSocket al servidor
                             try {
@@ -241,7 +245,10 @@ fun SellerDashboardContent(
                         result.fold(
                             onSuccess = { response ->
                                 showSuccessMessage = "Pago confirmado exitosamente"
-                                pendingPayments = pendingPayments.filter { it.paymentId != notification.paymentId }
+                                
+                                // Refrescar la lista de pagos desde el servidor
+                                refreshData()
+                                
                                 dismissNotification()
                                 
                                 // Enviar notificación WebSocket al servidor

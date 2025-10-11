@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.DropdownMenu
@@ -54,6 +55,7 @@ fun TopBarComponent(
     icon: ImageVector? = null,
     onNavigateBack: (() -> Unit)? = null,
     onRefresh: (() -> Unit)? = null,
+    onCalendarClick: (() -> Unit)? = null,
     actions: @Composable (() -> Unit)? = null,
     menuItems: List<TopBarMenuItem> = emptyList(),
     showMenu: Boolean = false,
@@ -134,6 +136,26 @@ fun TopBarComponent(
                                 imageVector = Icons.Filled.Refresh,
                                 contentDescription = "Actualizar",
                                 tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    
+                    // Botón de calendario
+                    onCalendarClick?.let {
+                        IconButton(
+                            onClick = it,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CalendarMonth,
+                                contentDescription = "Seleccionar período",
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }

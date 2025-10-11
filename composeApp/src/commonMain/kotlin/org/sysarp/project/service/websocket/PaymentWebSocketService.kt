@@ -36,6 +36,7 @@ class PaymentWebSocketService(
     // Callback para notificar cuando se recibe un mensaje
     private var onMessageReceivedCallback: (() -> Unit)? = null
     private var autoStartJob: Job? = null
+    private var isAutoConnectStarted = false
     
     // Estados del servicio
     private val _isConnected = MutableStateFlow(false)
@@ -56,7 +57,13 @@ class PaymentWebSocketService(
     }
     
     fun startAutoConnect() {
+        if (isAutoConnectStarted) {
+            logInfo("WEBSOCKET_SERVICE", "⚠️ Servicio WebSocket ya está iniciado, ignorando llamada duplicada")
+            return
+        }
+        
         logInfo("WEBSOCKET_SERVICE", "🚀 Iniciando servicio WebSocket automático")
+        isAutoConnectStarted = true
         
         autoStartJob = CoroutineScope(Dispatchers.IO).launch {
             // Observar cambios en el perfil de usuario y token
@@ -106,6 +113,8 @@ class PaymentWebSocketService(
      */
     fun stop() {
         logInfo("WEBSOCKET_SERVICE", "🛑 Deteniendo servicio WebSocket")
+        
+        isAutoConnectStarted = false
         
         if (autoStartJob != null) {
             logInfo("WEBSOCKET_SERVICE", "🔄 Cancelando trabajo de auto-conexión")

@@ -26,6 +26,7 @@ import kotlinx.serialization.json.Json
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.data.PaymentResultData
 import org.sysarp.project.data.WebSocketMessage
+import org.sysarp.project.service.getHttpClientEngine
 import org.sysarp.project.utils.Constants
 
 /**
@@ -46,7 +47,7 @@ class PaymentWebSocketClient(
         println("[$service] ERROR: $message")
     }
     
-    private val httpClient = HttpClient {
+    private val httpClient = HttpClient(getHttpClientEngine()) {
         install(WebSockets)
     }
     
@@ -81,9 +82,16 @@ class PaymentWebSocketClient(
      * Conecta al WebSocket del vendedor
      */
     suspend fun connect(sellerId: Long) {
+        // Verificar si ya estamos conectados o conectando para el mismo sellerId
         if (_connectionState.value == WebSocketConnectionState.CONNECTED && currentSellerId == sellerId) {
             logInfo("WEBSOCKET", "Ya conectado para sellerId: $sellerId, ignorando intento de conexión")
             return
+        }
+        
+        // Si estamos conectando, cancelar la conexión anterior
+        if (_connectionState.value == WebSocketConnectionState.CONNECTING) {
+            logInfo("WEBSOCKET", "Cancelando conexión anterior para iniciar nueva conexión para sellerId: $sellerId")
+            disconnect()
         }
         
         // Si hay una conexión diferente, desconectar primero
@@ -361,6 +369,9 @@ class PaymentWebSocketClient(
         logInfo("WEBSOCKET", "🔌 Iniciando desconexión del WebSocket")
         logInfo("WEBSOCKET", "Estado actual: ${_connectionState.value}")
         logInfo("WEBSOCKET", "SellerId actual: $currentSellerId")
+        
+        // Cambiar estado a desconectado inmediatamente para evitar nuevas conexiones
+        _connectionState.value = WebSocketConnectionState.DISCONNECTED
         
         // Cancelar trabajos de reconexión
         if (reconnectJob != null) {

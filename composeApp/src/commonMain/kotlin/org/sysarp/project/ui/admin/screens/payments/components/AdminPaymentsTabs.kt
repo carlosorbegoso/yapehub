@@ -1,15 +1,19 @@
-package org.sysarp.project.ui.seller.screens.payments.components
+package org.sysarp.project.ui.admin.screens.payments.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -17,17 +21,21 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
- * Pestañas de navegación mejoradas para vendedor con filtros
+ * Pestañas de navegación mejoradas para administrador con filtros
  * Incluye filtro por código Yape y botón de calendario
  */
 @Composable
-fun SellerPaymentsTabs(
+fun AdminPaymentsTabs(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     yapeCodeFilter: String,
@@ -46,7 +54,7 @@ fun SellerPaymentsTabs(
                 value = yapeCodeFilter,
                 onValueChange = onYapeCodeFilterChanged,
                 label = { Text("Código Yape") },
-                placeholder = { Text("Ej: 210") },
+                placeholder = { Text("Ej: YAPE_210") },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.Search,
@@ -58,8 +66,8 @@ fun SellerPaymentsTabs(
             )
         }
         
-        // Tabs para vendedor
-        val tabs = listOf("Pendientes", "Confirmados")
+        // Tabs para administrador (incluye ALL)
+        val tabs = listOf("Todos", "Pendientes", "Confirmados", "Rechazados")
         
         TabRow(
             selectedTabIndex = selectedTab,
@@ -78,9 +86,11 @@ fun SellerPaymentsTabs(
                     icon = {
                         Icon(
                             imageVector = when (index) {
-                                0 -> Icons.Filled.Schedule    // Pendientes
-                                1 -> Icons.Filled.CheckCircle // Confirmados
-                                else -> Icons.Filled.Schedule
+                                0 -> Icons.Filled.ListAlt      // Todos
+                                1 -> Icons.Filled.Schedule    // Pendientes
+                                2 -> Icons.Filled.CheckCircle // Confirmados
+                                3 -> Icons.Filled.Warning     // Rechazados
+                                else -> Icons.Filled.ListAlt
                             },
                             contentDescription = title
                         )

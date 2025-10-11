@@ -57,7 +57,8 @@ fun SellerDashboardScreen(
         val accessToken = authService.accessToken.value
         
         if (sellerId != null && accessToken != null) {
-            webSocketService.startAutoConnect()
+            // El WebSocket ya se inicia automáticamente en HybridNotificationManager
+            // No necesitamos llamar startAutoConnect() aquí para evitar duplicados
             
             paymentService.getSellerConnectionStatus(
                 sellerId = sellerId.toInt(),

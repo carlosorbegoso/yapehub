@@ -6,14 +6,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.UserProfile
+import org.sysarp.project.data.PaymentFilterStatus
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsState
 
 /**
- * Componente principal que orquesta toda la gestión de pagos de vendedor
- * Refactorizado para ser más modular y mantenible
+ * Componente principal mejorado que orquesta toda la gestión de pagos de vendedor
+ * Con filtros dinámicos y mejor UX
  */
 @Composable
 fun SellerPaymentsComponents(
+    state: SellerPaymentsState,
     pendingPayments: List<SellerPendingPayment>,
     confirmedPayments: List<SellerPendingPayment>,
     isLoadingPending: Boolean,
@@ -24,6 +27,9 @@ fun SellerPaymentsComponents(
     onTabSelected: (Int) -> Unit,
     onRefresh: () -> Unit,
     onNavigateBack: () -> Unit,
+    yapeCodeFilter: String,
+    onYapeCodeFilterChanged: (String) -> Unit,
+    onCalendarClick: (() -> Unit)? = null,
     userProfile: UserProfile?,
     accessToken: String?,
     paymentService: PaymentService,
@@ -32,23 +38,26 @@ fun SellerPaymentsComponents(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Top Bar
+        // Top Bar mejorado
         SellerPaymentsTopBar(
             onNavigateBack = onNavigateBack,
-            onRefresh = onRefresh
+            onRefresh = onRefresh,
+            onCalendarClick = onCalendarClick
         )
         
-        // Tabs
+        // Tabs mejorados con filtros
         SellerPaymentsTabs(
             selectedTab = selectedTab,
-            onTabSelected = onTabSelected
+            onTabSelected = onTabSelected,
+            yapeCodeFilter = yapeCodeFilter,
+            onYapeCodeFilterChanged = onYapeCodeFilterChanged
         )
         
         // Content based on selected tab
         when (selectedTab) {
             0 -> {
                 SellerPaymentsContent(
-                    payments = pendingPayments,
+                    payments = state.filteredPendingPayments,
                     isLoading = isLoadingPending,
                     errorMessage = errorMessagePending,
                     onRefresh = onRefresh,
@@ -61,7 +70,7 @@ fun SellerPaymentsComponents(
             }
             1 -> {
                 SellerPaymentsContent(
-                    payments = confirmedPayments,
+                    payments = state.filteredConfirmedPayments,
                     isLoading = isLoadingConfirmed,
                     errorMessage = errorMessageConfirmed,
                     onRefresh = onRefresh,

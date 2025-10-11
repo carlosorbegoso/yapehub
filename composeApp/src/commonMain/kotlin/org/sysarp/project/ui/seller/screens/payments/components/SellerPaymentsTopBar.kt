@@ -2,6 +2,7 @@ package org.sysarp.project.ui.seller.screens.payments.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -20,7 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 @Composable
 fun SellerPaymentsTopBar(
     onNavigateBack: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onCalendarClick: (() -> Unit)? = null
 ) {
     TopAppBar(
         title = { 
@@ -44,6 +46,16 @@ fun SellerPaymentsTopBar(
                     imageVector = Icons.Filled.Refresh,
                     contentDescription = "Actualizar"
                 )
+            }
+            
+            onCalendarClick?.let { calendarClick ->
+                IconButton(onClick = calendarClick) {
+                    Icon(
+                        imageVector = Icons.Filled.CalendarMonth,
+                        contentDescription = "Seleccionar período",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(

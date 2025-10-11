@@ -32,13 +32,10 @@ class NotificationPollingService {
     
     fun start() {
         if (isActive) {
-            println("[POLLING_SERVICE] ⚠️ Polling ya está activo")
             return
         }
         
         isActive = true
-        println("[POLLING_SERVICE] 🚀 Iniciando polling de notificaciones de Yape")
-        
         pollingJob = coroutineScope.launch {
             while (isActive) {
                 try {
@@ -75,14 +72,7 @@ class NotificationPollingService {
             
             when {
                 sellerId != null -> {
-                    // Usuario es un seller
-                    println("[POLLING_SERVICE] 📱 Polling para sellerId: $sellerId")
                     checkSellerNotifications(sellerId.toInt(), accessToken)
-                }
-                adminId != null -> {
-                    // Usuario es un admin - obtener notificaciones de todos sus sellers
-                    println("[POLLING_SERVICE] 👨‍💼 Polling para adminId: $adminId")
-                    checkAdminNotifications(adminId.toInt(), accessToken)
                 }
                 else -> {
                     println("[POLLING_SERVICE] ❌ No hay sellerId ni adminId disponible")
@@ -119,27 +109,9 @@ class NotificationPollingService {
             }
         )
     }
-    
-    private suspend fun checkAdminNotifications(adminId: Int, accessToken: String) {
-        // Para admins, podríamos implementar una lógica diferente
-        // Por ahora, simplemente logueamos que es un admin
-        println("[POLLING_SERVICE] ℹ️ Admin $adminId - Polling de notificaciones no implementado para admins")
-        
-        // TODO: Implementar lógica específica para admins si es necesario
-        // Por ejemplo, obtener notificaciones de todos los sellers bajo este admin
-    }
-    
+
     private fun showNewNotifications(payments: List<SellerPendingPayment>) {
         try {
-            println("[POLLING_SERVICE] 🔔 Mostrando ${payments.size} notificaciones nuevas")
-            
-            // Aquí puedes implementar la lógica para mostrar notificaciones
-            // Por ejemplo, enviar a un NotificationManager o actualizar la UI
-            payments.forEach { payment ->
-                println("[POLLING_SERVICE] 💰 Pago encontrado: ${payment.paymentId} - S/ ${payment.amount}")
-            }
-            
-            // Llamar al callback si está configurado
             onNewNotification?.invoke(payments)
             
         } catch (e: Exception) {

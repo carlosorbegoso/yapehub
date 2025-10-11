@@ -321,13 +321,7 @@ private fun VisualCalendarGrid(
     }
     val daysInMonth = lastDayOfMonth.dayOfMonth
     
-    // Debug: imprimir información del calendario
-    println("CALENDAR_DEBUG: Mes: ${currentMonth.monthNumber}/${currentMonth.year}")
-    println("CALENDAR_DEBUG: Primer día del mes: $firstDayOfMonth (${firstDayOfMonth.dayOfWeek})")
-    println("CALENDAR_DEBUG: Último día del mes: $lastDayOfMonth")
-    println("CALENDAR_DEBUG: Días en el mes: $daysInMonth")
-    println("CALENDAR_DEBUG: Primer día de la semana: $firstDayOfWeek")
-    
+
     Column {
         // Días de la semana
         Row(
@@ -350,13 +344,10 @@ private fun VisualCalendarGrid(
         
         // Días del mes - mostrar todos los días del mes correctamente
         // Crear una lista de todos los días del mes
-        val allDays = (1..daysInMonth).toList()
+        (1..daysInMonth).toList()
         
         // Calcular cuántas semanas necesitamos
         val totalWeeks = ((firstDayOfWeek + daysInMonth - 1) / 7) + 1
-        
-        println("CALENDAR_DEBUG: Total semanas: $totalWeeks")
-        println("CALENDAR_DEBUG: Días del mes: $allDays")
         
         repeat(totalWeeks) { week ->
             Row(
@@ -366,9 +357,7 @@ private fun VisualCalendarGrid(
                 repeat(7) { dayOfWeek ->
                     val dayIndex = week * 7 + dayOfWeek
                     val dayNumber = dayIndex - firstDayOfWeek + 1
-                    
-                    println("CALENDAR_DEBUG: Semana $week, Día $dayOfWeek, Índice $dayIndex, Número $dayNumber")
-                    
+
                     if (dayNumber < 1 || dayNumber > daysInMonth) {
                         // Espacios vacíos antes del primer día del mes o después del último
                         Spacer(modifier = Modifier.size(32.dp))

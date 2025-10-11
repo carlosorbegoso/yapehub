@@ -1,8 +1,10 @@
 package org.sysarp.project.ui.admin.screens.payments.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
@@ -15,18 +17,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.AdminPayment
+import org.sysarp.project.data.PaymentFilterStatus
 import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsState
 
 /**
- * Componente principal de gestión de pagos administrativos mejorado
- * Incluye diálogo de confirmación y mejor UX
+ * Componente principal de gestión de pagos administrativos mejorado con filtros dinámicos
+ * Incluye diálogo de confirmación, filtros avanzados y mejor UX
  */
 @Composable
 fun AdminPaymentsContent(
     state: AdminPaymentsState,
     onLoadMore: () -> Unit = {},
-    onPaymentAction: (Int, String) -> Unit = { _: Int, _: String -> }, // paymentId, action
-    onAdvancedFiltersChanged: (AdvancedFilters) -> Unit = {}
+    onPaymentAction: (Int, String) -> Unit = { _: Int, _: String -> } // paymentId, action
 ) {
     // Estado para el diálogo de confirmación
     var selectedPayment by remember { mutableStateOf<AdminPayment?>(null) }
@@ -39,71 +41,67 @@ fun AdminPaymentsContent(
         println("ADMIN_PAYMENTS_CONTENT: Estado actual - isLoading: ${state.isLoading}, error: '${state.errorMessage}', payments: ${state.payments.size}, summary: ${state.paymentSummary != null}")
     }
     
-    // Lista desplazable con todos los componentes
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    Column(
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Resumen de pagos interactivo
-        if (state.paymentSummary != null) {
-            item {
-                PaymentSummaryCard(
-                    summary = state.paymentSummary!!
-                )
-            }
-        }
-        
-        // Filtros avanzados (incluye filtro por estado)
-        item {
-            AdvancedFiltersComponent(
-                payments = state.payments,
-                onFiltersChanged = onAdvancedFiltersChanged
-            )
-        }
-        
-        // Estados de carga, error o vacío
-        when {
-            state.isLoading -> {
+        // Contenido principal
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Resumen de pagos interactivo
+            if (state.paymentSummary != null) {
                 item {
-                    AdminPaymentsLoadingCard()
-                }
-            }
-            state.errorMessage.isNotEmpty() -> {
-                item {
-                    AdminPaymentsErrorCard(errorMessage = state.errorMessage)
-                }
-            }
-            state.getDisplayPayments().isEmpty() -> {
-                item {
-                    AdminPaymentsEmptyState(
-                        message = state.getEmptyStateMessage()
+                    PaymentSummaryCard(
+                        summary = state.paymentSummary!!
                     )
                 }
             }
-            else -> {
-                // Lista de pagos con keys estables para mejor performance
-                items(
-                    items = state.getDisplayPayments(),
-                    key = { payment -> payment.paymentId }
-                ) { payment ->
-                    AdminPaymentCard(
-                        payment = payment,
-                        onAction = { action ->
-                            selectedPayment = payment
-                            selectedAction = action
-                            isDialogVisible = true
-                        }
-                    )
-                }
-                
-                // Botón de cargar más
-                if (state.hasMorePayments) {
+            
+            // Estados de carga, error o vacío
+            when {
+                state.isLoading -> {
                     item {
-                        AdminPaymentsLoadMoreButton(
-                            isLoadingMore = state.isLoadingMore,
-                            onLoadMore = onLoadMore
+                        AdminPaymentsLoadingCard()
+                    }
+                }
+                state.errorMessage.isNotEmpty() -> {
+                    item {
+                        AdminPaymentsErrorCard(errorMessage = state.errorMessage)
+                    }
+                }
+                state.filteredPayments.isEmpty() -> {
+                    item {
+                        AdminPaymentsEmptyState(
+                            message = state.getEmptyStateMessage()
                         )
+                    }
+                }
+                else -> {
+                    // Lista de pagos con keys estables para mejor performance
+                    items(
+                        items = state.filteredPayments,
+                        key = { payment -> payment.paymentId }
+                    ) { payment ->
+                        AdminPaymentCard(
+                            payment = payment,
+                            onAction = { action ->
+                                selectedPayment = payment
+                                selectedAction = action
+                                isDialogVisible = true
+                            }
+                        )
+                    }
+                    
+                    // Botón de cargar más
+                    if (state.hasMorePayments) {
+                        item {
+                            AdminPaymentsLoadMoreButton(
+                                isLoadingMore = state.isLoadingMore,
+                                onLoadMore = onLoadMore
+                            )
+                        }
                     }
                 }
             }

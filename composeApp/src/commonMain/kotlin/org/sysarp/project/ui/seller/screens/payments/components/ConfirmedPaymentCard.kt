@@ -137,7 +137,7 @@ private fun PaymentInfoSection(
         
         PaymentInfoRow(
             label = "Fecha",
-            value = payment.timestamp,
+            value = payment.getDisplayDate(),
             icon = Icons.Filled.Schedule
         )
     }
