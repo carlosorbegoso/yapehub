@@ -16,7 +16,7 @@ camerax = "1.5.1"
 mlkit = "17.3.0"
 lottie-compose = "6.6.10"
 koin = "4.1.1"
-androidx-startup = "1.1.1"
+androidx-startup = "1.2.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

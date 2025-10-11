@@ -9,6 +9,8 @@ import io.ktor.http.isSuccess
 import org.sysarp.project.data.ApiError
 import org.sysarp.project.data.SellerRegistrationRequest
 import org.sysarp.project.data.SellerRegistrationResponse
+import org.sysarp.project.utils.getCurrentTimestampMs
+import org.sysarp.project.utils.calculateDurationMs
 
 /**
  * Cliente API especializado para registro de vendedores
@@ -23,31 +25,39 @@ class SellerRegistrationApiClient : BaseApiClient() {
         sellerName: String,
         phone: String
     ): Result<SellerRegistrationResponse> {
+        val startTime = getCurrentTimestampMs()
+        val serviceName = "SELLER_REGISTRATION_API"
+        
         return try {
-            logInfo("SELLER_REGISTRATION_API", "Intentando registro de vendedor con código: $affiliationCode")
-            
             val requestData = SellerRegistrationRequest(
                 affiliationCode = affiliationCode,
                 sellerName = sellerName,
                 phone = phone
             )
             
-            logInfo("SELLER_REGISTRATION_API", "Datos de registro: affiliationCode=$affiliationCode, sellerName=$sellerName, phone=$phone")
-            
             val response = client.post("$baseUrl/api/seller/register") {
                 contentType(ContentType.Application.Json)
                 setBody(requestData)
             }
             
+            val duration = calculateDurationMs(startTime)
+            
             if (response.status.isSuccess()) {
                 val registrationResponse = response.body<SellerRegistrationResponse>()
-                logInfo("SELLER_REGISTRATION_API", "Registro de vendedor exitoso con código: $affiliationCode")
+                
+                if (registrationResponse.success && registrationResponse.data != null) {
+                    val sellerData = registrationResponse.data
+                    logInfo(serviceName, "Registro exitoso - Seller ID: ${sellerData.sellerId} (${duration}ms)")
+                } else {
+                    logWarning(serviceName, "Registro falló - ${registrationResponse.message}")
+                }
+                
                 Result.success(registrationResponse)
             } else {
                 // Manejar errores específicos de vendedor
                 val errorMessage = try {
                     val errorBody = response.body<String>()
-                    logError("SELLER_REGISTRATION_API", "Error body: $errorBody")
+                    logError(serviceName, "Error HTTP ${response.status}")
                     
                     try {
                         // Intentar parsear como ApiError primero
@@ -77,11 +87,11 @@ class SellerRegistrationApiClient : BaseApiClient() {
                     "Error desconocido: ${e.message}"
                 }
                 
-                logError("SELLER_REGISTRATION_API", "Error en registro de vendedor: ${response.status} - $errorMessage")
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
-            logError("SELLER_REGISTRATION_API", "Error en registro de vendedor: ${e.message}")
+            val duration = calculateDurationMs(startTime)
+            logError(serviceName, "Excepción en registro: ${e.message} (${duration}ms)")
             Result.failure(e)
         }
     }

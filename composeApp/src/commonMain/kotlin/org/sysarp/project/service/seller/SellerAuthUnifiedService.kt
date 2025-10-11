@@ -6,6 +6,9 @@ import org.sysarp.project.data.AuthState
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.SellerAuthApiClient
 import org.sysarp.project.service.http.SellerRegistrationApiClient
+import org.sysarp.project.utils.getCurrentTimestampMs
+import org.sysarp.project.utils.calculateDurationMs
+import org.sysarp.project.utils.getFormattedTimestamp
 
 /**
  * Servicio unificado para autenticación de vendedores
@@ -51,15 +54,23 @@ class SellerAuthUnifiedService(
         affiliationCode: String,
         sellerName: String? = null
     ): SellerAuthResult {
+        val startTime = getCurrentTimestampMs()
+        val serviceName = "SELLER_AUTH_UNIFIED"
+        
+        logInfo(serviceName, "Iniciando autenticación - Teléfono: $phone, Código: $affiliationCode")
+        
         return try {
             // Paso 1: Intentar login primero
             val loginResult = attemptLogin(phone, affiliationCode)
             
             if (loginResult is SellerAuthResult.Success) {
+                val duration = calculateDurationMs(startTime)
+                logInfo(serviceName, "Login exitoso - Seller ID: ${loginResult.sellerId} (${duration}ms)")
                 return loginResult
             }
             
             // Paso 2: Si el login falla, intentar registro
+            logInfo(serviceName, "Login falló, intentando registro")
             val registrationResult = attemptRegistration(
                 phone = phone,
                 affiliationCode = affiliationCode,
@@ -67,16 +78,22 @@ class SellerAuthUnifiedService(
             )
             
             if (registrationResult is SellerAuthResult.Success) {
+                val duration = calculateDurationMs(startTime)
+                logInfo(serviceName, "Registro exitoso - Seller ID: ${registrationResult.sellerId} (${duration}ms)")
                 return registrationResult
             }
             
             // Paso 3: Si ambos fallan, retornar error
+            val duration = calculateDurationMs(startTime)
+            logError(serviceName, "Autenticación fallida - Tiempo total: ${duration}ms")
             SellerAuthResult.Error(
                 message = "No se pudo autenticar el vendedor. Verifique el código de afiliación y el teléfono.",
                 isNetworkError = false
             )
             
         } catch (e: Exception) {
+            val duration = calculateDurationMs(startTime)
+            logError(serviceName, "Error en autenticación: ${e.message} (${duration}ms)")
             SellerAuthResult.Error(
                 message = "Error de conexión: ${e.message}",
                 isNetworkError = true
@@ -268,7 +285,8 @@ class SellerAuthUnifiedService(
             val result = authService.validateAffiliationCode(affiliationCode)
             result.fold(
                 onSuccess = { response ->
-                    Result.success(response.success && response.data?.isValid == true)
+                    val isValid = response.success && response.data?.isValid == true
+                    Result.success(isValid)
                 },
                 onFailure = { error ->
                     Result.failure(error)
@@ -277,5 +295,16 @@ class SellerAuthUnifiedService(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+    
+    // Funciones de logging auxiliares simplificadas
+    private fun logInfo(service: String, message: String) {
+        val timestamp = getFormattedTimestamp()
+        println("[$timestamp] [$service] INFO: $message")
+    }
+    
+    private fun logError(service: String, message: String) {
+        val timestamp = getFormattedTimestamp()
+        println("[$timestamp] [$service] ERROR: $message")
     }
 }

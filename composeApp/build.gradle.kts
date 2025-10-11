@@ -26,6 +26,11 @@ kotlin {
     }
     
     sourceSets {
+        all { languageSettings{
+            optIn("kotlin.time.ExperimentalTime")
+            optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+            optIn("kotlin.ExperimentalStdlibApi")
+        } }
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
@@ -36,8 +41,7 @@ kotlin {
             implementation(libs.androidx.security.crypto)
             
             // AndroidX Startup para resolver NoClassDefFoundError
-            implementation("androidx.startup:startup-runtime:1.1.1")
-            
+            implementation(libs.androidx.startup.runtime)
             // Ktor Android
             implementation(libs.ktor.client.android)
             implementation(libs.ktor.client.cio)

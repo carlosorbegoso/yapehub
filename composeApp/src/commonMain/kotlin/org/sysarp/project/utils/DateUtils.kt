@@ -1,5 +1,9 @@
 package org.sysarp.project.utils
 
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
+
 /**
  * Utilidades para formateo de fechas y timestamps
  * Compatible con Kotlin Multiplatform
@@ -15,10 +19,10 @@ fun formatTimestamp(timestamp: String): String {
         // Formatear timestamp ISO a formato dd/MM/yyyy HH:mm
         val datePart = timestamp.substringBefore("T")
         val timePart = timestamp.substringAfter("T").substringBefore(".")
-        
+
         val dateComponents = datePart.split("-")
         val timeComponents = timePart.split(":")
-        
+
         if (dateComponents.size >= 3 && timeComponents.size >= 2) {
             "${dateComponents[2]}/${dateComponents[1]}/${dateComponents[0]} ${timeComponents[0]}:${timeComponents[1]}"
         } else {
@@ -40,7 +44,7 @@ fun formatTimeOnly(timestamp: String): String {
     return try {
         val timePart = timestamp.substringAfter("T").substringBefore(".")
         val timeComponents = timePart.split(":")
-        
+
         if (timeComponents.size >= 2) {
             "${timeComponents[0]}:${timeComponents[1]}"
         } else {
@@ -61,11 +65,11 @@ fun formatRelativeTime(timestamp: String): String {
         // Formatear la fecha para mostrar de manera más amigable
         val datePart = timestamp.substringBefore("T")
         val timePart = timestamp.substringAfter("T").substringBefore(".")
-        
+
         // Formato simple: dd/MM/yyyy HH:mm
         val dateComponents = datePart.split("-")
         val timeComponents = timePart.split(":")
-        
+
         if (dateComponents.size >= 3 && timeComponents.size >= 2) {
             "${dateComponents[2]}/${dateComponents[1]}/${dateComponents[0]} ${timeComponents[0]}:${timeComponents[1]}"
         } else {
@@ -87,10 +91,10 @@ fun formatDateTime(dateTimeString: String): String {
         // Formato esperado: "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
         val datePart = dateTimeString.substringBefore("T")
         val timePart = dateTimeString.substringAfter("T").substringBefore(".")
-        
+
         val dateComponents = datePart.split("-")
         val timeComponents = timePart.split(":")
-        
+
         if (dateComponents.size >= 3 && timeComponents.size >= 2) {
             // Formato dd/MM/yyyy HH:mm
             "${dateComponents[2]}/${dateComponents[1]}/${dateComponents[0]} ${timeComponents[0]}:${timeComponents[1]}"
@@ -111,13 +115,13 @@ fun formatDateTime(dateTimeString: String): String {
  * @param createdAt Timestamp en formato ISO (ej: "2024-01-15T14:30:00.000Z")
  * @return Tiempo relativo como "hace 2 horas" o "hace 3 días" o "desconocido" si falla
  */
-@OptIn(kotlin.time.ExperimentalTime::class)
+@OptIn(ExperimentalTime::class)
 fun calculatePreciseTimeElapsed(createdAt: String): String {
     return try {
-        val createdInstant = kotlinx.datetime.Instant.parse(createdAt)
-        val now = kotlin.time.Clock.System.now()
+        val createdInstant = Instant.parse(createdAt)
+        val now = Clock.System.now()
         val duration = now - createdInstant
-        
+
         when {
             duration.inWholeSeconds < 60 -> "Ahora mismo"
             duration.inWholeMinutes < 60 -> "Hace ${duration.inWholeMinutes} min"
@@ -129,10 +133,12 @@ fun calculatePreciseTimeElapsed(createdAt: String): String {
         }
     } catch (e: Exception) {
         try {
-            // Fallback al cálculo básico
+            // Fallback simple usando solo strings
             val createdDate = createdAt.substring(0, 10)
-            val currentDate = java.time.LocalDate.now().toString()
-            
+            val now = Clock.System.now()
+            val nowString = now.toString()
+            val currentDate = nowString.substring(0, 10)
+
             if (createdDate == currentDate) {
                 "Hoy"
             } else {
@@ -141,6 +147,27 @@ fun calculatePreciseTimeElapsed(createdAt: String): String {
         } catch (e2: Exception) {
             "Desconocido"
         }
+    }
+}
+
+
+fun getCurrentTimestampMs(): Long {
+    return Clock.System.now().toEpochMilliseconds()
+}
+
+fun calculateDurationMs(startTime: Long, endTime: Long? = null): Long {
+    val end = endTime ?: getCurrentTimestampMs()
+    return end - startTime
+}
+
+fun getFormattedTimestamp(): String {
+    return try {
+        val now = Clock.System.now()
+        val nowString = now.toString()
+        val dateTime = nowString.substring(0, 19).replace("T", " ")
+        "$dateTime.000"
+    } catch (e: Exception) {
+        "N/A"
     }
 }
 

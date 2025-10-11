@@ -150,7 +150,7 @@ private fun TrendIndicator(trendAnalysis: TrendAnalysisData) {
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Text(
-            text = "$trendIcon ${String.format("%.1f", trendAnalysis.slope)}%",
+            text = "$trendIcon ${(trendAnalysis.slope * 10).toInt() / 10.0}%",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium,
             color = trendColor
@@ -320,7 +320,7 @@ private fun TrendAnalysisCard(trendAnalysis: TrendAnalysisData) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Precisión: ${String.format("%.1f", trendAnalysis.forecastAccuracy)}%",
+                    text = "Precisión: ${(trendAnalysis.forecastAccuracy * 10).toInt() / 10.0}%",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -400,7 +400,7 @@ private fun PredictionDetailsDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "${String.format("%.1f", predictedData.confidence)}%",
+                            text = "${(predictedData.confidence * 10).toInt() / 10.0}%",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
