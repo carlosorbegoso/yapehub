@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.People
@@ -42,10 +41,6 @@ import org.sysarp.project.data.ConnectedSellerInfo
 import org.sysarp.project.data.QuickSummaryData
 import org.sysarp.project.utils.formatCurrency
 import org.sysarp.project.utils.formatRelativeTime
-
-/**
- * Tarjetas y componentes de métricas para AdminDashboardScreen
- */
 
 @Composable
 fun StatCard(
