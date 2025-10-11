@@ -83,10 +83,11 @@ private fun PredictionsContent(
             .padding(if (showPadding) 16.dp else 0.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Gráfico de líneas con predicciones
+        // Gráfico de líneas mejorado con predicciones
         PredictionsLineChart(
             predictedSales = sellerForecasting.predictedSales,
-            trendAnalysis = sellerForecasting.trendAnalysis
+            trendAnalysis = sellerForecasting.trendAnalysis,
+            showCard = false
         )
 
         // Análisis de tendencias

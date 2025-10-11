@@ -20,8 +20,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -271,9 +279,11 @@ private fun BadgeItem(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = badge.icon,
-                    fontSize = 20.sp
+                Icon(
+                    imageVector = getBadgeIcon(badge.icon),
+                    contentDescription = badge.name,
+                    tint = if (badge.earned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
                 )
             }
             
@@ -293,6 +303,20 @@ private fun BadgeItem(
                 maxLines = 2
             )
         }
+    }
+}
+
+/**
+ * Función para mapear los nombres de iconos de texto a iconos de Material Design
+ */
+private fun getBadgeIcon(iconName: String): ImageVector {
+    return when (iconName.lowercase()) {
+        "star" -> Icons.Filled.Star
+        "receipt" -> Icons.Filled.Receipt
+        "trending-up" -> Icons.Filled.TrendingUp
+        "flag" -> Icons.Filled.Flag
+        "zap" -> Icons.Filled.FlashOn
+        else -> Icons.Filled.Star // Icono por defecto
     }
 }
 

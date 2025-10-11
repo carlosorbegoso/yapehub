@@ -67,23 +67,27 @@ fun StatCard(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            icon?.let {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(32.dp)
-                )
+            Box(
+                modifier = Modifier.height(40.dp), // 32dp (icono) + 8dp (spacer)
+                contentAlignment = Alignment.Center
+            ) {
+                icon?.let {
+                    Icon(
+                        imageVector = it,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodySmall,
@@ -121,9 +125,9 @@ fun ActionCard(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp)
             )
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
@@ -131,14 +135,14 @@ fun ActionCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             Icon(
                 imageVector = Icons.Filled.ArrowForward,
                 contentDescription = null,
@@ -164,16 +168,16 @@ fun ConnectionStatItem(
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(20.dp)
         )
-        
+
         Spacer(modifier = Modifier.height(6.dp))
-        
+
         Text(
             text = value,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
-        
+
         Text(
             text = label,
             fontSize = 11.sp,
@@ -205,15 +209,15 @@ fun ConnectedSellerCard(
                 modifier = Modifier
                     .size(10.dp)
                     .background(
-                        color = if (sellerInfo.isConnected) 
-                            MaterialTheme.colorScheme.primary 
+                        color = if (sellerInfo.isConnected)
+                            MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.outline,
                         shape = CircleShape
                     )
             )
-            
+
             Spacer(modifier = Modifier.width(12.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = sellerInfo.sellerName,
@@ -221,31 +225,31 @@ fun ConnectedSellerCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Text(
                     text = sellerInfo.branchName,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
+
                 Text(
                     text = sellerInfo.email,
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
+
                 Text(
                     text = sellerInfo.phone,
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
+
                 Text(
                     text = if (sellerInfo.isConnected) "En línea" else "Última vez: ${formatRelativeTime(sellerInfo.lastSeen)}",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (sellerInfo.isConnected) 
-                        MaterialTheme.colorScheme.primary 
+                    color = if (sellerInfo.isConnected)
+                        MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -278,9 +282,9 @@ fun BusinessHeaderCard(
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = businessName,
                 style = MaterialTheme.typography.headlineMedium,
@@ -288,7 +292,7 @@ fun BusinessHeaderCard(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 textAlign = TextAlign.Center
             )
-            
+
             Text(
                 text = "Panel de Administración",
                 style = MaterialTheme.typography.bodyLarge,
@@ -313,7 +317,7 @@ fun PendingRequestsCard(
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp), 
+                modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -373,16 +377,16 @@ fun EmptySellersCard() {
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Text(
                 text = "No hay vendedores conectados",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
             Text(
                 text = "Los vendedores aparecerán aquí cuando se conecten",
                 fontSize = 12.sp,
