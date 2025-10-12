@@ -5,6 +5,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.service.websocket.WebSocketConnectionState
@@ -60,8 +62,8 @@ class HybridNotificationManager(
     
     private fun startPollingFallback() {
         pollingJob = coroutineScope.launch {
-            while (true) {
-                try {
+            try {
+                while (currentCoroutineContext().isActive) {
                     delay(30000) // Verificar cada 30 segundos
                     
                     if (shouldUsePolling()) {
@@ -75,10 +77,12 @@ class HybridNotificationManager(
                             pollingService.stop()
                         }
                     }
-                    
-                } catch (e: Exception) {
-                    println("[HYBRID_MANAGER] ❌ Error en polling fallback: ${e.message}")
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                println("[HYBRID_MANAGER] 🛑 Polling fallback cancelado correctamente")
+                throw e // Re-lanzar para manejo correcto de cancelación
+            } catch (e: Exception) {
+                println("[HYBRID_MANAGER] ❌ Error en polling fallback: ${e.message}")
             }
         }
     }

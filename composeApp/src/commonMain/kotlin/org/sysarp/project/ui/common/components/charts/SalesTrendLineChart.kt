@@ -95,9 +95,17 @@ fun SalesTrendLineChart(
                 )
             }
             
-            // Gráfico de líneas animado
-            val maxSales = dailySales.maxOfOrNull { it.sales } ?: 1.0
-            val chartData = dailySales.take(7) // Últimos 7 días
+            // Gráfico de líneas animado mejorado
+            val maxSales = if (dailySales.isNotEmpty()) {
+                dailySales.maxOfOrNull { it.sales } ?: 1.0
+            } else {
+                1.0
+            }
+            val chartData = if (dailySales.isNotEmpty()) {
+                dailySales.takeLast(7) // Últimos 7 días con datos
+            } else {
+                emptyList()
+            }
             val animationProgress = remember { Animatable(0f) }
             
             // Animar la entrada del gráfico
@@ -127,6 +135,26 @@ fun SalesTrendLineChart(
                     )
                     .padding(16.dp)
             ) {
+                if (chartData.isEmpty()) {
+                    // Estado vacío para el gráfico
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.TrendingUp,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = "Sin datos de tendencia",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                } else {
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
@@ -269,26 +297,29 @@ fun SalesTrendLineChart(
                         }
                     }
                 }
+                }
             }
             
-            // Etiquetas de los días
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                chartData.forEach { dayData ->
-                    Text(
-                        text = dayData.dayName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f)
-                    )
+            // Etiquetas de los días (solo si hay datos)
+            if (chartData.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    chartData.forEach { dayData ->
+                        Text(
+                            text = dayData.dayName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
             
             // Estadísticas adicionales (opcional)
-            if (showStats) {
+            if (showStats && dailySales.isNotEmpty()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween

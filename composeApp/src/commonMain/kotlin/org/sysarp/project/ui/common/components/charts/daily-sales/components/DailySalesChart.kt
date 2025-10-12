@@ -54,16 +54,21 @@ fun DailySalesChart(
                 DailySalesChartTitle(title = title)
             }
 
-            // Análisis de datos
+            // Análisis de datos mejorado
             val analysis = remember(dailySales) { analyzeSalesData(dailySales) }
             val periodLabel = calculatePeriodLabel(dailySales.size)
             
-            // Métricas principales
-            DailySalesMetricsSection(
-                dailySales = dailySales,
-                analysis = analysis,
-                periodLabel = periodLabel
-            )
+            // Mostrar métricas solo si hay datos
+            if (dailySales.isNotEmpty()) {
+                DailySalesMetricsSection(
+                    dailySales = dailySales,
+                    analysis = analysis,
+                    periodLabel = periodLabel
+                )
+            } else {
+                // Estado vacío mejorado
+                DailySalesEmptyState()
+            }
             
             // Área principal del gráfico
             DailySalesChartArea(
@@ -134,5 +139,37 @@ private fun calculatePeriodLabel(totalDays: Int): String {
         totalDays <= 30 -> "Mensual"
         totalDays <= 60 -> "Bimestral"
         else -> "Período Extendido"
+    }
+}
+
+@Composable
+private fun DailySalesEmptyState() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Analytics,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            modifier = Modifier.size(48.dp)
+        )
+        
+        Text(
+            text = "Sin datos de ventas",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        Text(
+            text = "Los datos de ventas aparecerán aquí cuando estén disponibles",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }

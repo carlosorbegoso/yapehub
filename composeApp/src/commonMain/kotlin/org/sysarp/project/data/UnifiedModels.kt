@@ -145,7 +145,10 @@ data class UnifiedAnalyticsUrls(
     val performanceDetails: String? = null, // Campo opcional
     val dailySales: String,
     val monthlySales: String,
-    val topSellers: String? = null // Campo opcional para admin
+    val topSellers: String? = null, // Campo opcional para admin
+    val weeklySales: String? = null, // Campo opcional para admin
+    val hourlySales: String? = null, // Campo opcional para admin
+    val completeAnalytics: String? = null // Campo opcional para admin
 )
 
 /**

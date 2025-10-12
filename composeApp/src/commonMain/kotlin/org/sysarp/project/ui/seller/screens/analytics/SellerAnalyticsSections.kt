@@ -17,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.AnalyticsData
 import org.sysarp.project.data.SellerFinancialAnalysisData
+import org.sysarp.project.ui.common.components.charts.MonthlySalesBarChart
+import org.sysarp.project.ui.common.components.charts.PerformanceComparisonChart
 import org.sysarp.project.ui.common.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.common.components.charts.daily.sales.DailySalesChart
 import org.sysarp.project.ui.common.components.charts.hourly.sales.HourlySalesChart
@@ -75,7 +77,8 @@ fun SellerAnalyticsSections(
                         charts = listOf(
                             ChartItem("Ventas Diarias", { DailySalesChart(dailySales = analyticsData.dailySales, showCard = false) }),
                             ChartItem("Métricas de Rendimiento", { PerformanceMetricsPieChart(performanceMetrics = analyticsData.performanceMetrics, showCard = false) }),
-                            ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales, showCard = false) })
+                            ChartItem("Tendencias", { SalesTrendLineChart(dailySales = analyticsData.dailySales, showCard = false) }),
+                            ChartItem("Ventas Mensuales", { MonthlySalesBarChart(monthlySales = analyticsData.monthlySales ?: emptyList(), showCard = false) })
                         )
                     )
                 }

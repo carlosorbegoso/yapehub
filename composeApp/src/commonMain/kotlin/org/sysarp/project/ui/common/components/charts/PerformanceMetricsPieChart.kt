@@ -223,23 +223,26 @@ fun PerformanceMetricsPieChart(
                     )
                 }
                 
-                // Colores dinámicos que cambian según los datos
+                // Colores dinámicos mejorados que cambian según los datos
                 val confirmedColor = when {
                     performanceMetrics.confirmedPayments > 50 -> Color(0xFF4CAF50) // Verde vibrante
                     performanceMetrics.confirmedPayments > 20 -> Color(0xFF8BC34A) // Verde medio
-                    else -> MaterialTheme.colorScheme.primary
+                    performanceMetrics.confirmedPayments > 0 -> Color(0xFF66BB6A) // Verde suave
+                    else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                 }
                 
                 val pendingColor = when {
                     performanceMetrics.pendingPayments > 30 -> Color(0xFFFF9800) // Naranja vibrante
                     performanceMetrics.pendingPayments > 10 -> Color(0xFFFFC107) // Amarillo dorado
-                    else -> MaterialTheme.colorScheme.secondary
+                    performanceMetrics.pendingPayments > 0 -> Color(0xFFFFB74D) // Naranja suave
+                    else -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)
                 }
                 
                 val rejectedColor = when {
                     performanceMetrics.rejectedPayments > 10 -> Color(0xFFE91E63) // Rosa vibrante
                     performanceMetrics.rejectedPayments > 5 -> Color(0xFFF44336) // Rojo vibrante
-                    else -> MaterialTheme.colorScheme.error
+                    performanceMetrics.rejectedPayments > 0 -> Color(0xFFEF5350) // Rojo suave
+                    else -> MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
                 }
                 val surfaceColor = MaterialTheme.colorScheme.surface
                 
