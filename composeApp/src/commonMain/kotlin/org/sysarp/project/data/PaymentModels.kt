@@ -168,9 +168,10 @@ data class WebSocketData(
     val amount: Double,
     val senderName: String,
     val yapeCode: String,
-    val status: String,
-    val timestamp: String,
-    val message: String,
+    // Hacer opcionales los campos que a veces faltan desde el servidor
+    val status: String? = null,
+    val timestamp: String? = null,
+    val message: String? = null,
     val sellerId: Int? = null,
     val sellerName: String? = null
 )
@@ -183,7 +184,7 @@ data class PaymentNotificationData(
     val yapeCode: String,
     val status: String,
     val timestamp: String,
-    val message: String
+    val message: String?
 )
 
 @Serializable

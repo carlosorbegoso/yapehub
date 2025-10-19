@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.sysarp.project.data.PaymentNotificationData
-import org.sysarp.project.ui.components.EnhancedPaymentNotificationCard
+import org.sysarp.project.ui.common.components.EnhancedPaymentNotificationCard
 
 /**
  * Sección de notificaciones de pago del vendedor mejorada

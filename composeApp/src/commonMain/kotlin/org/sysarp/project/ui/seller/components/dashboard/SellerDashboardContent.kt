@@ -175,7 +175,7 @@ fun SellerDashboardContent(
                             
                             // Refrescar la lista de pagos desde el servidor
                             refreshData()
-                            
+
                             // Enviar notificación WebSocket al servidor
                             try {
                                 val websocketMessage = """
@@ -207,7 +207,7 @@ fun SellerDashboardContent(
         }
         Unit
     }
-    
+
     // Función para rechazar pago
     val rejectPayment = { paymentId: Int ->
         coroutineScope.launch {
@@ -222,7 +222,7 @@ fun SellerDashboardContent(
                             
                             // Refrescar la lista de pagos desde el servidor
                             refreshData()
-                            
+
                             // Enviar notificación WebSocket al servidor
                             try {
                                 val websocketMessage = """
@@ -265,7 +265,7 @@ fun SellerDashboardContent(
     val dismissNotification = {
         currentNotification = null
     }
-    
+
     // Función para confirmar desde notificación
     val claimFromNotification = {
         val notification = currentNotification

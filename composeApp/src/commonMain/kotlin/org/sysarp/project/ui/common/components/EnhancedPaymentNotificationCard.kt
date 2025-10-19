@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.components
+package org.sysarp.project.ui.common.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -68,29 +69,30 @@ fun EnhancedPaymentNotificationCard(
     onReject: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var showContent by remember { mutableStateOf(false) }
+    var showContent by remember { mutableStateOf(true) }
     var timeRemaining by remember { mutableStateOf(30) } // 30 segundos para responder
-    
-    // Animación de entrada
-    LaunchedEffect(Unit) {
-        delay(100)
-        showContent = true
-    }
-    
-    // Timer countdown
+
+    // Timer countdown con eliminación automática
     LaunchedEffect(Unit) {
         while (timeRemaining > 0) {
             delay(1000)
             timeRemaining--
+
+            // Si el tiempo llega a 0, eliminar la notificación
+            if (timeRemaining == 0) {
+                showContent = false
+                onDismiss() // Llamar a la función de dismissal
+                break
+            }
         }
     }
-    
+
     val progress by animateFloatAsState(
         targetValue = timeRemaining / 30f,
         animationSpec = tween(1000),
         label = "progress"
     )
-    
+
     AnimatedVisibility(
         visible = showContent,
         enter = slideInVertically(
@@ -145,9 +147,12 @@ fun EnhancedPaymentNotificationCard(
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                             )
                         }
-                        
+
                         IconButton(
-                            onClick = onDismiss,
+                            onClick = {
+                                showContent = false
+                                onDismiss()
+                            },
                             modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
@@ -158,9 +163,9 @@ fun EnhancedPaymentNotificationCard(
                             )
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     // Monto destacado
                     Column(
                         modifier = Modifier
@@ -181,9 +186,9 @@ fun EnhancedPaymentNotificationCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     // Información del pago en grid
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -200,7 +205,7 @@ fun EnhancedPaymentNotificationCard(
                                 icon = Icons.Filled.Person,
                                 iconColor = MaterialTheme.colorScheme.secondary
                             )
-                            
+
                             EnhancedInfoRow(
                                 label = "Código",
                                 value = extractShortYapeCode(notification.yapeCode),
@@ -208,7 +213,7 @@ fun EnhancedPaymentNotificationCard(
                                 iconColor = MaterialTheme.colorScheme.tertiary
                             )
                         }
-                        
+
                         // Columna derecha
                         Column(
                             modifier = Modifier.weight(1f),
@@ -220,7 +225,7 @@ fun EnhancedPaymentNotificationCard(
                                 icon = Icons.Filled.Tag,
                                 iconColor = MaterialTheme.colorScheme.outline
                             )
-                            
+
                             EnhancedInfoRow(
                                 label = "Tiempo",
                                 value = "${timeRemaining}s",
@@ -229,9 +234,9 @@ fun EnhancedPaymentNotificationCard(
                             )
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(12.dp))
-                    
+
                     // Barra de progreso del tiempo
                     LinearProgressIndicator(
                         progress = progress,
@@ -242,27 +247,33 @@ fun EnhancedPaymentNotificationCard(
                         color = if (timeRemaining <= 10) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     // Mensaje
-                    Text(
-                        text = notification.message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
+                    notification.message?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(20.dp))
-                    
+
                     // Botones de acción mejorados
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
-                            onClick = onClaim,
+                            onClick = {
+                                showContent = false
+                                onClaim()
+                                onDismiss()
+                            },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
@@ -281,9 +292,13 @@ fun EnhancedPaymentNotificationCard(
                                 fontSize = 16.sp
                             )
                         }
-                        
+
                         OutlinedButton(
-                            onClick = onReject,
+                            onClick = {
+                                showContent = false
+                                onReject()
+                                onDismiss()
+                            },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error
@@ -316,7 +331,7 @@ fun EnhancedPaymentNotificationCard(
 private fun EnhancedInfoRow(
     label: String,
     value: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     iconColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
 ) {
     Row(

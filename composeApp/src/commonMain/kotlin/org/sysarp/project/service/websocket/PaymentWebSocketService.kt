@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.data.UserRole
 import org.sysarp.project.service.auth.AuthService
@@ -42,7 +44,8 @@ class PaymentWebSocketService(
     private var onMessageReceivedCallback: (() -> Unit)? = null
     private var autoStartJob: Job? = null
     private var isAutoConnectStarted = false
-    
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
     // Estados del servicio
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
@@ -50,9 +53,26 @@ class PaymentWebSocketService(
     private val _connectionState = MutableStateFlow(WebSocketConnectionState.DISCONNECTED)
     val connectionState: StateFlow<WebSocketConnectionState> = _connectionState.asStateFlow()
     
-    // Flujos de notificaciones
-    val paymentNotifications: SharedFlow<PaymentNotificationData> = webSocketClient.paymentNotifications
-    
+    // Flujos de notificaciones - usamos un flujo intermedio para filtrar por manejadas
+    private val _paymentNotifications = MutableSharedFlow<PaymentNotificationData>(replay = 1)
+    val paymentNotifications: SharedFlow<PaymentNotificationData> = _paymentNotifications.asSharedFlow()
+
+    // Set en memoria con IDs de notificaciones ya manejadas (evita reaparecer al navegar)
+    private val _handledNotificationIds = MutableStateFlow<Set<Int>>(emptySet())
+    val handledNotificationIds: StateFlow<Set<Int>> = _handledNotificationIds.asStateFlow()
+
+    fun markNotificationHandled(paymentId: Int) {
+        val current = _handledNotificationIds.value
+        if (!current.contains(paymentId)) {
+            _handledNotificationIds.value = current + paymentId
+            logInfo("WEBSOCKET_SERVICE", "Marcada notificación $paymentId como manejada")
+        }
+    }
+
+    fun isNotificationHandled(paymentId: Int): Boolean {
+        return _handledNotificationIds.value.contains(paymentId)
+    }
+
     /**
      * Inicia el servicio WebSocket con auto-conexión
      */
@@ -70,7 +90,7 @@ class PaymentWebSocketService(
         logInfo("WEBSOCKET_SERVICE", "🚀 Iniciando servicio WebSocket automático")
         isAutoConnectStarted = true
         
-        autoStartJob = CoroutineScope(Dispatchers.IO).launch {
+        autoStartJob = coroutineScope.launch {
             // Observar cambios en el perfil de usuario y token
             combine(authService.userProfile, authService.accessToken) { userProfile, token ->
                 // Verificar si es un seller con token válido
@@ -87,10 +107,21 @@ class PaymentWebSocketService(
         }
         
         // Observar estado de conexión (sin reconexión automática aquí para evitar conflictos)
-        CoroutineScope(Dispatchers.IO).launch {
+        coroutineScope.launch {
             webSocketClient.connectionState.collect { state ->
                 _connectionState.value = state
                 _isConnected.value = state == WebSocketConnectionState.CONNECTED
+            }
+        }
+
+        // Re-emitir notificaciones del cliente pero filtrando las ya manejadas
+        coroutineScope.launch {
+            webSocketClient.paymentNotifications.collect { notification ->
+                if (!isNotificationHandled(notification.paymentId)) {
+                    _paymentNotifications.emit(notification)
+                } else {
+                    logInfo("WEBSOCKET_SERVICE", "Ignorando notificación ya manejada: ${notification.paymentId}")
+                }
             }
         }
     }
@@ -112,6 +143,5 @@ class PaymentWebSocketService(
     suspend fun sendMessage(message: String) {
         webSocketClient.sendMessage(message)
     }
-    
     
 }

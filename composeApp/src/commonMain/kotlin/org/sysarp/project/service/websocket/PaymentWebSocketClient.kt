@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.channels.BufferOverflow
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.data.PaymentResultData
 import org.sysarp.project.data.WebSocketMessage
@@ -61,10 +62,18 @@ class PaymentWebSocketClient(
     val connectionState: StateFlow<WebSocketConnectionState> = _connectionState.asStateFlow()
     
     // Flujos de datos
-    private val _paymentNotifications = MutableSharedFlow<PaymentNotificationData>()
+    private val _paymentNotifications = MutableSharedFlow<PaymentNotificationData>(
+        replay = 1,
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
     val paymentNotifications: SharedFlow<PaymentNotificationData> = _paymentNotifications.asSharedFlow()
     
-    private val _paymentResults = MutableSharedFlow<PaymentResultData>()
+    private val _paymentResults = MutableSharedFlow<PaymentResultData>(
+        replay = 1,
+        extraBufferCapacity = 32,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
     val paymentResults: SharedFlow<PaymentResultData> = _paymentResults.asSharedFlow()
     
     // Configuración de reconexión automática
@@ -209,9 +218,9 @@ class PaymentWebSocketClient(
                         amount = webSocketMessage.data.amount,
                         senderName = webSocketMessage.data.senderName,
                         yapeCode = webSocketMessage.data.yapeCode,
-                        status = webSocketMessage.data.status,
-                        timestamp = webSocketMessage.data.timestamp,
-                        message = webSocketMessage.data.message
+                        status = webSocketMessage.data.status ?: "PENDING",
+                        timestamp = webSocketMessage.data.timestamp ?: getCurrentTimeMillis().toString(),
+                        message = webSocketMessage.data.message ?: ""
                     )
                     _paymentNotifications.emit(notificationData)
                 }
@@ -220,8 +229,8 @@ class PaymentWebSocketClient(
                      logInfo("WEBSOCKET", "[WEBSOCKET] Resultado de pago recibido: ${webSocketMessage.data}")
                     val resultData = PaymentResultData(
                         paymentId = webSocketMessage.data.paymentId,
-                        status = webSocketMessage.data.status,
-                        message = webSocketMessage.data.message,
+                        status = webSocketMessage.data.status ?: "UNKNOWN",
+                        message = webSocketMessage.data.message ?: "",
                         sellerId = webSocketMessage.data.sellerId ?: 0,
                         sellerName = webSocketMessage.data.sellerName ?: ""
                     )
@@ -339,7 +348,7 @@ class PaymentWebSocketClient(
         reconnectJob = CoroutineScope(Dispatchers.IO).launch {
             reconnectAttempts++
             
-            // Usar backo ff exponencial pero con límite máximo
+            // Usar backoff exponencial pero con límite máximo
             val delaySeconds = minOf(reconnectAttempts * 3, 15) // 3, 6, 9, 12, 15 segundos
             logInfo("WEBSOCKET", "⏳ Esperando ${delaySeconds}s antes del intento de reconexión #$reconnectAttempts")
             
