@@ -8,6 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.SellerPendingPayment
+import org.sysarp.project.data.UserRole
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.PaymentApiClient
 import org.sysarp.project.service.payment.PaymentService
@@ -42,7 +43,10 @@ class NotificationPollingService {
                     delay(30000) // Polling cada 30 segundos
                     checkForNewNotifications()
                 } catch (e: Exception) {
-                    println("[POLLING_SERVICE] ❌ Error en polling: ${e.message}")
+                    // Solo log de errores críticos
+                    if (e.message?.contains("No hay sellerId") != true) {
+                        println("[POLLING_SERVICE] ❌ Error en polling: ${e.message}")
+                    }
                     delay(60000) // Esperar más tiempo si hay error
                 }
             }
@@ -53,7 +57,8 @@ class NotificationPollingService {
         isActive = false
         pollingJob?.cancel()
         pollingJob = null
-        println("[POLLING_SERVICE] 🛑 Polling detenido")
+        // Solo log cuando se detiene por cambio de usuario
+        // println("[POLLING_SERVICE] 🛑 Polling detenido")
     }
     
     private suspend fun checkForNewNotifications() {
@@ -62,22 +67,18 @@ class NotificationPollingService {
             val accessToken = authService.accessToken.value
             
             if (accessToken.isNullOrBlank()) {
-                println("[POLLING_SERVICE] ❌ No hay token disponible")
                 return
             }
             
-            // Verificar si es un seller o un admin
+            // Verificar si es un seller
+            val isSeller = userProfile?.role == UserRole.VENDOR
             val sellerId = userProfile?.sellerId
-            val adminId = userProfile?.adminId
             
-            when {
-                sellerId != null -> {
-                    checkSellerNotifications(sellerId.toInt(), accessToken)
-                }
-                else -> {
-                    println("[POLLING_SERVICE] ❌ No hay sellerId ni adminId disponible")
-                    return
-                }
+            if (isSeller && sellerId != null) {
+                checkSellerNotifications(sellerId.toInt(), accessToken)
+            } else {
+                stop() // Detener el polling si no es seller
+                return
             }
             
         } catch (e: Exception) {
@@ -98,14 +99,16 @@ class NotificationPollingService {
         response.fold(
             onSuccess = { pendingPayments ->
                 val payments = pendingPayments.data.payments
-                println("[POLLING_SERVICE] 📨 Encontrados ${payments.size} pagos pendientes para seller $sellerId")
                 
                 if (payments.isNotEmpty()) {
                     showNewNotifications(payments)
                 }
             },
             onFailure = { error ->
-                println("[POLLING_SERVICE] ❌ Error en polling para seller $sellerId: ${error.message}")
+                // Solo log de errores críticos
+                if (error.message?.contains("No hay sellerId") != true) {
+                    println("[POLLING_SERVICE] ❌ Error en polling para seller $sellerId: ${error.message}")
+                }
             }
         )
     }

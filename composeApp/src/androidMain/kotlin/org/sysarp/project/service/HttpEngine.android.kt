@@ -1,11 +1,11 @@
 package org.sysarp.project.service
 
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.engine.android.Android
+import io.ktor.client.engine.okhttp.OkHttp
 
 internal actual fun getHttpClientEngine(): HttpClientEngine {
-    return Android.create {
-        // Configuración específica para Android con soporte para WebSockets
-        // El engine Android por defecto ya soporta WebSockets
+    return OkHttp.create {
+        // Configuración específica para Android con soporte completo para WebSockets
+        // OkHttp engine soporta WebSockets nativamente
     }
 }

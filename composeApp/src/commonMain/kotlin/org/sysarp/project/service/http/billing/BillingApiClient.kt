@@ -7,7 +7,12 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.decodeFromJsonElement
 import org.sysarp.project.data.BillingDashboard
+import org.sysarp.project.data.BillingDashboardResponse
 import org.sysarp.project.data.BillingResponse
 import org.sysarp.project.data.FlexibleBillingResponse
 import org.sysarp.project.data.GeneratePaymentRequest
@@ -32,6 +37,7 @@ class BillingApiClient : BaseApiClient() {
         coerceInputValues = true
         encodeDefaults = true
         allowStructuredMapKeys = true
+        explicitNulls = false
     }
     
     /**
@@ -202,8 +208,18 @@ class BillingApiClient : BaseApiClient() {
             // Log de la respuesta para debugging
             println("BILLING_API: Respuesta del servidor: $responseBody")
             
-            // Usar la función auxiliar para parsing robusto
-            parseBillingResponse<BillingDashboard>(responseBody)
+            // Parsear directamente con kotlinx.serialization
+            try {
+                val billingResponse = json.decodeFromString<BillingDashboardResponse>(responseBody)
+                if (billingResponse.success) {
+                    Result.success(billingResponse.data)
+                } else {
+                    Result.failure(Exception(billingResponse.message))
+                }
+            } catch (e: Exception) {
+                println("BILLING_API: Error en parsing: ${e.message}")
+                Result.failure(e)
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -476,33 +492,5 @@ class BillingApiClient : BaseApiClient() {
         }
     }
     
-    /**
-     * Comprar tokens directamente (genera ingreso inmediato)
-     * API: POST /api/billing/operations?action=purchase&adminId={adminId}
-     */
-    suspend fun purchaseTokens(adminId: Int, token: String, tokensPackage: String): Result<Boolean> {
-        return try {
-            
-            val response = client.post("$baseUrl/api/billing/operations") {
-                parameter("adminId", adminId)
-                parameter("action", "purchase")
-                header("Authorization", "Bearer $token")
-                header("Content-Type", "application/json")
-                setBody(mapOf("tokensPackage" to tokensPackage))
-            }
-            
-            val responseBody = response.body<String>()
-            
-            val purchaseResponse = json.decodeFromString<BillingResponse<Any>>(responseBody)
-            
-            if (purchaseResponse.success) {
-                Result.success(true)
-            } else {
-                Result.failure(Exception(purchaseResponse.message))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
     
 }

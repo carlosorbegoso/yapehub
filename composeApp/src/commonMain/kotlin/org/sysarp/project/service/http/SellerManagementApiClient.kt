@@ -49,7 +49,7 @@ class SellerManagementApiClient : BaseApiClient() {
      */
     suspend fun getMySellers(adminId: Int, page: Int = 1, limit: Int = 30, token: String): Result<SellersResponse> {
         return try {
-            logInfo("SELLER_MANAGEMENT_API", "Obteniendo vendedores del admin: $adminId, página: $page")
+            // logInfo("SELLER_MANAGEMENT_API", "Obteniendo vendedores del admin: $adminId, página: $page")
 
             val response = client.get("$baseUrl/api/admin/sellers/my-sellers") {
                 parameter("adminId", adminId)
@@ -60,7 +60,7 @@ class SellerManagementApiClient : BaseApiClient() {
 
             if (response.status.isSuccess()) {
                 val sellersResponse = response.body<SellersResponse>()
-                logInfo("SELLER_MANAGEMENT_API", "Vendedores obtenidos exitosamente: ${sellersResponse.data?.sellers?.size ?: 0} vendedores")
+                // logInfo("SELLER_MANAGEMENT_API", "Vendedores obtenidos exitosamente: ${sellersResponse.data?.sellers?.size ?: 0} vendedores")
                 Result.success(sellersResponse)
             } else {
                 val errorMessage = try {
@@ -93,7 +93,7 @@ class SellerManagementApiClient : BaseApiClient() {
         token: String
     ): Result<MySeller> {
         return try {
-            logInfo("SELLER_MANAGEMENT_API", "Actualizando vendedor: $sellerId")
+            // logInfo("SELLER_MANAGEMENT_API", "Actualizando vendedor: $sellerId")
 
             val response = sellerClient.put("$baseUrl/api/admin/sellers/$sellerId") {
                 header(HttpHeaders.Authorization, "Bearer $token")
@@ -105,20 +105,20 @@ class SellerManagementApiClient : BaseApiClient() {
             }
 
             val responseBody = response.bodyAsText()
-            logInfo("SELLER_MANAGEMENT_API", "Respuesta del servidor: $responseBody")
+            // logInfo("SELLER_MANAGEMENT_API", "Respuesta del servidor: $responseBody")
 
             if (response.status.isSuccess()) {
                 try {
                     // Intentar parsear como MySeller primero
                     val updatedSeller = json.decodeFromString<MySeller>(responseBody)
-                    logInfo("SELLER_MANAGEMENT_API", "Vendedor actualizado exitosamente: ${updatedSeller.name}")
+                    // logInfo("SELLER_MANAGEMENT_API", "Vendedor actualizado exitosamente: ${updatedSeller.name}")
                     Result.success(updatedSeller)
                 } catch (e: Exception) {
                     logError("SELLER_MANAGEMENT_API", "Error parseando respuesta como MySeller: ${e.message}")
                     // Si falla, intentar parsear como UpdateSellerResponse
                     try {
                         val updateResponse = json.decodeFromString<UpdateSellerResponse>(responseBody)
-                        logInfo("SELLER_MANAGEMENT_API", "Vendedor actualizado exitosamente (UpdateSellerResponse)")
+                        // logInfo("SELLER_MANAGEMENT_API", "Vendedor actualizado exitosamente (UpdateSellerResponse)")
                         // Convertir UpdateSellerResponse a MySeller
                         val mySeller = MySeller(
                             sellerId = updateResponse.data?.sellerId ?: sellerId,
@@ -161,7 +161,7 @@ class SellerManagementApiClient : BaseApiClient() {
         token: String
     ): Result<Boolean> {
         return try {
-            logInfo("SELLER_MANAGEMENT_API", "Eliminando/pausando vendedor: $sellerId con acción: $action")
+            // logInfo("SELLER_MANAGEMENT_API", "Eliminando/pausando vendedor: $sellerId con acción: $action")
 
             val response = sellerClient.delete("$baseUrl/api/admin/sellers/$sellerId") {
                 header(HttpHeaders.Authorization, "Bearer $token")
@@ -173,7 +173,7 @@ class SellerManagementApiClient : BaseApiClient() {
             val responseBody = response.bodyAsText()
 
             if (response.status.isSuccess()) {
-                logInfo("SELLER_MANAGEMENT_API", "Vendedor $action exitosamente: $sellerId")
+                // logInfo("SELLER_MANAGEMENT_API", "Vendedor $action exitosamente: $sellerId")
                 Result.success(true)
             } else {
                 val errorMessage = "Error $action vendedor: ${response.status.value}: ${response.status.description} - $responseBody"
@@ -194,7 +194,7 @@ class SellerManagementApiClient : BaseApiClient() {
         accessToken: String
     ): Result<ConnectedSellersResponse> {
         return try {
-            logInfo("SELLER_MANAGEMENT_API", "Obteniendo vendedores conectados para admin: $adminId")
+            // logInfo("SELLER_MANAGEMENT_API", "Obteniendo vendedores conectados para admin: $adminId")
             
             val response = client.get("$baseUrl/api/payments/admin/connected-sellers") {
                 contentType(ContentType.Application.Json)
@@ -204,7 +204,7 @@ class SellerManagementApiClient : BaseApiClient() {
             
             if (response.status.isSuccess()) {
                 val connectedSellersResponse = response.body<ConnectedSellersResponse>()
-                logInfo("SELLER_MANAGEMENT_API", "Vendedores conectados obtenidos: ${connectedSellersResponse.data?.totalConnected} conectados")
+                // logInfo("SELLER_MANAGEMENT_API", "Vendedores conectados obtenidos: ${connectedSellersResponse.data?.totalConnected} conectados")
                 Result.success(connectedSellersResponse)
             } else {
                 val errorMessage = "Error obteniendo vendedores conectados: ${response.status}"
@@ -225,7 +225,7 @@ class SellerManagementApiClient : BaseApiClient() {
         accessToken: String
     ): Result<SellersStatusResponse> {
         return try {
-            logInfo("SELLER_MANAGEMENT_API", "Obteniendo estado de vendedores para admin: $adminId")
+            // logInfo("SELLER_MANAGEMENT_API", "Obteniendo estado de vendedores para admin: $adminId")
             
             val response = client.get("$baseUrl/api/payments/admin/sellers-status") {
                 contentType(ContentType.Application.Json)
@@ -235,7 +235,7 @@ class SellerManagementApiClient : BaseApiClient() {
             
             if (response.status.isSuccess()) {
                 val sellersStatusResponse = response.body<SellersStatusResponse>()
-                logInfo("SELLER_MANAGEMENT_API", "Estado de vendedores obtenido: ${sellersStatusResponse.data?.totalSellers} total")
+                // logInfo("SELLER_MANAGEMENT_API", "Estado de vendedores obtenido: ${sellersStatusResponse.data?.totalSellers} total")
                 Result.success(sellersStatusResponse)
             } else {
                 val errorMessage = "Error obteniendo estado de vendedores: ${response.status}"

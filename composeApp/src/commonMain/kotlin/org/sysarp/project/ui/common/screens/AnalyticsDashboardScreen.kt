@@ -29,9 +29,14 @@ import org.sysarp.project.ui.common.components.charts.PerformanceComparisonChart
 import org.sysarp.project.data.HourlySalesData
 import org.sysarp.project.data.WeeklySalesData
 import org.sysarp.project.utils.convertPeriodToDates
+import org.sysarp.project.ui.common.components.DateFilterComponent
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
 
 /**
  * Funciones de parsing para convertir JSON en datos estructurados
@@ -43,21 +48,29 @@ fun parseWeeklySalesData(jsonData: String): List<DailySalesData> {
         val weeklySales = data?.get("weeklySales")
         
         if (weeklySales != null) {
-            // Crear datos de ejemplo basados en la estructura esperada
-            listOf(
-                DailySalesData("2025-01-06", "MONDAY", 2.5, 25),
-                DailySalesData("2025-01-07", "TUESDAY", 3.2, 32),
-                DailySalesData("2025-01-08", "WEDNESDAY", 1.8, 18),
-                DailySalesData("2025-01-09", "THURSDAY", 2.1, 21),
-                DailySalesData("2025-01-10", "FRIDAY", 4.5, 45),
-                DailySalesData("2025-01-11", "SATURDAY", 3.8, 38),
-                DailySalesData("2025-01-12", "SUNDAY", 2.9, 29)
-            )
+            // Parsear datos reales del servidor
+            val weeklySalesArray = weeklySales.jsonArray
+            weeklySalesArray.mapNotNull { item ->
+                try {
+                    val itemObj = item.jsonObject
+                    DailySalesData(
+                        date = itemObj["date"]?.jsonPrimitive?.content ?: "",
+                        dayName = itemObj["dayName"]?.jsonPrimitive?.content ?: "",
+                        sales = itemObj["sales"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                        transactions = itemObj["transactions"]?.jsonPrimitive?.intOrNull ?: 0
+                    )
+                } catch (e: Exception) {
+                    println("[PARSING] ❌ Error parseando item de Weekly Sales: ${e.message}")
+                    null
+                }
+            }
         } else {
+            println("[PARSING] ⚠️ No se encontraron datos de Weekly Sales en la respuesta")
             emptyList()
         }
     } catch (e: Exception) {
         println("[PARSING] ❌ Error parseando Weekly Sales: ${e.message}")
+        println("[PARSING] 📄 JSON recibido: ${jsonData.take(200)}...")
         emptyList()
     }
 }
@@ -69,22 +82,28 @@ fun parseHourlySalesData(jsonData: String): List<HourlySalesData> {
         val hourlySales = data?.get("hourlySales")
         
         if (hourlySales != null) {
-            // Crear datos de ejemplo basados en la estructura esperada
-            listOf(
-                HourlySalesData("09:00", 1.2, 12),
-                HourlySalesData("10:00", 2.1, 21),
-                HourlySalesData("11:00", 3.5, 35),
-                HourlySalesData("12:00", 4.2, 42),
-                HourlySalesData("13:00", 2.8, 28),
-                HourlySalesData("14:00", 3.1, 31),
-                HourlySalesData("15:00", 2.5, 25),
-                HourlySalesData("16:00", 1.9, 19)
-            )
+            // Parsear datos reales del servidor
+            val hourlySalesArray = hourlySales.jsonArray
+            hourlySalesArray.mapNotNull { item ->
+                try {
+                    val itemObj = item.jsonObject
+                    HourlySalesData(
+                        hour = itemObj["hour"]?.jsonPrimitive?.content ?: "",
+                        sales = itemObj["sales"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                        transactions = itemObj["transactions"]?.jsonPrimitive?.intOrNull ?: 0
+                    )
+                } catch (e: Exception) {
+                    println("[PARSING] ❌ Error parseando item de Hourly Sales: ${e.message}")
+                    null
+                }
+            }
         } else {
+            println("[PARSING] ⚠️ No se encontraron datos de Hourly Sales en la respuesta")
             emptyList()
         }
     } catch (e: Exception) {
         println("[PARSING] ❌ Error parseando Hourly Sales: ${e.message}")
+        println("[PARSING] 📄 JSON recibido: ${jsonData.take(200)}...")
         emptyList()
     }
 }
@@ -94,40 +113,70 @@ fun parseCompleteAnalyticsData(jsonData: String): AnalyticsData {
         val json = Json.parseToJsonElement(jsonData).jsonObject
         val data = json["data"]?.jsonObject
         
-        // Crear AnalyticsData con datos de ejemplo basados en la respuesta
-        AnalyticsData(
-            overview = AnalyticsOverview(
-                totalSales = 15.8,
-                totalTransactions = 158,
-                averageTransactionValue = 0.1,
-                salesGrowth = 12.5,
-                transactionGrowth = 8.2,
-                averageGrowth = 3.1
-            ),
-            dailySales = listOf(
-                DailySalesData("2025-01-06", "MONDAY", 2.5, 25),
-                DailySalesData("2025-01-07", "TUESDAY", 3.2, 32),
-                DailySalesData("2025-01-08", "WEDNESDAY", 1.8, 18),
-                DailySalesData("2025-01-09", "THURSDAY", 2.1, 21),
-                DailySalesData("2025-01-10", "FRIDAY", 4.5, 45),
-                DailySalesData("2025-01-11", "SATURDAY", 3.8, 38),
-                DailySalesData("2025-01-12", "SUNDAY", 2.9, 29)
-            ),
-            performanceMetrics = PerformanceMetricsData(
-                averageConfirmationTime = 2.3,
-                claimRate = 6.35,
-                rejectionRate = 15.2,
-                pendingPayments = 25,
-                confirmedPayments = 120,
-                rejectedPayments = 13
-            ),
-            monthlySales = listOf(
-                MonthlySalesData("2025-01", 15.8, 158)
+        if (data != null) {
+            // Parsear datos reales del servidor
+            val overview = data["overview"]?.jsonObject
+            val dailySales = data["dailySales"]?.jsonArray
+            val performanceMetrics = data["performanceMetrics"]?.jsonObject
+            val monthlySales = data["monthlySales"]?.jsonArray
+            
+            AnalyticsData(
+                overview = AnalyticsOverview(
+                    totalSales = overview?.get("totalSales")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    totalTransactions = overview?.get("totalTransactions")?.jsonPrimitive?.intOrNull ?: 0,
+                    averageTransactionValue = overview?.get("averageTransactionValue")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    salesGrowth = overview?.get("salesGrowth")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    transactionGrowth = overview?.get("transactionGrowth")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    averageGrowth = overview?.get("averageGrowth")?.jsonPrimitive?.doubleOrNull ?: 0.0
+                ),
+                dailySales = dailySales?.mapNotNull { item ->
+                    try {
+                        val itemObj = item.jsonObject
+                        DailySalesData(
+                            date = itemObj["date"]?.jsonPrimitive?.content ?: "",
+                            dayName = itemObj["dayName"]?.jsonPrimitive?.content ?: "",
+                            sales = itemObj["sales"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                            transactions = itemObj["transactions"]?.jsonPrimitive?.intOrNull ?: 0
+                        )
+                    } catch (e: Exception) {
+                        println("[PARSING] ❌ Error parseando item de Daily Sales: ${e.message}")
+                        null
+                    }
+                } ?: emptyList(),
+                performanceMetrics = PerformanceMetricsData(
+                    averageConfirmationTime = performanceMetrics?.get("averageConfirmationTime")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    claimRate = performanceMetrics?.get("claimRate")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    rejectionRate = performanceMetrics?.get("rejectionRate")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                    pendingPayments = performanceMetrics?.get("pendingPayments")?.jsonPrimitive?.intOrNull ?: 0,
+                    confirmedPayments = performanceMetrics?.get("confirmedPayments")?.jsonPrimitive?.intOrNull ?: 0,
+                    rejectedPayments = performanceMetrics?.get("rejectedPayments")?.jsonPrimitive?.intOrNull ?: 0
+                ),
+                monthlySales = monthlySales?.mapNotNull { item ->
+                    try {
+                        val itemObj = item.jsonObject
+                        MonthlySalesData(
+                            month = itemObj["month"]?.jsonPrimitive?.content ?: "",
+                            sales = itemObj["sales"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                            transactions = itemObj["transactions"]?.jsonPrimitive?.intOrNull ?: 0
+                        )
+                    } catch (e: Exception) {
+                        println("[PARSING] ❌ Error parseando item de Monthly Sales: ${e.message}")
+                        null
+                    }
+                } ?: emptyList()
             )
-        )
+        } else {
+            println("[PARSING] ⚠️ No se encontraron datos de Complete Analytics en la respuesta")
+            AnalyticsData(
+                overview = AnalyticsOverview(0.0, 0, 0.0, 0.0, 0.0, 0.0),
+                dailySales = emptyList(),
+                performanceMetrics = PerformanceMetricsData(0.0, 0.0, 0.0, 0, 0, 0),
+                monthlySales = emptyList()
+            )
+        }
     } catch (e: Exception) {
         println("[PARSING] ❌ Error parseando Complete Analytics: ${e.message}")
-        // Retornar datos de ejemplo en caso de error
+        println("[PARSING] 📄 JSON recibido: ${jsonData.take(200)}...")
         AnalyticsData(
             overview = AnalyticsOverview(0.0, 0, 0.0, 0.0, 0.0, 0.0),
             dailySales = emptyList(),
@@ -144,20 +193,86 @@ fun parsePerformanceDetailsData(jsonData: String): PerformanceMetricsData {
         val performanceDetails = data?.get("performanceDetails")
         
         if (performanceDetails != null) {
+            val detailsObj = performanceDetails.jsonObject
             PerformanceMetricsData(
-                averageConfirmationTime = 2.1,
-                claimRate = 7.2,
-                rejectionRate = 12.8,
-                pendingPayments = 18,
-                confirmedPayments = 95,
-                rejectedPayments = 8
+                averageConfirmationTime = detailsObj["averageConfirmationTime"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                claimRate = detailsObj["claimRate"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                rejectionRate = detailsObj["rejectionRate"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                pendingPayments = detailsObj["pendingPayments"]?.jsonPrimitive?.intOrNull ?: 0,
+                confirmedPayments = detailsObj["confirmedPayments"]?.jsonPrimitive?.intOrNull ?: 0,
+                rejectedPayments = detailsObj["rejectedPayments"]?.jsonPrimitive?.intOrNull ?: 0
             )
         } else {
+            println("[PARSING] ⚠️ No se encontraron datos de Performance Details en la respuesta")
             PerformanceMetricsData(0.0, 0.0, 0.0, 0, 0, 0)
         }
     } catch (e: Exception) {
         println("[PARSING] ❌ Error parseando Performance Details: ${e.message}")
+        println("[PARSING] 📄 JSON recibido: ${jsonData.take(200)}...")
         PerformanceMetricsData(0.0, 0.0, 0.0, 0, 0, 0)
+    }
+}
+
+fun parseDailySalesData(jsonData: String): List<DailySalesData> {
+    return try {
+        val json = Json.parseToJsonElement(jsonData).jsonObject
+        val data = json["data"]?.jsonObject
+        val dailySales = data?.get("dailySales")?.jsonArray
+        
+        if (dailySales != null) {
+            dailySales.mapNotNull { item ->
+                try {
+                    val itemObj = item.jsonObject
+                    DailySalesData(
+                        date = itemObj["date"]?.jsonPrimitive?.content ?: "",
+                        dayName = itemObj["dayName"]?.jsonPrimitive?.content ?: "",
+                        sales = itemObj["sales"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                        transactions = itemObj["transactions"]?.jsonPrimitive?.intOrNull ?: 0
+                    )
+                } catch (e: Exception) {
+                    println("[PARSING] ❌ Error parseando item de Daily Sales: ${e.message}")
+                    null
+                }
+            }
+        } else {
+            println("[PARSING] ⚠️ No se encontraron datos de Daily Sales en la respuesta")
+            emptyList()
+        }
+    } catch (e: Exception) {
+        println("[PARSING] ❌ Error parseando Daily Sales: ${e.message}")
+        println("[PARSING] 📄 JSON recibido: ${jsonData.take(200)}...")
+        emptyList()
+    }
+}
+
+fun parseMonthlySalesData(jsonData: String): List<MonthlySalesData> {
+    return try {
+        val json = Json.parseToJsonElement(jsonData).jsonObject
+        val data = json["data"]?.jsonObject
+        val monthlySales = data?.get("monthlySales")?.jsonArray
+        
+        if (monthlySales != null) {
+            monthlySales.mapNotNull { item ->
+                try {
+                    val itemObj = item.jsonObject
+                    MonthlySalesData(
+                        month = itemObj["month"]?.jsonPrimitive?.content ?: "0",
+                        sales = itemObj["sales"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                        transactions = itemObj["transactions"]?.jsonPrimitive?.intOrNull ?: 0
+                    )
+                } catch (e: Exception) {
+                    println("[PARSING] ❌ Error parseando item de Monthly Sales: ${e.message}")
+                    null
+                }
+            }
+        } else {
+            println("[PARSING] ⚠️ No se encontraron datos de Monthly Sales en la respuesta")
+            emptyList()
+        }
+    } catch (e: Exception) {
+        println("[PARSING] ❌ Error parseando Monthly Sales: ${e.message}")
+        println("[PARSING] 📄 JSON recibido: ${jsonData.take(200)}...")
+        emptyList()
     }
 }
 
@@ -251,6 +366,8 @@ fun AdminNewRoutesSection(
     var weeklySalesData by remember { mutableStateOf<String?>(null) }
     var hourlySalesData by remember { mutableStateOf<String?>(null) }
     var completeAnalyticsData by remember { mutableStateOf<String?>(null) }
+    var dailySalesData by remember { mutableStateOf<String?>(null) }
+    var monthlySalesData by remember { mutableStateOf<String?>(null) }
     var performanceDetailsData by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     
@@ -314,6 +431,42 @@ fun AdminNewRoutesSection(
                             )
                         } catch (e: Exception) {
                             println("[ADMIN_NEW_ROUTES] ❌ Excepción cargando Complete Analytics: ${e.message}")
+                        }
+                    }
+                },
+                urls.dailySales?.let { url ->
+                    async {
+                        try {
+                            val result = statsService.getAnalyticsFromUrl(url, token)
+                            result.fold(
+                                onSuccess = { data ->
+                                    dailySalesData = data
+                                    println("[ADMIN_NEW_ROUTES] ✅ Daily Sales cargado: ${data.take(100)}...")
+                                },
+                                onFailure = { error ->
+                                    println("[ADMIN_NEW_ROUTES] ❌ Error cargando Daily Sales: ${error.message}")
+                                }
+                            )
+                        } catch (e: Exception) {
+                            println("[ADMIN_NEW_ROUTES] ❌ Excepción cargando Daily Sales: ${e.message}")
+                        }
+                    }
+                },
+                urls.monthlySales?.let { url ->
+                    async {
+                        try {
+                            val result = statsService.getAnalyticsFromUrl(url, token)
+                            result.fold(
+                                onSuccess = { data ->
+                                    monthlySalesData = data
+                                    println("[ADMIN_NEW_ROUTES] ✅ Monthly Sales cargado: ${data.take(100)}...")
+                                },
+                                onFailure = { error ->
+                                    println("[ADMIN_NEW_ROUTES] ❌ Error cargando Monthly Sales: ${error.message}")
+                                }
+                            )
+                        } catch (e: Exception) {
+                            println("[ADMIN_NEW_ROUTES] ❌ Excepción cargando Monthly Sales: ${e.message}")
                         }
                     }
                 },
@@ -462,8 +615,12 @@ fun AdminNewRoutesSection(
     }
 }
 
+/**
+ * Dashboard de Analytics unificado que funciona tanto para Admin como para Seller
+ * Incluye filtro de fechas y visualización de gráficos y estadísticas
+ */
 @Composable
-fun UnifiedAnalyticsScreen(
+fun AnalyticsDashboardScreen(
     userType: String, // "ADMIN" o "SELLER"
     userId: Int,
     onNavigateBack: () -> Unit,
@@ -474,6 +631,14 @@ fun UnifiedAnalyticsScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var analyticsUrls by remember { mutableStateOf<UnifiedAnalyticsUrls?>(null) }
     var serverResponseData by remember { mutableStateOf<org.sysarp.project.data.UnifiedStatsResponse?>(null) }
+    
+    // Estados para datos adicionales
+    var dailySalesData by remember { mutableStateOf<String?>(null) }
+    var monthlySalesData by remember { mutableStateOf<String?>(null) }
+    
+    // Estados para el filtro de fechas
+    var selectedDateRange by remember { mutableStateOf("Último mes") }
+    var showCalendar by remember { mutableStateOf(false) }
     
     val scope = rememberCoroutineScope()
     
@@ -494,87 +659,90 @@ fun UnifiedAnalyticsScreen(
         else -> "Análisis de datos"
     }
     
-    // Cargar datos de analytics
-    LaunchedEffect(currentUserProfile, currentAccessToken, analyticsUrls) {
-        val token = currentAccessToken
-        if (token != null && analyticsUrls == null) {
-            isLoading = true
-            errorMessage = null
-            
+    // Función para cargar datos con filtro de fechas
+    fun loadAnalyticsData() {
+        isLoading = true
+        analyticsUrls = null
+        serverResponseData = null
+        errorMessage = null
+        
+        scope.launch {
             try {
-                // Obtener estadísticas unificadas usando el utilitario de fechas
-                val (startDate, endDate) = convertPeriodToDates("📅 30 días")
+                val token = currentAccessToken
+                if (token != null) {
+                    // Obtener estadísticas unificadas usando el filtro de fechas seleccionado
+                    val (startDate, endDate) = convertPeriodToDates(selectedDateRange)
                 
-                val result = when (userType) {
-                    "ADMIN" -> {
-                        statsService.getUnifiedStatsSummary(
-                            adminId = userId,
-                            sellerId = null,
-                            startDate = startDate ?: "2024-01-01",
-                            endDate = endDate ?: "2024-12-31",
-                            token = token
-                        )
+                    val result = when (userType) {
+                        "ADMIN" -> {
+                            statsService.getUnifiedStatsSummary(
+                                adminId = userId,
+                                sellerId = null,
+                                startDate = startDate ?: "2024-01-01",
+                                endDate = endDate ?: "2024-12-31",
+                                token = token
+                            )
+                        }
+                        "SELLER" -> {
+                            statsService.getUnifiedStatsSummary(
+                                adminId = null,
+                                sellerId = userId,
+                                startDate = startDate ?: "2024-01-01",
+                                endDate = endDate ?: "2024-12-31",
+                                token = token
+                            )
+                        }
+                        else -> throw IllegalArgumentException("Tipo de usuario no válido: $userType")
                     }
-                    "SELLER" -> {
-                        statsService.getUnifiedStatsSummary(
-                            adminId = null,
-                            sellerId = userId,
-                            startDate = startDate ?: "2024-01-01",
-                            endDate = endDate ?: "2024-12-31",
-                            token = token
-                        )
-                    }
-                    else -> throw IllegalArgumentException("Tipo de usuario no válido: $userType")
-                }
                 
-                result.fold(
-                    onSuccess = { response ->
-                        analyticsUrls = response.data.urls
-                        serverResponseData = response
-                        isLoading = false
-                        println("[UNIFIED_ANALYTICS] 🔄 Datos analytics obtenidos exitosamente")
-                        println("[UNIFIED_ANALYTICS] 📋 URLs disponibles: ${response.data.urls}")
-                        println("[UNIFIED_ANALYTICS] 📊 Overview: ${response.data.overview}")
-                        println("[UNIFIED_ANALYTICS] 🎯 Performance Metrics: ${response.data.performanceMetrics}")
-                        
-                        // Log específico para admin con nuevas rutas disponibles
-                        if (userType == "ADMIN") {
-                            println("[UNIFIED_ANALYTICS] 👑 Admin - Nuevas rutas disponibles:")
-                            response.data.urls.weeklySales?.let { 
-                                println("[UNIFIED_ANALYTICS] 📅 Weekly Sales: $it") 
-                            }
-                            response.data.urls.hourlySales?.let { 
-                                println("[UNIFIED_ANALYTICS] ⏰ Hourly Sales: $it") 
-                            }
-                            response.data.urls.completeAnalytics?.let { 
-                                println("[UNIFIED_ANALYTICS] 📊 Complete Analytics: $it") 
-                            }
-                            response.data.urls.performanceDetails?.let { 
-                                println("[UNIFIED_ANALYTICS] 🎯 Performance Details: $it") 
-                            }
+                    result.fold(
+                        onSuccess = { response ->
+                            analyticsUrls = response.data.urls
+                            serverResponseData = response
                             
-                            if (response.data.topSellers != null) {
-                                println("[UNIFIED_ANALYTICS] 👑 Top Sellers disponibles: ${response.data.topSellers.size} sellers")
-                                response.data.topSellers.forEach { seller ->
-                                    println("[UNIFIED_ANALYTICS] 🏆 Seller: ${seller.sellerName} - Ventas: ${seller.totalSales}")
+                            // Cargar datos adicionales si hay URLs disponibles
+                            response.data.urls.dailySales?.let { url ->
+                                scope.launch {
+                                    statsService.getAnalyticsFromUrl(url, token).fold(
+                                        onSuccess = { data -> dailySalesData = data },
+                                        onFailure = { /* Ignorar errores silenciosamente */ }
+                                    )
                                 }
                             }
+                            
+                            response.data.urls.monthlySales?.let { url ->
+                                scope.launch {
+                                    statsService.getAnalyticsFromUrl(url, token).fold(
+                                        onSuccess = { data -> monthlySalesData = data },
+                                        onFailure = { /* Ignorar errores silenciosamente */ }
+                                    )
+                                }
+                            }
+                            
+                            isLoading = false
+                            println("[UNIFIED_ANALYTICS] ✅ Datos cargados exitosamente para $userType: $userId con filtro: $selectedDateRange")
+                        },
+                        onFailure = { error ->
+                            errorMessage = error.message ?: "Error desconocido"
+                            isLoading = false
+                            println("[UNIFIED_ANALYTICS] ❌ Error: ${error.message}")
                         }
-                        
-                        println("[UNIFIED_ANALYTICS] ✅ Todos los datos están disponibles en la respuesta inicial")
-                    },
-                    onFailure = { error ->
-                        errorMessage = error.message ?: "Error desconocido"
-                        isLoading = false
-                        println("[UNIFIED_ANALYTICS] ❌ Error: ${error.message}")
-                    }
-                )
+                    )
+                } else {
+                    errorMessage = "Token de acceso no disponible"
+                    isLoading = false
+                }
             } catch (e: Exception) {
                 errorMessage = e.message ?: "Error desconocido"
                 isLoading = false
                 println("[UNIFIED_ANALYTICS] ❌ Error: ${e.message}")
             }
         }
+    }
+    
+    // Cargar datos iniciales
+    LaunchedEffect(userId, userType) {
+        loadAnalyticsData()
     }
     
     Scaffold(
@@ -594,6 +762,19 @@ fun UnifiedAnalyticsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Filtro de fechas
+            DateFilterComponent(
+                selectedDateRange = selectedDateRange,
+                onDateRangeSelected = { period ->
+                    selectedDateRange = period
+                    loadAnalyticsData()
+                },
+                showCalendar = showCalendar,
+                onShowCalendar = { showCalendar = true },
+                onDismissCalendar = { showCalendar = false },
+                title = "Filtrar analytics por fecha",
+                description = "Selecciona un período para filtrar los datos de analytics"
+            )
             when {
                 isLoading -> {
                     Box(
@@ -664,16 +845,7 @@ fun UnifiedAnalyticsScreen(
                                     transactionGrowth = response.data.overview.transactionGrowth,
                                     averageGrowth = response.data.overview.averageGrowth
                                 ),
-                                dailySales = listOf(
-                                    // Datos de ejemplo para mostrar charts (hasta que tengamos datos reales de daily sales)
-                                    DailySalesData("2025-10-01", "MONDAY", 2.5, 25),
-                                    DailySalesData("2025-10-02", "TUESDAY", 3.2, 32),
-                                    DailySalesData("2025-10-03", "WEDNESDAY", 1.8, 18),
-                                    DailySalesData("2025-10-04", "THURSDAY", 2.1, 21),
-                                    DailySalesData("2025-10-05", "FRIDAY", 4.5, 45),
-                                    DailySalesData("2025-10-06", "SATURDAY", 3.8, 38),
-                                    DailySalesData("2025-10-07", "SUNDAY", 2.9, 29)
-                                ),
+                                dailySales = dailySalesData?.let { parseDailySalesData(it) } ?: emptyList(),
                                 topSellers = if (userType == "ADMIN" && response.data.topSellers != null) {
                                     // Para admin, usar los topSellers reales del servidor
                                     response.data.topSellers.map { seller ->
@@ -695,19 +867,7 @@ fun UnifiedAnalyticsScreen(
                                     confirmedPayments = response.data.performanceMetrics.confirmedPayments,
                                     rejectedPayments = response.data.performanceMetrics.rejectedPayments
                                 ),
-                                monthlySales = listOf(
-                                    // Datos de ejemplo para mostrar charts (hasta que tengamos datos reales de monthly sales)
-                                    MonthlySalesData("2025-01", 15.2, 152),
-                                    MonthlySalesData("2025-02", 18.5, 185),
-                                    MonthlySalesData("2025-03", 22.1, 221),
-                                    MonthlySalesData("2025-04", 19.8, 198),
-                                    MonthlySalesData("2025-05", 25.3, 253),
-                                    MonthlySalesData("2025-06", 28.7, 287),
-                                    MonthlySalesData("2025-07", 31.2, 312),
-                                    MonthlySalesData("2025-08", 29.5, 295),
-                                    MonthlySalesData("2025-09", 26.8, 268),
-                                    MonthlySalesData("2025-10", 9.3, 93)
-                                )
+                                monthlySales = monthlySalesData?.let { parseMonthlySalesData(it) } ?: emptyList()
                             )
                         } catch (e: Exception) {
                             println("[UNIFIED_ANALYTICS] ❌ Error creando AnalyticsData: ${e.message}")

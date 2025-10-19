@@ -20,7 +20,7 @@ class AdminProfileApiClient : BaseApiClient() {
      */
     suspend fun getAdminProfile(userId: Int, token: String): Result<AdminProfileResponse> {
         return try {
-            logInfo("ADMIN_PROFILE_API", "Obteniendo perfil de admin: $userId")
+            // logInfo("ADMIN_PROFILE_API", "Obteniendo perfil de admin: $userId")
             
             val response = client.get("$baseUrl/api/admin/profile") {
                 parameter("userId", userId)
@@ -30,7 +30,7 @@ class AdminProfileApiClient : BaseApiClient() {
             
             if (response.status.isSuccess()) {
                 val profileResponse = response.body<AdminProfileResponse>()
-                logInfo("ADMIN_PROFILE_API", "Perfil de admin obtenido exitosamente")
+                // logInfo("ADMIN_PROFILE_API", "Perfil de admin obtenido exitosamente")
                 Result.success(profileResponse)
             } else {
                 val errorMessage = "Error obteniendo perfil de admin: ${response.status}"
@@ -52,7 +52,7 @@ class AdminProfileApiClient : BaseApiClient() {
         profileData: UpdateAdminProfileRequest
     ): Result<AdminProfileResponse> {
         return try {
-            logInfo("ADMIN_PROFILE_API", "Actualizando perfil de admin: $userId")
+            // logInfo("ADMIN_PROFILE_API", "Actualizando perfil de admin: $userId")
             
             val response = client.put("$baseUrl/api/admin/profile") {
                 parameter("userId", userId)
@@ -63,7 +63,7 @@ class AdminProfileApiClient : BaseApiClient() {
             
             if (response.status.isSuccess()) {
                 val profileResponse = response.body<AdminProfileResponse>()
-                logInfo("ADMIN_PROFILE_API", "Perfil de admin actualizado exitosamente")
+                // logInfo("ADMIN_PROFILE_API", "Perfil de admin actualizado exitosamente")
                 Result.success(profileResponse)
             } else {
                 val errorMessage = "Error actualizando perfil de admin: ${response.status}"

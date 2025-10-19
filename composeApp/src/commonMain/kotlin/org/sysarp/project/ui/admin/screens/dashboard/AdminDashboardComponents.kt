@@ -308,8 +308,7 @@ fun DashboardContent(
     onNavigateToPendingPayments: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequests: () -> Unit,
-    onNavigateToBilling: () -> Unit,
-    billingService: BillingService
+    onNavigateToBilling: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -349,14 +348,6 @@ fun DashboardContent(
             )
         }
         
-        // Integración de billing
-        item {
-            AdminBillingIntegrationCard(
-                billingService = billingService,
-                connectedSellersCount = connectedSellersData?.connectedSellers?.size ?: 0,
-                onNavigateToBilling = onNavigateToBilling
-            )
-        }
         
         // Vendedores conectados
         item {

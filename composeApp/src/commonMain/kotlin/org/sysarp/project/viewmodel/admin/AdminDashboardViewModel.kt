@@ -41,7 +41,6 @@ class AdminDashboardViewModel(
     private val statsService: StatsService,
     private val affiliationService: AffiliationService,
     private val branchService: BranchService,
-    private val billingService: BillingService,
     private val webSocketService: PaymentWebSocketService
 ) {
 
@@ -54,8 +53,6 @@ class AdminDashboardViewModel(
     private val _dashboardStats = MutableStateFlow(DashboardStats(0, 0, 0, 0, 0.0, 0))
     val dashboardStats: StateFlow<DashboardStats> = _dashboardStats.asStateFlow()
 
-    private val _billingDashboard = MutableStateFlow<BillingDashboard?>(null)
-    val billingDashboard: StateFlow<BillingDashboard?> = _billingDashboard.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -141,9 +138,6 @@ class AdminDashboardViewModel(
                         
                         // Cargar datos adicionales en background (lazy loading)
                         loadAdditionalData(userProfile, accessToken)
-                        
-                        // Cargar datos de facturación
-                        loadBillingData()
                     },
                     onFailure = { error ->
                         _errorMessage.value = "Error cargando estadísticas: ${error.message}"
@@ -201,26 +195,6 @@ class AdminDashboardViewModel(
         }
     }
 
-    /**
-     * Cargar datos de facturación del dashboard
-     */
-    fun loadBillingData() {
-        coroutineScope.launch {
-            try {
-                val billingResult = billingService.getCurrentBillingDashboard()
-                billingResult.fold(
-                    onSuccess = { billingDashboard ->
-                        _billingDashboard.value = billingDashboard
-                    },
-                    onFailure = { error ->
-                        _errorMessage.value = "Error cargando datos de facturación: ${error.message}"
-                    }
-                )
-            } catch (e: Exception) {
-                _errorMessage.value = "Error inesperado cargando facturación: ${e.message}"
-            }
-        }
-    }
 
     /**
      * Desconectar WebSocket

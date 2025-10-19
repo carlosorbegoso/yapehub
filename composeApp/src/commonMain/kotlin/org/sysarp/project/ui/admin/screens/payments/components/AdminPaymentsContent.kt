@@ -37,9 +37,7 @@ fun AdminPaymentsContent(
     var isProcessingAction by remember { mutableStateOf(false) }
 
     // Debug: Mostrar estado actual
-    LaunchedEffect(state.isLoading, state.errorMessage, state.payments.size, state.paymentSummary) {
-        println("ADMIN_PAYMENTS_CONTENT: Estado actual - isLoading: ${state.isLoading}, error: '${state.errorMessage}', payments: ${state.payments.size}, summary: ${state.paymentSummary != null}")
-    }
+    // LaunchedEffect para monitorear cambios de estado si es necesario
     
     Column(
         modifier = Modifier.fillMaxSize()

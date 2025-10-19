@@ -7,13 +7,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.combine
 import org.sysarp.project.data.SellerPendingPayment
+import org.sysarp.project.data.UserRole
+import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.service.websocket.WebSocketConnectionState
 
 class HybridNotificationManager(
     private val webSocketService: PaymentWebSocketService
 ) {
+    
+    private val authService = AuthService.getInstance()
     
     private val pollingService = NotificationPollingService()
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
@@ -39,19 +44,14 @@ class HybridNotificationManager(
             onNewNotification?.invoke(payments)
         }
         
-        // Iniciar WebSocket (ya está funcionando)
-        webSocketService.startAutoConnect()
+        // Solo iniciar servicios si el usuario es un seller
+        startServicesIfSeller()
         
-        // Iniciar polling como fallback
-        startPollingFallback()
-        
-        // Monitorear actividad del WebSocket
-        startWebSocketMonitoring()
+        // Monitorear cambios en el perfil de usuario
+        startUserProfileMonitoring()
     }
     
     fun stop() {
-        println("[HYBRID_MANAGER] 🛑 Deteniendo Hybrid Notification Manager")
-        
         pollingJob?.cancel()
         pollingJob = null
         isPollingActive = false
@@ -79,10 +79,12 @@ class HybridNotificationManager(
                     }
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
-                println("[HYBRID_MANAGER] 🛑 Polling fallback cancelado correctamente")
                 throw e // Re-lanzar para manejo correcto de cancelación
             } catch (e: Exception) {
-                println("[HYBRID_MANAGER] ❌ Error en polling fallback: ${e.message}")
+                // Solo log de errores críticos
+                if (e.message?.contains("StandaloneCoroutine was cancelled") != true) {
+                    println("[HYBRID_MANAGER] ❌ Error en polling fallback: ${e.message}")
+                }
             }
         }
     }
@@ -93,17 +95,16 @@ class HybridNotificationManager(
             webSocketService.connectionState.collect { state ->
                 when (state) {
                     WebSocketConnectionState.CONNECTED -> {
-                        println("[HYBRID_MANAGER] ✅ WebSocket conectado")
                         lastMessageTime = getCurrentTimeMillis()
                     }
                     WebSocketConnectionState.DISCONNECTED -> {
-                        println("[HYBRID_MANAGER] ❌ WebSocket desconectado")
+                        // Solo log crítico
                     }
                     WebSocketConnectionState.CONNECTING -> {
-                        println("[HYBRID_MANAGER] 🔄 WebSocket conectando...")
+                        // Solo log crítico
                     }
                     WebSocketConnectionState.RECONNECTING -> {
-                        println("[HYBRID_MANAGER] 🔄 WebSocket reconectando...")
+                        // Solo log crítico
                     }
                 }
             }
@@ -128,6 +129,64 @@ class HybridNotificationManager(
         val timeSinceLastPolling = (getCurrentTimeMillis() - lastPollingTime) / 1000
         
         return "WebSocket: ${timeSinceLastMessage}s, Polling: ${timeSinceLastPolling}s, Activo: $isPollingActive"
+    }
+    
+    /**
+     * Iniciar servicios solo si el usuario es un seller
+     */
+    private fun startServicesIfSeller() {
+        coroutineScope.launch {
+            combine(authService.userProfile, authService.accessToken) { userProfile, token ->
+                val isSeller = userProfile?.role == UserRole.VENDOR && userProfile?.sellerId != null
+                val hasToken = !token.isNullOrBlank()
+                
+                if (isSeller && hasToken) {
+                    startNotificationServices()
+                } else {
+                    stopNotificationServices()
+                }
+            }.collect { }
+        }
+    }
+    
+    /**
+     * Monitorear cambios en el perfil de usuario
+     */
+    private fun startUserProfileMonitoring() {
+        coroutineScope.launch {
+            authService.userProfile.collect { userProfile ->
+                // Re-evaluar si debemos iniciar o detener servicios
+                startServicesIfSeller()
+            }
+        }
+    }
+    
+    /**
+     * Iniciar servicios de notificación (WebSocket + Polling)
+     */
+    private fun startNotificationServices() {
+        // Iniciar WebSocket
+        webSocketService.startAutoConnect()
+        
+        // Iniciar polling como fallback
+        startPollingFallback()
+        
+        // Monitorear actividad del WebSocket
+        startWebSocketMonitoring()
+    }
+    
+    /**
+     * Detener servicios de notificación
+     */
+    private fun stopNotificationServices() {
+        // Detener polling
+        pollingJob?.cancel()
+        pollingJob = null
+        isPollingActive = false
+        pollingService.stop()
+        
+        // Detener WebSocket
+        webSocketService.stop()
     }
 }
 

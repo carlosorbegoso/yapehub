@@ -79,7 +79,6 @@ data class BillingDashboard(
     val tokenStatus: TokenStatusResponse? = null,
     val subscriptionStatus: SubscriptionStatus,
     val recentPayments: List<PaymentStatus> = emptyList(),
-    val monthlyUsage: MonthlyUsage,
     val billingSummary: BillingSummary,
     val lastUpdated: String
 )

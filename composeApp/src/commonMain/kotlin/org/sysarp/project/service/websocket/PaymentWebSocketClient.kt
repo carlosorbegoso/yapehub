@@ -37,10 +37,15 @@ class PaymentWebSocketClient(
 ) {
     
     /**
-     * Logging para WebSocket
+     * Logging para WebSocket - Solo errores críticos
      */
     private fun logInfo(service: String, message: String) {
-        println("[$service] INFO: $message")
+        // Solo logs críticos de conexión/desconexión
+        if (message.contains("Conectado para sellerId") || 
+            message.contains("Error al conectar WebSocket") ||
+            message.contains("Desconectado completamente")) {
+            println("[$service] INFO: $message")
+        }
     }
     
     private fun logError(service: String, message: String) {
@@ -109,21 +114,15 @@ class PaymentWebSocketClient(
         currentSellerId = sellerId
         _connectionState.value = WebSocketConnectionState.CONNECTING
         
-        logInfo("WEBSOCKET", "Iniciando conexión WebSocket para sellerId: $sellerId")
-        logInfo("WEBSOCKET", "Estado de conexión: CONNECTING")
-        
         try {
             val url = "${Constants.WEBSOCKET_URL}/ws/payments/$sellerId?token=$token"
-            logInfo("WEBSOCKET", "URL de conexión: $url")
             
             httpClient.webSocket(url) {
                 webSocketSession = this
                 _connectionState.value = WebSocketConnectionState.CONNECTED
                 reconnectAttempts = 0 // Resetear intentos de reconexión
                 
-                logInfo("WEBSOCKET", "✅ WebSocket conectado exitosamente para sellerId: $sellerId")
-                logInfo("WEBSOCKET", "Estado de conexión: CONNECTED")
-                logInfo("WEBSOCKET", "🔄 Intentos de reconexión reseteados a 0")
+                logInfo("WEBSOCKET", "✅ Conectado para sellerId: $sellerId")
                 
                 lastHeartbeatTime = getCurrentTimeMillis()
                 lastMessageTime = getCurrentTimeMillis()
@@ -138,7 +137,7 @@ class PaymentWebSocketClient(
                         is Frame.Text -> {
                             val message = frame.readText()
                             lastMessageTime = getCurrentTimeMillis()
-                            logInfo("WEBSOCKET", "📨 Mensaje recibido: ${message.take(100)}${if (message.length > 100) "..." else ""}")
+                            // Solo loggear mensajes importantes
                             processMessage(message)
                             
                             // Notificar al HybridNotificationManager que recibimos un mensaje
@@ -146,22 +145,18 @@ class PaymentWebSocketClient(
                         }
                                 is Frame.Close -> {
                                     val reason = frame.readReason()
-                                    logInfo("WEBSOCKET", "🔌 WebSocket cerrado por el servidor. Razón: ${reason?.message ?: "No especificada"}")
                                     _connectionState.value = WebSocketConnectionState.DISCONNECTED
-                                    logInfo("WEBSOCKET", "🔄 Programando reconexión automática...")
+                                    // Programando reconexión automática
                                     scheduleReconnect()
                                     break
                                 }
                                 is Frame.Ping -> {
-                                    logInfo("WEBSOCKET", "🏓 Ping recibido del servidor")
                                     lastMessageTime = getCurrentTimeMillis()
                                 }
                                 is Frame.Pong -> {
-                                    logInfo("WEBSOCKET", "🏓 Pong recibido del servidor")
                                     lastMessageTime = getCurrentTimeMillis()
                                 }
                                 else -> {
-                                    logInfo("WEBSOCKET", "📦 Frame recibido: ${frame::class.simpleName}")
                                     lastMessageTime = getCurrentTimeMillis()
                                 }
                             }

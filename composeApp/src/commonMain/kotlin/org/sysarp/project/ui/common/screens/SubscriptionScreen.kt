@@ -61,7 +61,6 @@ fun SubscriptionScreen(
     var isLoading by remember { mutableStateOf(true) }
     var subscriptionError by remember { mutableStateOf("") }
     var plansError by remember { mutableStateOf("") }
-    var showTokenPurchaseDialog by remember { mutableStateOf(false) }
     var showSuccessAnimation by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
     
@@ -283,9 +282,6 @@ fun SubscriptionScreen(
                     
                     // Tarjeta de compra de tokens
                     item {
-                        TokenPurchaseCard(
-                            onPurchaseTokens = { showTokenPurchaseDialog = true }
-                        )
                     }
                 }
             }
@@ -301,13 +297,6 @@ fun SubscriptionScreen(
     }
     
     // Diálogo para compra de tokens
-    if (showTokenPurchaseDialog) {
-        TokenPurchaseDialog(
-            billingService = billingService,
-            onDismiss = { showTokenPurchaseDialog = false },
-            onNavigateToPayment = onNavigateToPayment
-        )
-    }
     
     // Diálogo de error elegante
     currentError?.let { errorInfo ->

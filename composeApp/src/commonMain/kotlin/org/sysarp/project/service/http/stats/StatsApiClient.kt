@@ -28,7 +28,7 @@ class StatsApiClient : BaseApiClient() {
         return try {
             val role = if (adminId != null) "ADMIN" else "SELLER"
             val id = adminId ?: sellerId ?: 0
-            logInfo("STATS_API", "Obteniendo estadísticas unificadas para $role: $id")
+            // logInfo("STATS_API", "Obteniendo estadísticas unificadas para $role: $id")
 
             val response = client.get("$baseUrl/api/stats/summary") {
                 adminId?.let { parameter("adminId", it) }
@@ -42,9 +42,9 @@ class StatsApiClient : BaseApiClient() {
             if (response.status.value in 200..299) {
                 try {
                     val responseBody = response.body<String>()
-                    logInfo("STATS_API", "Respuesta del servidor: $responseBody")
+                    // logInfo("STATS_API", "Respuesta del servidor: $responseBody")
                     val unifiedStatsResponse = kotlinx.serialization.json.Json.decodeFromString<UnifiedStatsResponse>(responseBody)
-                    logInfo("STATS_API", "Estadísticas unificadas obtenidas exitosamente para $role: $id")
+                    // logInfo("STATS_API", "Estadísticas unificadas obtenidas exitosamente para $role: $id")
                     Result.success(unifiedStatsResponse)
                 } catch (e: Exception) {
                     logError("STATS_API", "Error deserializando respuesta: ${e.message}")
@@ -97,8 +97,8 @@ class StatsApiClient : BaseApiClient() {
                     "${Constants.BASE_URL}/$url"
                 }
             }
-            logInfo("STATS_API", "Obteniendo analytics desde URL original: $url")
-            logInfo("STATS_API", "URL procesada: $processedUrl")
+            // logInfo("STATS_API", "Obteniendo analytics desde URL original: $url")
+            // logInfo("STATS_API", "URL procesada: $processedUrl")
             
             val response = client.get(processedUrl) {
                 header("Authorization", "Bearer $token")
@@ -107,7 +107,7 @@ class StatsApiClient : BaseApiClient() {
 
             if (response.status.value in 200..299) {
                 val responseBody = response.body<String>()
-                logInfo("STATS_API", "Analytics obtenidos exitosamente desde: $url")
+                // logInfo("STATS_API", "Analytics obtenidos exitosamente desde: $url")
                 Result.success(responseBody)
             } else {
                 val errorMessage = try {

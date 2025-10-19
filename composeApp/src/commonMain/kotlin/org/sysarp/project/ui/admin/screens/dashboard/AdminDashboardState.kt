@@ -37,7 +37,6 @@ class AdminDashboardState(
     private val affiliationService: AffiliationService,
     private val qrService: QRService,
     private val branchService: BranchService,
-    private val billingService: BillingService,
     val webSocketService: org.sysarp.project.service.websocket.PaymentWebSocketService,
     private val coroutineScope: CoroutineScope
 ) {
@@ -57,8 +56,6 @@ class AdminDashboardState(
     var pendingRequests by mutableStateOf<List<DeactivationRequest>>(emptyList())
         private set
     
-    var billingDashboard by mutableStateOf<BillingDashboard?>(null)
-        private set
     
     // Estados de carga
     var isLoadingStats by mutableStateOf(false)
@@ -79,8 +76,6 @@ class AdminDashboardState(
     var isLoadingQR by mutableStateOf(false)
         private set
     
-    var isLoadingBilling by mutableStateOf(false)
-        private set
     
     // Estados de error
     var statsError by mutableStateOf("")
@@ -98,8 +93,6 @@ class AdminDashboardState(
     var qrError by mutableStateOf<String?>(null)
         private set
     
-    var billingError by mutableStateOf<String?>(null)
-        private set
     
     // Estados de diálogos
     var showAffiliationDialog by mutableStateOf(false)
@@ -373,8 +366,6 @@ class AdminDashboardState(
                 }
             )
             
-            // Recargar datos de facturación
-            loadBillingData()
         }
     }
     
@@ -532,32 +523,6 @@ class AdminDashboardState(
         }
     }
     
-    /**
-     * Cargar datos de facturación
-     */
-    fun loadBillingData() {
-        coroutineScope.launch {
-            try {
-                isLoadingBilling = true
-                billingError = null
-                
-                val billingResult = billingService.getCurrentBillingDashboard()
-                billingResult.fold(
-                    onSuccess = { billing ->
-                        billingDashboard = billing
-                        isLoadingBilling = false
-                    },
-                    onFailure = { error ->
-                        billingError = error.message ?: "Error cargando datos de facturación"
-                        isLoadingBilling = false
-                    }
-                )
-            } catch (e: Exception) {
-                billingError = e.message ?: "Error inesperado cargando facturación"
-                isLoadingBilling = false
-            }
-        }
-    }
     
     /**
      * Limpia todos los errores
@@ -568,6 +533,5 @@ class AdminDashboardState(
         sellersError = ""
         affiliationError = null
         qrError = null
-        billingError = null
     }
 }

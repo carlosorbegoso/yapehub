@@ -102,25 +102,6 @@ class BillingService(
         return billingApiClient.generatePaymentCode(userProfile.adminId.toInt(), accessToken, request)
     }
     
-    /**
-     * Genera un código de pago para comprar tokens adicionales
-     * API: POST /api/billing/operations?action=generate-code&adminId={adminId}
-     */
-    suspend fun generateTokenPurchasePayment(tokensPackage: String): Result<PaymentCode> {
-        val userProfile = authService.userProfile.value
-        val accessToken = authService.accessToken.value
-        
-        if (userProfile?.adminId == null || accessToken == null) {
-            return Result.failure(Exception("Usuario no autenticado"))
-        }
-        
-        val request = GeneratePaymentRequest(
-            tokensPackage = tokensPackage,
-            paymentMethod = "yape"
-        )
-        
-        return billingApiClient.generatePaymentCode(userProfile.adminId.toInt(), accessToken, request)
-    }
     
     /**
      * Sube un comprobante de pago

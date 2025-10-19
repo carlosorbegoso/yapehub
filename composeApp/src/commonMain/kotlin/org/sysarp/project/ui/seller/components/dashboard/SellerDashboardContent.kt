@@ -417,13 +417,7 @@ fun SellerDashboardContent(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Sección de notificaciones
-            SellerNotificationSection(
-                currentNotification = currentNotification,
-                onDismissNotification = dismissNotification,
-                onClaimNotification = claimFromNotification,
-                onRejectNotification = rejectFromNotification
-            )
+            // Sección de notificaciones eliminada según solicitud del usuario
             
             // Sección del perfil del vendedor
             SellerProfileSection(
@@ -433,8 +427,8 @@ fun SellerDashboardContent(
             
             // Sección de estadísticas
             SellerStatsSection(
-                confirmedPaymentsCount = sellerStats?.summary?.confirmedPayments ?: 0,
-                totalAmountCollected = sellerStats?.summary?.totalSales ?: 0.0,
+                confirmedPaymentsCount = sellerStats?.performanceMetrics?.confirmedPayments ?: 0,
+                totalAmountCollected = sellerStats?.overview?.totalSales ?: 0.0,
                 isLoadingStats = sellerStats == null
             )
             

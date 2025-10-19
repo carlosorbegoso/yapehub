@@ -49,8 +49,7 @@ fun AdminDashboardScreen(
     affiliationService: AffiliationService = koinInject(),
     qrService: QRService = koinInject(),
     branchService: BranchService = koinInject(),
-    webSocketService: PaymentWebSocketService = koinInject(),
-    billingService: BillingService = koinInject()
+    webSocketService: PaymentWebSocketService = koinInject()
 ) {
     // Crear el ViewModel con las dependencias inyectadas
     val viewModel = remember {
@@ -60,7 +59,6 @@ fun AdminDashboardScreen(
             statsService = statsService,
             affiliationService = affiliationService,
             branchService = branchService,
-            billingService = billingService,
             webSocketService = webSocketService
         )
     }
@@ -126,8 +124,7 @@ fun AdminDashboardScreen(
                 onNavigateToPendingPayments = onNavigateToPendingPayments,
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToDeactivationRequests = onNavigateToDeactivationRequests,
-                onNavigateToBilling = onNavigateToBilling,
-                billingService = billingService
+                onNavigateToBilling = onNavigateToBilling
             )
         }
         

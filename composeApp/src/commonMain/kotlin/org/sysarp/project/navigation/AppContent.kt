@@ -210,7 +210,6 @@ fun AppContent(
             val qrService: QRService = koinInject()
             val branchService: BranchService = koinInject()
             val webSocketService: PaymentWebSocketService = koinInject()
-            val billingService: BillingService = koinInject()
             AdminDashboardScreen(
                 authService = authService,
                 sellerService = sellerService,
@@ -219,7 +218,6 @@ fun AppContent(
                 qrService = qrService,
                 branchService = branchService,
                 webSocketService = webSocketService,
-                billingService = billingService,
                 onNavigateToBranchManagement = { navigationManager.navigateTo(Screen.BranchManagement) },
                 onNavigateToSellerManagement = { navigationManager.navigateTo(Screen.SellerManagement) },
                 onNavigateToAnalytics = { navigationManager.navigateTo(Screen.Analytics) },

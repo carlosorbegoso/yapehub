@@ -53,7 +53,6 @@ fun TokenManagementScreen(
     var tokenStatus by remember { mutableStateOf<TokenStatusResponse?>(null) }
     var tokenPackages by remember { mutableStateOf<List<TokenPackage>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-    var showTokenPurchaseDialog by remember { mutableStateOf(false) }
     var showSuccessAnimation by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
     
@@ -101,13 +100,13 @@ fun TokenManagementScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showTokenPurchaseDialog = true },
+                onClick = { /* Tokens se asignan automáticamente según el plan */ },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
-                    contentDescription = "Comprar tokens"
+                    contentDescription = "Tokens incluidos en plan"
                 )
             }
         }
@@ -166,7 +165,7 @@ fun TokenManagementScreen(
                         TokenPackageCard(
                             tokenPackage = tokenPackage,
                             onPurchase = { 
-                                showTokenPurchaseDialog = true
+                                /* Tokens se asignan automáticamente según el plan */
                             }
                         )
                     }
@@ -180,19 +179,6 @@ fun TokenManagementScreen(
         }
     }
     
-    // Dialog para comprar tokens
-    if (showTokenPurchaseDialog) {
-        TokenPurchaseDialog(
-            billingService = billingService,
-            onDismiss = { showTokenPurchaseDialog = false },
-            onNavigateToPayment = { paymentCode ->
-                showTokenPurchaseDialog = false
-                showSuccessAnimation = true
-                successMessage = "Código de pago generado exitosamente"
-                onNavigateToPayment(paymentCode)
-            }
-        )
-    }
     
     // Animación de éxito
     if (showSuccessAnimation) {

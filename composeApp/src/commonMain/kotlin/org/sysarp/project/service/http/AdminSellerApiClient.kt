@@ -32,7 +32,7 @@ class AdminSellerApiClient : BaseApiClient() {
         sortOrder: String? = null
     ): Result<SellersWithFiltersResponse> {
         return try {
-            logInfo("ADMIN_SELLER_API", "Obteniendo vendedores con filtros para admin: $adminId")
+            // logInfo("ADMIN_SELLER_API", "Obteniendo vendedores con filtros para admin: $adminId")
             
             val response = client.get("$baseUrl/api/admin/sellers") {
                 parameter("adminId", adminId)
@@ -48,7 +48,7 @@ class AdminSellerApiClient : BaseApiClient() {
             
             if (response.status.isSuccess()) {
                 val sellersResponse = response.body<SellersWithFiltersResponse>()
-                logInfo("ADMIN_SELLER_API", "Vendedores con filtros obtenidos exitosamente")
+                // logInfo("ADMIN_SELLER_API", "Vendedores con filtros obtenidos exitosamente")
                 Result.success(sellersResponse)
             } else {
                 val errorMessage = "Error obteniendo vendedores con filtros: ${response.status}"
@@ -71,7 +71,7 @@ class AdminSellerApiClient : BaseApiClient() {
         sellerData: UpdateSellerRequest
     ): Result<UpdateSellerResponse> {
         return try {
-            logInfo("ADMIN_SELLER_API", "Actualizando vendedor: $sellerId por admin: $adminId")
+            // logInfo("ADMIN_SELLER_API", "Actualizando vendedor: $sellerId por admin: $adminId")
             
             val response = client.put("$baseUrl/api/admin/sellers/$sellerId") {
                 parameter("adminId", adminId)
@@ -82,7 +82,7 @@ class AdminSellerApiClient : BaseApiClient() {
             
             if (response.status.isSuccess()) {
                 val updateResponse = response.body<UpdateSellerResponse>()
-                logInfo("ADMIN_SELLER_API", "Vendedor actualizado exitosamente")
+                // logInfo("ADMIN_SELLER_API", "Vendedor actualizado exitosamente")
                 Result.success(updateResponse)
             } else {
                 val errorMessage = "Error actualizando vendedor: ${response.status}"
@@ -104,7 +104,7 @@ class AdminSellerApiClient : BaseApiClient() {
         token: String
     ): Result<DeleteSellerResponse> {
         return try {
-            logInfo("ADMIN_SELLER_API", "Eliminando vendedor: $sellerId por admin: $adminId")
+            // logInfo("ADMIN_SELLER_API", "Eliminando vendedor: $sellerId por admin: $adminId")
             
             val response = client.delete("$baseUrl/api/admin/sellers/$sellerId") {
                 parameter("adminId", adminId)
@@ -114,7 +114,7 @@ class AdminSellerApiClient : BaseApiClient() {
             
             if (response.status.isSuccess()) {
                 val deleteResponse = response.body<DeleteSellerResponse>()
-                logInfo("ADMIN_SELLER_API", "Vendedor eliminado exitosamente")
+                // logInfo("ADMIN_SELLER_API", "Vendedor eliminado exitosamente")
                 Result.success(deleteResponse)
             } else {
                 val errorMessage = "Error eliminando vendedor: ${response.status}"

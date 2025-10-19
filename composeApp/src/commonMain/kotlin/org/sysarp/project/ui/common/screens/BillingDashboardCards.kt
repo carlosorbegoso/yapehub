@@ -125,20 +125,7 @@ fun SubscriptionSummaryCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
-                        Text(
-                            text = "Tokens/mes",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "${subscription.tokensIncluded}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    
+
                     Column {
                         Text(
                             text = "Precio",
@@ -202,8 +189,7 @@ fun SubscriptionSummaryCard(
 
 @Composable
 fun TokenStatusCard(
-    tokenStatus: TokenStatusResponse?,
-    onPurchaseTokens: () -> Unit
+    tokenStatus: TokenStatusResponse?
 ) {
     if (tokenStatus == null) {
         // Mostrar card de estado sin tokens
@@ -235,27 +221,11 @@ fun TokenStatusCard(
                 )
                 
                 Text(
-                    text = "Compra tokens para acceder a funcionalidades premium",
+                    text = "Los tokens se asignan automáticamente según tu plan de suscripción",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
-                
-                Button(
-                    onClick = onPurchaseTokens,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ShoppingCart,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Comprar Tokens")
-                }
             }
         }
         return
@@ -353,21 +323,14 @@ fun TokenStatusCard(
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
             
-            Button(
-                onClick = onPurchaseTokens,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ShoppingCart,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Comprar Tokens")
-            }
+            // Información sobre tokens incluidos en el plan
+            Text(
+                text = "Los tokens se renuevan automáticamente cada mes según tu plan",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

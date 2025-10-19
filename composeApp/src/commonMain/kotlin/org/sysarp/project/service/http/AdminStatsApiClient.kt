@@ -20,7 +20,7 @@ class AdminStatsApiClient : BaseApiClient() {
         token: String
     ): Result<NotificationStatsResponse> {
         return try {
-            logInfo("ADMIN_STATS_API", "Obteniendo estadísticas de notificaciones para admin: $adminId")
+            // logInfo("ADMIN_STATS_API", "Obteniendo estadísticas de notificaciones para admin: $adminId")
             
             val response = client.get("$baseUrl/api/payments/notification-stats") {
                 parameter("adminId", adminId)
@@ -30,7 +30,7 @@ class AdminStatsApiClient : BaseApiClient() {
             
             if (response.status.isSuccess()) {
                 val statsResponse = response.body<NotificationStatsResponse>()
-                logInfo("ADMIN_STATS_API", "Estadísticas de notificaciones obtenidas exitosamente")
+                // logInfo("ADMIN_STATS_API", "Estadísticas de notificaciones obtenidas exitosamente")
                 Result.success(statsResponse)
             } else {
                 val errorMessage = "Error obteniendo estadísticas de notificaciones: ${response.status}"

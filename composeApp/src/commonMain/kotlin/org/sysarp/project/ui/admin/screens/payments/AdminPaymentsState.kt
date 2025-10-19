@@ -354,7 +354,6 @@ class AdminPaymentsState(
     ) {
         if (accessToken != null && userProfile?.adminId != null) {
             coroutineScope.launch {
-                println("ADMIN_STATS: Cargando estadísticas unificadas para adminId: ${userProfile?.adminId}, fechas: $startDate - $endDate")
                 statsService.getUnifiedStatsSummary(
                     adminId = userProfile?.adminId?.toInt() ?: 0,
                     sellerId = null,
@@ -363,20 +362,16 @@ class AdminPaymentsState(
                     token = accessToken ?: ""
                 ).fold(
                     onSuccess = { response ->
-                        println("ADMIN_STATS: Estadísticas unificadas cargadas exitosamente: ${response.data}")
                         adminStats = response
                         analyticsUrls = response.data.urls
                         onSuccess()
                     },
                     onFailure = { error ->
-                        println("ADMIN_STATS: Error cargando estadísticas unificadas: ${error.message}")
                         updateErrorMessage("Error cargando estadísticas: ${error.message}")
                         onFailure(errorMessage)
                     }
                 )
             }
-        } else {
-            println("ADMIN_STATS: No se pueden cargar estadísticas - accessToken: ${accessToken != null}, adminId: ${userProfile?.adminId}")
         }
     }
     

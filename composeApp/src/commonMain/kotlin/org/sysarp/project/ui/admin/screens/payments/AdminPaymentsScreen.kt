@@ -58,39 +58,21 @@ fun AdminPaymentsScreen(
 
     // Inicializar el estado con los datos del usuario
     LaunchedEffect(userProfile, accessToken) {
-        println("ADMIN_PAYMENTS: Inicializando con userProfile: $userProfile, accessToken: ${accessToken?.take(10)}...")
-
         state.updateUserProfile(userProfile)
         state.updateAccessToken(accessToken)
         
         // Inicializar filtros por defecto
         state.initializeDefaultFilters()
 
-        println("ADMIN_PAYMENTS: canLoadPayments: ${state.canLoadPayments()}")
-
         if (state.canLoadPayments()) {
-            println("ADMIN_PAYMENTS: Cargando pagos...")
             state.loadAdminPayments(
-                onSuccess = {
-                    println("ADMIN_PAYMENTS: Pagos cargados exitosamente")
-                },
-                onFailure = { error ->
-                    println("ADMIN_PAYMENTS: Error cargando pagos: $error")
-                }
+                onSuccess = { },
+                onFailure = { }
             )
-            
-            // Cargar estadísticas del admin
-            println("ADMIN_PAYMENTS: Cargando estadísticas...")
             state.loadAdminStats(
-                onSuccess = {
-                    println("ADMIN_PAYMENTS: Estadísticas cargadas exitosamente")
-                },
-                onFailure = { error ->
-                    println("ADMIN_PAYMENTS: Error cargando estadísticas: $error")
-                }
+                onSuccess = { },
+                onFailure = { }
             )
-        } else {
-            println("ADMIN_PAYMENTS: No se pueden cargar pagos - userProfile: $userProfile, accessToken: ${accessToken != null}")
         }
     }
 
@@ -152,7 +134,6 @@ fun AdminPaymentsScreen(
                 },
                 onPaymentAction = { paymentId, action ->
                     // Manejar acciones de pago
-                    println("ADMIN_PAYMENTS: Acción $action en pago $paymentId")
                 }
             )
         }

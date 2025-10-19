@@ -72,7 +72,6 @@ fun BillingDashboardScreen(
     var billingDashboard by remember { mutableStateOf<BillingDashboard?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf("") }
-    var showTokenPurchaseDialog by remember { mutableStateOf(false) }
     var showSuccessAnimation by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
     var shouldReload by remember { mutableStateOf(false) }
@@ -385,36 +384,6 @@ fun BillingDashboardScreen(
                             }
                         }
                         
-                        // Estado de tokens con animación
-                        item {
-                            AnimatedVisibility(
-                                visible = true,
-                                enter = slideInHorizontally(
-                                    initialOffsetX = { it },
-                                    animationSpec = tween(800, delayMillis = 200, easing = EaseOutCubic)
-                                ) + fadeIn(animationSpec = tween(800, delayMillis = 200))
-                            ) {
-                                TokenStatusCard(
-                                    tokenStatus = dashboard.tokenStatus,
-                                    onPurchaseTokens = { showTokenPurchaseDialog = true }
-                                )
-                            }
-                        }
-                        
-                        // Uso mensual con animación
-                        item {
-                            AnimatedVisibility(
-                                visible = true,
-                                enter = slideInVertically(
-                                    initialOffsetY = { it / 2 },
-                                    animationSpec = tween(800, delayMillis = 400, easing = EaseOutCubic)
-                                ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
-                            ) {
-                                TokenUsageCard(
-                                    monthlyUsage = dashboard.monthlyUsage
-                                )
-                            }
-                        }
                         
                         // Pagos recientes con animación
                         if (dashboard.recentPayments.isNotEmpty()) {
@@ -484,12 +453,4 @@ fun BillingDashboardScreen(
         )
     }
     
-    // Diálogo para compra de tokens
-    if (showTokenPurchaseDialog) {
-        TokenPurchaseDialog(
-            billingService = billingService,
-            onDismiss = { showTokenPurchaseDialog = false },
-            onNavigateToPayment = onNavigateToPayment
-        )
-    }
 }
