@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.UserRole
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.service.http.PaymentApiClient
+import org.sysarp.project.service.http.payment.PaymentApiClient
 import org.sysarp.project.service.payment.PaymentService
 
 class NotificationPollingService {
@@ -57,8 +57,6 @@ class NotificationPollingService {
         isActive = false
         pollingJob?.cancel()
         pollingJob = null
-        // Solo log cuando se detiene por cambio de usuario
-        // println("[POLLING_SERVICE] 🛑 Polling detenido")
     }
     
     private suspend fun checkForNewNotifications() {

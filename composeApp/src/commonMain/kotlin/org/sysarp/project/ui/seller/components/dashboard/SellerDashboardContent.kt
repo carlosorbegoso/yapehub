@@ -402,6 +402,7 @@ fun SellerDashboardContent(
     // Manejar notificaciones de WebSocket
     LaunchedEffect(webSocketService) {
         webSocketService.paymentNotifications.collect { notification ->
+            println("[SELLER_DASHBOARD_CONTENT] 🔔 Notificación WebSocket recibida: ${notification.paymentId} - ${notification.amount}")
             handleNotification(notification)
         }
     }
@@ -417,8 +418,14 @@ fun SellerDashboardContent(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Sección de notificaciones eliminada según solicitud del usuario
-            
+            // Reinsertar sección de notificaciones (estaba eliminada)
+            SellerNotificationSection(
+                currentNotification = currentNotification,
+                onDismissNotification = dismissNotification,
+                onClaimNotification = claimFromNotification,
+                onRejectNotification = rejectFromNotification
+            )
+
             // Sección del perfil del vendedor
             SellerProfileSection(
                 userProfile = userProfile,

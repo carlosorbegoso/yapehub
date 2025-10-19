@@ -43,7 +43,7 @@ kotlin {
             // AndroidX Startup para resolver NoClassDefFoundError
             implementation(libs.androidx.startup.runtime)
             // Ktor Android
-            implementation(libs.ktor.client.android)
+            implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.websockets)
             
@@ -67,9 +67,6 @@ kotlin {
         commonMain.dependencies {
             // Kotlinx IO for image processing
             implementation(libs.kotlinx.io.core)
-        }
-        
-        commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
@@ -99,7 +96,6 @@ kotlin {
             implementation(libs.ktor.client.auth)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.client.websockets)
-            implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.serialization.kotlinx.json)
 
             // Koin

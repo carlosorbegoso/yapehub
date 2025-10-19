@@ -26,6 +26,7 @@ import kotlinx.serialization.json.Json
 import org.sysarp.project.data.PaymentNotificationData
 import org.sysarp.project.data.PaymentResultData
 import org.sysarp.project.data.WebSocketMessage
+import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.getHttpClientEngine
 import org.sysarp.project.utils.Constants
 
@@ -33,19 +34,14 @@ import org.sysarp.project.utils.Constants
  * Cliente WebSocket simplificado para notificaciones de pagos en tiempo real
  */
 class PaymentWebSocketClient(
-    private val authService: org.sysarp.project.service.auth.AuthService
+    private val authService: AuthService
 ) {
     
     /**
-     * Logging para WebSocket - Solo errores críticos
+     * Logging para WebSocket
      */
     private fun logInfo(service: String, message: String) {
-        // Solo logs críticos de conexión/desconexión
-        if (message.contains("Conectado para sellerId") || 
-            message.contains("Error al conectar WebSocket") ||
-            message.contains("Desconectado completamente")) {
-            println("[$service] INFO: $message")
-        }
+        println("[$service] INFO: $message")
     }
     
     private fun logError(service: String, message: String) {
@@ -137,7 +133,6 @@ class PaymentWebSocketClient(
                         is Frame.Text -> {
                             val message = frame.readText()
                             lastMessageTime = getCurrentTimeMillis()
-                            // Solo loggear mensajes importantes
                             processMessage(message)
                             
                             // Notificar al HybridNotificationManager que recibimos un mensaje
@@ -193,6 +188,7 @@ class PaymentWebSocketClient(
      * Procesa mensajes entrantes del WebSocket
      */
     private suspend fun processMessage(message: String) {
+        logInfo("WEBSOCKET", "[RAW] Mensaje recibido: $message")
         try {
             
             // Manejar mensaje de conexión especial
@@ -207,6 +203,7 @@ class PaymentWebSocketClient(
             
             when (webSocketMessage.type) {
                 "PAYMENT_NOTIFICATION" -> {
+                    logInfo("WEBSOCKET", "[WEBSOCKET] Notificación de pago recibida: ${webSocketMessage.data}")
                     val notificationData = PaymentNotificationData(
                         paymentId = webSocketMessage.data.paymentId,
                         amount = webSocketMessage.data.amount,
@@ -220,6 +217,7 @@ class PaymentWebSocketClient(
                 }
                 
                 "PAYMENT_RESULT" -> {
+                     logInfo("WEBSOCKET", "[WEBSOCKET] Resultado de pago recibido: ${webSocketMessage.data}")
                     val resultData = PaymentResultData(
                         paymentId = webSocketMessage.data.paymentId,
                         status = webSocketMessage.data.status,
@@ -231,10 +229,12 @@ class PaymentWebSocketClient(
                 }
                 
                 else -> {
+                    logInfo("WEBSOCKET", "[WEBSOCKET] Mensaje de tipo desconocido: ${webSocketMessage.type}")
                 }
             }
             
         } catch (e: Exception) {
+             logError("WEBSOCKET", "[WEBSOCKET] Error al procesar mensaje: ${e.message}")
         }
     }
     
@@ -339,7 +339,7 @@ class PaymentWebSocketClient(
         reconnectJob = CoroutineScope(Dispatchers.IO).launch {
             reconnectAttempts++
             
-            // Usar backoff exponencial pero con límite máximo
+            // Usar backo ff exponencial pero con límite máximo
             val delaySeconds = minOf(reconnectAttempts * 3, 15) // 3, 6, 9, 12, 15 segundos
             logInfo("WEBSOCKET", "⏳ Esperando ${delaySeconds}s antes del intento de reconexión #$reconnectAttempts")
             
@@ -434,6 +434,7 @@ internal expect fun getCurrentTimeMillis(): Long
 /**
  * Estados de conexión WebSocket
  */
+
 enum class WebSocketConnectionState {
     DISCONNECTED,
     CONNECTING,

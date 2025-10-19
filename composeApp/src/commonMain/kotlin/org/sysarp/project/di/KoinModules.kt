@@ -10,9 +10,9 @@ import org.sysarp.project.service.affiliation.AffiliationService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.service.branch.BranchService
-import org.sysarp.project.service.http.PaymentApiClient
 import org.sysarp.project.service.http.StatsApiClient
 import org.sysarp.project.service.http.billing.BillingApiClient
+import org.sysarp.project.service.http.payment.PaymentApiClient
 import org.sysarp.project.service.notification.HybridNotificationManager
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.qr.QRService

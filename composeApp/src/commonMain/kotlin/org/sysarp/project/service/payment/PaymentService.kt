@@ -1,6 +1,6 @@
 package org.sysarp.project.service.payment
 
-import org.sysarp.project.service.http.PaymentApiClient
+import org.sysarp.project.service.http.payment.PaymentApiClient
 
 class PaymentService(
     private val paymentApiClient: PaymentApiClient

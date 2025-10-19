@@ -1,4 +1,4 @@
-package org.sysarp.project.service.http
+package org.sysarp.project.service.http.payment
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -11,6 +11,7 @@ import kotlinx.serialization.json.Json
 import org.sysarp.project.data.PendingPaymentsResponse
 import org.sysarp.project.data.SellerConnectionStatusResponse
 import org.sysarp.project.data.ServerErrorResponse
+import org.sysarp.project.service.http.BaseApiClient
 
 class PaymentApiClient(
     private val httpClient: HttpClient
@@ -34,7 +35,7 @@ class PaymentApiClient(
         startDate: String? = null,
         endDate: String? = null,
         token: String
-    ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
+    ): Result<PendingPaymentsResponse> {
         return try {
 
             val response = httpClient.get("$baseUrl/api/payments") {
@@ -97,7 +98,7 @@ class PaymentApiClient(
             if (response.status.value in 200..299) {
                 try {
                     val responseBody = response.body<String>()
-                    val claimResponse = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.ClaimPaymentResponse>(responseBody)
+                    val claimResponse = Json.decodeFromString<org.sysarp.project.data.ClaimPaymentResponse>(responseBody)
                     Result.success(claimResponse)
                 } catch (e: Exception) {
                     logError("PAYMENT_API", "Error deserializando respuesta de claim: ${e.message}")
@@ -254,7 +255,8 @@ class PaymentApiClient(
 
             if (response.status.value in 200..299) {
                 try {
-                    val statusResponse = kotlinx.serialization.json.Json.decodeFromString<SellerConnectionStatusResponse>(responseBody)
+                    val responseBody = response.body<String>()
+                    val statusResponse = Json.decodeFromString<SellerConnectionStatusResponse>(responseBody)
                     Result.success(statusResponse)
                 } catch (e: Exception) {
                     logError("PAYMENT_API", "Error deserializando respuesta: ${e.message}")
@@ -309,7 +311,7 @@ class PaymentApiClient(
                 try {
                     val responseBody = response.body<String>()
                     // logInfo("PAYMENT_API", "Respuesta del servidor: $responseBody")
-                    val pendingPaymentsResponse = kotlinx.serialization.json.Json.decodeFromString<org.sysarp.project.data.PendingPaymentsResponse>(responseBody)
+                    val pendingPaymentsResponse = Json.decodeFromString<org.sysarp.project.data.PendingPaymentsResponse>(responseBody)
                     // logInfo("PAYMENT_API", "Pagos pendientes obtenidos exitosamente: ${pendingPaymentsResponse.data.payments.size} pagos en página ${pendingPaymentsResponse.data.pagination.currentPage}")
                     Result.success(pendingPaymentsResponse)
                 } catch (e: Exception) {
