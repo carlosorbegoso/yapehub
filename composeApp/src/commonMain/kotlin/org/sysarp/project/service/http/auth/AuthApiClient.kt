@@ -43,12 +43,7 @@ class AuthApiClient : BaseApiClient() {
         role: String = "ADMIN"
     ): Result<LoginResponse> {
         return try {
-            // logInfo("AUTH_API", "Intentando login de admin: $email")
-            
-            // Generar device fingerprint si no se proporciona
             val fingerprint = deviceFingerprint ?: generateDeviceFingerprint()
-            // logInfo("AUTH_API", "Device fingerprint: ${fingerprint.take(20)}...")
-            
             val response = client.post("$baseUrl/api/auth/login") {
                 contentType(ContentType.Application.Json)
                 val loginRequest = LoginRequest(
@@ -275,7 +270,6 @@ class AuthApiClient : BaseApiClient() {
         contactName: String
     ): Result<AdminRegistrationResponse> {
         return try {
-            // logInfo("AUTH_API", "Intentando registro de admin: $email")
             
             val requestData = AdminRegistrationRequest(
                 businessName = businessName,
@@ -287,9 +281,6 @@ class AuthApiClient : BaseApiClient() {
                 address = address,
                 contactName = contactName
             )
-            
-            // logInfo("AUTH_API", "Datos de registro: businessName=$businessName, businessType=$businessType, ruc=$ruc, email=$email, phone=$phone, address=$address, contactName=$contactName")
-            
             val response = client.post("$baseUrl/api/auth/admin/register") {
                 contentType(ContentType.Application.Json)
                 setBody(requestData)

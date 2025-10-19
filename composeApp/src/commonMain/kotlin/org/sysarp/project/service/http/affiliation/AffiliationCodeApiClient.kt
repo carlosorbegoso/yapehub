@@ -26,8 +26,6 @@ class AffiliationCodeApiClient : BaseApiClient() {
         accessToken: String
     ): Result<GenerateAffiliationCodeResponse> {
         return try {
-            // logInfo("AFFILIATION_CODE_API", "Generando código de afiliación para admin: $adminId")
-            
             val response = client.post("$baseUrl/api/generate-affiliation-code-protected") {
                 contentType(ContentType.Application.Json)
                 header("Authorization", "Bearer $accessToken")
@@ -40,7 +38,6 @@ class AffiliationCodeApiClient : BaseApiClient() {
             
             if (response.status.isSuccess()) {
                 val affiliationResponse = response.body<GenerateAffiliationCodeResponse>()
-                // logInfo("AFFILIATION_CODE_API", "Código de afiliación generado exitosamente")
                 Result.success(affiliationResponse)
             } else {
                 val errorMessage = "Error generando código de afiliación: ${response.status}"

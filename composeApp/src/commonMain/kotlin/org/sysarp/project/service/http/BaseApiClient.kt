@@ -101,14 +101,7 @@ abstract class BaseApiClient {
         println("[$timestamp] [$service] ERROR: $maskedMessage")
     }
     
-    /**
-     * Logging común para todos los servicios - DEBUG level
-     */
-    protected fun logDebug(service: String, message: String) {
-        val timestamp = getCurrentTimestamp()
-        val maskedMessage = maskSensitiveData(message)
-        println("[$timestamp] [$service] DEBUG: $maskedMessage")
-    }
+
     
     /**
      * Logging común para todos los servicios - WARNING level
@@ -118,28 +111,6 @@ abstract class BaseApiClient {
         val maskedMessage = maskSensitiveData(message)
         println("[$timestamp] [$service] WARNING: $maskedMessage")
     }
-    
-    /**
-     * Logging de inicio de operación con métricas de tiempo
-     */
-    protected fun logOperationStart(service: String, operation: String, details: String? = null) {
-        val message = "Iniciando $operation" + if (details != null) " - $details" else ""
-        logInfo(service, message)
-    }
-    
-    /**
-     * Logging de finalización de operación con métricas de tiempo
-     */
-    protected fun logOperationEnd(service: String, operation: String, success: Boolean, durationMs: Long? = null) {
-        val status = if (success) "exitoso" else "fallido"
-        val duration = if (durationMs != null) " en ${durationMs}ms" else ""
-        val message = "$operation $status$duration"
-        
-        if (success) {
-            logInfo(service, message)
-        } else {
-            logError(service, message)
-        }
-    }
+
     
 }
