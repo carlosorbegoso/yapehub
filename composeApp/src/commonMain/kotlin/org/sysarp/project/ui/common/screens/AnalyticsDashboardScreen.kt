@@ -7,7 +7,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.async
@@ -21,17 +20,14 @@ import org.sysarp.project.data.UnifiedAnalyticsUrls
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.screens.admin.AdminAnalyticsSections
-import org.sysarp.project.ui.screens.seller.SellerAnalyticsSections
+import org.sysarp.project.ui.seller.screens.analytics.SellerAnalyticsSections
 import org.sysarp.project.ui.common.components.topbar.TopBarComponent
-import org.sysarp.project.ui.components.charts.SalesTrendLineChart
 import org.sysarp.project.ui.common.components.charts.hourly.sales.HourlySalesChart
 import org.sysarp.project.ui.common.components.charts.PerformanceComparisonChart
 import org.sysarp.project.data.HourlySalesData
-import org.sysarp.project.data.WeeklySalesData
 import org.sysarp.project.utils.convertPeriodToDates
 import org.sysarp.project.ui.common.components.DateFilterComponent
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive

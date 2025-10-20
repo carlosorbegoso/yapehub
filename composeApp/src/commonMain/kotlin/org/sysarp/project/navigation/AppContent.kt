@@ -38,9 +38,9 @@ import org.sysarp.project.ui.admin.screens.analytics.AdminAnalyticsScreen
 import org.sysarp.project.ui.seller.screens.analytics.SellerAnalyticsScreen
 import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
 import org.sysarp.project.ui.screens.seller.SellerDashboardScreen
-import org.sysarp.project.ui.screens.seller.SellerNotificationsScreen
-import org.sysarp.project.ui.screens.seller.SellerSpecificPaymentsScreen
-import org.sysarp.project.ui.screens.seller.SellerUnifiedScreen
+import org.sysarp.project.ui.seller.screens.notifications.SellerNotificationsScreen
+import org.sysarp.project.ui.seller.screens.payments.SellerSpecificPaymentsScreen
+import org.sysarp.project.ui.seller.screens.auth.SellerUnifiedScreen
 import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsScreen
 import org.sysarp.project.viewmodel.YapeViewModel
 

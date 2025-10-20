@@ -395,7 +395,7 @@ private fun ProcessingInfoSection(payment: AdminPayment) {
 
 /**
  * Sección de acciones contextuales para ADMINISTRADORES
- * Los admins NO pueden confirmar/rechazar pagos, solo supervisar
+ * Los admins NO pueden confirmar/ pagos, solo supervisar
  */
 @Composable
 private fun ContextualActionsSection(

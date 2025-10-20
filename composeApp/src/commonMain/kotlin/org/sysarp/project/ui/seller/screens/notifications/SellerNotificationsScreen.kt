@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.seller
+package org.sysarp.project.ui.seller.screens.notifications
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

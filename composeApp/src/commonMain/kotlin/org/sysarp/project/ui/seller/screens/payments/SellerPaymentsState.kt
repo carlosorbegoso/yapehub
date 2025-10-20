@@ -5,311 +5,358 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.sysarp.project.data.SellerPendingPayment
-import org.sysarp.project.data.UserProfile
+import org.sysarp.project.data.DailySalesData
 import org.sysarp.project.data.PaymentFilterStatus
 import org.sysarp.project.data.PaymentFilterStatusUtils
+import org.sysarp.project.data.PaymentSummary
+import org.sysarp.project.data.PerformanceMetricsData
+import org.sysarp.project.data.SellerOverviewSummaryData
+import org.sysarp.project.data.SellerPendingPayment
+import org.sysarp.project.data.SellerStatsData
+import org.sysarp.project.data.UnifiedAnalyticsUrls
+import org.sysarp.project.data.UnifiedStatsData
+import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.utils.convertPeriodToDates
 
 /**
  * Estado y lógica de negocio para SellerPaymentsScreen
+ * Gestiona:
+ * - Estados de datos (pagos, estadísticas, filtros)
+ * - Operaciones de API (carga, claim, reject)
+ * - Lógica de filtrados en tiempo real
  */
 class SellerPaymentsState(
     val paymentService: PaymentService,
-    val statsService: org.sysarp.project.service.stats.StatsService,
+    val statsService: StatsService,
     private val coroutineScope: CoroutineScope
 ) {
-    // Estados de tabs
-    var selectedTab by mutableStateOf(0)
-        private set
-    
-    // Estados de datos
+    // ===== Estados de Datos =====
     var pendingPayments by mutableStateOf<List<SellerPendingPayment>>(emptyList())
         private set
-    
+
     var confirmedPayments by mutableStateOf<List<SellerPendingPayment>>(emptyList())
         private set
-    
-    // Estado del summary del servidor
-    var paymentSummary by mutableStateOf<org.sysarp.project.data.PaymentSummary?>(null)
+
+    var paymentSummary by mutableStateOf<PaymentSummary?>(null)
         private set
-    
-    // Estado de estadísticas del seller
-    var sellerStats by mutableStateOf<org.sysarp.project.data.SellerStatsData?>(null)
+
+    var sellerStats by mutableStateOf<SellerStatsData?>(null)
         private set
-    
-    // URLs de analytics del endpoint unificado
-    var analyticsUrls by mutableStateOf<org.sysarp.project.data.UnifiedAnalyticsUrls?>(null)
+
+    var analyticsUrls by mutableStateOf<UnifiedAnalyticsUrls?>(null)
         private set
-    
-    // Estados de carga
+
+    var filteredPendingPayments by mutableStateOf<List<SellerPendingPayment>>(emptyList())
+        private set
+
+    var filteredConfirmedPayments by mutableStateOf<List<SellerPendingPayment>>(emptyList())
+        private set
+
+    // ===== Estados de UI =====
+    var selectedTab by mutableStateOf(0)
+        private set
+
     var isLoading by mutableStateOf(false)
         private set
-    
+
     var isLoadingMore by mutableStateOf(false)
         private set
-    
-    // Estados de error
+
     var errorMessage by mutableStateOf("")
-        private set
-    
-    // Estados de paginación
-    var currentPage by mutableStateOf(0)
-        private set
-    
-    var hasMorePayments by mutableStateOf(true)
-        private set
-    
-    // Estados de filtros de fechas
-    var startDate by mutableStateOf<String?>(null)
-        private set
-    
-    var endDate by mutableStateOf<String?>(null)
-        private set
-    
-    // Estados de filtros dinámicos
-    var selectedStatuses by mutableStateOf<List<PaymentFilterStatus>>(emptyList())
-        private set
-    
+
     var showAdvancedFilters by mutableStateOf(false)
         private set
-    
-    // Estados de filtros en tiempo real
+
+    // ===== Estados de Filtros =====
     var yapeCodeFilter by mutableStateOf("")
         private set
 
-    var dateRangeFilter by mutableStateOf("📅 30 días") // Período por defecto
+    var dateRangeFilter by mutableStateOf("📅 30 días")
         private set
-    
-    // Estados de pagos filtrados
-    var filteredPendingPayments by mutableStateOf<List<SellerPendingPayment>>(emptyList())
+
+    var selectedStatuses by mutableStateOf<List<PaymentFilterStatus>>(emptyList())
         private set
-    
-    var filteredConfirmedPayments by mutableStateOf<List<SellerPendingPayment>>(emptyList())
+
+    var startDate by mutableStateOf<String?>(null)
         private set
-    
-    // Estados de usuario (se pasan como parámetros)
+
+    var endDate by mutableStateOf<String?>(null)
+        private set
+
+    // ===== Estados de Paginación =====
+    var currentPage by mutableStateOf(0)
+        private set
+
+    var hasMorePayments by mutableStateOf(true)
+        private set
+
+    // ===== Estados de Usuario =====
     var userProfile: UserProfile? = null
         private set
-    
+
     var accessToken: String? = null
         private set
-    
-    /**
-     * Cambia el tab seleccionado y recarga los datos automáticamente
-     */
+
+    // ===== Propiedades Calculadas =====
+
+    val canLoadData: Boolean
+        get() = accessToken != null && userProfile?.sellerId != null
+
+    val isSellerIdValid: Boolean
+        get() = userProfile?.sellerId?.toIntOrNull() != null
+
+    // ===== Acciones Públicas =====
+
     fun changeSelectedTab(tabIndex: Int) {
         selectedTab = tabIndex
-        // Recargar datos automáticamente cuando se cambia de pestaña
-        loadPaymentsWithFilters(
-            onSuccess = { },
-            onFailure = { }
-        )
+        loadPaymentsWithFilters(onSuccess = {}, onFailure = {})
     }
-    
-    /**
-     * Establece los pagos pendientes
-     */
-    fun updatePendingPayments(payments: List<SellerPendingPayment>) {
-        pendingPayments = payments
-        applyRealTimeFilters()
+
+    fun toggleAdvancedFilters() {
+        showAdvancedFilters = !showAdvancedFilters
     }
-    
-    /**
-     * Establece los pagos confirmados
-     */
-    fun updateConfirmedPayments(payments: List<SellerPendingPayment>) {
-        confirmedPayments = payments
-        applyRealTimeFilters()
-    }
-    
-    /**
-     * Agrega más pagos pendientes a la lista existente
-     */
-    fun addMorePendingPayments(morePayments: List<SellerPendingPayment>) {
-        pendingPayments = pendingPayments + morePayments
-        applyRealTimeFilters()
-    }
-    
-    /**
-     * Agrega más pagos confirmados a la lista existente
-     */
-    fun addMoreConfirmedPayments(morePayments: List<SellerPendingPayment>) {
-        confirmedPayments = confirmedPayments + morePayments
-        applyRealTimeFilters()
-    }
-    
-    /**
-     * Establece el summary de pagos del servidor
-     */
-    fun updatePaymentSummary(summary: org.sysarp.project.data.PaymentSummary?) {
-        paymentSummary = summary
-    }
-    
-    /**
-     * Establece las estadísticas del seller
-     */
-    fun updateSellerStats(stats: org.sysarp.project.data.SellerStatsData?) {
-        sellerStats = stats
-    }
-    
-    /**
-     * Establece el estado de carga
-     */
-    fun updateLoading(loading: Boolean) {
-        isLoading = loading
-    }
-    
-    /**
-     * Establece el estado de carga de más elementos
-     */
-    fun updateLoadingMore(loading: Boolean) {
-        isLoadingMore = loading
-    }
-    
-    /**
-     * Establece la página actual
-     */
-    fun updateCurrentPage(page: Int) {
-        currentPage = page
-    }
-    
-    /**
-     * Establece si hay más pagos disponibles
-     */
-    fun updateHasMorePayments(hasMore: Boolean) {
-        hasMorePayments = hasMore
-    }
-    
-    /**
-     * Establece el mensaje de error
-     */
-    fun updateErrorMessage(message: String) {
-        errorMessage = message
-    }
-    
-    /**
-     * Limpia el mensaje de error
-     */
-    fun clearErrorMessage() {
-        errorMessage = ""
-    }
-    
-    /**
-     * Establece el perfil de usuario
-     */
-    fun updateUserProfile(profile: UserProfile?) {
-        userProfile = profile
-    }
-    
-    /**
-     * Establece el token de acceso
-     */
-    fun updateAccessToken(token: String?) {
-        accessToken = token
-    }
-    
-    /**
-     * Inicializa los filtros por defecto
-     */
-    fun initializeDefaultFilters() {
-        // Inicializar filtros de fecha por defecto
-        val (start, end) = convertPeriodToDates(dateRangeFilter)
-        updateDateRange(start, end)
-    }
-    
-    /**
-     * Actualiza el filtro de código Yape y aplica filtrado en tiempo real
-     */
+
     fun updateYapeCodeFilter(filter: String) {
         yapeCodeFilter = filter
         applyRealTimeFilters()
     }
-    
-    /**
-     * Actualiza el filtro de rango de fechas y aplica filtrado en tiempo real
-     */
+
     fun updateDateRangeFilter(filter: String) {
         dateRangeFilter = filter
-        // Convertir el período seleccionado en fechas específicas
         val (start, end) = convertPeriodToDates(filter)
         updateDateRange(start, end)
         applyRealTimeFilters()
     }
-    
-    /**
-     * Convierte un período del calendario en fechas específicas para la API
-     */
-    private fun convertPeriodToDates(period: String): Pair<String?, String?> {
-        return org.sysarp.project.utils.convertPeriodToDates(period)
-    }
-    
-    /**
-     * Aplica filtros en tiempo real a los pagos cargados
-     */
-    private fun applyRealTimeFilters() {
-        filteredPendingPayments = pendingPayments.filter { payment ->
-            matchesFilters(payment)
-        }
-        
-        filteredConfirmedPayments = confirmedPayments.filter { payment ->
-            matchesFilters(payment)
-        }
-    }
-    
-    /**
-     * Verifica si un pago coincide con los filtros aplicados
-     */
-    private fun matchesFilters(payment: SellerPendingPayment): Boolean {
-        // Filtro por código Yape
-        val matchesYapeCode = yapeCodeFilter.isEmpty() || 
-            payment.yapeCode.contains(yapeCodeFilter, ignoreCase = true)
-        
-        // Filtro por fecha (si está implementado)
-        val matchesDateRange = dateRangeFilter.isEmpty() || 
-            matchesDateRange(payment, dateRangeFilter)
-        
-        return matchesYapeCode && matchesDateRange
-    }
-    
-    /**
-     * Verifica si un pago coincide con el rango de fechas seleccionado
-     */
-    private fun matchesDateRange(payment: SellerPendingPayment, dateRange: String): Boolean {
-        // TODO: Implementar lógica de filtrado por fecha
-        // Por ahora retorna true para no filtrar por fecha
-        return true
-    }
-    
-    /**
-     * Establece las fechas de filtro
-     */
-    fun updateDateRange(startDate: String?, endDate: String?) {
-        this.startDate = startDate
-        this.endDate = endDate
-    }
-    
-    /**
-     * Establece los estados de filtro seleccionados
-     */
+
     fun updateSelectedStatuses(statuses: List<PaymentFilterStatus>) {
         selectedStatuses = statuses
     }
-    
-    /**
-     * Alterna la visibilidad de filtros avanzados
-     */
-    fun toggleAdvancedFilters() {
-        showAdvancedFilters = !showAdvancedFilters
+
+    fun clearErrorMessage() {
+        errorMessage = ""
     }
-    
-    /**
-     * Obtiene el string de estados para la API
-     */
-    fun getStatusString(): String {
+
+    fun updateUserProfile(profile: UserProfile?) {
+        userProfile = profile
+    }
+
+    fun updateAccessToken(token: String?) {
+        accessToken = token
+    }
+
+    fun initializeDefaultFilters() {
+        val (start, end) = convertPeriodToDates(dateRangeFilter)
+        updateDateRange(start, end)
+    }
+
+    fun clearAllFilters() {
+        selectedStatuses = emptyList()
+        startDate = null
+        endDate = null
+        showAdvancedFilters = false
+        yapeCodeFilter = ""
+        dateRangeFilter = ""
+        applyRealTimeFilters()
+    }
+
+    // ===== Operaciones de Carga =====
+
+    fun loadPaymentsWithFilters(
+        onSuccess: () -> Unit = {},
+        onFailure: (String) -> Unit = {}
+    ) {
+        if (!canLoadData) return
+
+        coroutineScope.launch {
+            isLoading = true
+            clearErrorMessage()
+            currentPage = 0
+            hasMorePayments = true
+
+            val statusString = getStatusString()
+
+            paymentService.getPayments(
+                sellerId = userProfile?.sellerId?.toInt() ?: 0,
+                status = statusString,
+                page = 0,
+                size = 20,
+                startDate = startDate,
+                endDate = endDate,
+                token = accessToken ?: ""
+            ).fold(
+                onSuccess = { response ->
+                    updatePaymentsFromResponse(response)
+                    isLoading = false
+                    onSuccess()
+                },
+                onFailure = { error ->
+                    handleLoadError("Error cargando pagos: ${error.message}", onFailure)
+                }
+            )
+        }
+    }
+
+    fun loadMorePayments(
+        onSuccess: () -> Unit = {},
+        onFailure: (String) -> Unit = {}
+    ) {
+        if (!canLoadData || !hasMorePayments || isLoadingMore) return
+
+        coroutineScope.launch {
+            isLoadingMore = true
+            val nextPage = currentPage + 1
+            val statusString = getStatusString()
+
+            paymentService.getPayments(
+                sellerId = userProfile?.sellerId?.toInt() ?: 0,
+                status = statusString,
+                page = nextPage,
+                size = 20,
+                startDate = startDate,
+                endDate = endDate,
+                token = accessToken ?: ""
+            ).fold(
+                onSuccess = { response ->
+                    addMorePaymentsFromResponse(response, nextPage)
+                    isLoadingMore = false
+                    onSuccess()
+                },
+                onFailure = { error ->
+                    handleLoadError("Error cargando más pagos: ${error.message}", onFailure)
+                }
+            )
+        }
+    }
+
+    fun claimPayment(
+        paymentId: Int,
+        onSuccess: () -> Unit = {},
+        onFailure: (String) -> Unit = {}
+    ) {
+        if (!canLoadData) return
+
+        coroutineScope.launch {
+            paymentService.claimPayment(
+                sellerId = userProfile?.sellerId?.toInt() ?: 0,
+                paymentId = paymentId,
+                token = accessToken ?: ""
+            ).fold(
+                onSuccess = {
+                    refreshAllPayments(onSuccess, onFailure)
+                },
+                onFailure = { error ->
+                    handleLoadError("Error confirmando pago: ${error.message}", onFailure)
+                }
+            )
+        }
+    }
+
+    fun rejectPayment(
+        paymentId: Int,
+        reason: String = "Rechazado por vendedor",
+        onSuccess: () -> Unit = {},
+        onFailure: (String) -> Unit = {}
+    ) {
+        if (!canLoadData) return
+
+        coroutineScope.launch {
+            paymentService.rejectPayment(
+                sellerId = userProfile?.sellerId?.toInt() ?: 0,
+                paymentId = paymentId,
+                reason = reason,
+                token = accessToken ?: ""
+            ).fold(
+                onSuccess = {
+                    refreshAllPayments(onSuccess, onFailure)
+                },
+                onFailure = { error ->
+                    handleLoadError("Error rechazando pago: ${error.message}", onFailure)
+                }
+            )
+        }
+    }
+
+    fun refreshAllPayments(
+        onSuccess: () -> Unit = {},
+        onFailure: (String) -> Unit = {}
+    ) {
+        loadPaymentsWithFilters(onSuccess, onFailure)
+    }
+
+    fun loadSellerStats(
+        onSuccess: () -> Unit = {},
+        onFailure: (String) -> Unit = {}
+    ) {
+        if (!canLoadData) return
+
+        coroutineScope.launch {
+            statsService.getUnifiedStatsSummary(
+                adminId = null,
+                sellerId = userProfile?.sellerId?.toInt() ?: 0,
+                startDate = startDate,
+                endDate = endDate,
+                token = accessToken ?: ""
+            ).fold(
+                onSuccess = { response ->
+                    sellerStats = buildSellerStatsData(response.data)
+                    analyticsUrls = response.data.urls
+                    onSuccess()
+                },
+                onFailure = { error ->
+                    handleLoadError("Error cargando estadísticas: ${error.message}", onFailure)
+                }
+            )
+        }
+    }
+
+    // ===== Operaciones Privadas =====
+
+    private fun updatePaymentsFromResponse(response: Any) {
+        val typedResponse = response as? org.sysarp.project.data.PendingPaymentsResponse ?: return
+
+        val pending = typedResponse.data.payments.filter { it.status == "PENDING" }
+        val confirmed = typedResponse.data.payments.filter { it.status == "CLAIMED" }
+
+        pendingPayments = pending
+        confirmedPayments = confirmed
+        paymentSummary = typedResponse.data.summary
+        hasMorePayments = typedResponse.data.pagination.currentPage <
+                typedResponse.data.pagination.totalPages - 1
+
+        applyRealTimeFilters()
+    }
+
+    private fun addMorePaymentsFromResponse(response: Any, nextPage: Int) {
+        val typedResponse = response as? org.sysarp.project.data.PendingPaymentsResponse ?: return
+
+        val pending = typedResponse.data.payments.filter { it.status == "PENDING" }
+        val confirmed = typedResponse.data.payments.filter { it.status == "CLAIMED" }
+
+        pendingPayments = pendingPayments + pending
+        confirmedPayments = confirmedPayments + confirmed
+        currentPage = nextPage
+        hasMorePayments = typedResponse.data.pagination.currentPage <
+                typedResponse.data.pagination.totalPages - 1
+
+        applyRealTimeFilters()
+    }
+
+    private fun applyRealTimeFilters() {
+        filteredPendingPayments = pendingPayments.filter { matchesFilters(it) }
+        filteredConfirmedPayments = confirmedPayments.filter { matchesFilters(it) }
+    }
+
+    private fun matchesFilters(payment: SellerPendingPayment): Boolean {
+        val matchesYapeCode = yapeCodeFilter.isEmpty() ||
+                payment.yapeCode.contains(yapeCodeFilter, ignoreCase = true)
+
+        return matchesYapeCode
+    }
+
+    private fun getStatusString(): String {
         return if (selectedStatuses.isEmpty()) {
-            // Si no hay filtros, usar el tab seleccionado
             when (selectedTab) {
                 0 -> PaymentFilterStatus.PENDING.value
                 1 -> PaymentFilterStatus.CLAIMED.value
@@ -319,382 +366,47 @@ class SellerPaymentsState(
             PaymentFilterStatusUtils.toCommaSeparatedString(selectedStatuses)
         }
     }
-    
-    /**
-     * Verifica si hay filtros activos
-     */
-    fun hasActiveFilters(): Boolean {
-        return selectedStatuses.isNotEmpty() || startDate != null || endDate != null
-    }
-    
-    /**
-     * Limpia todos los filtros
-     */
-    fun clearAllFilters() {
-        selectedStatuses = emptyList()
-        startDate = null
-        endDate = null
-        showAdvancedFilters = false
-        yapeCodeFilter = ""
-        dateRangeFilter = ""
-        filteredPendingPayments = pendingPayments
-        filteredConfirmedPayments = confirmedPayments
-    }
-    
-    /**
-     * Carga los pagos con filtros dinámicos (primera página)
-     */
-    fun loadPaymentsWithFilters(
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        if (accessToken != null && userProfile?.sellerId != null) {
-            coroutineScope.launch {
-                updateLoading(true)
-                clearErrorMessage()
-                updateCurrentPage(0)
-                updateHasMorePayments(true)
 
-                val statusString = getStatusString()
-                
-                paymentService.getPayments(
-                    sellerId = userProfile?.sellerId?.toInt() ?: 0,
-                    status = statusString,
-                    page = 0,
-                    size = 20,
-                    startDate = startDate,
-                    endDate = endDate,
-                    token = accessToken ?: ""
-                ).fold(
-                    onSuccess = { response ->
-                        // Separar pagos por estado
-                        val pending = response.data.payments.filter { it.status == "PENDING" }
-                        val confirmed = response.data.payments.filter { it.status == "CLAIMED" }
-                        
-                        updatePendingPayments(pending)
-                        updateConfirmedPayments(confirmed)
-                        updatePaymentSummary(response.data.summary)
-                        updateHasMorePayments(response.data.pagination.currentPage < response.data.pagination.totalPages - 1)
-                        updateLoading(false)
-                        onSuccess()
-                    },
-                    onFailure = { error ->
-                        updateErrorMessage(error.message ?: "Error cargando pagos")
-                        updateLoading(false)
-                        onFailure(errorMessage)
-                    }
+    private fun buildSellerStatsData(data: UnifiedStatsData): SellerStatsData? {
+        return SellerStatsData(
+            sellerId = userProfile?.sellerId?.toInt(),
+            sellerName = userProfile?.name,
+            performanceMetrics = PerformanceMetricsData(
+                averageConfirmationTime = data.performanceMetrics.averageConfirmationTime,
+                claimRate = data.performanceMetrics.claimRate,
+                rejectionRate = data.performanceMetrics.rejectionRate,
+                pendingPayments = data.performanceMetrics.pendingPayments,
+                confirmedPayments = data.performanceMetrics.confirmedPayments,
+                rejectedPayments = data.performanceMetrics.rejectedPayments
+            ),
+            dailySales = data.dailySales?.map { daily ->
+                DailySalesData(
+                    date = daily.date,
+                    dayName = daily.dayName,
+                    sales = daily.sales,
+                    transactions = daily.transactions
                 )
-            }
-        }
-    }
-    
-    /**
-     * Carga más pagos (paginación infinita)
-     */
-    fun loadMorePayments(
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        if (accessToken != null && userProfile?.sellerId != null && hasMorePayments && !isLoadingMore) {
-            coroutineScope.launch {
-                updateLoadingMore(true)
-                val nextPage = currentPage + 1
-
-                val statusString = getStatusString()
-                
-                paymentService.getPayments(
-                    sellerId = userProfile?.sellerId?.toInt() ?: 0,
-                    status = statusString,
-                    page = nextPage,
-                    size = 20,
-                    startDate = startDate,
-                    endDate = endDate,
-                    token = accessToken ?: ""
-                ).fold(
-                    onSuccess = { response ->
-                        // Separar pagos por estado
-                        val pending = response.data.payments.filter { it.status == "PENDING" }
-                        val confirmed = response.data.payments.filter { it.status == "CLAIMED" }
-                        
-                        // Agregar a las listas existentes
-                        addMorePendingPayments(pending)
-                        addMoreConfirmedPayments(confirmed)
-                        updateCurrentPage(nextPage)
-                        updateHasMorePayments(response.data.pagination.currentPage < response.data.pagination.totalPages - 1)
-                        updateLoadingMore(false)
-                        onSuccess()
-                    },
-                    onFailure = { error ->
-                        updateErrorMessage(error.message ?: "Error cargando más pagos")
-                        updateLoadingMore(false)
-                        onFailure(errorMessage)
-                    }
-                )
-            }
-        }
-    }
-    
-    /**
-     * Carga los pagos pendientes (método de compatibilidad)
-     */
-    fun loadPendingPayments(
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        loadPaymentsWithFilters(onSuccess, onFailure)
-    }
-    
-    /**
-     * Carga los pagos confirmados (método de compatibilidad)
-     */
-    fun loadConfirmedPayments(
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        loadPaymentsWithFilters(onSuccess, onFailure)
+            } ?: emptyList(),
+            overview = SellerOverviewSummaryData(
+                totalSales = data.overview.totalSales,
+                totalTransactions = data.overview.totalTransactions,
+                averageTransactionValue = data.overview.averageTransactionValue,
+                salesGrowth = data.overview.salesGrowth,
+                transactionGrowth = data.overview.transactionGrowth,
+                averageGrowth = data.overview.averageGrowth
+            )
+        )
     }
 
-    /**
-     * Confirma un pago
-     */
-    fun claimPayment(
-        paymentId: Int,
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        if (userProfile?.sellerId != null && accessToken != null) {
-            coroutineScope.launch {
-                paymentService.claimPayment(
-                    sellerId = userProfile?.sellerId?.toInt() ?: 0,
-                    paymentId = paymentId,
-                    token = accessToken ?: ""
-                ).fold(
-                    onSuccess = { response ->
-                        // Recargar con filtros actuales
-                        refreshAllPayments(
-                            onSuccess = { },
-                            onFailure = { }
-                        )
-                        onSuccess()
-                    },
-                    onFailure = { error ->
-                        updateErrorMessage("Error confirmando pago: ${error.message}")
-                        onFailure(errorMessage)
-                    }
-                )
-            }
-        }
+    private fun updateDateRange(startDate: String?, endDate: String?) {
+        this.startDate = startDate
+        this.endDate = endDate
     }
 
-    /**
-     * Rechaza un pago
-     */
-    fun rejectPayment(
-        paymentId: Int,
-        reason: String = "Rechazado por vendedor",
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        if (userProfile?.sellerId != null && accessToken != null) {
-            coroutineScope.launch {
-                paymentService.rejectPayment(
-                    sellerId = userProfile?.sellerId?.toInt() ?: 0,
-                    paymentId = paymentId,
-                    reason = reason,
-                    token = accessToken ?: ""
-                ).fold(
-                    onSuccess = { response ->
-                        // Recargar con filtros actuales
-                        refreshAllPayments(
-                            onSuccess = { },
-                            onFailure = { }
-                        )
-                        onSuccess()
-                    },
-                    onFailure = { error ->
-                        updateErrorMessage("Error rechazando pago: ${error.message}")
-                        onFailure(errorMessage)
-                    }
-                )
-            }
-        }
-    }
-
-    /**
-     * Recarga todos los pagos con filtros actuales
-     */
-    fun refreshAllPayments(
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        loadPaymentsWithFilters(onSuccess, onFailure)
-    }
-    
-    /**
-     * Carga las estadísticas del seller
-     */
-    fun loadSellerStats(
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        if (accessToken != null && userProfile?.sellerId != null) {
-            coroutineScope.launch {
-                println("SELLER_STATS: Cargando estadísticas unificadas para sellerId: ${userProfile?.sellerId}, fechas: $startDate - $endDate")
-                statsService.getUnifiedStatsSummary(
-                    adminId = null,
-                    sellerId = userProfile?.sellerId?.toInt() ?: 0,
-                    startDate = startDate,
-                    endDate = endDate,
-                    token = accessToken ?: ""
-                ).fold(
-                    onSuccess = { response ->
-                        println("SELLER_STATS: Estadísticas unificadas cargadas exitosamente: ${response.data}")
-                        // Convertir UnifiedStatsData a SellerStatsData para mantener compatibilidad
-                        val sellerStatsData = org.sysarp.project.data.SellerStatsData(
-                            sellerId = userProfile?.sellerId?.toInt(),
-                            sellerName = userProfile?.name,
-                            performanceMetrics = org.sysarp.project.data.PerformanceMetricsData(
-                                averageConfirmationTime = response.data.performanceMetrics.averageConfirmationTime,
-                                claimRate = response.data.performanceMetrics.claimRate,
-                                rejectionRate = response.data.performanceMetrics.rejectionRate,
-                                pendingPayments = response.data.performanceMetrics.pendingPayments,
-                                confirmedPayments = response.data.performanceMetrics.confirmedPayments,
-                                rejectedPayments = response.data.performanceMetrics.rejectedPayments
-                            ),
-                dailySales = response.data.dailySales?.map { daily ->
-                    org.sysarp.project.data.DailySalesData(
-                        date = daily.date,
-                        dayName = daily.dayName,
-                        sales = daily.sales,
-                        transactions = daily.transactions
-                    )
-                } ?: emptyList(),
-                            overview = org.sysarp.project.data.SellerOverviewSummaryData(
-                                totalSales = response.data.overview.totalSales,
-                                totalTransactions = response.data.overview.totalTransactions,
-                                averageTransactionValue = response.data.overview.averageTransactionValue,
-                                salesGrowth = response.data.overview.salesGrowth,
-                                transactionGrowth = response.data.overview.transactionGrowth,
-                                averageGrowth = response.data.overview.averageGrowth
-                            )
-                        )
-                        updateSellerStats(sellerStatsData)
-                        analyticsUrls = response.data.urls
-                        onSuccess()
-                    },
-                    onFailure = { error ->
-                        println("SELLER_STATS: Error cargando estadísticas unificadas: ${error.message}")
-                        updateErrorMessage("Error cargando estadísticas: ${error.message}")
-                        onFailure(errorMessage)
-                    }
-                )
-            }
-        } else {
-            println("SELLER_STATS: No se pueden cargar estadísticas - accessToken: ${accessToken != null}, sellerId: ${userProfile?.sellerId}")
-        }
-    }
-    
-    /**
-     * Carga analytics específicos usando las URLs del endpoint unificado
-     */
-    fun loadAnalyticsFromUrl(
-        url: String,
-        onSuccess: (String) -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        if (accessToken != null) {
-            coroutineScope.launch {
-                println("SELLER_ANALYTICS: Cargando analytics desde URL: $url")
-                statsService.getAnalyticsFromUrl(url, accessToken ?: "").fold(
-                    onSuccess = { response ->
-                        println("SELLER_ANALYTICS: Analytics cargados exitosamente desde: $url")
-                        onSuccess(response)
-                    },
-                    onFailure = { error ->
-                        println("SELLER_ANALYTICS: Error cargando analytics desde $url: ${error.message}")
-                        onFailure(error.message ?: "Error desconocido")
-                    }
-                )
-            }
-        } else {
-            println("SELLER_ANALYTICS: No se pueden cargar analytics - accessToken: ${accessToken != null}")
-        }
-    }
-    
-    /**
-     * Verifica si se puede cargar pagos
-     */
-    fun canLoadPayments(): Boolean {
-        return accessToken != null && userProfile?.sellerId != null
-    }
-    
-    /**
-     * Verifica si hay pagos pendientes
-     */
-    fun hasPendingPayments(): Boolean {
-        return pendingPayments.isNotEmpty()
-    }
-    
-    /**
-     * Verifica si hay pagos confirmados
-     */
-    fun hasConfirmedPayments(): Boolean {
-        return confirmedPayments.isNotEmpty()
-    }
-    
-    /**
-     * Obtiene el total de pagos pendientes
-     */
-    fun getPendingPaymentsTotal(): Double {
-        return pendingPayments.sumOf { it.amount }
-    }
-    
-    /**
-     * Obtiene el total de pagos confirmados
-     */
-    fun getConfirmedPaymentsTotal(): Double {
-        return confirmedPayments.sumOf { it.amount }
-    }
-    
-    /**
-     * Obtiene el número de pagos pendientes
-     */
-    fun getPendingPaymentsCount(): Int {
-        return pendingPayments.size
-    }
-    
-    /**
-     * Obtiene el número de pagos confirmados
-     */
-    fun getConfirmedPaymentsCount(): Int {
-        return confirmedPayments.size
-    }
-    
-    /**
-     * Filtra por rango de fechas y recarga
-     */
-    fun filterByDateRange(
-        startDate: String?,
-        endDate: String?,
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        updateDateRange(startDate, endDate)
-        refreshAllPayments(onSuccess, onFailure)
-    }
-    
-    /**
-     * Aplica filtros avanzados y recarga
-     */
-    fun applyAdvancedFilters(
-        statuses: List<PaymentFilterStatus>,
-        startDate: String?,
-        endDate: String?,
-        onSuccess: () -> Unit,
-        onFailure: (String) -> Unit
-    ) {
-        updateSelectedStatuses(statuses)
-        updateDateRange(startDate, endDate)
-        refreshAllPayments(onSuccess, onFailure)
+    private fun handleLoadError(message: String, onFailure: (String) -> Unit) {
+        errorMessage = message
+        isLoading = false
+        isLoadingMore = false
+        onFailure(message)
     }
 }

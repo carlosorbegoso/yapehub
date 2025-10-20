@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.seller
+package org.sysarp.project.ui.seller.screens.payments
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.service.auth.AuthService
@@ -68,13 +70,13 @@ fun SellerSpecificPaymentsScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var processingPayments by remember { mutableStateOf<Set<Int>>(emptySet()) }
-    
+    var processedPaymentIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+
     val userProfile by authService.userProfile.collectAsState()
     val accessToken by authService.accessToken.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    // Función para cargar pagos del vendedor específico
-    val loadSellerPayments: () -> Unit = {
+    fun loadSellerPayments() {
         if (accessToken != null && userProfile?.adminId != null) {
             coroutineScope.launch {
                 isLoading = true
@@ -84,7 +86,7 @@ fun SellerSpecificPaymentsScreen(
                     sellerId = sellerId,
                     adminId = userProfile!!.adminId!!.toInt(),
                     page = 0,
-                    size = 100, // Cargar más pagos para este vendedor específico
+                    size = 100,
                     token = accessToken!!
                 ).fold(
                     onSuccess = { response ->
@@ -100,25 +102,27 @@ fun SellerSpecificPaymentsScreen(
         }
     }
 
-    // Cargar pagos al iniciar
-    LaunchedEffect(sellerId) {
-        loadSellerPayments()
-    }
-
-    // Función para confirmar un pago
-    val claimPayment: (Int) -> Unit = { paymentId ->
+    fun claimPayment(paymentId: Int) {
         if (accessToken != null && userProfile?.adminId != null) {
             coroutineScope.launch {
                 processingPayments = processingPayments + paymentId
-                
+
                 paymentService.claimPayment(
                     sellerId = sellerId,
                     paymentId = paymentId,
                     token = accessToken!!
                 ).fold(
-                    onSuccess = { response ->
-                        // Actualizar la lista de pagos
+                    onSuccess = {
+                        // Marcar como procesado
+                        processedPaymentIds = processedPaymentIds + paymentId
+
+                        // Remover localmente de inmediato para mejor UX
+                        pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+
+                        // Recargar después de un delay corto para sincronizar con servidor
+                        delay(500)
                         loadSellerPayments()
+
                         processingPayments = processingPayments - paymentId
                     },
                     onFailure = { error ->
@@ -130,21 +134,28 @@ fun SellerSpecificPaymentsScreen(
         }
     }
 
-    // Función para rechazar un pago
-    val rejectPayment: (Int) -> Unit = { paymentId ->
+    fun rejectPayment(paymentId: Int) {
         if (accessToken != null && userProfile?.adminId != null) {
             coroutineScope.launch {
                 processingPayments = processingPayments + paymentId
-                
+
                 paymentService.rejectPayment(
                     sellerId = sellerId,
                     paymentId = paymentId,
                     reason = "Rechazado por administrador",
                     token = accessToken!!
                 ).fold(
-                    onSuccess = { response ->
-                        // Actualizar la lista de pagos
+                    onSuccess = {
+                        // Marcar como procesado
+                        processedPaymentIds = processedPaymentIds + paymentId
+
+                        // Remover localmente de inmediato para mejor UX
+                        pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+
+                        // Recargar después de un delay corto para sincronizar con servidor
+                        delay(500)
                         loadSellerPayments()
+
                         processingPayments = processingPayments - paymentId
                     },
                     onFailure = { error ->
@@ -156,10 +167,25 @@ fun SellerSpecificPaymentsScreen(
         }
     }
 
+    // Cargar pagos al iniciar
+    LaunchedEffect(sellerId) {
+        loadSellerPayments()
+    }
+
+    // Limpiar estado al desmontar
+    DisposableEffect(Unit) {
+        onDispose {
+            pendingPayments = emptyList()
+            processingPayments = emptySet()
+            processedPaymentIds = emptySet()
+            errorMessage = ""
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         "Pagos de $sellerName",
                         style = MaterialTheme.typography.headlineSmall,
@@ -175,7 +201,10 @@ fun SellerSpecificPaymentsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = loadSellerPayments) {
+                    IconButton(
+                        onClick = { loadSellerPayments() },
+                        enabled = !isLoading
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Refresh,
                             contentDescription = "Actualizar"
@@ -260,7 +289,7 @@ fun SellerSpecificPaymentsScreen(
                         )
                     }
                 }
-                
+
                 Card(
                     modifier = Modifier.weight(1f),
                     colors = CardDefaults.cardColors(
@@ -365,12 +394,15 @@ fun SellerSpecificPaymentsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(pendingPayments) { payment ->
-                        SellerPaymentCard(
-                            payment = payment,
-                            onClaimPayment = { claimPayment(payment.paymentId) },
-                            onRejectPayment = { rejectPayment(payment.paymentId) },
-                            isProcessing = processingPayments.contains(payment.paymentId)
-                        )
+                        // Solo mostrar pagos que no hayan sido procesados
+                        if (!processedPaymentIds.contains(payment.paymentId)) {
+                            SellerPaymentCard(
+                                payment = payment,
+                                onClaimPayment = { claimPayment(payment.paymentId) },
+                                onRejectPayment = { rejectPayment(payment.paymentId) },
+                                isProcessing = processingPayments.contains(payment.paymentId)
+                            )
+                        }
                     }
                 }
             }
@@ -414,16 +446,16 @@ fun SellerPaymentCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                
+
                 Text(
                     text = payment.getDisplayDate(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -452,7 +484,7 @@ fun SellerPaymentCard(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Confirmar")
                 }
-                
+
                 OutlinedButton(
                     onClick = onRejectPayment,
                     modifier = Modifier.weight(1f),

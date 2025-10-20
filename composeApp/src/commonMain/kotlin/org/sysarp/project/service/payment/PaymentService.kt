@@ -107,28 +107,6 @@ class PaymentService(
         )
     }
 
-    /**
-     * Obtener pagos pendientes y confirmados (método de conveniencia)
-     */
-    suspend fun getPendingAndConfirmedPayments(
-        sellerId: Int? = null,
-        page: Int = 0,
-        size: Int = 20,
-        startDate: String? = null,
-        endDate: String? = null,
-        token: String
-    ): Result<org.sysarp.project.data.PendingPaymentsResponse> {
-        return getPaymentsWithMultipleStatuses(
-            sellerId, 
-            listOf("PENDING", "CLAIMED"), 
-            page, 
-            size, 
-            startDate, 
-            endDate, 
-            token
-        )
-    }
-
     suspend fun claimPayment(
         sellerId: Int,
         paymentId: Int,

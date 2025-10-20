@@ -2,7 +2,7 @@ package org.sysarp.project.ui.common.screens
 
 import androidx.compose.runtime.Composable
 import org.sysarp.project.service.auth.AuthService
-import org.sysarp.project.ui.screens.seller.SellerQRLoginScreen
+import org.sysarp.project.ui.seller.screens.auth.SellerQRLoginScreen
 
 @Composable
 fun QRScannerScreen(

@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.components.dashboard
+package org.sysarp.project.ui.seller.components.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,11 +21,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.sysarp.project.data.DailySalesData
 import org.sysarp.project.data.PaymentNotificationData
+import org.sysarp.project.data.PerformanceMetricsData
+import org.sysarp.project.data.SellerOverviewSummaryData
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.SellerStatsData
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.notification.HybridNotificationManager
+import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.service.stats.StatsService
+import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.service.websocket.WebSocketConnectionState
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerActionsSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerNotificationSection
@@ -44,9 +51,9 @@ import kotlin.time.ExperimentalTime
 fun SellerDashboardContent(
     accessToken: String,
     userProfile: UserProfile?,
-    paymentService: org.sysarp.project.service.payment.PaymentService,
-    statsService: org.sysarp.project.service.stats.StatsService,
-    webSocketService: org.sysarp.project.service.websocket.PaymentWebSocketService,
+    paymentService: PaymentService,
+    statsService: StatsService,
+    webSocketService: PaymentWebSocketService,
     hybridNotificationManager: HybridNotificationManager,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToPendingPayments: () -> Unit,
@@ -56,357 +63,278 @@ fun SellerDashboardContent(
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
-    
-    // Estados principales
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Estado centralizado del dashboard
     var pendingPayments by remember { mutableStateOf<List<SellerPendingPayment>>(emptyList()) }
     var sellerStats by remember { mutableStateOf<SellerStatsData?>(null) }
     var connectionState by remember { mutableStateOf(WebSocketConnectionState.DISCONNECTED) }
     var currentNotification by remember { mutableStateOf<PaymentNotificationData?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
     var processingPayments by remember { mutableStateOf<Set<Int>>(emptySet()) }
-    
-    // Estados de UI
     var searchQuery by remember { mutableStateOf("") }
     var showAllPayments by remember { mutableStateOf(false) }
-    
-    // Estados de mensajes
     var showSuccessMessage by remember { mutableStateOf("") }
     var showErrorMessage by remember { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
-    
-    // Conectar con el sistema híbrido para actualizar pagos pendientes
-    LaunchedEffect(Unit) {
-        hybridNotificationManager.setOnNewNotificationCallback { newPayments ->
-            println("[SELLER_DASHBOARD_CONTENT] 🔔 Actualizando UI con ${newPayments.size} pagos híbridos")
-            // Actualizar la lista de pagos pendientes con los nuevos pagos
-            pendingPayments = newPayments
-            showSuccessMessage = "Nuevos pagos recibidos: ${newPayments.size}"
-        }
-    }
-    
-    // Filtrar pagos pendientes
+
     val filteredPayments = remember(pendingPayments, searchQuery) {
         SellerDashboardLogic.filterPayments(pendingPayments, searchQuery, "Todos")
     }
-    
-    // Función para refrescar datos
-    val refreshData = {
+
+    val sellerId = userProfile?.sellerId?.toIntOrNull()
+
+    // ===== Operaciones de Datos =====
+
+    fun showSuccess(message: String) {
+        showSuccessMessage = message
+    }
+
+    fun showError(message: String) {
+        showErrorMessage = message
+    }
+
+    fun removePaymentFromList(paymentId: Int) {
+        pendingPayments = pendingPayments.filter { it.paymentId != paymentId }
+    }
+
+    fun loadDashboardData() {
         coroutineScope.launch {
+            if (sellerId == null || accessToken.isEmpty()) return@launch
+
             isRefreshing = true
             try {
-                val sellerId = userProfile?.sellerId?.toIntOrNull()
-                if (sellerId != null && accessToken.isNotEmpty()) {
-                    // Cargar pagos pendientes
-                    val paymentsResult = paymentService.getPendingPayments(sellerId, 0, 20, null, null, accessToken)
-                    paymentsResult.fold(
+                // Cargar pagos pendientes
+                paymentService.getPendingPayments(sellerId, 0, 20, null, null, accessToken)
+                    .fold(
                         onSuccess = { response ->
                             pendingPayments = response.data.payments
                         },
                         onFailure = { error ->
-                            showErrorMessage = "Error cargando pagos: ${error.message}"
+                            showError("Error cargando pagos: ${error.message}")
                         }
                     )
-                    
-                    // Cargar estadísticas del vendedor usando endpoint unificado
-                    val statsResult = statsService.getUnifiedStatsSummary(
-                        adminId = null,
-                        sellerId = sellerId,
-                        startDate = null,
-                        endDate = null,
-                        token = accessToken
-                    )
-                    statsResult.fold(
-                        onSuccess = { response ->
-                            // Convertir UnifiedStatsResponse a SellerStatsData para mantener compatibilidad
-                            sellerStats = SellerStatsData(
-                                sellerId = sellerId,
-                                sellerName = userProfile?.name,
-                                performanceMetrics = org.sysarp.project.data.PerformanceMetricsData(
-                                    averageConfirmationTime = response.data.performanceMetrics.averageConfirmationTime,
-                                    claimRate = response.data.performanceMetrics.claimRate,
-                                    rejectionRate = response.data.performanceMetrics.rejectionRate,
-                                    pendingPayments = response.data.performanceMetrics.pendingPayments,
-                                    confirmedPayments = response.data.performanceMetrics.confirmedPayments,
-                                    rejectedPayments = response.data.performanceMetrics.rejectedPayments
-                                ),
-                dailySales = response.data.dailySales?.map { daily ->
-                    org.sysarp.project.data.DailySalesData(
-                        date = daily.date,
-                        dayName = daily.dayName,
-                        sales = daily.sales,
-                        transactions = daily.transactions
-                    )
-                } ?: emptyList(),
-                                overview = org.sysarp.project.data.SellerOverviewSummaryData(
-                                    totalSales = response.data.overview.totalSales,
-                                    totalTransactions = response.data.overview.totalTransactions,
-                                    averageTransactionValue = response.data.overview.averageTransactionValue,
-                                    salesGrowth = response.data.overview.salesGrowth,
-                                    transactionGrowth = response.data.overview.transactionGrowth,
-                                    averageGrowth = response.data.overview.averageGrowth
+
+                // Cargar estadísticas del vendedor
+                statsService.getUnifiedStatsSummary(
+                    adminId = null,
+                    sellerId = sellerId,
+                    startDate = null,
+                    endDate = null,
+                    token = accessToken
+                ).fold(
+                    onSuccess = { response ->
+                        sellerStats = SellerStatsData(
+                            sellerId = sellerId,
+                            sellerName = userProfile?.name,
+                            performanceMetrics = PerformanceMetricsData(
+                                averageConfirmationTime = response.data.performanceMetrics.averageConfirmationTime,
+                                claimRate = response.data.performanceMetrics.claimRate,
+                                rejectionRate = response.data.performanceMetrics.rejectionRate,
+                                pendingPayments = response.data.performanceMetrics.pendingPayments,
+                                confirmedPayments = response.data.performanceMetrics.confirmedPayments,
+                                rejectedPayments = response.data.performanceMetrics.rejectedPayments
+                            ),
+                            dailySales = response.data.dailySales?.map { daily ->
+                                DailySalesData(
+                                    date = daily.date,
+                                    dayName = daily.dayName,
+                                    sales = daily.sales,
+                                    transactions = daily.transactions
                                 )
+                            } ?: emptyList(),
+                            overview = SellerOverviewSummaryData(
+                                totalSales = response.data.overview.totalSales,
+                                totalTransactions = response.data.overview.totalTransactions,
+                                averageTransactionValue = response.data.overview.averageTransactionValue,
+                                salesGrowth = response.data.overview.salesGrowth,
+                                transactionGrowth = response.data.overview.transactionGrowth,
+                                averageGrowth = response.data.overview.averageGrowth
                             )
-                        },
-                        onFailure = { error ->
-                            showErrorMessage = "Error cargando estadísticas: ${error.message}"
-                        }
-                    )
-                }
+                        )
+                    },
+                    onFailure = { error ->
+                        showError("Error cargando estadísticas: ${error.message}")
+                    }
+                )
             } catch (e: Exception) {
-                showErrorMessage = "Error cargando datos: ${e.message}"
+                showError("Error cargando datos: ${e.message}")
             } finally {
                 isRefreshing = false
             }
         }
-        Unit
     }
-    
-    // Función para confirmar pago
-    val claimPayment = { paymentId: Int ->
+
+    fun claimPayment(paymentId: Int) {
         coroutineScope.launch {
+            if (sellerId == null || accessToken.isEmpty()) return@launch
+
             processingPayments = processingPayments + paymentId
             try {
-                val sellerId = userProfile?.sellerId?.toIntOrNull()
-                if (sellerId != null && accessToken.isNotEmpty()) {
-                    val result = paymentService.claimPayment(sellerId, paymentId, accessToken)
-                    result.fold(
-                        onSuccess = { response ->
-                            showSuccessMessage = "Pago confirmado exitosamente"
-                            
-                            // Refrescar la lista de pagos desde el servidor
-                            refreshData()
-
-                            // Enviar notificación WebSocket al servidor
-                            try {
-                                val websocketMessage = """
-                                {
-                                    "type": "PAYMENT_CONFIRMED",
-                                    "data": {
-                                        "paymentId": $paymentId,
-                                        "sellerId": $sellerId,
-                                        "status": "CONFIRMED",
-                                        "timestamp": "${kotlin.time.Clock.System.now().toEpochMilliseconds()}",
-                                        "message": "Pago confirmado por el vendedor"
-                                    }
-                                }
-                                """.trimIndent()
-                                webSocketService.sendMessage(websocketMessage)
-                            } catch (e: Exception) {
-                            }
-                        },
-                        onFailure = { error ->
-                            showErrorMessage = "Error confirmando pago: ${error.message}"
-                        }
-                    )
-                }
+                paymentService.claimPayment(sellerId, paymentId, accessToken).fold(
+                    onSuccess = {
+                        showSuccess("Pago confirmado exitosamente")
+                        removePaymentFromList(paymentId)
+                    },
+                    onFailure = { error ->
+                        showError("Error confirmando pago: ${error.message}")
+                    }
+                )
             } catch (e: Exception) {
-                showErrorMessage = "Error confirmando pago: ${e.message}"
+                showError("Error confirmando pago: ${e.message}")
             } finally {
                 processingPayments = processingPayments - paymentId
             }
         }
-        Unit
     }
 
-    // Función para rechazar pago
-    val rejectPayment = { paymentId: Int ->
+    fun rejectPayment(paymentId: Int) {
         coroutineScope.launch {
+            if (sellerId == null || accessToken.isEmpty()) return@launch
+
             processingPayments = processingPayments + paymentId
             try {
-                val sellerId = userProfile?.sellerId?.toIntOrNull()
-                if (sellerId != null && accessToken.isNotEmpty()) {
-                    val result = paymentService.rejectPayment(sellerId, paymentId, "Rechazado por el vendedor", accessToken)
-                    result.fold(
-                        onSuccess = { response ->
-                            showSuccessMessage = "Pago rechazado exitosamente"
-                            
-                            // Refrescar la lista de pagos desde el servidor
-                            refreshData()
-
-                            // Enviar notificación WebSocket al servidor
-                            try {
-                                val websocketMessage = """
-                                {
-                                    "type": "PAYMENT_REJECTED",
-                                    "data": {
-                                        "paymentId": $paymentId,
-                                        "sellerId": $sellerId,
-                                        "status": "REJECTED",
-                                        "timestamp": "${kotlin.time.Clock.System.now().toEpochMilliseconds()}",
-                                        "message": "Pago rechazado por el vendedor",
-                                        "reason": "Rechazado por el vendedor"
-                                    }
-                                }
-                                """.trimIndent()
-                                webSocketService.sendMessage(websocketMessage)
-                            } catch (e: Exception) {
-                            }
-                        },
-                        onFailure = { error ->
-                            showErrorMessage = "Error rechazando pago: ${error.message}"
-                        }
-                    )
-                }
+                paymentService.rejectPayment(sellerId, paymentId, "Rechazado por el vendedor", accessToken).fold(
+                    onSuccess = {
+                        showSuccess("Pago rechazado exitosamente")
+                        removePaymentFromList(paymentId)
+                    },
+                    onFailure = { error ->
+                        showError("Error rechazando pago: ${error.message}")
+                    }
+                )
             } catch (e: Exception) {
-                showErrorMessage = "Error rechazando pago: ${e.message}"
+                showError("Error rechazando pago: ${e.message}")
             } finally {
                 processingPayments = processingPayments - paymentId
             }
         }
-        Unit
-    }
-    
-    // Función para manejar notificación
-    val handleNotification = { notification: PaymentNotificationData ->
-        currentNotification = notification
-    }
-    
-    // Función para descartar notificación
-    val dismissNotification = {
-        currentNotification = null
     }
 
-    // Función para confirmar desde notificación
-    val claimFromNotification = {
-        val notification = currentNotification
-        if (notification != null) {
-            coroutineScope.launch {
-                processingPayments = processingPayments + notification.paymentId
-                try {
-                    val sellerId = userProfile?.sellerId?.toIntOrNull()
-                    if (sellerId != null && accessToken.isNotEmpty()) {
-                        val result = paymentService.claimPayment(sellerId, notification.paymentId, accessToken)
-                        result.fold(
-                            onSuccess = { response ->
-                                showSuccessMessage = "Pago confirmado exitosamente"
-                                
-                                // Refrescar la lista de pagos desde el servidor
-                                refreshData()
-                                
-                                dismissNotification()
-                                
-                                // Enviar notificación WebSocket al servidor
-                                try {
-                                    val websocketMessage = """
-                                    {
-                                        "type": "PAYMENT_CONFIRMED",
-                                        "data": {
-                                            "paymentId": ${notification.paymentId},
-                                            "sellerId": $sellerId,
-                                            "status": "CONFIRMED",
-                                            "timestamp": "${kotlin.time.Clock.System.now().toEpochMilliseconds()}",
-                                            "message": "Pago confirmado por el vendedor desde notificación"
-                                        }
-                                    }
-                                    """.trimIndent()
-                                    webSocketService.sendMessage(websocketMessage)
-                                } catch (e: Exception) {
+    fun claimFromNotification() {
+        val notification = currentNotification ?: return
 
-                                }
-                            },
-                            onFailure = { error ->
-                                showErrorMessage = "Error confirmando pago: ${error.message}"
-                            }
-                        )
-                    }
-                } catch (e: Exception) {
-                    showErrorMessage = "Error confirmando pago: ${e.message}"
-                } finally {
-                    processingPayments = processingPayments - notification.paymentId
+        coroutineScope.launch {
+            if (sellerId == null || accessToken.isEmpty()) return@launch
+
+            processingPayments = processingPayments + notification.paymentId
+            try {
+                val existingPayment = pendingPayments.find { it.paymentId == notification.paymentId }
+
+                if (existingPayment != null) {
+                    paymentService.claimPayment(sellerId, notification.paymentId, accessToken).fold(
+                        onSuccess = {
+                            showSuccess("Pago confirmado exitosamente")
+                            removePaymentFromList(notification.paymentId)
+                            currentNotification = null
+                        },
+                        onFailure = { error ->
+                            showError("Error confirmando pago: ${error.message}")
+                        }
+                    )
+                } else {
+                    currentNotification = null
+                    showSuccess("Pago ya procesado")
                 }
+            } catch (e: Exception) {
+                showError("Error confirmando pago: ${e.message}")
+            } finally {
+                processingPayments = processingPayments - notification.paymentId
             }
         }
     }
-    
-    // Función para rechazar desde notificación
-    val rejectFromNotification = {
-        val notification = currentNotification
-        if (notification != null) {
-            coroutineScope.launch {
-                processingPayments = processingPayments + notification.paymentId
-                try {
-                    val sellerId = userProfile?.sellerId?.toIntOrNull()
-                    if (sellerId != null && accessToken.isNotEmpty()) {
-                        val result = paymentService.rejectPayment(sellerId, notification.paymentId, "Rechazado por el vendedor", accessToken)
-                        result.fold(
-                            onSuccess = { response ->
-                                showSuccessMessage = "Pago rechazado exitosamente"
-                                pendingPayments = pendingPayments.filter { it.paymentId != notification.paymentId }
-                                dismissNotification()
-                                
-                                // Enviar notificación WebSocket al servidor
-                                try {
-                                    val websocketMessage = """
-                                    {
-                                        "type": "PAYMENT_REJECTED",
-                                        "data": {
-                                            "paymentId": ${notification.paymentId},
-                                            "sellerId": $sellerId,
-                                            "status": "REJECTED",
-                                            "timestamp": "${kotlin.time.Clock.System.now().toEpochMilliseconds()}",
-                                            "message": "Pago rechazado por el vendedor desde notificación",
-                                            "reason": "Rechazado por el vendedor"
-                                        }
-                                    }
-                                    """.trimIndent()
-                                    webSocketService.sendMessage(websocketMessage)
-                                } catch (e: Exception) {
-                                }
-                            },
-                            onFailure = { error ->
-                                showErrorMessage = "Error rechazando pago: ${error.message}"
-                            }
-                        )
-                    }
-                } catch (e: Exception) {
-                    showErrorMessage = "Error rechazando pago: ${e.message}"
-                } finally {
-                    processingPayments = processingPayments - notification.paymentId
+
+    fun rejectFromNotification() {
+        val notification = currentNotification ?: return
+
+        coroutineScope.launch {
+            if (sellerId == null || accessToken.isEmpty()) return@launch
+
+            processingPayments = processingPayments + notification.paymentId
+            try {
+                val existingPayment = pendingPayments.find { it.paymentId == notification.paymentId }
+
+                if (existingPayment != null) {
+                    paymentService.rejectPayment(sellerId, notification.paymentId, "Rechazado por el vendedor", accessToken).fold(
+                        onSuccess = {
+                            showSuccess("Pago rechazado exitosamente")
+                            removePaymentFromList(notification.paymentId)
+                            currentNotification = null
+                        },
+                        onFailure = { error ->
+                            showError("Error rechazando pago: ${error.message}")
+                        }
+                    )
+                } else {
+                    currentNotification = null
+                    showSuccess("Pago ya procesado")
                 }
+            } catch (e: Exception) {
+                showError("Error rechazando pago: ${e.message}")
+            } finally {
+                processingPayments = processingPayments - notification.paymentId
             }
         }
     }
-    
-    // Manejar mensajes de éxito y error
+
+    // ===== Efectos =====
+
+    LaunchedEffect(Unit) {
+        hybridNotificationManager.setOnNewNotificationCallback { newPayments ->
+            pendingPayments = newPayments
+            showSuccess("Nuevos pagos recibidos: ${newPayments.size}")
+        }
+    }
+
     LaunchedEffect(showSuccessMessage) {
         if (showSuccessMessage.isNotEmpty()) {
             snackbarHostState.showSnackbar(showSuccessMessage)
             showSuccessMessage = ""
         }
     }
-    
+
     LaunchedEffect(showErrorMessage) {
         if (showErrorMessage.isNotEmpty()) {
             snackbarHostState.showSnackbar(showErrorMessage)
             showErrorMessage = ""
         }
     }
-    
-    // Cargar datos iniciales
+
     LaunchedEffect(accessToken, userProfile?.sellerId) {
-        refreshData()
-        
-        // Configurar WebSocket
+        loadDashboardData()
         if (userProfile?.sellerId != null) {
             webSocketService.startAutoConnect()
         }
     }
-    
-    // Manejar cambios de estado de conexión WebSocket
+
     LaunchedEffect(webSocketService) {
         webSocketService.connectionState.collect { state ->
             connectionState = state
         }
     }
-    
-    // Manejar notificaciones de WebSocket
+
+    // Rastrear notificaciones ya vistas
+    var processedNotificationIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+
     LaunchedEffect(webSocketService) {
         webSocketService.paymentNotifications.collect { notification ->
-            println("[SELLER_DASHBOARD_CONTENT] 🔔 Notificación WebSocket recibida: ${notification.paymentId} - ${notification.amount}")
-            handleNotification(notification)
+            // Solo mostrar notificaciones que no hayan sido procesadas
+            if (!processedNotificationIds.contains(notification.paymentId)) {
+                currentNotification = notification
+                processedNotificationIds = processedNotificationIds + notification.paymentId
+            }
         }
     }
-    
+
+    // Limpiar notificación al desmontar el composable
+    DisposableEffect(Unit) {
+        onDispose {
+            currentNotification = null
+            processedNotificationIds = emptySet()
+        }
+    }
+
+    // ===== UI =====
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier.fillMaxSize()
@@ -418,28 +346,24 @@ fun SellerDashboardContent(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Reinsertar sección de notificaciones (estaba eliminada)
             SellerNotificationSection(
                 currentNotification = currentNotification,
-                onDismissNotification = dismissNotification,
-                onClaimNotification = claimFromNotification,
-                onRejectNotification = rejectFromNotification
+                onDismissNotification = { currentNotification = null },
+                onClaimNotification = { claimFromNotification() },
+                onRejectNotification = { rejectFromNotification() }
             )
 
-            // Sección del perfil del vendedor
             SellerProfileSection(
                 userProfile = userProfile,
                 connectionState = connectionState
             )
-            
-            // Sección de estadísticas
+
             SellerStatsSection(
                 confirmedPaymentsCount = sellerStats?.performanceMetrics?.confirmedPayments ?: 0,
                 totalAmountCollected = sellerStats?.overview?.totalSales ?: 0.0,
                 isLoadingStats = sellerStats == null
             )
-            
-            // Sección de pagos pendientes (header, búsqueda, filtros)
+
             SellerPaymentsSection(
                 pendingPayments = pendingPayments,
                 filteredPayments = filteredPayments,
@@ -448,21 +372,19 @@ fun SellerDashboardContent(
                 showFilters = false,
                 onToggleFilters = { },
                 isRefreshing = isRefreshing,
-                onRefresh = refreshData
+                onRefresh = { loadDashboardData() }
             )
-            
-            // Sección de lista de pagos
+
             SellerPaymentListSection(
                 filteredPayments = filteredPayments,
                 pendingPayments = pendingPayments,
                 showAllPayments = showAllPayments,
                 processingPayments = processingPayments,
                 isRefreshing = isRefreshing,
-                onClaimPayment = claimPayment,
-                onRejectPayment = rejectPayment
+                onClaimPayment = { paymentId -> claimPayment(paymentId) },
+                onRejectPayment = { paymentId -> rejectPayment(paymentId) }
             )
-            
-            // Sección de acciones
+
             SellerActionsSection(
                 pendingPayments = pendingPayments,
                 showAllPayments = showAllPayments,

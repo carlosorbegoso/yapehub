@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.seller
+package org.sysarp.project.ui.seller.screens.analytics
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOutCubic
@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.AnalyticsData
 import org.sysarp.project.data.SellerFinancialAnalysisData
 import org.sysarp.project.ui.common.components.charts.MonthlySalesBarChart
-import org.sysarp.project.ui.common.components.charts.PerformanceComparisonChart
 import org.sysarp.project.ui.common.components.charts.PerformanceMetricsPieChart
 import org.sysarp.project.ui.common.components.charts.daily.sales.DailySalesChart
 import org.sysarp.project.ui.common.components.charts.hourly.sales.HourlySalesChart

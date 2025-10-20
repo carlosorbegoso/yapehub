@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.SellerPendingPayment
-import org.sysarp.project.ui.components.dashboard.SellerDashboardActions
+import org.sysarp.project.ui.seller.components.dashboard.SellerDashboardActions
 
 /**
  * Sección de acciones del vendedor en el dashboard

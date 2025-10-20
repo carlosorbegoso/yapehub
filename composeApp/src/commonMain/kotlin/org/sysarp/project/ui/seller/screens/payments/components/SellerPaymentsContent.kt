@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.CircularProgressIndicator
@@ -21,9 +22,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.sysarp.project.data.PaymentSummary
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.data.UserProfile
-import org.sysarp.project.data.PaymentFilterStatus
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.ui.common.components.cards.ModernPaymentCard
 import org.sysarp.project.ui.common.components.cards.ModernPaymentCardWithActions
@@ -33,7 +34,13 @@ import org.sysarp.project.ui.common.components.states.PaymentEmptyState
 import org.sysarp.project.ui.common.components.states.PaymentErrorState
 
 /**
- * Componente principal de pagos de vendedor con UI/UX moderna y atractiva
+ * Componente que renderiza la lista de pagos con estados de carga, error y vacío
+ * Responsabilidades:
+ * - Mostrar estado de carga
+ * - Mostrar estado de error
+ * - Mostrar estado vacío
+ * - Renderizar lista de pagos
+ * - Manejar scroll infinito
  */
 @Composable
 fun SellerPaymentsContent(
@@ -41,124 +48,204 @@ fun SellerPaymentsContent(
     isLoading: Boolean,
     errorMessage: String,
     onRefresh: () -> Unit,
-    userProfile: UserProfile?,
-    accessToken: String?,
-    paymentService: PaymentService,
-    onError: (String) -> Unit,
     isPendingTab: Boolean = true,
     onClaimPayment: (Int) -> Unit = {},
     onRejectPayment: (Int) -> Unit = {},
-    paymentSummary: org.sysarp.project.data.PaymentSummary? = null,
+    paymentSummary: PaymentSummary? = null,
     isLoadingMore: Boolean = false,
     hasMorePayments: Boolean = false,
     onLoadMore: () -> Unit = {}
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Contenido principal
+    Column(modifier = Modifier.fillMaxSize()) {
         when {
-            isLoading -> {
-                ModernLoadingState(
-                    message = if (isPendingTab) "Cargando pagos pendientes..." else "Cargando pagos confirmados...",
-                    modifier = Modifier.fillMaxSize()
-                )
+            isLoading -> renderLoadingState(isPendingTab)
+            errorMessage.isNotEmpty() -> renderErrorState(errorMessage, onRefresh)
+            payments.isEmpty() -> renderEmptyState(isPendingTab, onRefresh)
+            else -> renderPaymentsList(
+                payments = payments,
+                isPendingTab = isPendingTab,
+                paymentSummary = paymentSummary,
+                isLoadingMore = isLoadingMore,
+                hasMorePayments = hasMorePayments,
+                onClaimPayment = onClaimPayment,
+                onRejectPayment = onRejectPayment,
+                onLoadMore = onLoadMore
+            )
+        }
+    }
+}
+
+/**
+ * Renderiza el estado de carga
+ */
+@Composable
+private fun renderLoadingState(isPendingTab: Boolean) {
+    ModernLoadingState(
+        message = if (isPendingTab)
+            "Cargando pagos pendientes..."
+        else
+            "Cargando pagos confirmados...",
+        modifier = Modifier.fillMaxSize()
+    )
+}
+
+/**
+ * Renderiza el estado de error
+ */
+@Composable
+private fun renderErrorState(
+    errorMessage: String,
+    onRetry: () -> Unit
+) {
+    PaymentErrorState(
+        message = errorMessage,
+        onRetry = onRetry,
+        modifier = Modifier.fillMaxSize()
+    )
+}
+
+/**
+ * Renderiza el estado vacío
+ */
+@Composable
+private fun renderEmptyState(
+    isPendingTab: Boolean,
+    onRefresh: () -> Unit
+) {
+    PaymentEmptyState(
+        isPendingTab = isPendingTab,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize()
+    )
+}
+
+/**
+ * Renderiza la lista de pagos
+ */
+@Composable
+private fun renderPaymentsList(
+    payments: List<SellerPendingPayment>,
+    isPendingTab: Boolean,
+    paymentSummary: PaymentSummary?,
+    isLoadingMore: Boolean,
+    hasMorePayments: Boolean,
+    onClaimPayment: (Int) -> Unit,
+    onRejectPayment: (Int) -> Unit,
+    onLoadMore: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        // Estadísticas rápidas
+        item {
+            renderPaymentStats(
+                isPendingTab = isPendingTab,
+                payments = payments,
+                paymentSummary = paymentSummary
+            )
+        }
+
+        // Lista de pagos
+        items(
+            items = payments,
+            key = { it.paymentId }
+        ) { payment ->
+            renderPaymentItem(
+                payment = payment,
+                isPendingTab = isPendingTab,
+                onClaimPayment = onClaimPayment,
+                onRejectPayment = onRejectPayment
+            )
+        }
+
+        // Indicador de carga más pagos
+        if (isLoadingMore) {
+            item {
+                renderLoadingMoreIndicator()
             }
-            errorMessage.isNotEmpty() -> {
-                PaymentErrorState(
-                    message = errorMessage,
-                    onRetry = onRefresh,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            payments.isEmpty() -> {
-                PaymentEmptyState(
-                    isPendingTab = isPendingTab,
-                    onRefresh = onRefresh,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(16.dp)
-                ) {
-                    // Estadísticas rápidas
-                    item {
-                        PaymentStatsCard(
-                            title = if (isPendingTab) "Pendientes" else "Confirmados",
-                            count = if (paymentSummary != null) {
-                                if (isPendingTab) paymentSummary.pendingCount else paymentSummary.confirmedCount
-                            } else {
-                                payments.size
-                            },
-                            totalAmount = if (paymentSummary != null) {
-                                if (isPendingTab) paymentSummary.pendingAmount else paymentSummary.confirmedAmount
-                            } else {
-                                payments.sumOf { it.amount }
-                            },
-                            icon = if (isPendingTab)
-                                androidx.compose.material.icons.Icons.Filled.Schedule
-                            else
-                                androidx.compose.material.icons.Icons.Filled.CheckCircle
-                        )
-                    }
-                    
-                    // Lista de pagos con scroll infinito
-                    items(
-                        items = payments,
-                        key = { payment -> payment.paymentId }
-                    ) { payment ->
-                        if (isPendingTab) {
-                            ModernPaymentCardWithActions(
-                                payment = payment,
-                                onClaim = {
-                                    onClaimPayment(payment.paymentId)
-                                },
-                                onReject = {
-                                    onRejectPayment(payment.paymentId)
-                                }
-                            )
-                        } else {
-                            ModernPaymentCard(
-                                payment = payment
-                            )
-                        }
-                    }
-                    
-                    // Indicador de carga más pagos
-                    if (isLoadingMore) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                    
-                    // Trigger para cargar más cuando se acerca al final
-                    if (hasMorePayments && !isLoadingMore) {
-                        item {
-                            LaunchedEffect(Unit) {
-                                onLoadMore()
-                            }
-                        }
-                    }
-                    
-                    // Espacio adicional
-                    item {
-                        Spacer(modifier = Modifier.height(80.dp))
-                    }
+        }
+
+        // Trigger para cargar más
+        if (hasMorePayments && !isLoadingMore) {
+            item {
+                LaunchedEffect(Unit) {
+                    onLoadMore()
                 }
             }
         }
+
+        // Espacio final
+        item {
+            Spacer(modifier = Modifier.height(80.dp))
+        }
+    }
+}
+
+/**
+ * Renderiza la tarjeta de estadísticas de pagos
+ */
+@Composable
+private fun renderPaymentStats(
+    isPendingTab: Boolean,
+    payments: List<SellerPendingPayment>,
+    paymentSummary: PaymentSummary?
+) {
+    val count = paymentSummary?.let {
+        if (isPendingTab) it.pendingCount else it.confirmedCount
+    } ?: payments.size
+
+    val totalAmount = paymentSummary?.let {
+        if (isPendingTab) it.pendingAmount else it.confirmedAmount
+    } ?: payments.sumOf { it.amount }
+
+    PaymentStatsCard(
+        title = if (isPendingTab) "Pendientes" else "Confirmados",
+        count = count,
+        totalAmount = totalAmount,
+        icon = if (isPendingTab)
+            Icons.Filled.Schedule
+        else
+            Icons.Filled.CheckCircle
+    )
+}
+
+/**
+ * Renderiza un item de pago
+ */
+@Composable
+private fun renderPaymentItem(
+    payment: SellerPendingPayment,
+    isPendingTab: Boolean,
+    onClaimPayment: (Int) -> Unit,
+    onRejectPayment: (Int) -> Unit
+) {
+    if (isPendingTab) {
+        ModernPaymentCardWithActions(
+            payment = payment,
+            onClaim = { onClaimPayment(payment.paymentId) },
+            onReject = { onRejectPayment(payment.paymentId) }
+        )
+    } else {
+        ModernPaymentCard(payment = payment)
+    }
+}
+
+/**
+ * Renderiza el indicador de carga infinita
+ */
+@Composable
+private fun renderLoadingMoreIndicator() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(24.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
     }
 }
