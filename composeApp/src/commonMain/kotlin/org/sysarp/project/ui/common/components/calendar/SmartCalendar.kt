@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.components.calendar
+package org.sysarp.project.ui.common.components.calendar
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -52,11 +52,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 /**
@@ -73,7 +75,7 @@ fun SmartCalendar(
 ) {
     var selectedStartDate by remember(expanded) { mutableStateOf<LocalDate?>(null) }
     var selectedEndDate by remember(expanded) { mutableStateOf<LocalDate?>(null) }
-    var currentMonth by remember(expanded) { mutableStateOf(kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
+    var currentMonth by remember(expanded) { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
     var isApplying by remember { mutableStateOf(false) }
     
     // Resetear estado cuando se abre el calendario
@@ -83,7 +85,7 @@ fun SmartCalendar(
             selectedStartDate = null
             selectedEndDate = null
             isApplying = false
-            currentMonth = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            currentMonth = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         }
     }
     
@@ -293,7 +295,7 @@ private fun VisualCalendarGrid(
     selectedEndDate: LocalDate?,
     onDateSelected: (LocalDate) -> Unit
 ) {
-    val today = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val firstDayOfMonth = LocalDate(currentMonth.year, currentMonth.monthNumber, 1)
     // Calcular correctamente el último día del mes
     val lastDayOfMonth = when (currentMonth.monthNumber) {
@@ -311,13 +313,13 @@ private fun VisualCalendarGrid(
     }
     // Calcular correctamente el día de la semana (Lunes = 0)
     val firstDayOfWeek = when (firstDayOfMonth.dayOfWeek) {
-        kotlinx.datetime.DayOfWeek.MONDAY -> 0
-        kotlinx.datetime.DayOfWeek.TUESDAY -> 1
-        kotlinx.datetime.DayOfWeek.WEDNESDAY -> 2
-        kotlinx.datetime.DayOfWeek.THURSDAY -> 3
-        kotlinx.datetime.DayOfWeek.FRIDAY -> 4
-        kotlinx.datetime.DayOfWeek.SATURDAY -> 5
-        kotlinx.datetime.DayOfWeek.SUNDAY -> 6
+        DayOfWeek.MONDAY -> 0
+        DayOfWeek.TUESDAY -> 1
+        DayOfWeek.WEDNESDAY -> 2
+        DayOfWeek.THURSDAY -> 3
+        DayOfWeek.FRIDAY -> 4
+        DayOfWeek.SATURDAY -> 5
+        DayOfWeek.SUNDAY -> 6
     }
     val daysInMonth = lastDayOfMonth.dayOfMonth
     

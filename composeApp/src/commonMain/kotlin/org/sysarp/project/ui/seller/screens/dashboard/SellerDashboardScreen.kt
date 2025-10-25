@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.screens.seller
+package org.sysarp.project.ui.seller.screens.dashboard
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
@@ -15,19 +15,24 @@ import kotlinx.coroutines.delay
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.notification.HybridNotificationManager
 import org.sysarp.project.service.payment.PaymentService
+import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.ui.seller.components.dashboard.SellerDashboardContent
 import org.sysarp.project.ui.components.dashboard.SellerDashboardTopBar
 
 /**
  * Pantalla principal del dashboard del vendedor
- * Refactorizada para usar componentes más pequeños y manejables
+ * Responsabilidades:
+ * - Mostrar top bar con información del usuario
+ * - Delegar contenido principal a SellerDashboardContent
+ * - Manejar token refresh periódico
+ * - Contar notificaciones de WebSocket
  */
 @Composable
 fun SellerDashboardScreen(
     authService: AuthService,
     paymentService: PaymentService,
-    statsService: org.sysarp.project.service.stats.StatsService,
+    statsService: StatsService,
     webSocketService: PaymentWebSocketService,
     hybridNotificationManager: HybridNotificationManager,
     onNavigateToAnalytics: () -> Unit,
@@ -39,71 +44,72 @@ fun SellerDashboardScreen(
 ) {
     val userProfile by authService.userProfile.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    
+
+    // ===== Estados Locales =====
     var newPaymentsCount by remember { mutableStateOf(0) }
-    var hybridPaymentsCount by remember { mutableStateOf(0) }
-    
-    // Conectar con el sistema híbrido para recibir notificaciones
+
+    // ===== Inicializaciones =====
+
     LaunchedEffect(Unit) {
-        hybridNotificationManager.setOnNewNotificationCallback { payments ->
-            println("[SELLER_DASHBOARD] 🔔 Notificaciones híbridas recibidas: ${payments.size} pagos")
-            hybridPaymentsCount += payments.size
-            // Aquí se podría actualizar la UI directamente
+        hybridNotificationManager.setOnNewNotificationCallback { _ ->
+
         }
     }
-    
+
     LaunchedEffect(userProfile?.sellerId, authService.accessToken.value) {
         val sellerId = userProfile?.sellerId
         val accessToken = authService.accessToken.value
-        
+
         if (sellerId != null && accessToken != null) {
-            // El WebSocket ya se inicia automáticamente en HybridNotificationManager
-            // No necesitamos llamar startAutoConnect() aquí para evitar duplicados
-            
+            // Verificar estado de conexión del vendedor
             paymentService.getSellerConnectionStatus(
                 sellerId = sellerId.toInt(),
                 token = accessToken
             ).fold(
-                onSuccess = { response ->
-                },
-                onFailure = { error ->
-                }
+                onSuccess = { /* Conexión verificada */ },
+                onFailure = { /* Manejar error */ }
             )
         }
     }
-    
+
+    // ===== WebSocket Notifications =====
+
     LaunchedEffect(Unit) {
         webSocketService.paymentNotifications.collect { _ ->
             newPaymentsCount++
         }
     }
+
+    // ===== Token Refresh Periódico =====
+
     LaunchedEffect(Unit) {
         while (true) {
             delay(120_000) // 2 minutos
             try {
                 val refreshSuccess = authService.checkAndRefreshTokenIfNeeded()
                 if (!refreshSuccess) {
-                    // Error en refresh periódico, verificando sesión
+
                     if (!authService.isSessionValid()) {
-                        // Sesión inválida después de refresh fallido, cerrando sesión
                         authService.logout()
                         onLogout()
                         break
                     }
                 }
             } catch (e: Exception) {
-                // Error en verificación periódica
+                // Log del error pero continuar
             }
         }
     }
-    
+
+    // ===== UI =====
+
     Scaffold(
         topBar = {
             SellerDashboardTopBar(
                 newPaymentsCount = newPaymentsCount,
                 authService = authService,
                 coroutineScope = coroutineScope,
-                onNotificationsClick = { 
+                onNotificationsClick = {
                     newPaymentsCount = 0
                 },
                 onNavigateToAnalytics = onNavigateToAnalytics,

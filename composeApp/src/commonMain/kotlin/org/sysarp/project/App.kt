@@ -7,8 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
+import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.navigation.AppContent
 import org.sysarp.project.navigation.rememberNavigationManager
 import org.sysarp.project.service.notification.HybridNotificationManager
@@ -21,39 +21,58 @@ fun App() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-
-            KoinContext {
-                YapeApp()
-            }
+            YapeApp()
         }
     }
 }
 
 @Composable
 fun YapeApp() {
-    // Koin will provide the dependencies. No more manual creation!
     val hybridNotificationManager: HybridNotificationManager = koinInject()
     val navigationManager = rememberNavigationManager()
 
-    LaunchedEffect(Unit) {
-        // Configure and start the notification manager
-        hybridNotificationManager.setOnNewNotificationCallback { payments ->
-            println("[APP] 🔔 Hybrid notifications received: ${payments.size} payments")
-            payments.forEach { payment ->
-                println("[APP] 💰 Payment: ${payment.paymentId} - S/ ${payment.amount} from ${payment.senderName}")
-            }
-        }
-        hybridNotificationManager.start()
-    }
+    InitializeNotificationManager(hybridNotificationManager)
+    ManageNotificationLifecycle(hybridNotificationManager)
 
+    AppContent(navigationManager = navigationManager)
+}
+
+@Composable
+private fun InitializeNotificationManager(
+    notificationManager: HybridNotificationManager
+) {
+    LaunchedEffect(Unit) {
+        notificationManager.setOnNewNotificationCallback { payments ->
+            handleIncomingPayments(payments)
+        }
+        notificationManager.start()
+    }
+}
+
+@Composable
+private fun ManageNotificationLifecycle(
+    notificationManager: HybridNotificationManager
+) {
     DisposableEffect(Unit) {
         onDispose {
-            // Stop the manager when the app closes
-            hybridNotificationManager.stop()
+            notificationManager.stop()
         }
     }
+}
 
-    // AppContent is now much cleaner!
-    // Screens inside AppContent can now use koinInject() to get their own dependencies.
-    AppContent(navigationManager = navigationManager)
+private fun handleIncomingPayments(payments: List<SellerPendingPayment>) {
+    logPaymentNotification(payments.size)
+    payments.forEach { payment ->
+        logPaymentDetails(payment)
+    }
+}
+
+private fun logPaymentNotification(paymentCount: Int) {
+    println("[APP] 🔔 Hybrid notifications received: $paymentCount payments")
+}
+
+private fun logPaymentDetails(payment: SellerPendingPayment) {
+    println(
+        "[APP] 💰 Payment: ${payment.paymentId} - S/ ${payment.amount} from ${payment.senderName}"
+    )
 }

@@ -9,8 +9,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import org.sysarp.project.data.BranchInfo
 import org.sysarp.project.service.branch.BranchService
-import org.sysarp.project.ui.components.branch.CreateBranchDialog
-import org.sysarp.project.ui.components.branch.EditBranchDialog
+import org.sysarp.project.ui.common.components.branch.CreateBranchDialog
+import org.sysarp.project.ui.common.components.branch.EditBranchDialog
 
 @Composable
 fun BranchManagementScreen(

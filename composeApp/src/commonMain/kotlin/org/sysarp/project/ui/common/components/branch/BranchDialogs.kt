@@ -1,4 +1,4 @@
-package org.sysarp.project.ui.components.branch
+package org.sysarp.project.ui.common.components.branch
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

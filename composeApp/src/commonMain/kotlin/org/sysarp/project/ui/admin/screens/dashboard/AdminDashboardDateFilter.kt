@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.sysarp.project.ui.components.calendar.SmartCalendar
+import org.sysarp.project.ui.common.components.calendar.SmartCalendar
 
 /**
  * Componente de filtro de fechas para el dashboard del admin

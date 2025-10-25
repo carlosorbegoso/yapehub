@@ -21,7 +21,7 @@ import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.admin.screens.payments.components.AdminPaymentsContent
 import org.sysarp.project.ui.admin.screens.payments.components.AdminPaymentsTabs
-import org.sysarp.project.ui.components.calendar.SmartCalendar
+import org.sysarp.project.ui.common.components.calendar.SmartCalendar
 import org.sysarp.project.ui.common.components.topbar.TopBarComponent
 
 /**

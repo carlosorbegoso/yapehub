@@ -13,7 +13,7 @@ import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.stats.StatsService
-import org.sysarp.project.ui.components.calendar.SmartCalendar
+import org.sysarp.project.ui.common.components.calendar.SmartCalendar
 import org.sysarp.project.ui.seller.screens.payments.components.SellerPaymentsComponents
 
 @OptIn(ExperimentalMaterial3Api::class)

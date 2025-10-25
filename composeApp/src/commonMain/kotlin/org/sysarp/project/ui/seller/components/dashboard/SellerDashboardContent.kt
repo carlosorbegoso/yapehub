@@ -39,7 +39,7 @@ import org.sysarp.project.ui.components.seller_dashboard.sections.SellerPaymentL
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerPaymentsSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerProfileSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerStatsSection
-import org.sysarp.project.ui.components.seller_dashboard.utils.SellerDashboardLogic
+import org.sysarp.project.ui.seller.components.dashboard.utils.SellerDashboardLogic
 import kotlin.time.ExperimentalTime
 
 /**

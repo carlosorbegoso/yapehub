@@ -38,8 +38,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     private val pendingNotifications = mutableListOf<YapeNotificationRequest>()
     private val maxRetries = 2 // Reducido de 3 a 2 para evitar duplicados
     private val retryDelayMs = 10000L // Aumentado de 5 a 10 segundos para dar más tiempo a la API
-    
-    // Sistema de deduplicación para evitar notificaciones duplicadas
+
     private val sentNotifications = mutableSetOf<String>() // Hash de notificaciones ya enviadas
     private val maxSentNotifications = 100 // Límite para evitar memory leak
     
@@ -105,7 +104,6 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     @SuppressLint("LogNotTimber")
     private suspend fun processNotification(sbn: StatusBarNotification) {
         try {
-            // Check if service is still valid before processing
             if (!isServiceValid()) {
                 return
             }
@@ -122,7 +120,6 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
     
     private suspend fun processYapeNotification(sbn: StatusBarNotification, notificationText: String?) {
         try {
-            // Check if service is still valid before processing
             if (!isServiceValid()) {
                 Timber.tag("AndroidNotificationCapt")
                     .w("Service not valid, skipping Yape notification processing")
@@ -134,8 +131,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
             }
             
             if (notificationText != null) {
-                
-                // Extraer datos de la notificación
+
                 val extras = sbn.notification.extras
                 val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
                 val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
@@ -145,14 +141,12 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
                 
                 notificationService?.let { _ ->
                     val fullText = if (bigText.isNullOrEmpty()) text else bigText
-                    
-                            // Crear request para la API de notificaciones con datos reales
+
                             val currentFingerprint = deviceFingerprint ?: AndroidDeviceUtils.generateSimpleFingerprint(this@AndroidNotificationCaptureService)
                     val adminId = authService?.userProfile?.value?.id?.toIntOrNull() ?: 605
-                    
-                    // ENCRIPTAR la notificación completa sin parsear
+
                     val encryptedNotification = try {
-                        // Crear JSON manualmente para evitar problemas de serialización
+
                         val jsonString = buildString {
                             append("{")
                             append("\"packageName\":\"${sbn.packageName}\",")
@@ -202,10 +196,7 @@ class AndroidNotificationCaptureService : NotificationListenerService() {
         } catch (e: Exception) {
         }
     }
-    
-    /**
-     * Verificar si el package es de Yape
-     */
+
     private fun isYapePackage(packageName: String): Boolean {
         val yapePackages = listOf(
             "com.bcp.innovacxion.yapeapp",

@@ -1,41 +1,63 @@
-package org.sysarp.project.ui.components.seller_dashboard.utils
+package org.sysarp.project.ui.seller.components.dashboard.utils
 
 import org.sysarp.project.data.SellerPendingPayment
 
-/**
- * Utilidades y lógica para el dashboard del vendedor
- */
 object SellerDashboardLogic {
 
-    /**
-     * Filtra pagos pendientes según criterios de búsqueda y filtros
-     */
+
     fun filterPayments(
         payments: List<SellerPendingPayment>,
         searchQuery: String,
         selectedFilter: String
     ): List<SellerPendingPayment> {
         var filtered = payments
-        
-        // Filtrar por búsqueda
-        if (searchQuery.isNotEmpty()) {
-            filtered = filtered.filter { payment ->
-                payment.senderName.contains(searchQuery, ignoreCase = true) ||
-                payment.yapeCode.contains(searchQuery, ignoreCase = true) ||
-                payment.paymentId.toString().contains(searchQuery, ignoreCase = true)
-            }
-        }
-        
-        // Filtrar por estado
-        when (selectedFilter) {
-            "Pendientes" -> filtered = filtered.filter { it.status == "PENDING" }
-            "Procesando" -> filtered = filtered.filter { 
-                // Esta lógica se manejará en el componente padre
-                true 
-            }
-        }
-        
+
+        // Aplicar filtro de búsqueda
+        filtered = applySearchFilter(filtered, searchQuery)
+
+        // Aplicar filtro de estado
+        filtered = applyStatusFilter(filtered, selectedFilter)
+
         return filtered
     }
 
+
+    private fun applySearchFilter(
+        payments: List<SellerPendingPayment>,
+        searchQuery: String
+    ): List<SellerPendingPayment> {
+        if (searchQuery.isEmpty()) return payments
+
+        return payments.filter { payment ->
+            matchesSearchQuery(payment, searchQuery)
+        }
+    }
+
+
+    private fun matchesSearchQuery(
+        payment: SellerPendingPayment,
+        query: String
+    ): Boolean {
+        val lowerQuery = query.lowercase()
+
+        return payment.senderName.lowercase().contains(lowerQuery) ||
+                payment.yapeCode.lowercase().contains(lowerQuery) ||
+                payment.paymentId.toString().contains(lowerQuery)
+    }
+
+
+    private fun applyStatusFilter(
+        payments: List<SellerPendingPayment>,
+        selectedFilter: String
+    ): List<SellerPendingPayment> {
+        return when (selectedFilter) {
+            "Todos" -> payments
+            "Pendientes" -> payments.filter { it.status == "PENDING" }
+            "Confirmados" -> payments.filter { it.status == "CLAIMED" }
+            "Rechazados" -> payments.filter { it.status == "REJECTED" }
+            else -> payments
+        }
+    }
+
 }
+

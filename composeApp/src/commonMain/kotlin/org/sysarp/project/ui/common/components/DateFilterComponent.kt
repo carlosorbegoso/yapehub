@@ -29,7 +29,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
-import org.sysarp.project.ui.components.calendar.SmartCalendar
+import org.sysarp.project.ui.common.components.calendar.SmartCalendar
 import kotlin.time.ExperimentalTime
 
 /**

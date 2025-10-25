@@ -17,8 +17,8 @@ import org.sysarp.project.data.BranchData
 import org.sysarp.project.data.BranchInfo
 import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.ui.components.branch.BranchSellersDialog
-import org.sysarp.project.ui.components.branch.CreateBranchDialog
-import org.sysarp.project.ui.components.branch.EditBranchDialog
+import org.sysarp.project.ui.common.components.branch.CreateBranchDialog
+import org.sysarp.project.ui.common.components.branch.EditBranchDialog
 
 /**
  * Diálogos para BranchManagementScreen

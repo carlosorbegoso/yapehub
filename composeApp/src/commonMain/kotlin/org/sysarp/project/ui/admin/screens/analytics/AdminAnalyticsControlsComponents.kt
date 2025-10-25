@@ -23,7 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.sysarp.project.ui.components.calendar.SmartCalendar
+import org.sysarp.project.ui.common.components.calendar.SmartCalendar
 
 /**
  * Componentes UI para AdminAnalyticsControls
