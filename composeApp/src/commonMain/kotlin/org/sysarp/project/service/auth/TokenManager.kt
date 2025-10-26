@@ -31,10 +31,16 @@ class TokenManager {
      */
 
     fun saveTokens(
-        accessToken: String,
-        refreshToken: String,
+        accessToken: String?,
+        refreshToken: String?,
         expiresInSeconds: Int
     ) {
+        // Si el accessToken es nulo, limpiamos los tokens
+        if (accessToken == null) {
+            clearTokens()
+            return
+        }
+
         _accessToken.value = accessToken
         _refreshToken.value = refreshToken
 
@@ -92,7 +98,12 @@ class TokenManager {
     /**
      * Actualiza el token de acceso
      */
-    fun updateAccessToken(newAccessToken: String, expiresInSeconds: Int) {
+    fun updateAccessToken(newAccessToken: String?, expiresInSeconds: Int) {
+        if (newAccessToken == null) {
+            clearTokens()
+            return
+        }
+
         _accessToken.value = newAccessToken
 
         val now = Clock.System.now()

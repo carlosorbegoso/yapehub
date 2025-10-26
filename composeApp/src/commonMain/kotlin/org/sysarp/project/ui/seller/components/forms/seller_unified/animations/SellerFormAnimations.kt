@@ -152,7 +152,7 @@ fun AnimatedTitle() {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "YapeChamo",
+                text = "YapeHub",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary

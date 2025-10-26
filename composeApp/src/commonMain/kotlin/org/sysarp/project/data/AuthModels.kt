@@ -30,7 +30,7 @@ data class LoginData(
 @Serializable
 data class LoginUserData(
     val id: Int,
-    val email: String,
+    val email: String? = null,
     val role: String,
     val businessId: Int,
     val businessName: String,
@@ -62,7 +62,7 @@ data class RefreshTokenData(
 @Serializable
 data class RefreshUserData(
     val id: Int,
-    val email: String,
+    val email: String? = null,
     val role: String,
     val businessId: Int?,
     val businessName: String?,

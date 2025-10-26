@@ -103,7 +103,7 @@ class AuthService {
                         
                         _userProfile.value = UserProfileFactory.createAdminProfile(
                             id = loginData.id,
-                            email = loginData.email,
+                            email = loginData.email ?: "",
                             businessId = loginData.businessId,
                             businessName = loginData.businessName,
                             isVerified = loginData.isVerified
@@ -332,7 +332,7 @@ class AuthService {
                         
                         _userProfile.value = UserProfileFactory.createAdminProfile(
                             id = loginData.id,
-                            email = loginData.email,
+                            email = loginData.email ?: "",
                             businessId = loginData.businessId,
                             businessName = loginData.businessName,
                             isVerified = loginData.isVerified

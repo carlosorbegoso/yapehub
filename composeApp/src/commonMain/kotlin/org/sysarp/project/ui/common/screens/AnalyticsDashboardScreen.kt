@@ -33,6 +33,8 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 
 /**
  * Funciones de parsing para convertir JSON en datos estructurados
@@ -77,25 +79,35 @@ fun parseHourlySalesData(jsonData: String): List<HourlySalesData> {
         val data = json["data"]?.jsonObject
         val hourlySales = data?.get("hourlySales")
         
-        if (hourlySales != null) {
-            // Parsear datos reales del servidor
-            val hourlySalesArray = hourlySales.jsonArray
-            hourlySalesArray.mapNotNull { item ->
-                try {
-                    val itemObj = item.jsonObject
-                    HourlySalesData(
-                        hour = itemObj["hour"]?.jsonPrimitive?.content ?: "",
-                        sales = itemObj["sales"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
-                        transactions = itemObj["transactions"]?.jsonPrimitive?.intOrNull ?: 0
-                    )
-                } catch (e: Exception) {
-                    println("[PARSING] ❌ Error parseando item de Hourly Sales: ${e.message}")
-                    null
+        when {
+            hourlySales == null -> {
+                println("[PARSING] ⚠️ hourlySales es null, retornando lista vacía")
+                emptyList()
+            }
+            hourlySales is kotlinx.serialization.json.JsonNull -> {
+                println("[PARSING] ⚠️ hourlySales es JsonNull, retornando lista vacía")
+                emptyList()
+            }
+            hourlySales is kotlinx.serialization.json.JsonArray -> {
+                println("[PARSING] ✅ hourlySales parseado exitosamente: ${hourlySales.size} elementos")
+                hourlySales.mapNotNull { item ->
+                    try {
+                        val itemObj = item.jsonObject
+                        HourlySalesData(
+                            hour = itemObj["hour"]?.jsonPrimitive?.content ?: "",
+                            sales = itemObj["sales"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+                            transactions = itemObj["transactions"]?.jsonPrimitive?.intOrNull ?: 0
+                        )
+                    } catch (e: Exception) {
+                        println("[PARSING] ❌ Error parseando item de Hourly Sales: ${e.message}")
+                        null
+                    }
                 }
             }
-        } else {
-            println("[PARSING] ⚠️ No se encontraron datos de Hourly Sales en la respuesta")
-            emptyList()
+            else -> {
+                println("[PARSING] ❌ hourlySales no es un tipo válido: ${hourlySales::class.simpleName}")
+                emptyList()
+            }
         }
     } catch (e: Exception) {
         println("[PARSING] ❌ Error parseando Hourly Sales: ${e.message}")
@@ -834,7 +846,7 @@ fun AnalyticsDashboardScreen(
                             // Crear AnalyticsData usando los datos reales del servidor
                             AnalyticsData(
                                 overview = AnalyticsOverview(
-                                    totalSales = response.data.overview.totalSales,
+                                    totalSales = response.data.overview.confirmedSales,
                                     totalTransactions = response.data.overview.totalTransactions,
                                     averageTransactionValue = response.data.overview.averageTransactionValue,
                                     salesGrowth = response.data.overview.salesGrowth,

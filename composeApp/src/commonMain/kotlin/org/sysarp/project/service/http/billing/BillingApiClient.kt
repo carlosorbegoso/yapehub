@@ -7,10 +7,6 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.decodeFromJsonElement
 import org.sysarp.project.data.BillingDashboard
 import org.sysarp.project.data.BillingDashboardResponse
 import org.sysarp.project.data.BillingResponse

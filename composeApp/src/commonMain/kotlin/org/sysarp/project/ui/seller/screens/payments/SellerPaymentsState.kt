@@ -388,7 +388,7 @@ class SellerPaymentsState(
                 )
             } ?: emptyList(),
             overview = SellerOverviewSummaryData(
-                totalSales = data.overview.totalSales,
+                totalSales = data.overview.confirmedSales,
                 totalTransactions = data.overview.totalTransactions,
                 averageTransactionValue = data.overview.averageTransactionValue,
                 salesGrowth = data.overview.salesGrowth,

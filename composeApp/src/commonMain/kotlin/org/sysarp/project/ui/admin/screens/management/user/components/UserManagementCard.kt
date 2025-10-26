@@ -135,7 +135,7 @@ private fun UserInfo(user: UserProfile) {
         )
         
         Text(
-            text = user.email,
+            text = user.email ?: "Sin email",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

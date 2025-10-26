@@ -6,10 +6,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AdminStatsData(
-    val dailySales: List<DailySalesData>,
-    val performanceMetrics: PerformanceMetricsData,
+    val overview: AdminOverviewData,
+    val urls: StatsUrlsData,
     val topSellers: List<TopSellerData>,
-    val overview: SellerOverviewSummaryData
+    val performanceMetrics: PerformanceMetricsData,
+    val userType: String,
+    val userId: Int
 )
 
 
@@ -82,7 +84,7 @@ data class AnalyticsData(
     val topSellers: List<TopSellerData>? = null, // Hacer opcional ya que no está en la respuesta del vendedor
     val performanceMetrics: PerformanceMetricsData,
     // Datos avanzados para gráficos
-    val hourlySales: List<HourlySalesData>? = null,
+    val hourlySales: List<HourlySalesData> = emptyList(),
     val weeklySales: List<WeeklySalesData>? = null,
     val monthlySales: List<MonthlySalesData>? = null,
     val sellerGoals: SellerGoalsData? = null,
@@ -145,7 +147,7 @@ data class PerformanceMetricsData(
 data class HourlySalesData(
     val hour: String,
     val sales: Double,
-    val transactions: Int
+    val transactions: Int = 0  // Valor por defecto
 )
 
 @Serializable
@@ -355,6 +357,31 @@ data class SellerManagementData(
 )
 
 @Serializable
+data class AdminOverviewData(
+    val confirmedSales: Double,
+    val totalTransactions: Int,
+    val averageTransactionValue: Double,
+    val salesGrowth: Double,
+    val transactionGrowth: Double,
+    val averageGrowth: Double,
+    val allSales: Double,
+    val confirmedTransactions: Int,
+    val pendingTransactions: Int,
+    val rejectedTransactions: Int
+)
+
+@Serializable
+data class StatsUrlsData(
+    val monthlySales: String,
+    val hourlySales: String,
+    val topSellers: String,
+    val completeAnalytics: String,
+    val weeklySales: String,
+    val dailySales: String,
+    val performanceDetails: String
+)
+
+@Serializable
 data class SellerOverviewSummaryData(
     val totalSales: Double,
     val totalTransactions: Int,
@@ -520,3 +547,5 @@ data class ComplianceStatusData(
     val backupStatus: String,
     val lastAudit: String
 )
+
+

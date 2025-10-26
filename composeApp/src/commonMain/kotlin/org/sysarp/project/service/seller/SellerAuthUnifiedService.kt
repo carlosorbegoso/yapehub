@@ -227,7 +227,7 @@ class SellerAuthUnifiedService(
         authService.updateUserProfile(
             id = userData.id,
             name = loginData.sellerName,
-            email = userData.email,
+            email = userData.email ?: "",
             role = userData.role,
             branchId = userData.businessId,
             branchName = userData.businessName,
@@ -257,7 +257,7 @@ class SellerAuthUnifiedService(
         authService.updateUserProfile(
             id = userData.id,
             name = registrationData.name,
-            email = userData.email,
+            email = userData.email ?: "",
             role = userData.role,
             branchId = userData.businessId,
             branchName = userData.businessName,

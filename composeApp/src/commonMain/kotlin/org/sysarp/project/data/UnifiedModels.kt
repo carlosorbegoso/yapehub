@@ -16,37 +16,41 @@ data class UnifiedStatsData(
     val overview: UnifiedOverviewData,
     val urls: UnifiedAnalyticsUrls,
     val performanceMetrics: UnifiedPerformanceMetricsData,
-    val dailySales: List<UnifiedDailySalesData>? = null, // Campo opcional
     val userType: String,
     val userId: Int,
-    val topSellers: List<UnifiedTopSellerData>? = null // Campo opcional para admin
+    val topSellers: List<UnifiedTopSellerData>? = null, // Campo opcional para admin
+    val dailySales: List<UnifiedDailySalesData>? = null // Campo opcional que puede venir en la respuesta
 )
 
 /**
- * Datos de resumen unificado
+ * Datos de resumen unificado - Updated to match new API response
  */
 @Serializable
 data class UnifiedOverviewData(
-    val totalSales: Double,
+    val confirmedSales: Double,
     val totalTransactions: Int,
     val averageTransactionValue: Double,
     val salesGrowth: Double,
     val transactionGrowth: Double,
-    val averageGrowth: Double
+    val averageGrowth: Double,
+    val allSales: Double,
+    val confirmedTransactions: Int,
+    val pendingTransactions: Int,
+    val rejectedTransactions: Int
 )
 
 /**
- * URLs de analytics unificadas
+ * URLs de analytics unificadas - Updated to match actual API response
+ * topSellers is NOT a URL, it comes as direct data in the response
  */
 @Serializable
 data class UnifiedAnalyticsUrls(
-    val performanceDetails: String? = null, // Campo opcional
-    val dailySales: String,
-    val monthlySales: String,
-    val topSellers: String? = null, // Campo opcional para admin
-    val weeklySales: String? = null, // Campo opcional para admin
-    val hourlySales: String? = null, // Campo opcional para admin
-    val completeAnalytics: String? = null // Campo opcional para admin
+    val hourlySales: String? = null,
+    val weeklySales: String? = null,
+    val dailySales: String? = null,
+    val completeAnalytics: String? = null,
+    val performanceDetails: String? = null,
+    val monthlySales: String? = null
 )
 
 /**

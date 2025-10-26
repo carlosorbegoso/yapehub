@@ -127,7 +127,7 @@ class AdminDashboardViewModel(
                             activeSellers = 0, // Se cargará después
                             totalBranches = 0, // Se cargará después
                             totalTransactions = stats.data.overview.totalTransactions,
-                            totalRevenue = stats.data.overview.totalSales,
+                            totalRevenue = stats.data.overview.confirmedSales,
                             pendingPayments = stats.data.performanceMetrics.pendingPayments
                         )
                         

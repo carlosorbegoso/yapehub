@@ -39,6 +39,7 @@ import org.sysarp.project.ui.components.seller_dashboard.sections.SellerPaymentL
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerPaymentsSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerProfileSection
 import org.sysarp.project.ui.components.seller_dashboard.sections.SellerStatsSection
+import org.sysarp.project.ui.seller.components.dashboard.sections.EnhancedSellerOverviewSection
 import org.sysarp.project.ui.seller.components.dashboard.utils.SellerDashboardLogic
 import kotlin.time.ExperimentalTime
 
@@ -68,6 +69,7 @@ fun SellerDashboardContent(
     // Estado centralizado del dashboard
     var pendingPayments by remember { mutableStateOf<List<SellerPendingPayment>>(emptyList()) }
     var sellerStats by remember { mutableStateOf<SellerStatsData?>(null) }
+    var serverResponseData by remember { mutableStateOf<org.sysarp.project.data.UnifiedStatsResponse?>(null) }
     var connectionState by remember { mutableStateOf(WebSocketConnectionState.DISCONNECTED) }
     var currentNotification by remember { mutableStateOf<PaymentNotificationData?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -123,6 +125,7 @@ fun SellerDashboardContent(
                     token = accessToken
                 ).fold(
                     onSuccess = { response ->
+                        serverResponseData = response
                         sellerStats = SellerStatsData(
                             sellerId = sellerId,
                             sellerName = userProfile?.name,
@@ -143,7 +146,7 @@ fun SellerDashboardContent(
                                 )
                             } ?: emptyList(),
                             overview = SellerOverviewSummaryData(
-                                totalSales = response.data.overview.totalSales,
+                                totalSales = response.data.overview.confirmedSales,
                                 totalTransactions = response.data.overview.totalTransactions,
                                 averageTransactionValue = response.data.overview.averageTransactionValue,
                                 salesGrowth = response.data.overview.salesGrowth,
@@ -361,8 +364,16 @@ fun SellerDashboardContent(
             SellerStatsSection(
                 confirmedPaymentsCount = sellerStats?.performanceMetrics?.confirmedPayments ?: 0,
                 totalAmountCollected = sellerStats?.overview?.totalSales ?: 0.0,
-                isLoadingStats = sellerStats == null
+                isLoadingStats = sellerStats == null,
+                overviewData = serverResponseData?.data?.overview
             )
+
+            // Nueva sección mejorada con datos detallados
+            serverResponseData?.data?.overview?.let { overviewData ->
+                org.sysarp.project.ui.seller.components.dashboard.sections.EnhancedSellerOverviewSection(
+                    overviewData = overviewData
+                )
+            }
 
             SellerPaymentsSection(
                 pendingPayments = pendingPayments,

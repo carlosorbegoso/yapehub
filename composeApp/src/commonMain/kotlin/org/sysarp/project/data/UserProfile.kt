@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class UserProfile(
     val id: String,
     val name: String,
-    val email: String,
+    val email: String? = null,
     val role: UserRole,
     val assignedStores: List<String> = emptyList(), // Para vendedores, lista de tiendas asignadas
     val isActive: Boolean = true,

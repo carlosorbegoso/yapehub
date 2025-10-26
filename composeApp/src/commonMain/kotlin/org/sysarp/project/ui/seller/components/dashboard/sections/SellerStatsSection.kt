@@ -6,25 +6,32 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.ui.components.seller_dashboard.cards.SellerStatCard
 import org.sysarp.project.utils.formatCurrencyNoDecimals
+import org.sysarp.project.data.UnifiedOverviewData
 
 /**
- * Sección de estadísticas del vendedor en el dashboard
- * Muestra resumen de ventas confirmadas y total recaudado
+ * Sección de estadísticas del vendedor en el dashboard - Versión mejorada
+ * Muestra información detallada usando los nuevos campos de la API
  */
 @Composable
 fun SellerStatsSection(
     confirmedPaymentsCount: Int,
     totalAmountCollected: Double,
     isLoadingStats: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Nuevos parámetros para aprovechar la API actualizada
+    overviewData: UnifiedOverviewData? = null
 ) {
     // Header de estadísticas
     Column(
@@ -37,20 +44,23 @@ fun SellerStatsSection(
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = "Estado actual de tus transacciones",
+            text = if (overviewData != null) {
+                "Total: ${overviewData.totalTransactions} transacciones • Promedio: ${formatCurrencyNoDecimals(overviewData.averageTransactionValue)}"
+            } else {
+                "Estado actual de tus transacciones"
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp)
         )
     }
     
-    // Tarjetas de estadísticas
-    Row(
-        modifier = Modifier.padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        if (isLoadingStats) {
-            // Estado de carga
+    if (isLoadingStats) {
+        // Estado de carga
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             SellerStatCard(
                 title = "Confirmados",
                 value = "...",
@@ -60,14 +70,91 @@ fun SellerStatsSection(
             )
             
             SellerStatCard(
-                title = "Total Recaudado",
+                title = "Total",
                 value = "...",
-                icon = Icons.Filled.CheckCircle,
+                icon = Icons.Filled.TrendingUp,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f)
             )
-        } else {
-            // Datos reales
+        }
+    } else if (overviewData != null) {
+        // Usar datos detallados de la nueva API
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Primera fila: Ventas confirmadas y totales
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SellerStatCard(
+                    title = "Ventas Confirmadas",
+                    value = formatCurrencyNoDecimals(overviewData.confirmedSales),
+                    icon = Icons.Filled.CheckCircle,
+                    color = Color(0xFF4CAF50), // Verde para confirmado
+                    modifier = Modifier.weight(1f)
+                )
+                
+                SellerStatCard(
+                    title = "Ventas Totales",
+                    value = formatCurrencyNoDecimals(overviewData.allSales),
+                    icon = Icons.Filled.TrendingUp,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            
+            // Segunda fila: Estado de transacciones
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SellerStatCard(
+                    title = "Confirmadas",
+                    value = "${overviewData.confirmedTransactions}",
+                    icon = Icons.Filled.CheckCircle,
+                    color = Color(0xFF4CAF50),
+                    modifier = Modifier.weight(1f)
+                )
+                
+                if (overviewData.pendingTransactions > 0) {
+                    SellerStatCard(
+                        title = "Pendientes",
+                        value = "${overviewData.pendingTransactions}",
+                        icon = Icons.Filled.Schedule,
+                        color = Color(0xFFFF9800), // Naranja para pendiente
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                
+                if (overviewData.rejectedTransactions > 0) {
+                    SellerStatCard(
+                        title = "Rechazadas",
+                        value = "${overviewData.rejectedTransactions}",
+                        icon = Icons.Filled.Cancel,
+                        color = Color(0xFFF44336), // Rojo para rechazado
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                
+                // Si no hay pendientes ni rechazadas, mostrar promedio
+                if (overviewData.pendingTransactions == 0 && overviewData.rejectedTransactions == 0) {
+                    SellerStatCard(
+                        title = "Promedio",
+                        value = formatCurrencyNoDecimals(overviewData.averageTransactionValue),
+                        icon = Icons.Filled.TrendingUp,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    } else {
+        // Fallback a datos básicos
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             SellerStatCard(
                 title = "Confirmados",
                 value = confirmedPaymentsCount.toString(),

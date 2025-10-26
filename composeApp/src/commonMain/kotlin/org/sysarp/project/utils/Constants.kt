@@ -7,8 +7,8 @@ package org.sysarp.project.utils
 object Constants {
 
     // URLs
-    const val BASE_URL = "167.172.117.133:8080"
-    const val WEBSOCKET_URL = "wss://167.172.117.133:8080"
+    const val BASE_URL = "https://ks9ql0l7-8080.brs.devtunnels.ms"
+    const val WEBSOCKET_URL = "wss://ks9ql0l7-8080.brs.devtunnels.ms"
 
     // Permisos
     object Permissions {
@@ -18,4 +18,3 @@ object Constants {
         const val VIEW_ANALYTICS = "VIEW_ANALYTICS"
     }
 }
-
