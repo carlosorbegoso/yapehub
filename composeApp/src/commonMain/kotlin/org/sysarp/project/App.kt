@@ -10,8 +10,11 @@ import androidx.compose.ui.Modifier
 import org.koin.compose.koinInject
 import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.navigation.AppContent
+import org.sysarp.project.navigation.Screen
 import org.sysarp.project.navigation.rememberNavigationManager
+import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.notification.HybridNotificationManager
+import org.sysarp.project.ui.common.components.AutoSessionHandler
 import org.sysarp.project.ui.theme.YapeHubTheme
 
 @Composable
@@ -29,12 +32,22 @@ fun App() {
 @Composable
 fun YapeApp() {
     val hybridNotificationManager: HybridNotificationManager = koinInject()
+    val authService: AuthService = koinInject()
     val navigationManager = rememberNavigationManager()
 
     InitializeNotificationManager(hybridNotificationManager)
     ManageNotificationLifecycle(hybridNotificationManager)
 
-    AppContent(navigationManager = navigationManager)
+    // Manejo automático de expiración de sesiones
+    AutoSessionHandler(
+        authService = authService,
+        onNavigateToLogin = {
+            // Navegar al login cuando la sesión expire
+            navigationManager.navigateTo(Screen.ProfileSelection)
+        }
+    ) {
+        AppContent(navigationManager = navigationManager)
+    }
 }
 
 @Composable

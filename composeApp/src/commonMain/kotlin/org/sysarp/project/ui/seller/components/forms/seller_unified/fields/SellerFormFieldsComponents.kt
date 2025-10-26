@@ -149,7 +149,7 @@ fun AffiliationCodeField(
             value = state.affiliationCode,
             onValueChange = { newValue ->
                 // Solo permitir letras y números, máximo 6 caracteres
-                if (newValue.length <= 6 && newValue.all { it.isLetterOrDigit() }) {
+                if (newValue.length <= 9 && newValue.all { it.isLetterOrDigit() }) {
                     state.updateAffiliationCode(newValue.uppercase())
                 }
             },
