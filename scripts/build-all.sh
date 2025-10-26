@@ -286,23 +286,31 @@ case $BUILD_TYPE in
     "apk")
         if [ -f "composeApp/build/outputs/apk/release/composeApp-release.apk" ]; then
             APK_SIZE=$(du -h "composeApp/build/outputs/apk/release/composeApp-release.apk" | cut -f1)
+            APK_PATH=$(realpath "composeApp/build/outputs/apk/release/composeApp-release.apk")
             print_status "APK: composeApp-release.apk ($APK_SIZE)"
+            print_info "📁 Ruta completa: $APK_PATH"
         fi
         ;;
     "aab")
         if [ -f "composeApp/build/outputs/bundle/release/composeApp-release.aab" ]; then
             AAB_SIZE=$(du -h "composeApp/build/outputs/bundle/release/composeApp-release.aab" | cut -f1)
+            AAB_PATH=$(realpath "composeApp/build/outputs/bundle/release/composeApp-release.aab")
             print_status "AAB: composeApp-release.aab ($AAB_SIZE)"
+            print_info "📁 Ruta completa: $AAB_PATH"
         fi
         ;;
     "both")
         if [ -f "composeApp/build/outputs/apk/release/composeApp-release.apk" ]; then
             APK_SIZE=$(du -h "composeApp/build/outputs/apk/release/composeApp-release.apk" | cut -f1)
+            APK_PATH=$(realpath "composeApp/build/outputs/apk/release/composeApp-release.apk")
             print_status "APK: composeApp-release.apk ($APK_SIZE)"
+            print_info "📁 Ruta completa: $APK_PATH"
         fi
         if [ -f "composeApp/build/outputs/bundle/release/composeApp-release.aab" ]; then
             AAB_SIZE=$(du -h "composeApp/build/outputs/bundle/release/composeApp-release.aab" | cut -f1)
+            AAB_PATH=$(realpath "composeApp/build/outputs/bundle/release/composeApp-release.aab")
             print_status "AAB: composeApp-release.aab ($AAB_SIZE)"
+            print_info "📁 Ruta completa: $AAB_PATH"
         fi
         ;;
 esac
@@ -311,15 +319,24 @@ echo ""
 print_header "Próximos Pasos"
 case $BUILD_TYPE in
     "apk"|"both")
-        echo "📱 Para testing: Instala la APK en tu dispositivo"
-        echo "   adb install composeApp/build/outputs/apk/release/composeApp-release.apk"
+        if [ -f "composeApp/build/outputs/apk/release/composeApp-release.apk" ]; then
+            APK_FULL_PATH=$(realpath "composeApp/build/outputs/apk/release/composeApp-release.apk")
+            echo "📱 Para testing: Instala la APK en tu dispositivo"
+            echo "   adb install \"$APK_FULL_PATH\""
+            echo "   📂 Abrir en Finder: open \"$(dirname "$APK_FULL_PATH")\""
+        fi
         ;;
 esac
 
 case $BUILD_TYPE in
     "aab"|"both")
-        echo "🏪 Para Play Store: Sube el AAB a Google Play Console"
-        echo "   Archivo: composeApp/build/outputs/bundle/release/composeApp-release.aab"
+        if [ -f "composeApp/build/outputs/bundle/release/composeApp-release.aab" ]; then
+            AAB_FULL_PATH=$(realpath "composeApp/build/outputs/bundle/release/composeApp-release.aab")
+            echo "🏪 Para Play Store: Sube el AAB a Google Play Console"
+            echo "   📁 Archivo: $AAB_FULL_PATH"
+            echo "   📂 Abrir en Finder: open \"$(dirname "$AAB_FULL_PATH")\""
+            echo "   🌐 Google Play Console: https://play.google.com/console"
+        fi
         ;;
 esac
 
