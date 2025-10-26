@@ -14,8 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.sysarp.project.viewmodel.admin.EnhancedAdminDashboardData
 import org.sysarp.project.utils.formatCurrencyNoDecimals
+import org.sysarp.project.viewmodel.admin.EnhancedAdminDashboardData
 
 /**
  * Sección mejorada del dashboard del administrador que aprovecha todos los datos de la nueva API

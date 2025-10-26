@@ -17,8 +17,8 @@ import org.sysarp.project.service.notification.HybridNotificationManager
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
-import org.sysarp.project.ui.seller.components.dashboard.SellerDashboardContent
 import org.sysarp.project.ui.components.dashboard.SellerDashboardTopBar
+import org.sysarp.project.ui.seller.components.dashboard.SellerDashboardContent
 
 /**
  * Pantalla principal del dashboard del vendedor

@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import org.koin.compose.koinInject
-import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.repository.UserProfileRepository
 import org.sysarp.project.service.CredentialStorageService
 import org.sysarp.project.service.SellerService
@@ -18,21 +17,31 @@ import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.ui.admin.screens.analytics.AdminAnalyticsScreen
 import org.sysarp.project.ui.admin.screens.dashboard.AdminDashboardScreen
 import org.sysarp.project.ui.admin.screens.management.BranchManagementScreen
 import org.sysarp.project.ui.admin.screens.management.SellerManagementScreen
 import org.sysarp.project.ui.admin.screens.management.UserManagementScreen
 import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsScreen
 import org.sysarp.project.ui.admin.screens.profile.AdminProfileScreen
-import org.sysarp.project.ui.admin.screens.analytics.AdminAnalyticsScreen
-import org.sysarp.project.ui.common.screens.*
+import org.sysarp.project.ui.common.screens.BillingDashboardScreen
+import org.sysarp.project.ui.common.screens.DeactivationRequestScreen
+import org.sysarp.project.ui.common.screens.ForgotPasswordScreen
+import org.sysarp.project.ui.common.screens.LoginScreen
+import org.sysarp.project.ui.common.screens.PaymentDialog
+import org.sysarp.project.ui.common.screens.ProfileSelectionScreen
+import org.sysarp.project.ui.common.screens.QRDisplayScreen
+import org.sysarp.project.ui.common.screens.QRScannerScreen
+import org.sysarp.project.ui.common.screens.SettingsScreen
+import org.sysarp.project.ui.common.screens.SplashScreen
+import org.sysarp.project.ui.common.screens.SubscriptionScreen
+import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
 import org.sysarp.project.ui.seller.screens.analytics.SellerAnalyticsScreen
+import org.sysarp.project.ui.seller.screens.auth.SellerUnifiedScreen
 import org.sysarp.project.ui.seller.screens.dashboard.SellerDashboardScreen
 import org.sysarp.project.ui.seller.screens.notifications.SellerNotificationsScreen
 import org.sysarp.project.ui.seller.screens.payments.SellerPaymentsScreen
 import org.sysarp.project.ui.seller.screens.payments.SellerSpecificPaymentsScreen
-import org.sysarp.project.ui.seller.screens.auth.SellerUnifiedScreen
-import org.sysarp.project.ui.screens.admin.AdminRegistrationScreen
 import org.sysarp.project.viewmodel.YapeViewModel
 
 @Composable

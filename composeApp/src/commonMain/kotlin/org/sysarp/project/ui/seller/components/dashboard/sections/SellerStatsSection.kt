@@ -6,9 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,9 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.sysarp.project.data.UnifiedOverviewData
 import org.sysarp.project.ui.components.seller_dashboard.cards.SellerStatCard
 import org.sysarp.project.utils.formatCurrencyNoDecimals
-import org.sysarp.project.data.UnifiedOverviewData
 
 /**
  * Sección de estadísticas del vendedor en el dashboard - Versión mejorada

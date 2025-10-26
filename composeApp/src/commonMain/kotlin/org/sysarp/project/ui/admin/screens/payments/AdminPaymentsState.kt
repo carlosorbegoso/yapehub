@@ -6,16 +6,15 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.sysarp.project.data.AdminPayment
-import org.sysarp.project.data.PaymentSummary
-import org.sysarp.project.data.UserProfile
 import org.sysarp.project.data.PaymentFilterStatus
 import org.sysarp.project.data.PaymentFilterStatusUtils
+import org.sysarp.project.data.PaymentSummary
 import org.sysarp.project.data.UnifiedStatsResponse
+import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.payment.PaymentService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.ui.admin.screens.payments.components.AdvancedFilters
-import org.sysarp.project.utils.convertPeriodToDates
 
 /**
  * Estado y lógica de negocio para AdminPaymentsScreen

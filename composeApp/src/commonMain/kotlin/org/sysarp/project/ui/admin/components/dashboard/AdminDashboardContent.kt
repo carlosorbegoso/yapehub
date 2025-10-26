@@ -1,16 +1,27 @@
 package org.sysarp.project.ui.admin.components.dashboard
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.UserProfile
 import org.sysarp.project.service.websocket.WebSocketConnectionState
+import org.sysarp.project.ui.admin.components.dashboard.sections.AdminActionsSection
+import org.sysarp.project.ui.admin.components.dashboard.sections.AdminPerformanceSection
+import org.sysarp.project.ui.admin.components.dashboard.sections.AdminProfileSection
+import org.sysarp.project.ui.admin.components.dashboard.sections.AdminStatsSection
+import org.sysarp.project.ui.admin.components.dashboard.sections.AdminTopSellersSection
 import org.sysarp.project.viewmodel.admin.EnhancedAdminDashboardData
-import org.sysarp.project.ui.admin.components.dashboard.sections.*
 
 /**
  * Contenido principal del dashboard del administrador

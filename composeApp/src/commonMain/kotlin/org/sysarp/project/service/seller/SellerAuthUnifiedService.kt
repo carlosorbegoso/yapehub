@@ -1,13 +1,11 @@
 package org.sysarp.project.service.seller
 
-import org.sysarp.project.data.SellerLoginByPhoneResponse
-import org.sysarp.project.data.SellerRegistrationResponse
 import org.sysarp.project.data.AuthState
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.SellerAuthApiClient
 import org.sysarp.project.service.http.SellerRegistrationApiClient
-import org.sysarp.project.utils.getCurrentTimestampMs
 import org.sysarp.project.utils.calculateDurationMs
+import org.sysarp.project.utils.getCurrentTimestampMs
 import org.sysarp.project.utils.getFormattedTimestamp
 
 /**

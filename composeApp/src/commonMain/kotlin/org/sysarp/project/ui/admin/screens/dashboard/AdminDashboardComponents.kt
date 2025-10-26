@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -24,7 +23,6 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -37,9 +35,7 @@ import androidx.compose.ui.unit.dp
 import org.sysarp.project.data.ConnectedSellersData
 import org.sysarp.project.data.PerformanceMetricsData
 import org.sysarp.project.data.QuickSummaryData
-import org.sysarp.project.service.billing.BillingService
 import org.sysarp.project.ui.common.components.charts.PerformanceMetricsPieChart
-import org.sysarp.project.ui.screens.admin.AdminBillingIntegrationCard
 import org.sysarp.project.utils.formatTimeOnly
 
 /**

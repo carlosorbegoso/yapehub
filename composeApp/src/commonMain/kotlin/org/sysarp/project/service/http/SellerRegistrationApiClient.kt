@@ -9,8 +9,8 @@ import io.ktor.http.isSuccess
 import org.sysarp.project.data.ApiError
 import org.sysarp.project.data.SellerRegistrationRequest
 import org.sysarp.project.data.SellerRegistrationResponse
-import org.sysarp.project.utils.getCurrentTimestampMs
 import org.sysarp.project.utils.calculateDurationMs
+import org.sysarp.project.utils.getCurrentTimestampMs
 
 /**
  * Cliente API especializado para registro de vendedores

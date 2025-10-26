@@ -10,8 +10,6 @@ import kotlinx.serialization.json.Json
 import org.sysarp.project.service.getHttpClientEngine
 import org.sysarp.project.utils.Constants
 import org.sysarp.project.utils.getFormattedTimestamp
-import org.sysarp.project.utils.calculateDurationMs
-import org.sysarp.project.utils.getCurrentTimestampMs
 
 /**
  * Cliente HTTP base con configuración común para todos los servicios
