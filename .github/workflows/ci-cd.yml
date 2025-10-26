@@ -1,0 +1,16 @@
+name: Mobile app CI (example)
+
+# Example workflow for a mobile application that reuses the tag-on-merge template.
+# Instructions:
+# 1. Copy this file to your mobile app repository under .github/workflows/ci-cd.yml
+# 2. Adjust branch names or other steps as needed.
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  create-tag:
+    uses: carlosorbegoso/workflow-templates/.github/workflows/tag-on-merge.yml@main
+    # No secrets required for the tag template. If you later extend the tag template
+    # to accept inputs or secrets, pass them under `secrets:` or `with:` here.
