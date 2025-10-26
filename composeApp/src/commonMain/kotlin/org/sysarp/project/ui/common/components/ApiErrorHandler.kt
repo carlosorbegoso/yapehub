@@ -2,7 +2,6 @@ package org.sysarp.project.ui.common.components
 
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.SecurityErrorDetector
-import org.sysarp.project.service.http.SecurityErrorInfo
 import org.sysarp.project.service.http.SecurityErrorType
 
 /**

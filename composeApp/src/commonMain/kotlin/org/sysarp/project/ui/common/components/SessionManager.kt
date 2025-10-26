@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 import org.sysarp.project.data.AuthState
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.http.TokenExpirationUIHandler
-import org.sysarp.project.service.http.TokenInterceptor
 
 /**
  * Gestor de sesión que maneja automáticamente:
