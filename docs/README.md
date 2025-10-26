@@ -5,6 +5,7 @@ Bienvenido a la documentación completa de YapeHub. Aquí encontrarás todas las
 ## 📋 Índice de Contenidos
 
 ### 🚀 Guías de Inicio Rápido
+- [**⚡ Referencia Rápida**](./guides/QUICK_REFERENCE.md) - Comandos más usados
 - [**Guía de Ejecución de Scripts**](./guides/SCRIPT_EXECUTION_GUIDE.md) - Cómo usar todos los scripts del proyecto
 - [**Guía de Firma de APK**](./guides/SIGNING_GUIDE.md) - Proceso completo para firmar APKs
 - [**Configuración del Proyecto**](./guides/PROJECT_SETUP.md) - Setup inicial y configuración
@@ -28,13 +29,18 @@ Bienvenido a la documentación completa de YapeHub. Aquí encontrarás todas las
 
 ### Para Desarrolladores Nuevos:
 1. Lee la [Guía de Configuración del Proyecto](./guides/PROJECT_SETUP.md)
-2. Ejecuta los scripts de setup: `./scripts/setup-project.sh`
-3. Compila tu primera APK: `./scripts/build-release.sh`
+2. Ejecuta: `./scripts/setup-project.sh`
+3. Genera keystore: `./scripts/generate-keystore.sh`
+4. Build completo: `./scripts/build-all.sh`
 
 ### Para Builds de Producción:
-1. Revisa la [Guía de Firma de APK](./guides/SIGNING_GUIDE.md)
-2. Ejecuta: `./scripts/build-release.sh` o `./scripts/build-bundle.sh`
-3. Verifica con: `./scripts/verify-apk.sh`
+1. **Build completo**: `./scripts/build-all.sh` (APK + AAB)
+2. **Solo APK**: `./scripts/build-all.sh -t apk`
+3. **Solo AAB**: `./scripts/build-all.sh -t aab`
+
+### Para Desarrollo Diario:
+1. **Build rápido**: `./scripts/dev-build.sh`
+2. **Consulta rápida**: [Referencia Rápida](./guides/QUICK_REFERENCE.md)
 
 ### Para Distribución:
 1. Consulta la [Guía de Play Store](./guides/PLAY_STORE_GUIDE.md)

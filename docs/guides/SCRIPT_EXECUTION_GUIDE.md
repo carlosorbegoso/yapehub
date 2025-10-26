@@ -2,17 +2,49 @@
 
 Esta guía te explica cómo usar todos los scripts disponibles en el proyecto YapeHub de manera efectiva y segura.
 
-## 📁 Estructura de Scripts
+## 🎯 Scripts Principales (Uso Diario)
+
+### ⭐ **Script Centralizado - TODO EN UNO**
+```bash
+./scripts/build-all.sh
+```
+**🔥 RECOMENDADO** - Ejecuta todo el proceso automáticamente:
+- Verificación de seguridad
+- Limpieza del proyecto
+- Generación de APK y AAB
+- Verificación final
+
+**Opciones disponibles:**
+```bash
+./scripts/build-all.sh              # Build completo (APK + AAB)
+./scripts/build-all.sh -t apk        # Solo APK
+./scripts/build-all.sh -t aab        # Solo AAB para Play Store
+./scripts/build-all.sh -s            # Sin limpieza inicial (más rápido)
+./scripts/build-all.sh --help        # Ver todas las opciones
+```
+
+### ⚡ **Build Rápido para Desarrollo**
+```bash
+./scripts/dev-build.sh
+```
+**Para desarrollo diario** - Solo APK debug, instalación automática
+
+---
+
+## 📁 Scripts Individuales
 
 ```
 scripts/
-├── generate-keystore.sh      # Genera keystore para firma
-├── build-release.sh          # Compila APK de release
-├── build-bundle.sh           # Compila AAB para Play Store
-├── verify-apk.sh            # Verifica archivos generados
-├── setup-project.sh         # Setup inicial del proyecto
-├── troubleshoot.sh          # Diagnóstico de problemas
-└── clean-project.sh         # Limpieza profunda
+├── build-all.sh             # 🌟 Script centralizado (PRINCIPAL)
+├── dev-build.sh             # ⚡ Build rápido para desarrollo
+├── setup-project.sh         # 🔧 Setup inicial del proyecto
+├── generate-keystore.sh     # 🔑 Genera keystore para firma
+├── build-release.sh         # 📱 Compila APK de release
+├── build-bundle.sh          # 📦 Compila AAB para Play Store
+├── verify-apk.sh           # ✅ Verifica archivos generados
+├── clean-project.sh        # 🧹 Limpieza profunda
+├── troubleshoot.sh         # 🔍 Diagnóstico de problemas
+└── security-check.sh       # 🔒 Verificación de seguridad
 ```
 
 ## 🔧 Scripts Principales
@@ -146,44 +178,66 @@ scripts/
 
 ---
 
-## 📋 Flujo de Trabajo Recomendado
+## 🎯 Flujos de Trabajo Recomendados
 
-### Para Desarrollo Diario:
+### 🚀 **Para Release Completo (RECOMENDADO)**
 ```bash
-# 1. Limpiar proyecto
-./scripts/clean-project.sh
+# Un solo comando hace todo
+./scripts/build-all.sh
 
-# 2. Compilar debug para pruebas
+# O con opciones específicas
+./scripts/build-all.sh -t both --skip-clean
+```
+
+### ⚡ **Para Desarrollo Diario**
+```bash
+# Build rápido para testing
+./scripts/dev-build.sh
+
+# O build debug manual
 ./gradlew :composeApp:assembleDebug
-
-# 3. Si hay problemas
-./scripts/troubleshoot.sh
 ```
 
-### Para Release de Testing:
+### 📱 **Solo APK para Testing**
 ```bash
-# 1. Verificar configuración
-./scripts/verify-apk.sh
+# Opción 1: Script centralizado
+./scripts/build-all.sh -t apk
 
-# 2. Compilar APK
+# Opción 2: Script individual
 ./scripts/build-release.sh
-
-# 3. Verificar resultado
-./scripts/verify-apk.sh
 ```
 
-### Para Release de Producción:
+### 🏪 **Solo AAB para Play Store**
 ```bash
-# 1. Limpiar completamente
+# Opción 1: Script centralizado
+./scripts/build-all.sh -t aab
+
+# Opción 2: Script individual
+./scripts/build-bundle.sh
+```
+
+### 🔧 **Solución de Problemas**
+```bash
+# Diagnóstico completo
+./scripts/troubleshoot.sh
+
+# Limpieza profunda
 ./scripts/clean-project.sh
 
-# 2. Compilar AAB
-./scripts/build-bundle.sh
+# Verificación de seguridad
+./scripts/security-check.sh
+```
 
-# 3. Verificar archivos
-./scripts/verify-apk.sh
+### 🆕 **Primera Vez / Setup**
+```bash
+# 1. Configuración inicial
+./scripts/setup-project.sh
 
-# 4. Subir a Play Store
+# 2. Generar keystore
+./scripts/generate-keystore.sh
+
+# 3. Primer build
+./scripts/build-all.sh
 ```
 
 ## 🔍 Solución de Problemas Comunes
@@ -253,32 +307,115 @@ adb uninstall com.yapechamo.composeapp
 adb devices
 ```
 
+## 💡 Ejemplos Prácticos
+
+### 🎬 **Escenarios Comunes**
+
+#### "Quiero generar APK para testing rápido"
+```bash
+./scripts/build-all.sh -t apk -s
+# -s = sin limpieza (más rápido)
+```
+
+#### "Necesito AAB para subir a Play Store"
+```bash
+./scripts/build-all.sh -t aab
+# Incluye verificación de seguridad automática
+```
+
+#### "Desarrollo diario - solo quiero probar cambios"
+```bash
+./scripts/dev-build.sh
+# Build debug + instalación automática
+```
+
+#### "Tengo problemas, necesito diagnóstico"
+```bash
+./scripts/troubleshoot.sh
+# Diagnóstico completo del proyecto
+```
+
+#### "Primera vez usando el proyecto"
+```bash
+./scripts/setup-project.sh
+./scripts/generate-keystore.sh
+./scripts/build-all.sh
+```
+
+#### "Build completo para release final"
+```bash
+./scripts/build-all.sh
+# Hace todo: limpieza + seguridad + APK + AAB + verificación
+```
+
+### ⚡ **Comandos de Una Línea**
+
+```bash
+# Build completo silencioso
+./scripts/build-all.sh > build.log 2>&1 && echo "✅ Build completado"
+
+# Solo errores
+./scripts/build-all.sh 2>&1 | grep -E "(❌|ERROR|FAILED)"
+
+# Build y verificar tamaño
+./scripts/build-all.sh && ls -lh composeApp/build/outputs/**/release/*
+
+# Build con tiempo
+time ./scripts/build-all.sh
+
+# Build condicional (solo si hay cambios)
+git diff --quiet || ./scripts/build-all.sh -t apk
+```
+
 ## 🎯 Tips y Trucos
 
-### Acelerar Builds:
+### 🚀 **Acelerar Builds:**
 ```bash
-# Build paralelo
+# Build sin limpieza (más rápido)
+./scripts/build-all.sh -s
+
+# Solo lo que necesitas
+./scripts/build-all.sh -t apk  # Solo APK
+./scripts/build-all.sh -t aab  # Solo AAB
+
+# Build paralelo manual
 ./gradlew --parallel :composeApp:assembleRelease
-
-# Con más memoria
-./gradlew -Xmx4g :composeApp:assembleRelease
 ```
 
-### Debugging:
+### 🔍 **Debugging:**
 ```bash
-# Build con información detallada
-./gradlew --info :composeApp:assembleRelease
+# Ver logs detallados
+./scripts/build-all.sh 2>&1 | tee build-detailed.log
 
-# Ver dependencias
-./gradlew :composeApp:dependencies
+# Solo verificar sin build
+./scripts/verify-apk.sh
+
+# Diagnóstico sin build
+./scripts/troubleshoot.sh
 ```
 
-### Automatización:
+### 🤖 **Automatización:**
 ```bash
-# Build completo automatizado
-./scripts/clean-project.sh && ./scripts/build-bundle.sh && ./scripts/verify-apk.sh
+# Script personalizado
+echo '#!/bin/bash
+./scripts/build-all.sh -t aab
+if [ $? -eq 0 ]; then
+    echo "✅ Listo para Play Store"
+    open composeApp/build/outputs/bundle/release/
+fi' > my-release.sh && chmod +x my-release.sh
+```
+
+### 📊 **Monitoreo:**
+```bash
+# Ver progreso en tiempo real
+./scripts/build-all.sh | while read line; do
+    echo "[$(date '+%H:%M:%S')] $line"
+done
+
+# Notificación al completar (macOS)
+./scripts/build-all.sh && osascript -e 'display notification "Build completado" with title "YapeHub"'
 ```
 
 ---
 
-**🚀 ¡Con estos scripts tendrás un flujo de trabajo eficiente y profesional!**
+**🚀 ¡Con el script centralizado tendrás un flujo de trabajo súper eficiente!**
