@@ -49,7 +49,19 @@ class NavigationManager {
     
     fun navigateBack() {
         if (_navigationStack.isNotEmpty()) {
-            _currentScreen.value = _navigationStack.removeLastOrNull() ?: Screen.AdminDashboard
+            _currentScreen.value = _navigationStack.removeLastOrNull() ?: getDefaultDashboard()
+        } else {
+            // Si no hay pantallas en el stack, ir al dashboard apropiado
+            _currentScreen.value = getDefaultDashboard()
+        }
+    }
+    
+    private fun getDefaultDashboard(): Screen {
+        // Para DeactivationRequest, siempre regresar al SellerDashboard
+        // Para otras pantallas, podríamos hacer lógica más compleja
+        return when (_currentScreen.value) {
+            Screen.DeactivationRequest -> Screen.SellerDashboard
+            else -> Screen.SellerDashboard
         }
     }
 
@@ -108,7 +120,7 @@ class NavigationManager {
     }
     
     fun navigateToDeactivationRequest() {
-        _currentScreen.value = Screen.DeactivationRequest
+        navigateTo(Screen.DeactivationRequest)
     }
     
     fun navigateToBillingDashboard() {
