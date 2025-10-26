@@ -67,6 +67,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.ui.common.components.LoadingHandler
+import org.sysarp.project.ui.common.components.LoadingMessages
+import org.sysarp.project.ui.common.components.launchWithLoading
+import org.sysarp.project.ui.common.components.rememberLoadingState
 import org.sysarp.project.utils.SecurityUtils
 import org.sysarp.project.utils.SuccessHandler
 
@@ -94,9 +98,12 @@ fun AdminRegistrationScreen(
     
     val businessTypes = listOf("RESTAURANT", "RETAIL", "SERVICES", "OTHER")
     
+    // Estado de loading global
+    val loadingState = rememberLoadingState()
+    
     // Animación de escala del formulario
     val animatedScale by animateFloatAsState(
-        targetValue = if (isLoading) 0.95f else 1f,
+        targetValue = if (isLoading || loadingState.isLoading) 0.95f else 1f,
         animationSpec = spring(
             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
             stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
@@ -104,14 +111,15 @@ fun AdminRegistrationScreen(
         label = "formScale"
     )
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    LoadingHandler(loadingState = loadingState) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         // Header animado
         AnimatedVisibility(
             visible = true,
@@ -520,10 +528,36 @@ fun AdminRegistrationScreen(
                     Button(
                         onClick = {
                             if (validateForm(businessName, businessType, ruc, email, password, phone, address, contactName)) {
-                                isLoading = true
                                 errorMessage = ""
                                 
-                                coroutineScope.launch {
+                                coroutineScope.launchWithLoading(
+                                    loadingState = loadingState,
+                                    message = LoadingMessages.REGISTERING,
+                                    canDismiss = false,
+                                    minDuration = 1000L,
+                                    onError = { error ->
+                                        val errorMsg = error.message ?: "Error desconocido"
+                                        errorMessage = when {
+                                            errorMsg.contains("422") -> {
+                                                // Extraer el mensaje específico de validación si está disponible
+                                                val specificError = errorMsg.substringAfter("422 - ").substringAfter("Error en registro de admin: ")
+                                                if (specificError.isNotEmpty() && specificError != errorMsg) {
+                                                    specificError
+                                                } else {
+                                                    "Error de validación: Verifica que todos los campos estén completos y sean válidos"
+                                                }
+                                            }
+                                            errorMsg.contains("400") -> "Error en los datos enviados: Revisa la información ingresada"
+                                            errorMsg.contains("409") -> "El email ya está registrado. Intenta con otro email"
+                                            errorMsg.contains("500") -> "Error del servidor. Intenta más tarde"
+                                            errorMsg.contains("network", ignoreCase = true) -> "Error de conexión. Verifica tu internet"
+                                            else -> errorMsg
+                                        }
+                                    }
+                                ) {
+                                    // Simular pasos del registro para mostrar progreso
+                                    loadingState.updateMessage("Validando datos...")
+                                    
                                     authService.registerAdmin(
                                         businessName = businessName,
                                         businessType = businessType,
@@ -535,29 +569,12 @@ fun AdminRegistrationScreen(
                                         contactName = contactName
                                     ).fold(
                                         onSuccess = { loginData ->
-                                            isLoading = false
+                                            loadingState.updateMessage("Configurando cuenta...")
                                             successMessage = SuccessHandler.Messages.ADMIN_REGISTERED
                                             onRegistrationSuccess()
                                         },
                                         onFailure = { error ->
-                                            isLoading = false
-                                            val errorMsg = error.message ?: "Error desconocido"
-                                            errorMessage = when {
-                                                errorMsg.contains("422") -> {
-                                                    // Extraer el mensaje específico de validación si está disponible
-                                                    val specificError = errorMsg.substringAfter("422 - ").substringAfter("Error en registro de admin: ")
-                                                    if (specificError.isNotEmpty() && specificError != errorMsg) {
-                                                        specificError
-                                                    } else {
-                                                        "Error de validación: Verifica que todos los campos estén completos y sean válidos"
-                                                    }
-                                                }
-                                                errorMsg.contains("400") -> "Error en los datos enviados: Revisa la información ingresada"
-                                                errorMsg.contains("409") -> "El email ya está registrado. Intenta con otro email"
-                                                errorMsg.contains("500") -> "Error del servidor. Intenta más tarde"
-                                                errorMsg.contains("network", ignoreCase = true) -> "Error de conexión. Verifica tu internet"
-                                                else -> errorMsg
-                                            }
+                                            throw error
                                         }
                                     )
                                 }
@@ -575,37 +592,18 @@ fun AdminRegistrationScreen(
                                 }
                             }
                         },
-                        enabled = !isLoading,
+                        enabled = !isLoading && !loadingState.isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        if (isLoading) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    strokeWidth = 2.dp
-                                )
-                                Text(
-                                    text = "Registrando...",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        } else {
-                            Text(
-                                text = "Registrar Administrador",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
+                        Text(
+                            text = "Registrar Administrador",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 }
             }
@@ -665,6 +663,7 @@ fun AdminRegistrationScreen(
             }
         }
     }
+}
 }
 
 private fun validateForm(

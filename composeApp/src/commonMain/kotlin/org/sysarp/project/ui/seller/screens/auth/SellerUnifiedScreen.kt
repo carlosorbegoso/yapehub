@@ -21,6 +21,10 @@ import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.auth.AuthService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.ui.common.components.LoadingHandler
+import org.sysarp.project.ui.common.components.LoadingMessages
+import org.sysarp.project.ui.common.components.launchWithLoading
+import org.sysarp.project.ui.common.components.rememberLoadingState
 import org.sysarp.project.ui.components.dashboard.DashboardAutoRefreshHandler
 import org.sysarp.project.ui.components.seller_unified.actions.SellerFormActions
 import org.sysarp.project.ui.components.seller_unified.animations.AnimatedForm
@@ -54,8 +58,11 @@ fun SellerUnifiedScreen(
     var showAdditionalFields by remember { mutableStateOf(false) }
     var isExistingSeller by remember { mutableStateOf(false) }
     
+    // Estado de loading global
+    val loadingState = rememberLoadingState()
+    
     // Animación de escala del formulario
-    val animatedScale = SellerFormAnimations.getFormScaleAnimation(isLoading)
+    val animatedScale = SellerFormAnimations.getFormScaleAnimation(isLoading || loadingState.isLoading)
     
     // Función para refrescar datos del vendedor
     val refreshSellerData: () -> Unit = {
@@ -70,14 +77,15 @@ fun SellerUnifiedScreen(
         onRefreshSellerDashboard = refreshSellerData
     )
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    LoadingHandler(loadingState = loadingState) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         // Header animado
         AnimatedHeader(onBackClick = onBackClick)
         
@@ -149,7 +157,8 @@ fun SellerUnifiedScreen(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Información adicional animada
-        AnimatedInfoCard()
+            // Información adicional animada
+            AnimatedInfoCard()
+        }
     }
 }
