@@ -35,7 +35,7 @@ import org.sysarp.project.service.auth.AuthService
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
-fun ImprovedGenerateAffiliationCodeDialog(
+fun GenerateAffiliationCodeDialog(
     isVisible: Boolean,
     onDismiss: () -> Unit,
     onGenerate: (Int, Int, Int, String?) -> Unit,
