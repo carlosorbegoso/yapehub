@@ -33,7 +33,7 @@ import org.sysarp.project.data.AffiliationCodeData
 import org.sysarp.project.data.BranchInfo
 import org.sysarp.project.service.auth.AuthService
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun ImprovedGenerateAffiliationCodeDialog(
     isVisible: Boolean,

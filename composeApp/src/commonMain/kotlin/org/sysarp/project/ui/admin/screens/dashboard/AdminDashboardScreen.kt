@@ -170,9 +170,9 @@ fun AdminDashboardScreen(
             }
         }
         
-        // Diálogo de generación de código de afiliación
+        // Diálogo de generación de código de afiliación mejorado
         if (showAffiliationDialog) {
-            GenerateAffiliationCodeDialog(
+            org.sysarp.project.ui.components.ImprovedGenerateAffiliationCodeDialog(
                 isVisible = showAffiliationDialog,
                 onDismiss = { viewModel.dismissAffiliationDialog() },
                 onGenerate = { expirationHours: Int, maxUses: Int, branchId: Int, notes: String? ->
