@@ -18,7 +18,7 @@ import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
 import org.sysarp.project.viewmodel.admin.AdminDashboardViewModel
 import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
-import org.sysarp.project.ui.common.components.topbar.TopBarComponent
+
 
 /**
  * Pantalla principal del dashboard de administración
@@ -148,9 +148,27 @@ fun AdminDashboardScreen(
                     onNavigateToBranchManagement = onNavigateToBranchManagement,
                     onNavigateToSettings = onNavigateToSettings,
                     onNavigateToDeactivationRequests = onNavigateToDeactivationRequests,
-                    onNavigateToBilling = onNavigateToBilling
+                    onNavigateToBilling = onNavigateToBilling,
+                    onShowAffiliationDialog = { viewModel.showAffiliationDialog() },
+                    onLogout = onLogout
                 )
             }
+        }
+        
+        // Diálogo de generación de código de afiliación
+        if (showAffiliationDialog) {
+            GenerateAffiliationCodeDialog(
+                isVisible = showAffiliationDialog,
+                onDismiss = { viewModel.dismissAffiliationDialog() },
+                onGenerate = { expirationHours: Int, maxUses: Int, branchId: Int, notes: String? ->
+                    viewModel.generateAffiliationCode(branchId, expirationHours, maxUses, notes)
+                },
+                branches = branches,
+                isLoading = isLoadingAffiliation,
+                generatedCode = generatedAffiliationCode,
+                errorMessage = affiliationError,
+                authService = authService
+            )
         }
     }
 }

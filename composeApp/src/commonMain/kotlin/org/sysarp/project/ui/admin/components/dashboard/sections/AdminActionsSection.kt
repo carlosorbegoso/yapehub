@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,6 +29,8 @@ fun AdminActionsSection(
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequests: () -> Unit,
     onNavigateToBilling: () -> Unit,
+    onShowAffiliationDialog: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Header (mismo estilo que otras secciones)
@@ -90,10 +93,10 @@ fun AdminActionsSection(
             )
             
             AdminActionCard(
-                title = "Sucursales",
-                subtitle = "Gestionar ubicaciones",
-                icon = Icons.Default.Business,
-                onClick = onNavigateToBranchManagement,
+                title = "Código QR",
+                subtitle = "Generar afiliación",
+                icon = Icons.Default.QrCode,
+                onClick = onShowAffiliationDialog,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -104,13 +107,27 @@ fun AdminActionsSection(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             AdminActionCard(
+                title = "Sucursales",
+                subtitle = "Gestionar ubicaciones",
+                icon = Icons.Default.Business,
+                onClick = onNavigateToBranchManagement,
+                modifier = Modifier.weight(1f)
+            )
+            
+            AdminActionCard(
                 title = "Configuración",
                 subtitle = "Ajustes del sistema",
                 icon = Icons.Default.Settings,
                 onClick = onNavigateToSettings,
                 modifier = Modifier.weight(1f)
             )
-            
+        }
+        
+        // Cuarta fila de acciones
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             AdminActionCard(
                 title = "Facturación",
                 subtitle = "Suscripciones",
@@ -118,6 +135,9 @@ fun AdminActionsSection(
                 onClick = onNavigateToBilling,
                 modifier = Modifier.weight(1f)
             )
+            
+            // Espacio vacío para mantener el balance visual
+            Spacer(modifier = Modifier.weight(1f))
         }
         
         // Acción adicional para solicitudes de desactivación
@@ -128,6 +148,17 @@ fun AdminActionsSection(
             onClick = onNavigateToDeactivationRequests,
             modifier = Modifier.fillMaxWidth(),
             isFullWidth = true
+        )
+        
+        // Botón de cerrar sesión más prominente
+        AdminActionCard(
+            title = "Cerrar Sesión",
+            subtitle = "Salir del sistema de administración",
+            icon = Icons.AutoMirrored.Filled.Logout,
+            onClick = onLogout,
+            modifier = Modifier.fillMaxWidth(),
+            isFullWidth = true,
+            isLogoutButton = true
         )
     }
 }
@@ -140,7 +171,8 @@ private fun AdminActionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     showBadge: Boolean = false,
-    isFullWidth: Boolean = false
+    isFullWidth: Boolean = false,
+    isLogoutButton: Boolean = false
 ) {
     Card(
         onClick = onClick,
@@ -163,7 +195,7 @@ private fun AdminActionCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = Color(0xFF2196F3), // Azul moderno
+                        tint = if (isLogoutButton) MaterialTheme.colorScheme.error else Color(0xFF2196F3), // Rojo para logout, azul para otros
                         modifier = Modifier.size(24.dp)
                     )
                     
@@ -203,7 +235,7 @@ private fun AdminActionCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = Color(0xFF1976D2), // Azul profundo consistente
+                        tint = if (isLogoutButton) MaterialTheme.colorScheme.error else Color(0xFF1976D2), // Rojo para logout, azul para otros
                         modifier = Modifier.size(32.dp)
                     )
                     

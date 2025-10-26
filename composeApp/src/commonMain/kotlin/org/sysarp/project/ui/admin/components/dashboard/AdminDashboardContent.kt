@@ -29,6 +29,8 @@ fun AdminDashboardContent(
     onNavigateToSettings: () -> Unit,
     onNavigateToDeactivationRequests: () -> Unit,
     onNavigateToBilling: () -> Unit,
+    onShowAffiliationDialog: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -79,7 +81,9 @@ fun AdminDashboardContent(
                 onNavigateToBranchManagement = onNavigateToBranchManagement,
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToDeactivationRequests = onNavigateToDeactivationRequests,
-                onNavigateToBilling = onNavigateToBilling
+                onNavigateToBilling = onNavigateToBilling,
+                onShowAffiliationDialog = onShowAffiliationDialog,
+                onLogout = onLogout
             )
         }
     }
