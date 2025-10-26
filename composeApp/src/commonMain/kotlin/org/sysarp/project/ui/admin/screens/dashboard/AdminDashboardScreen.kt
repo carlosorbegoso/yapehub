@@ -1,17 +1,12 @@
 package org.sysarp.project.ui.admin.screens.dashboard
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import org.sysarp.project.service.SellerService
 import org.sysarp.project.service.affiliation.AffiliationService
@@ -21,9 +16,9 @@ import org.sysarp.project.service.branch.BranchService
 import org.sysarp.project.service.qr.QRService
 import org.sysarp.project.service.stats.StatsService
 import org.sysarp.project.service.websocket.PaymentWebSocketService
+import org.sysarp.project.viewmodel.admin.AdminDashboardViewModel
 import org.sysarp.project.ui.components.GenerateAffiliationCodeDialog
 import org.sysarp.project.ui.common.components.topbar.TopBarComponent
-import org.sysarp.project.viewmodel.admin.AdminDashboardViewModel
 
 /**
  * Pantalla principal del dashboard de administración
@@ -81,65 +76,81 @@ fun AdminDashboardScreen(
     LaunchedEffect(Unit) {
         viewModel.initialize()
     }
-    
-    val coroutineScope = rememberCoroutineScope()
 
-    Scaffold(
-        topBar = {
-            TopBarComponent(
-                title = "Dashboard Admin",
-                subtitle = "Panel de administración",
-                menuItems = createTopBarMenuItems(
-                    onShowAffiliationDialog = { viewModel.showAffiliationDialog() },
-                    onNavigateToProfile = onNavigateToProfile,
-                    onNavigateToSettings = onNavigateToSettings,
-                    onLogout = { handleLogout(viewModel, coroutineScope, onLogout) }
-                ),
-                showMenu = true
-            )
-        }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Header con información del negocio
-            BusinessHeaderCard(
-                businessName = userProfile?.businessName ?: "Mi Negocio"
-            )
 
-            // Contenido principal del dashboard usando el ViewModel
-            DashboardContent(
-                quickSummaryData = viewModel.getQuickSummaryData(),
-                isLoadingStats = isLoading,
-                statsError = errorMessage ?: "",
-                connectedSellersData = null, // TODO: Implementar en el ViewModel
-                isLoadingSellers = false, // TODO: Implementar en el ViewModel
-                sellersError = "",
-                pendingRequestsCount = 0, // TODO: Implementar en el ViewModel
-                onNavigateToBranchManagement = onNavigateToBranchManagement,
-                onNavigateToSellerManagement = onNavigateToSellerManagement,
-                onNavigateToAnalytics = onNavigateToAnalytics,
-                onNavigateToPendingPayments = onNavigateToPendingPayments,
-                onNavigateToSettings = onNavigateToSettings,
-                onNavigateToDeactivationRequests = onNavigateToDeactivationRequests,
-                onNavigateToBilling = onNavigateToBilling
-            )
+
+            // Contenido principal del dashboard mejorado
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text(
+                            text = "Cargando dashboard...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else if (errorMessage != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Error al cargar dashboard",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = errorMessage ?: "Error desconocido",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Button(
+                            onClick = { viewModel.refreshDashboard() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Reintentar")
+                        }
+                    }
+                }
+            } else {
+                // Dashboard del administrador con el mismo estilo que el del vendedor
+                org.sysarp.project.ui.admin.components.dashboard.AdminDashboardContent(
+                    userProfile = userProfile,
+                    enhancedData = viewModel.getEnhancedAdminData(),
+                    connectionState = org.sysarp.project.service.websocket.WebSocketConnectionState.CONNECTED, // TODO: Implementar estado real
+                    isLoading = isLoading,
+                    onNavigateToAnalytics = onNavigateToAnalytics,
+                    onNavigateToSellerManagement = onNavigateToSellerManagement,
+                    onNavigateToPendingPayments = onNavigateToPendingPayments,
+                    onNavigateToBranchManagement = onNavigateToBranchManagement,
+                    onNavigateToSettings = onNavigateToSettings,
+                    onNavigateToDeactivationRequests = onNavigateToDeactivationRequests,
+                    onNavigateToBilling = onNavigateToBilling
+                )
+            }
         }
-        
-        // Diálogo de generación de código de afiliación
-        GenerateAffiliationCodeDialog(
-            isVisible = showAffiliationDialog,
-            onDismiss = { viewModel.dismissAffiliationDialog() },
-            onGenerate = { expirationHours: Int, maxUses: Int, branchId: Int, notes: String? ->
-                viewModel.generateAffiliationCode(branchId, expirationHours, maxUses, notes)
-            },
-            branches = branches,
-            isLoading = isLoadingAffiliation,
-            generatedCode = generatedAffiliationCode,
-            errorMessage = affiliationError,
-            authService = authService
-        )
     }
 }

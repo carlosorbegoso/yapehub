@@ -444,7 +444,7 @@ fun QuickSummaryData.toStatCards(): List<QuickStat> {
     return listOf(
         QuickStat(
             title = "Total Vendido",
-            value = formatCurrency(this.totalSales),
+            value = formatCurrency(this.confirmedSales),
             icon = null,
             color = MaterialTheme.colorScheme.primary
         ),

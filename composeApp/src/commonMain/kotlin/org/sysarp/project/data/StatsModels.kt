@@ -62,7 +62,8 @@ data class SellerDailyStats(
 
 @Serializable
 data class QuickSummaryData(
-    val totalSales: Double,
+    val confirmedSales: Double,     // Ventas confirmadas
+    val allSales: Double,           // Todas las ventas (para admin)
     val totalTransactions: Int,
     val averageTransactionValue: Double,
     val salesGrowth: Double,        // +12.5%
@@ -72,8 +73,14 @@ data class QuickSummaryData(
     val confirmedPayments: Int,
     val rejectedPayments: Int,
     val claimRate: Double,          // 6.35%
-    val averageConfirmationTime: Double  // 2.3 minutos
-)
+    val averageConfirmationTime: Double,  // 2.3 minutos
+    // Nuevos campos para mayor detalle
+    val confirmedTransactions: Int,
+    val pendingTransactions: Int,
+    val rejectedTransactions: Int
+) {
+
+}
 
 
 
@@ -547,5 +554,7 @@ data class ComplianceStatusData(
     val backupStatus: String,
     val lastAudit: String
 )
+
+
 
 

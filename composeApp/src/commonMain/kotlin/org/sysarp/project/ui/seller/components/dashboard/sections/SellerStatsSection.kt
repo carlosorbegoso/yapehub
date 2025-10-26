@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Schedule
@@ -78,11 +79,11 @@ fun SellerStatsSection(
             )
         }
     } else if (overviewData != null) {
-        // Usar datos detallados de la nueva API
+        // Usar datos detallados de la nueva API - SOLO información permitida para vendedores
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Primera fila: Ventas confirmadas y totales
+            // Primera fila: Solo ventas confirmadas y promedio (NO ventas totales)
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -96,15 +97,15 @@ fun SellerStatsSection(
                 )
                 
                 SellerStatCard(
-                    title = "Ventas Totales",
-                    value = formatCurrencyNoDecimals(overviewData.allSales),
+                    title = "Promedio/Transacción",
+                    value = formatCurrencyNoDecimals(overviewData.averageTransactionValue),
                     icon = Icons.Filled.TrendingUp,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.weight(1f)
                 )
             }
             
-            // Segunda fila: Estado de transacciones
+            // Segunda fila: Solo transacciones confirmadas y rechazadas (información permitida para vendedores)
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -117,36 +118,22 @@ fun SellerStatsSection(
                     modifier = Modifier.weight(1f)
                 )
                 
-                if (overviewData.pendingTransactions > 0) {
-                    SellerStatCard(
-                        title = "Pendientes",
-                        value = "${overviewData.pendingTransactions}",
-                        icon = Icons.Filled.Schedule,
-                        color = Color(0xFFFF9800), // Naranja para pendiente
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                SellerStatCard(
+                    title = "Rechazadas",
+                    value = "${overviewData.rejectedTransactions}",
+                    icon = Icons.Filled.Cancel,
+                    color = Color(0xFFF44336), // Rojo para rechazado
+                    modifier = Modifier.weight(1f)
+                )
                 
-                if (overviewData.rejectedTransactions > 0) {
-                    SellerStatCard(
-                        title = "Rechazadas",
-                        value = "${overviewData.rejectedTransactions}",
-                        icon = Icons.Filled.Cancel,
-                        color = Color(0xFFF44336), // Rojo para rechazado
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                
-                // Si no hay pendientes ni rechazadas, mostrar promedio
-                if (overviewData.pendingTransactions == 0 && overviewData.rejectedTransactions == 0) {
-                    SellerStatCard(
-                        title = "Promedio",
-                        value = formatCurrencyNoDecimals(overviewData.averageTransactionValue),
-                        icon = Icons.Filled.TrendingUp,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                // Mostrar total de transacciones como contexto
+                SellerStatCard(
+                    title = "Total",
+                    value = "${overviewData.totalTransactions}",
+                    icon = Icons.Filled.Assessment,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     } else {

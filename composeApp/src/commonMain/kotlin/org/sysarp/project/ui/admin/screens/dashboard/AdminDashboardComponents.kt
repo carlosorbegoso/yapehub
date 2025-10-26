@@ -65,20 +65,50 @@ fun QuickStatsSection(
             title = "Error cargando estadísticas",
             message = statsError
         )
-    } else {
-        val quickStats = quickSummaryData?.toStatCards() ?: emptyList()
-        
+    } else if (quickSummaryData != null) {
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            items(quickStats) { stat ->
-                StatCard(
-                    title = stat.title,
-                    value = stat.value,
-                    icon = stat.icon,
-                    color = stat.color
-                )
+            items(6) { index ->
+                when (index) {
+                    0 -> StatCard(
+                        title = "Ventas Confirmadas",
+                        value = org.sysarp.project.utils.formatCurrencyNoDecimals(quickSummaryData.confirmedSales),
+                        icon = Icons.Default.CheckCircle,
+                        color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                    )
+                    1 -> StatCard(
+                        title = "Ventas Totales",
+                        value = org.sysarp.project.utils.formatCurrencyNoDecimals(quickSummaryData.allSales),
+                        icon = Icons.Default.TrendingUp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    2 -> StatCard(
+                        title = "Transacciones",
+                        value = quickSummaryData.totalTransactions.toString(),
+                        icon = Icons.Default.Receipt,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    3 -> StatCard(
+                        title = "Promedio",
+                        value = org.sysarp.project.utils.formatCurrencyNoDecimals(quickSummaryData.averageTransactionValue),
+                        icon = Icons.Default.Analytics,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    4 -> StatCard(
+                        title = "Confirmadas",
+                        value = "${quickSummaryData.confirmedTransactions} (${if (quickSummaryData.totalTransactions > 0) String.format("%.0f", (quickSummaryData.confirmedTransactions.toFloat() / quickSummaryData.totalTransactions.toFloat()) * 100) else "0"}%)",
+                        icon = Icons.Default.CheckCircle,
+                        color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                    )
+                    5 -> StatCard(
+                        title = "Pendientes",
+                        value = "${quickSummaryData.pendingTransactions}",
+                        icon = Icons.Default.Schedule,
+                        color = androidx.compose.ui.graphics.Color(0xFFFF9800)
+                    )
+                }
             }
         }
     }

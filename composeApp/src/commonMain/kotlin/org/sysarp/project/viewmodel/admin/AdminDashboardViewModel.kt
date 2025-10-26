@@ -32,6 +32,19 @@ data class DashboardStats(
 )
 
 /**
+ * Data class para datos enriquecidos del dashboard del administrador
+ */
+data class EnhancedAdminDashboardData(
+    val overview: org.sysarp.project.data.UnifiedOverviewData,
+    val topSellers: List<org.sysarp.project.data.UnifiedTopSellerData>,
+    val performanceMetrics: org.sysarp.project.data.UnifiedPerformanceMetricsData,
+    val urls: org.sysarp.project.data.UnifiedAnalyticsUrls,
+    val dashboardStats: DashboardStats,
+    val userType: String,
+    val userId: Int
+)
+
+/**
  * ViewModel para el dashboard del administrador
  * Centraliza la lógica de negocio y estado
  */
@@ -80,6 +93,10 @@ class AdminDashboardViewModel(
     private val _previousStats = MutableStateFlow<DashboardStats?>(null)
     private val _rejectedPaymentsCount = MutableStateFlow(0)
     private val _averageConfirmationTime = MutableStateFlow(0.0)
+    
+    // Nuevo: Almacenar la respuesta completa de la API para datos enriquecidos
+    private val _unifiedStatsResponse = MutableStateFlow<org.sysarp.project.data.UnifiedStatsResponse?>(null)
+    val unifiedStatsResponse: StateFlow<org.sysarp.project.data.UnifiedStatsResponse?> = _unifiedStatsResponse.asStateFlow()
 
     /**
      * Inicializar el ViewModel
@@ -121,6 +138,9 @@ class AdminDashboardViewModel(
 
                 statsResult.fold(
                     onSuccess = { stats ->
+                        // Almacenar la respuesta completa para datos enriquecidos
+                        _unifiedStatsResponse.value = stats
+                        
                         // Actualizar UI inmediatamente con datos básicos
                         val newStats = DashboardStats(
                             totalSellers = 0, // Se cargará después
@@ -203,6 +223,52 @@ class AdminDashboardViewModel(
         coroutineScope.launch {
             webSocketService.stop()
         }
+    }
+    
+    /**
+     * Generar datos enriquecidos para el dashboard del administrador
+     */
+    fun getEnhancedAdminData(): EnhancedAdminDashboardData? {
+        val response = _unifiedStatsResponse.value ?: return null
+        val stats = _dashboardStats.value
+        
+        return EnhancedAdminDashboardData(
+            overview = response.data.overview,
+            topSellers = response.data.topSellers ?: emptyList(),
+            performanceMetrics = response.data.performanceMetrics,
+            urls = response.data.urls,
+            dashboardStats = stats,
+            userType = response.data.userType,
+            userId = response.data.userId
+        )
+    }
+    
+    /**
+     * Generar QuickSummaryData mejorado usando los nuevos datos de la API
+     * Mantiene compatibilidad con la UI existente
+     */
+    fun getEnhancedQuickSummaryData(): QuickSummaryData? {
+        val response = _unifiedStatsResponse.value ?: return null
+        val overview = response.data.overview
+        val performance = response.data.performanceMetrics
+        
+        return QuickSummaryData(
+            confirmedSales = overview.confirmedSales,
+            allSales = overview.allSales,
+            totalTransactions = overview.totalTransactions,
+            averageTransactionValue = overview.averageTransactionValue,
+            salesGrowth = overview.salesGrowth,
+            transactionGrowth = overview.transactionGrowth,
+            averageGrowth = overview.averageGrowth,
+            pendingPayments = performance.pendingPayments,
+            confirmedPayments = performance.confirmedPayments,
+            rejectedPayments = performance.rejectedPayments,
+            claimRate = performance.claimRate,
+            averageConfirmationTime = performance.averageConfirmationTime,
+            confirmedTransactions = overview.confirmedTransactions,
+            pendingTransactions = overview.pendingTransactions,
+            rejectedTransactions = overview.rejectedTransactions
+        )
     }
 
     /**
@@ -315,7 +381,8 @@ class AdminDashboardViewModel(
         val averageGrowth = (salesGrowth + transactionGrowth) / 2
         
         return QuickSummaryData(
-            totalSales = stats.totalRevenue,
+            confirmedSales = stats.totalRevenue,
+            allSales = stats.totalRevenue, // For admin, both values are the same initially
             totalTransactions = stats.totalTransactions,
             averageTransactionValue = if (stats.totalTransactions > 0) stats.totalRevenue / stats.totalTransactions else 0.0,
             salesGrowth = salesGrowth,
@@ -325,7 +392,10 @@ class AdminDashboardViewModel(
             confirmedPayments = stats.totalTransactions - stats.pendingPayments - _rejectedPaymentsCount.value,
             rejectedPayments = _rejectedPaymentsCount.value,
             claimRate = if (stats.totalTransactions > 0) (stats.pendingPayments.toDouble() / stats.totalTransactions) * 100 else 0.0,
-            averageConfirmationTime = _averageConfirmationTime.value
+            averageConfirmationTime = _averageConfirmationTime.value,
+            confirmedTransactions = stats.totalTransactions - stats.pendingPayments - _rejectedPaymentsCount.value,
+            pendingTransactions = stats.pendingPayments,
+            rejectedTransactions = _rejectedPaymentsCount.value
         )
     }
 

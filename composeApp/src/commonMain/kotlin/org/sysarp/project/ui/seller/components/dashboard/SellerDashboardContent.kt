@@ -368,13 +368,6 @@ fun SellerDashboardContent(
                 overviewData = serverResponseData?.data?.overview
             )
 
-            // Nueva sección mejorada con datos detallados
-            serverResponseData?.data?.overview?.let { overviewData ->
-                org.sysarp.project.ui.seller.components.dashboard.sections.EnhancedSellerOverviewSection(
-                    overviewData = overviewData
-                )
-            }
-
             SellerPaymentsSection(
                 pendingPayments = pendingPayments,
                 filteredPayments = filteredPayments,
