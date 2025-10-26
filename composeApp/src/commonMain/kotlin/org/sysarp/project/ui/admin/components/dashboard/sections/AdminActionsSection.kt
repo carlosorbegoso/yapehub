@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -146,8 +147,9 @@ private fun AdminActionCard(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF8B5CF6).copy(alpha = 0.1f) // Púrpura suave y moderno
-        )
+            containerColor = Color(0xFFFFFFFF) // Blanco limpio y profesional
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp) // Sombra muy sutil
     ) {
         Box {
             if (isFullWidth) {
@@ -161,7 +163,7 @@ private fun AdminActionCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = Color(0xFF6366F1), // Índigo moderno
+                        tint = Color(0xFF2196F3), // Azul moderno
                         modifier = Modifier.size(24.dp)
                     )
                     
@@ -174,12 +176,12 @@ private fun AdminActionCard(
                             text = title,
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = Color(0xFF1F2937) // Gris carbón moderno
                         )
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            color = Color(0xFF6B7280) // Gris medio elegante
                         )
                     }
                     
@@ -201,7 +203,7 @@ private fun AdminActionCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = Color(0xFF8B5CF6), // Púrpura vibrante
+                        tint = Color(0xFF1976D2), // Azul profundo consistente
                         modifier = Modifier.size(32.dp)
                     )
                     
@@ -211,13 +213,13 @@ private fun AdminActionCard(
                         text = title,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFF1F2937) // Gris carbón moderno
                     )
                     
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = Color(0xFF6B7280) // Gris medio elegante
                     )
                 }
             }

@@ -1,6 +1,8 @@
 package org.sysarp.project.ui.admin.components.dashboard.sections
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -8,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -66,8 +69,9 @@ fun AdminTopSellersSection(
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFEF3C7) // Amarillo dorado muy suave y premium
-        )
+            containerColor = Color(0xFFFFFFFF) // Blanco limpio y profesional
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // Sombra sutil
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -81,8 +85,8 @@ fun AdminTopSellersSection(
                 
                 if (seller != topSellers.take(3).last()) {
                     Divider(
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
-                        thickness = 1.dp
+                        color = Color(0xFFE5E7EB), // Gris muy suave y moderno
+                        thickness = 0.5.dp
                     )
                 }
             }
@@ -103,30 +107,35 @@ private fun TopSellerItem(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ranking badge
-            Card(
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = when (seller.rank) {
-                        1 -> Color(0xFFFFD700) // Oro brillante
-                        2 -> Color(0xFFE8E8E8) // Plata moderna
-                        3 -> Color(0xFFCD7F32) // Bronce elegante
-                        else -> Color(0xFF2196F3) // Azul moderno
-                    }
-                ),
-                modifier = Modifier.size(32.dp)
+            // Ranking badge mejorado con gradiente
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        brush = when (seller.rank) {
+                            1 -> Brush.radialGradient(
+                                colors = listOf(Color(0xFFFFD700), Color(0xFFFFA000)) // Gradiente dorado
+                            )
+                            2 -> Brush.radialGradient(
+                                colors = listOf(Color(0xFFE8E8E8), Color(0xFFBDBDBD)) // Gradiente plateado
+                            )
+                            3 -> Brush.radialGradient(
+                                colors = listOf(Color(0xFFCD7F32), Color(0xFF8D5524)) // Gradiente bronce
+                            )
+                            else -> Brush.radialGradient(
+                                colors = listOf(Color(0xFF64B5F6), Color(0xFF1976D2)) // Gradiente azul
+                            )
+                        },
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Text(
-                        text = "#${seller.rank}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
+                Text(
+                    text = "#${seller.rank}",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
             
             Spacer(modifier = Modifier.width(12.dp))
@@ -136,32 +145,52 @@ private fun TopSellerItem(
                 Text(
                     text = seller.sellerName,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF1F2937) // Gris carbón moderno
                 )
                 Text(
                     text = seller.branchName,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    color = Color(0xFF6B7280) // Gris medio elegante
                 )
             }
         }
         
-        // Métricas del vendedor
+        // Métricas del vendedor con diseño mejorado
         Column(
             horizontalAlignment = Alignment.End
         ) {
-            Text(
-                text = formatCurrencyNoDecimals(seller.totalSales),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF4CAF50)
-            )
-            Text(
-                text = "${seller.transactionCount} transacciones",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-            )
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF10B981).copy(alpha = 0.1f)
+                ),
+                modifier = Modifier.padding(2.dp)
+            ) {
+                Text(
+                    text = formatCurrencyNoDecimals(seller.totalSales),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF059669), // Verde esmeralda profundo
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Receipt,
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp),
+                    tint = Color(0xFF6B7280)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "${seller.transactionCount} transacciones",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF6B7280) // Gris moderno
+                )
+            }
         }
     }
 }

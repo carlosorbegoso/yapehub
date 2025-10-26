@@ -124,7 +124,7 @@ fun AdminStatsSection(
                         title = "Promedio",
                         value = formatCurrencyNoDecimals(enhancedData.overview.averageTransactionValue),
                         icon = Icons.Filled.Analytics,
-                        color = Color(0xFF9C27B0), // Púrpura elegante
+                        color = Color(0xFF1976D2), // Azul profundo consistente
                         modifier = Modifier.weight(1f)
                     )
                 }

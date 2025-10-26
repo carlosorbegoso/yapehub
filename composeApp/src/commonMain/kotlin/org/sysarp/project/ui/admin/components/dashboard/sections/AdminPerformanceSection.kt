@@ -98,8 +98,8 @@ fun AdminPerformanceSection(
                 }
                 
                 Divider(
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.1f),
-                    thickness = 1.dp
+                    color = Color(0xFFE5E7EB), // Gris muy suave y moderno
+                    thickness = 0.5.dp
                 )
                 
                 // Segunda fila de métricas
@@ -205,7 +205,7 @@ private fun PerformanceMetricItem(
         Text(
             text = title,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+            color = Color(0xFF6B7280) // Gris moderno y legible
         )
     }
 }

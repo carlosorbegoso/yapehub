@@ -91,7 +91,7 @@ fun QuickStatsSection(
                         title = "Transacciones",
                         value = quickSummaryData.totalTransactions.toString(),
                         icon = Icons.Default.Receipt,
-                        color = androidx.compose.ui.graphics.Color(0xFF9C27B0) // Púrpura elegante
+                        color = androidx.compose.ui.graphics.Color(0xFF1565C0) // Azul profundo
                     )
                     3 -> StatCard(
                         title = "Promedio",
