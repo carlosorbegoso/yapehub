@@ -121,5 +121,8 @@ android {
     defaultConfig {
         minSdk = 24
         targetSdk = 36
+        // Required for App Bundle / bundletool
+        versionCode = 1
+        versionName = "1.0.0"
     }
 }
