@@ -1,6 +1,14 @@
 package org.sysarp.project.ui.screens.admin
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,15 +19,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Store
@@ -46,6 +57,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -82,33 +94,47 @@ fun AdminRegistrationScreen(
     
     val businessTypes = listOf("RESTAURANT", "RETAIL", "SERVICES", "OTHER")
     
+    // Animación de escala del formulario
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isLoading) 0.95f else 1f,
+        animationSpec = spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+        ),
+        label = "formScale"
+    )
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-            // Header
+        // Header animado
+        AnimatedVisibility(
+            visible = true,
+            enter = slideInVertically(
+                initialOffsetY = { -it },
+                animationSpec = spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                )
+            ) + fadeIn(animationSpec = tween(800))
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onBackPressed,
-                    modifier = Modifier.size(48.dp)
-                ) {
+                IconButton(onClick = onBackPressed) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Volver",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(24.dp)
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Registro de Administrador",
                     fontSize = 20.sp,
@@ -116,48 +142,110 @@ fun AdminRegistrationScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
+        }
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        // Logo animado
+        AnimatedVisibility(
+            visible = true,
+            enter = slideInVertically(
+                initialOffsetY = { -it / 2 },
+                animationSpec = spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                )
+            ) + fadeIn(animationSpec = tween(1000))
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Business,
+                    contentDescription = "Admin Logo",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Título animado
+        AnimatedVisibility(
+            visible = true,
+            enter = slideInVertically(
+                initialOffsetY = { it / 2 },
+                animationSpec = spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                )
+            ) + fadeIn(animationSpec = tween(1200))
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "YapeHub Admin",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Text(
+                    text = "Configura tu negocio y comienza a gestionar vendedores",
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Logo
-            Icon(
-                imageVector = Icons.Filled.Business,
-                contentDescription = "Admin Logo",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(64.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = "Configura tu negocio",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Formulario
+        // Formulario principal con animación
+        AnimatedVisibility(
+            visible = true,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                )
+            ) + fadeIn(animationSpec = tween(1400))
+        ) {
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .scale(animatedScale),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Nombre del negocio
                     OutlinedTextField(
                         value = businessName,
-                        onValueChange = { businessName = SecurityUtils.sanitizeInput(it) },
+                        onValueChange = { 
+                            businessName = SecurityUtils.sanitizeInput(it)
+                            if (errorMessage.isNotEmpty()) errorMessage = ""
+                        },
                         label = { Text("Nombre del negocio") },
+                        placeholder = { Text("Ej: Mi Restaurante") },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = {
                             Icon(
@@ -166,19 +254,27 @@ fun AdminRegistrationScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isError = businessName.isNotBlank() && businessName.length < 2
+                        isError = businessName.isNotBlank() && businessName.length < 2,
+                        supportingText = if (businessName.isNotBlank() && businessName.length < 2) {
+                            { Text("El nombre debe tener al menos 2 caracteres", color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                        shape = RoundedCornerShape(12.dp)
                     )
                     
                     // Tipo de negocio
                     ExposedDropdownMenuBox(
                         expanded = showBusinessTypeDropdown,
-                        onExpandedChange = { showBusinessTypeDropdown = !showBusinessTypeDropdown }
+                        onExpandedChange = { 
+                            showBusinessTypeDropdown = !showBusinessTypeDropdown
+                            if (errorMessage.isNotEmpty()) errorMessage = ""
+                        }
                     ) {
                         OutlinedTextField(
-                            value = businessType,
+                            value = if (businessType.isNotEmpty()) getBusinessTypeDisplayName(businessType) else "",
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Tipo de negocio") },
+                            placeholder = { Text("Selecciona el tipo de negocio") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showBusinessTypeDropdown) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -189,19 +285,42 @@ fun AdminRegistrationScreen(
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                            }
+                            },
+                            shape = RoundedCornerShape(12.dp)
                         )
                         ExposedDropdownMenu(
                             expanded = showBusinessTypeDropdown,
-                            onDismissRequest = { showBusinessTypeDropdown = false }
+                            onDismissRequest = { showBusinessTypeDropdown = false },
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(4.dp)
                         ) {
                             businessTypes.forEach { type ->
                                 DropdownMenuItem(
-                                    text = { Text(getBusinessTypeDisplayName(type)) },
+                                    text = { 
+                                        Text(
+                                            text = getBusinessTypeDisplayName(type),
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontSize = 16.sp
+                                        ) 
+                                    },
                                     onClick = {
                                         businessType = type
                                         showBusinessTypeDropdown = false
-                                    }
+                                        if (errorMessage.isNotEmpty()) errorMessage = ""
+                                    },
+                                    colors = androidx.compose.material3.MenuDefaults.itemColors(
+                                        textColor = MaterialTheme.colorScheme.onSurface
+                                    ),
+                                    modifier = Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.surface,
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .padding(horizontal = 4.dp)
                                 )
                             }
                         }
@@ -213,8 +332,10 @@ fun AdminRegistrationScreen(
                         onValueChange = { 
                             val cleanValue = it.replace(Regex("[^0-9]"), "")
                             ruc = cleanValue
+                            if (errorMessage.isNotEmpty()) errorMessage = ""
                         },
                         label = { Text("RUC/DNI") },
+                        placeholder = { Text("Ej: 12345678901") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         leadingIcon = {
@@ -227,14 +348,19 @@ fun AdminRegistrationScreen(
                         isError = ruc.isNotBlank() && !SecurityUtils.isValidRucOrDni(ruc),
                         supportingText = if (ruc.isNotBlank() && !SecurityUtils.isValidRucOrDni(ruc)) {
                             { Text("RUC/DNI debe tener entre 8 y 11 dígitos", color = MaterialTheme.colorScheme.error) }
-                        } else null
+                        } else null,
+                        shape = RoundedCornerShape(12.dp)
                     )
                     
                     // Email
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = SecurityUtils.normalizeEmail(it) },
+                        onValueChange = { 
+                            email = SecurityUtils.normalizeEmail(it)
+                            if (errorMessage.isNotEmpty()) errorMessage = ""
+                        },
                         label = { Text("Email") },
+                        placeholder = { Text("admin@miempresa.com") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         leadingIcon = {
@@ -247,14 +373,19 @@ fun AdminRegistrationScreen(
                         isError = email.isNotBlank() && !SecurityUtils.isValidEmail(email),
                         supportingText = if (email.isNotBlank() && !SecurityUtils.isValidEmail(email)) {
                             { Text("Formato de email inválido", color = MaterialTheme.colorScheme.error) }
-                        } else null
+                        } else null,
+                        shape = RoundedCornerShape(12.dp)
                     )
                     
                     // Contraseña
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = { 
+                            password = it
+                            if (errorMessage.isNotEmpty()) errorMessage = ""
+                        },
                         label = { Text("Contraseña") },
+                        placeholder = { Text("Mínimo 8 caracteres") },
                         modifier = Modifier.fillMaxWidth(),
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         leadingIcon = {
@@ -276,14 +407,19 @@ fun AdminRegistrationScreen(
                         isError = password.isNotBlank() && !SecurityUtils.isValidPassword(password),
                         supportingText = if (password.isNotBlank() && !SecurityUtils.isValidPassword(password)) {
                             { Text("Mínimo 8 caracteres, sin caracteres especiales", color = MaterialTheme.colorScheme.error) }
-                        } else null
+                        } else null,
+                        shape = RoundedCornerShape(12.dp)
                     )
                     
                     // Teléfono
                     OutlinedTextField(
                         value = phone,
-                        onValueChange = { phone = SecurityUtils.cleanPhoneNumber(it) },
+                        onValueChange = { 
+                            phone = SecurityUtils.cleanPhoneNumber(it)
+                            if (errorMessage.isNotEmpty()) errorMessage = ""
+                        },
                         label = { Text("Teléfono") },
+                        placeholder = { Text("Ej: 987654321") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         leadingIcon = {
@@ -296,14 +432,19 @@ fun AdminRegistrationScreen(
                         isError = phone.isNotBlank() && !SecurityUtils.isValidPhone(phone),
                         supportingText = if (phone.isNotBlank() && !SecurityUtils.isValidPhone(phone)) {
                             { Text("Teléfono debe tener entre 9 y 15 dígitos", color = MaterialTheme.colorScheme.error) }
-                        } else null
+                        } else null,
+                        shape = RoundedCornerShape(12.dp)
                     )
                     
                     // Dirección
                     OutlinedTextField(
                         value = address,
-                        onValueChange = { address = SecurityUtils.sanitizeInput(it) },
+                        onValueChange = { 
+                            address = SecurityUtils.sanitizeInput(it)
+                            if (errorMessage.isNotEmpty()) errorMessage = ""
+                        },
                         label = { Text("Dirección") },
+                        placeholder = { Text("Av. Principal 123, Lima") },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = {
                             Icon(
@@ -312,14 +453,22 @@ fun AdminRegistrationScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isError = address.isNotBlank() && address.length < 5
+                        isError = address.isNotBlank() && address.length < 5,
+                        supportingText = if (address.isNotBlank() && address.length < 5) {
+                            { Text("La dirección debe tener al menos 5 caracteres", color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                        shape = RoundedCornerShape(12.dp)
                     )
                     
                     // Nombre de contacto
                     OutlinedTextField(
                         value = contactName,
-                        onValueChange = { contactName = SecurityUtils.sanitizeInput(it) },
+                        onValueChange = { 
+                            contactName = SecurityUtils.sanitizeInput(it)
+                            if (errorMessage.isNotEmpty()) errorMessage = ""
+                        },
                         label = { Text("Nombre de contacto") },
+                        placeholder = { Text("Juan Pérez") },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = {
                             Icon(
@@ -328,7 +477,11 @@ fun AdminRegistrationScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isError = contactName.isNotBlank() && contactName.length < 2
+                        isError = contactName.isNotBlank() && contactName.length < 2,
+                        supportingText = if (contactName.isNotBlank() && contactName.length < 2) {
+                            { Text("El nombre debe tener al menos 2 caracteres", color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                        shape = RoundedCornerShape(12.dp)
                     )
                     
                     // Mensaje de error
@@ -361,7 +514,7 @@ fun AdminRegistrationScreen(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     // Botón de registro
                     Button(
@@ -426,13 +579,25 @@ fun AdminRegistrationScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                                Text(
+                                    text = "Registrando...",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         } else {
                             Text(
                                 text = "Registrar Administrador",
@@ -444,17 +609,62 @@ fun AdminRegistrationScreen(
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Información adicional
-            Text(
-                text = "Al registrarte como administrador, podrás gestionar vendedores y recibir notificaciones de pagos Yape.",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
         }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // Información adicional animada
+        AnimatedVisibility(
+            visible = true,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                )
+            ) + fadeIn(animationSpec = tween(1600))
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Información",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    Text(
+                        text = "• Como administrador podrás gestionar vendedores y sus códigos de afiliación\n" +
+                              "• Recibirás notificaciones de todos los pagos Yape realizados\n" +
+                              "• Tendrás acceso completo al dashboard de estadísticas y reportes\n" +
+                              "• Podrás configurar y personalizar tu negocio",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 20.sp
+                    )
+                }
+            }
+        }
+    }
 }
 
 private fun validateForm(
