@@ -142,15 +142,19 @@ fun AffiliationCodeField(
     onNavigateToQRScanner: () -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Campo mejorado con mejor diseño
         OutlinedTextField(
             value = state.affiliationCode,
             onValueChange = { newValue ->
-                state.updateAffiliationCode(newValue)
+                // Solo permitir letras y números, máximo 6 caracteres
+                if (newValue.length <= 6 && newValue.all { it.isLetterOrDigit() }) {
+                    state.updateAffiliationCode(newValue.uppercase())
+                }
             },
             label = { Text("Código de Afiliación") },
-            placeholder = { Text("Ej: ABC123") },
+            placeholder = { Text("Ingresa tu código") },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Filled.Key,
@@ -170,7 +174,7 @@ fun AffiliationCodeField(
                     FieldVisualState.Error -> {
                         Icon(
                             imageVector = Icons.Filled.Warning,
-                            contentDescription = "Muy corto",
+                            contentDescription = "Incompleto",
                             tint = MaterialTheme.colorScheme.error
                         )
                     }
@@ -181,6 +185,7 @@ fun AffiliationCodeField(
             singleLine = true,
             enabled = !state.isLoading,
             isError = state.hasAffiliationCodeError(),
+            shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = when (state.getAffiliationCodeVisualState()) {
@@ -189,32 +194,48 @@ fun AffiliationCodeField(
                     FieldVisualState.Neutral -> MaterialTheme.colorScheme.outline
                 },
                 errorBorderColor = MaterialTheme.colorScheme.error
-            )
+            ),
+            supportingText = {
+                Text(
+                    text = when {
+                        state.affiliationCode.isEmpty() -> "Solicita este código a tu administrador"
+                        state.affiliationCode.length < 6 -> "El código debe tener 6 caracteres (${state.affiliationCode.length}/6)"
+                        else -> "Código válido ✓"
+                    },
+                    color = when (state.getAffiliationCodeVisualState()) {
+                        FieldVisualState.Valid -> MaterialTheme.colorScheme.primary
+                        FieldVisualState.Error -> MaterialTheme.colorScheme.error
+                        FieldVisualState.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
         )
         
-        Text(
-            text = "Código de 6 dígitos del administrador",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 2.dp)
-        )
-        
-        OutlinedButton(
-            onClick = onNavigateToQRScanner,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
-            enabled = !state.isLoading
+        // Información mejorada sobre el código
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            ),
+            shape = RoundedCornerShape(8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Filled.QrCodeScanner,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Escanear Código QR",
-                fontWeight = FontWeight.Medium
-            )
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Key,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = "El código de afiliación te identifica como vendedor autorizado",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
@@ -224,15 +245,18 @@ fun SellerNameField(
     state: SellerFormFieldsState
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OutlinedTextField(
             value = state.sellerName,
             onValueChange = { newValue ->
-                state.updateSellerName(newValue)
+                // Solo permitir letras, espacios y algunos caracteres especiales
+                if (newValue.all { it.isLetter() || it.isWhitespace() || it in "áéíóúñÁÉÍÓÚÑ'-." }) {
+                    state.updateSellerName(newValue)
+                }
             },
             label = { Text("Nombre Completo") },
-            placeholder = { Text("Tu nombre completo") },
+            placeholder = { Text("Ingresa tu nombre completo") },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Filled.Person,
@@ -263,6 +287,7 @@ fun SellerNameField(
             singleLine = true,
             enabled = !state.isLoading,
             isError = state.hasSellerNameError(),
+            shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = when (state.getSellerNameVisualState()) {
@@ -271,14 +296,21 @@ fun SellerNameField(
                     FieldVisualState.Neutral -> MaterialTheme.colorScheme.outline
                 },
                 errorBorderColor = MaterialTheme.colorScheme.error
-            )
-        )
-        
-        Text(
-            text = "Nombre completo como en tu documento",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 2.dp)
+            ),
+            supportingText = {
+                Text(
+                    text = when {
+                        state.sellerName.isEmpty() -> "Ingresa tu nombre completo"
+                        state.sellerName.length < 3 -> "El nombre debe tener al menos 3 caracteres"
+                        else -> "Nombre válido ✓"
+                    },
+                    color = when (state.getSellerNameVisualState()) {
+                        FieldVisualState.Valid -> MaterialTheme.colorScheme.primary
+                        FieldVisualState.Error -> MaterialTheme.colorScheme.error
+                        FieldVisualState.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
         )
     }
 }
