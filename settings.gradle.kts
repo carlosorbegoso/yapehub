@@ -25,6 +25,8 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        // Add the JetBrains Compose repository for KMP artifacts
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     }
 }
 

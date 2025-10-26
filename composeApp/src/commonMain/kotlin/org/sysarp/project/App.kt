@@ -3,22 +3,19 @@ package org.sysarp.project
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import org.sysarp.project.ui.theme.YapeHubTheme
-import org.sysarp.project.data.UserProfile
-import org.sysarp.project.repository.UserProfileRepository
-import org.sysarp.project.repository.YapeTransactionRepository
-import org.sysarp.project.service.NotificationCaptureService
-import org.sysarp.project.data.YapeTransaction
-import org.sysarp.project.data.TransactionType
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
-import org.sysarp.project.navigation.NavigationManager
+import org.koin.compose.koinInject
+import org.sysarp.project.data.SellerPendingPayment
 import org.sysarp.project.navigation.AppContent
+import org.sysarp.project.navigation.Screen
 import org.sysarp.project.navigation.rememberNavigationManager
-import org.sysarp.project.viewmodel.YapeViewModel
-import org.sysarp.project.service.AuthService
+import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.notification.HybridNotificationManager
+import org.sysarp.project.ui.common.components.AutoSessionHandler
+import org.sysarp.project.ui.theme.YapeHubTheme
 
 @Composable
 fun App() {
@@ -32,71 +29,63 @@ fun App() {
     }
 }
 
-// Singleton para el repositorio
-object RepositorySingleton {
-    private var _repository: YapeTransactionRepository? = null
-    
-    fun getRepository(): YapeTransactionRepository {
-        if (_repository == null) {
-            // Crear repositorio lazy - solo cuando se necesite
-            _repository = createRepository()
+@Composable
+fun YapeApp() {
+    val hybridNotificationManager: HybridNotificationManager = koinInject()
+    val authService: AuthService = koinInject()
+    val navigationManager = rememberNavigationManager()
+
+    InitializeNotificationManager(hybridNotificationManager)
+    ManageNotificationLifecycle(hybridNotificationManager)
+
+    // Manejo automático de expiración de sesiones
+    AutoSessionHandler(
+        authService = authService,
+        onNavigateToLogin = {
+            // Navegar al login cuando la sesión expire
+            navigationManager.navigateTo(Screen.ProfileSelection)
         }
-        return _repository!!
-    }
-    
-    // Función para reinicializar el repositorio cuando el contexto esté disponible
-    fun reinitializeRepository() {
-        _repository = null // Forzar recreación
+    ) {
+        AppContent(navigationManager = navigationManager)
     }
 }
 
 @Composable
-fun YapeApp() {
-    // CORREGIDO: Asegurar que TODOS usen la misma instancia del repositorio
-    val repository = remember {
-        RepositorySingleton.getRepository()
+private fun InitializeNotificationManager(
+    notificationManager: HybridNotificationManager
+) {
+    LaunchedEffect(Unit) {
+        notificationManager.setOnNewNotificationCallback { payments ->
+            handleIncomingPayments(payments)
+        }
+        notificationManager.start()
     }
-    
-    val userProfileRepository = remember {
-        UserProfileRepository()
-    }
-    
-    val authService = remember {
-        AuthService()
-    }
-    
-    val notificationService = remember {
-        createNotificationService(repository)
-    }
-    
-    // CORREGIDO: Usar el mismo repositorio singleton
-    val viewModel = remember {
-        YapeViewModel(repository, notificationService, userProfileRepository)
-    }
-    
-    // Sistema de navegación simple multiplataforma
-    val navigationManager = rememberNavigationManager()
-    
-    // Contenido de la aplicación
-    AppContent(
-        navigationManager = navigationManager,
-        viewModel = viewModel,
-        userProfileRepository = userProfileRepository,
-        authService = authService
-    )
 }
 
-// Función para crear el servicio de notificaciones apropiado para cada plataforma
-expect fun createNotificationService(repository: YapeTransactionRepository): NotificationCaptureService
+@Composable
+private fun ManageNotificationLifecycle(
+    notificationManager: HybridNotificationManager
+) {
+    DisposableEffect(Unit) {
+        onDispose {
+            notificationManager.stop()
+        }
+    }
+}
 
-// Función para crear el repositorio apropiado para cada plataforma
-expect fun createRepository(): YapeTransactionRepository
+private fun handleIncomingPayments(payments: List<SellerPendingPayment>) {
+    logPaymentNotification(payments.size)
+    payments.forEach { payment ->
+        logPaymentDetails(payment)
+    }
+}
 
-// Función para solicitar permisos automáticamente
-expect fun requestPermissionsAutomatically()
+private fun logPaymentNotification(paymentCount: Int) {
+    println("[APP] 🔔 Hybrid notifications received: $paymentCount payments")
+}
 
-// Función para verificar permisos de notificaciones
-expect suspend fun checkNotificationPermission(): Boolean
-
-// Función para verificar permisos de accesibilidad
-expect suspend fun checkAccessibilityPermission(): Boolean
+private fun logPaymentDetails(payment: SellerPendingPayment) {
+    println(
+        "[APP] 💰 Payment: ${payment.paymentId} - S/ ${payment.amount} from ${payment.senderName}"
+    )
+}

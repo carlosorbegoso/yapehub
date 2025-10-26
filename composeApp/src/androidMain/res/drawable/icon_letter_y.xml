@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Sombra de la letra -->
+    <item android:top="1dp" android:left="1dp">
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <path android:pathData="M44,44 L50,44 L54,52 L58,44 L64,44 L56,60 L56,68 L52,68 L52,60 Z" 
+                  android:fillColor="#20000000" />
+        </vector>
+    </item>
+    
+    <!-- Letra Y principal -->
+    <item android:bottom="1dp" android:right="1dp">
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <path android:pathData="M44,44 L50,44 L54,52 L58,44 L64,44 L56,60 L56,68 L52,68 L52,60 Z" 
+                  android:fillColor="#FFFFFF" />
+        </vector>
+    </item>
+    
+    <!-- Resplandor interno -->
+    <item android:bottom="1dp" android:right="1dp">
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <path android:pathData="M45,45 L49,45 L54,51 L59,45 L63,45 L55,59 L55,67 L53,67 L53,59 Z" 
+                  android:fillColor="#40FFFFFF" />
+        </vector>
+    </item>
+    
+</layer-list>

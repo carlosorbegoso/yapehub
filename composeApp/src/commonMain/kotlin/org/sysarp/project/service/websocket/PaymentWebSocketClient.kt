@@ -1,0 +1,452 @@
+package org.sysarp.project.service.websocket
+
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.DefaultWebSocketSession
+import io.ktor.websocket.Frame
+import io.ktor.websocket.close
+import io.ktor.websocket.readReason
+import io.ktor.websocket.readText
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import org.sysarp.project.data.PaymentNotificationData
+import org.sysarp.project.data.PaymentResultData
+import org.sysarp.project.data.WebSocketMessage
+import org.sysarp.project.service.auth.AuthService
+import org.sysarp.project.service.getHttpClientEngine
+import org.sysarp.project.utils.Constants
+
+/**
+ * Cliente WebSocket simplificado para notificaciones de pagos en tiempo real
+ */
+class PaymentWebSocketClient(
+    private val authService: AuthService
+) {
+    
+    /**
+     * Logging para WebSocket
+     */
+    private fun logInfo(service: String, message: String) {
+        println("[$service] INFO: $message")
+    }
+    
+    private fun logError(service: String, message: String) {
+        println("[$service] ERROR: $message")
+    }
+    
+    private val httpClient = HttpClient(getHttpClientEngine()) {
+        install(WebSockets)
+    }
+    
+    private var webSocketSession: DefaultWebSocketSession? = null
+    private var reconnectJob: Job? = null
+    private var heartbeatJob: Job? = null
+    
+    // Estados de conexión
+    private val _connectionState = MutableStateFlow(WebSocketConnectionState.DISCONNECTED)
+    val connectionState: StateFlow<WebSocketConnectionState> = _connectionState.asStateFlow()
+    
+    // Flujos de datos
+    private val _paymentNotifications = MutableSharedFlow<PaymentNotificationData>(
+        replay = 1,
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val paymentNotifications: SharedFlow<PaymentNotificationData> = _paymentNotifications.asSharedFlow()
+    
+    private val _paymentResults = MutableSharedFlow<PaymentResultData>(
+        replay = 1,
+        extraBufferCapacity = 32,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val paymentResults: SharedFlow<PaymentResultData> = _paymentResults.asSharedFlow()
+    
+    // Configuración de reconexión automática
+    private var reconnectAttempts = 0
+    private var currentSellerId: Long? = null
+    private var lastReconnectTime = 0L
+    private val minTimeBetweenReconnects = 3000L // 3 segundos entre reconexiones
+    private var lastHeartbeatTime = 0L
+    private var lastMessageTime = 0L
+    private var connectionCheckJob: Job? = null
+    
+    // Callback para notificar cuando se recibe un mensaje
+    private var onMessageReceivedCallback: (() -> Unit)? = null
+    
+    /**
+     * Conecta al WebSocket del vendedor
+     */
+    suspend fun connect(sellerId: Long) {
+        // Verificar si ya estamos conectados o conectando para el mismo sellerId
+        if (_connectionState.value == WebSocketConnectionState.CONNECTED && currentSellerId == sellerId) {
+            logInfo("WEBSOCKET", "Ya conectado para sellerId: $sellerId, ignorando intento de conexión")
+            return
+        }
+        
+        // Si estamos conectando, cancelar la conexión anterior
+        if (_connectionState.value == WebSocketConnectionState.CONNECTING) {
+            logInfo("WEBSOCKET", "Cancelando conexión anterior para iniciar nueva conexión para sellerId: $sellerId")
+            disconnect()
+        }
+        
+        // Si hay una conexión diferente, desconectar primero
+        if (_connectionState.value == WebSocketConnectionState.CONNECTED && currentSellerId != sellerId) {
+            logInfo("WEBSOCKET", "Desconectando conexión anterior para sellerId: $currentSellerId")
+            disconnect()
+        }
+        
+        val token = authService.accessToken.value
+        if (token.isNullOrBlank()) {
+            logError("WEBSOCKET", "Token de acceso vacío, no se puede conectar para sellerId: $sellerId")
+            return
+        }
+        
+        currentSellerId = sellerId
+        _connectionState.value = WebSocketConnectionState.CONNECTING
+        
+        try {
+            val url = "${Constants.WEBSOCKET_URL}/ws/payments/$sellerId?token=$token"
+            
+            httpClient.webSocket(url) {
+                webSocketSession = this
+                _connectionState.value = WebSocketConnectionState.CONNECTED
+                reconnectAttempts = 0 // Resetear intentos de reconexión
+                
+                logInfo("WEBSOCKET", "✅ Conectado para sellerId: $sellerId")
+                
+                lastHeartbeatTime = getCurrentTimeMillis()
+                lastMessageTime = getCurrentTimeMillis()
+                startHeartbeat()
+                startConnectionCheck()
+                
+                // Escuchar mensajes entrantes con loop robusto
+                try {
+                    for (frame in incoming) {
+                        try {
+                            when (frame) {
+                        is Frame.Text -> {
+                            val message = frame.readText()
+                            lastMessageTime = getCurrentTimeMillis()
+                            processMessage(message)
+                            
+                            // Notificar al HybridNotificationManager que recibimos un mensaje
+                            notifyMessageReceived()
+                        }
+                                is Frame.Close -> {
+                                    val reason = frame.readReason()
+                                    _connectionState.value = WebSocketConnectionState.DISCONNECTED
+                                    // Programando reconexión automática
+                                    scheduleReconnect()
+                                    break
+                                }
+                                is Frame.Ping -> {
+                                    lastMessageTime = getCurrentTimeMillis()
+                                }
+                                is Frame.Pong -> {
+                                    lastMessageTime = getCurrentTimeMillis()
+                                }
+                                else -> {
+                                    lastMessageTime = getCurrentTimeMillis()
+                                }
+                            }
+                        } catch (frameException: Exception) {
+                            logError("WEBSOCKET", "❌ Error procesando frame: ${frameException.message}")
+                            // Continuar con el siguiente frame
+                        }
+                    }
+                } catch (loopException: Exception) {
+                    logError("WEBSOCKET", "❌ Error en loop de mensajes: ${loopException.message}")
+                    _connectionState.value = WebSocketConnectionState.DISCONNECTED
+                    logInfo("WEBSOCKET", "🔄 Programando reconexión por error en loop...")
+                    scheduleReconnect()
+                }
+            }
+            
+        } catch (e: Exception) {
+            _connectionState.value = WebSocketConnectionState.DISCONNECTED
+            logError("WEBSOCKET", "❌ Error al conectar WebSocket para sellerId: $sellerId")
+            logError("WEBSOCKET", "Error: ${e.message}")
+            logError("WEBSOCKET", "Estado de conexión: DISCONNECTED")
+            
+            val message = e.message ?: ""
+            if (!message.contains("401") && !message.contains("403")) {
+                logInfo("WEBSOCKET", "🔄 Programando reconexión automática...")
+                scheduleReconnect()
+            } else {
+                logError("WEBSOCKET", "🚫 Error de autenticación (401/403), no se intentará reconectar")
+            }
+        }
+    }
+    
+    /**
+     * Procesa mensajes entrantes del WebSocket
+     */
+    private suspend fun processMessage(message: String) {
+        logInfo("WEBSOCKET", "[RAW] Mensaje recibido: $message")
+        try {
+            
+            // Manejar mensaje de conexión especial
+            if (message.contains("\"type\":\"CONNECTED\"")) {
+                _connectionState.value = WebSocketConnectionState.CONNECTED
+                reconnectAttempts = 0
+                startHeartbeat()
+                return
+            }
+            
+            val webSocketMessage = Json.decodeFromString<WebSocketMessage>(message)
+            
+            when (webSocketMessage.type) {
+                "PAYMENT_NOTIFICATION" -> {
+                    logInfo("WEBSOCKET", "[WEBSOCKET] Notificación de pago recibida: ${webSocketMessage.data}")
+                    val notificationData = PaymentNotificationData(
+                        paymentId = webSocketMessage.data.paymentId,
+                        amount = webSocketMessage.data.amount,
+                        senderName = webSocketMessage.data.senderName,
+                        yapeCode = webSocketMessage.data.yapeCode,
+                        status = webSocketMessage.data.status ?: "PENDING",
+                        timestamp = webSocketMessage.data.timestamp ?: getCurrentTimeMillis().toString(),
+                        message = webSocketMessage.data.message ?: ""
+                    )
+                    _paymentNotifications.emit(notificationData)
+                }
+                
+                "PAYMENT_RESULT" -> {
+                     logInfo("WEBSOCKET", "[WEBSOCKET] Resultado de pago recibido: ${webSocketMessage.data}")
+                    val resultData = PaymentResultData(
+                        paymentId = webSocketMessage.data.paymentId,
+                        status = webSocketMessage.data.status ?: "UNKNOWN",
+                        message = webSocketMessage.data.message ?: "",
+                        sellerId = webSocketMessage.data.sellerId ?: 0,
+                        sellerName = webSocketMessage.data.sellerName ?: ""
+                    )
+                    _paymentResults.emit(resultData)
+                }
+                
+                else -> {
+                    logInfo("WEBSOCKET", "[WEBSOCKET] Mensaje de tipo desconocido: ${webSocketMessage.type}")
+                }
+            }
+            
+        } catch (e: Exception) {
+             logError("WEBSOCKET", "[WEBSOCKET] Error al procesar mensaje: ${e.message}")
+        }
+    }
+    
+    /**
+     * Inicia heartbeat para mantener conexión activa (optimizado)
+     */
+    private fun startHeartbeat() {
+        logInfo("WEBSOCKET", "💓 Iniciando heartbeat para mantener conexión activa")
+        heartbeatJob?.cancel()
+        heartbeatJob = CoroutineScope(Dispatchers.IO).launch {
+            while (_connectionState.value == WebSocketConnectionState.CONNECTED) {
+                delay(60000) // Heartbeat cada 60 segundos (aumentado de 30 segundos)
+                
+                try {
+                    logInfo("WEBSOCKET", "💓 Heartbeat - conexión activa")
+                    // Enviar ping para mantener conexión
+                    webSocketSession?.send(Frame.Ping(ByteArray(0)))
+                    lastHeartbeatTime = getCurrentTimeMillis()
+                } catch (e: Exception) {
+                    logError("WEBSOCKET", "❌ Error en heartbeat: ${e.message}")
+                    _connectionState.value = WebSocketConnectionState.DISCONNECTED
+                    logInfo("WEBSOCKET", "🔄 Error en heartbeat, programando reconexión...")
+                    scheduleReconnect()
+                    break
+                }
+            }
+            logInfo("WEBSOCKET", "💓 Heartbeat detenido - conexión no activa")
+        }
+    }
+    
+    /**
+     * Inicia verificación de conexión para detectar conexiones muertas
+     */
+    private fun startConnectionCheck() {
+        logInfo("WEBSOCKET", "🔍 Iniciando verificación de conexión")
+        connectionCheckJob?.cancel()
+        connectionCheckJob = CoroutineScope(Dispatchers.IO).launch {
+            while (_connectionState.value == WebSocketConnectionState.CONNECTED) {
+                delay(30000) // Verificar cada 30 segundos
+                
+                val currentTime = getCurrentTimeMillis()
+                val timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
+                val timeSinceLastMessage = currentTime - lastMessageTime
+                
+                if (timeSinceLastHeartbeat > 120000) { // 2 minutos sin heartbeat
+                    logError("WEBSOCKET", "🚨 Conexión muerta detectada - sin heartbeat por ${timeSinceLastHeartbeat/1000}s")
+                    _connectionState.value = WebSocketConnectionState.DISCONNECTED
+                    logInfo("WEBSOCKET", "🔄 Forzando reconexión por conexión muerta...")
+                    scheduleReconnect()
+                    break
+                } else if (timeSinceLastMessage > 300000) { // 5 minutos sin mensajes del servidor
+                    logError("WEBSOCKET", "🚨 Sin mensajes del servidor por ${timeSinceLastMessage/1000}s - posible conexión muerta")
+                    logError("WEBSOCKET", "🚨 El loop de mensajes puede estar atascado - forzando reconexión")
+                    _connectionState.value = WebSocketConnectionState.DISCONNECTED
+                    logInfo("WEBSOCKET", "🔄 Forzando reconexión por falta de mensajes...")
+                    scheduleReconnect()
+                    break
+                } else if (timeSinceLastHeartbeat > 90000) { // 1.5 minutos sin heartbeat - advertencia
+                    logError("WEBSOCKET", "⚠️ Conexión lenta - sin heartbeat por ${timeSinceLastHeartbeat/1000}s")
+                } else {
+                    logInfo("WEBSOCKET", "✅ Conexión activa - último heartbeat hace ${timeSinceLastHeartbeat/1000}s, último mensaje hace ${timeSinceLastMessage/1000}s")
+                }
+            }
+            logInfo("WEBSOCKET", "🔍 Verificación de conexión detenida")
+        }
+    }
+    
+    /**
+     * Establece callback para notificar cuando se recibe un mensaje
+     */
+    fun setOnMessageReceivedCallback(callback: () -> Unit) {
+        onMessageReceivedCallback = callback
+    }
+    
+    /**
+     * Notifica que se recibió un mensaje
+     */
+    private fun notifyMessageReceived() {
+        onMessageReceivedCallback?.invoke()
+    }
+    
+    /**
+     * Programa reconexión automática con throttling
+     */
+    private fun scheduleReconnect() {
+        if (reconnectJob?.isActive == true) {
+            logInfo("WEBSOCKET", "🔄 Ya existe un trabajo de reconexión activo, ignorando")
+            return
+        }
+        
+        val currentTime = getCurrentTimeMillis()
+        
+        if (currentTime - lastReconnectTime < minTimeBetweenReconnects) {
+            val remainingTime = (minTimeBetweenReconnects - (currentTime - lastReconnectTime)) / 1000
+            logInfo("WEBSOCKET", "⏰ Esperando ${remainingTime}s antes de la próxima reconexión (mínimo entre reconexiones)")
+            return
+        }
+        
+        logInfo("WEBSOCKET", "🔄 Programando reconexión automática...")
+        logInfo("WEBSOCKET", "Intentos actuales: $reconnectAttempts")
+        
+        reconnectJob = CoroutineScope(Dispatchers.IO).launch {
+            reconnectAttempts++
+            
+            // Usar backoff exponencial pero con límite máximo
+            val delaySeconds = minOf(reconnectAttempts * 3, 15) // 3, 6, 9, 12, 15 segundos
+            logInfo("WEBSOCKET", "⏳ Esperando ${delaySeconds}s antes del intento de reconexión #$reconnectAttempts")
+            
+            delay(delaySeconds * 1000L)
+            
+            currentSellerId?.let { sellerId ->
+                logInfo("WEBSOCKET", "🔄 Intentando reconexión #$reconnectAttempts para sellerId: $sellerId")
+                lastReconnectTime = getCurrentTimeMillis()
+                connect(sellerId)
+            } ?: run {
+                logError("WEBSOCKET", "❌ No hay sellerId disponible para reconexión")
+                // Si no hay sellerId, resetear intentos y esperar
+                reconnectAttempts = 0
+            }
+        }
+    }
+    
+    /**
+     * Desconecta el WebSocket
+     */
+    fun disconnect() {
+        logInfo("WEBSOCKET", "🔌 Iniciando desconexión del WebSocket")
+        logInfo("WEBSOCKET", "Estado actual: ${_connectionState.value}")
+        logInfo("WEBSOCKET", "SellerId actual: $currentSellerId")
+        
+        // Cambiar estado a desconectado inmediatamente para evitar nuevas conexiones
+        _connectionState.value = WebSocketConnectionState.DISCONNECTED
+        
+        // Cancelar trabajos de reconexión
+        if (reconnectJob != null) {
+            logInfo("WEBSOCKET", "🔄 Cancelando trabajo de reconexión")
+            reconnectJob?.cancel()
+            reconnectJob = null
+        }
+        
+        // Cancelar heartbeat
+        if (heartbeatJob != null) {
+            logInfo("WEBSOCKET", "💓 Cancelando heartbeat")
+            heartbeatJob?.cancel()
+            heartbeatJob = null
+        }
+        
+        // Cancelar verificación de conexión
+        if (connectionCheckJob != null) {
+            logInfo("WEBSOCKET", "🔍 Cancelando verificación de conexión")
+            connectionCheckJob?.cancel()
+            connectionCheckJob = null
+        }
+        
+        // Cerrar sesión WebSocket si está abierta
+        if (webSocketSession != null) {
+            logInfo("WEBSOCKET", "🔌 Cerrando sesión WebSocket")
+            try {
+                runBlocking {
+                    webSocketSession?.close(CloseReason(CloseReason.Codes.NORMAL, "Desconexión solicitada por el cliente"))
+                }
+            } catch (e: Exception) {
+                logError("WEBSOCKET", "Error al cerrar sesión WebSocket: ${e.message}")
+            }
+            webSocketSession = null
+        }
+        
+        _connectionState.value = WebSocketConnectionState.DISCONNECTED
+        reconnectAttempts = 0
+        currentSellerId = null
+        
+        logInfo("WEBSOCKET", "✅ WebSocket desconectado completamente")
+        logInfo("WEBSOCKET", "Estado final: DISCONNECTED")
+    }
+    
+    /**
+     * Envía mensaje al servidor
+     */
+    suspend fun sendMessage(message: String) {
+        try {
+            val session = webSocketSession
+            if (session != null && _connectionState.value == WebSocketConnectionState.CONNECTED) {
+                session.send(Frame.Text(message))
+            } else {
+            }
+        } catch (e: Exception) {
+        }
+    }
+    
+}
+
+/**
+ * Función multiplataforma para obtener el tiempo actual en milisegundos
+ */
+internal expect fun getCurrentTimeMillis(): Long
+
+/**
+ * Estados de conexión WebSocket
+ */
+
+enum class WebSocketConnectionState {
+    DISCONNECTED,
+    CONNECTING,
+    CONNECTED,
+    RECONNECTING
+}

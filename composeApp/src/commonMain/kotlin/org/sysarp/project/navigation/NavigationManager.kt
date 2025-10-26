@@ -1,6 +1,7 @@
 package org.sysarp.project.navigation
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -8,13 +9,31 @@ import kotlinx.coroutines.flow.asStateFlow
 sealed class Screen {
     object Splash : Screen()
     object ProfileSelection : Screen()
+    object Login : Screen()
+    object ForgotPassword : Screen()
     object AdminRegistration : Screen()
+    object SellerLogin : Screen()
+    object SellerRegistration : Screen()
     object SellerAffiliation : Screen()
-    object Main : Screen()
-    object Reports : Screen()
+    object AdminDashboard : Screen()
+    object SellerDashboard : Screen()
+    object SellerManagement : Screen()
+    object BranchManagement : Screen()
+    object Analytics : Screen()
+    object SellerAnalytics : Screen()
     object Settings : Screen()
     object PendingPayments : Screen()
+    object SellerPayments : Screen()
     object UserManagement : Screen()
+    object DeactivationRequest : Screen()
+    object AdminProfile : Screen()
+    object SellerNotifications : Screen()
+    object QRScanner : Screen()
+    object BillingDashboard : Screen()
+    object Subscriptions : Screen()
+    data class QRDisplay(val qrCode: org.sysarp.project.data.QRCodeData) : Screen()
+    data class SellerSpecificPayments(val sellerId: Int, val sellerName: String) : Screen()
+    data class PaymentDialog(val paymentCode: org.sysarp.project.data.PaymentCode) : Screen()
 }
 
 class NavigationManager {
@@ -30,15 +49,22 @@ class NavigationManager {
     
     fun navigateBack() {
         if (_navigationStack.isNotEmpty()) {
-            _currentScreen.value = _navigationStack.removeLastOrNull() ?: Screen.Main
+            _currentScreen.value = _navigationStack.removeLastOrNull() ?: getDefaultDashboard()
+        } else {
+            // Si no hay pantallas en el stack, ir al dashboard apropiado
+            _currentScreen.value = getDefaultDashboard()
         }
     }
     
-    fun navigateToMain() {
-        _navigationStack.clear()
-        _currentScreen.value = Screen.Main
+    private fun getDefaultDashboard(): Screen {
+        // Para DeactivationRequest, siempre regresar al SellerDashboard
+        // Para otras pantallas, podríamos hacer lógica más compleja
+        return when (_currentScreen.value) {
+            Screen.DeactivationRequest -> Screen.SellerDashboard
+            else -> Screen.SellerDashboard
+        }
     }
-    
+
     fun navigateToProfileSelection() {
         _navigationStack.clear()
         _currentScreen.value = Screen.ProfileSelection
@@ -52,6 +78,14 @@ class NavigationManager {
         _currentScreen.value = Screen.AdminRegistration
     }
     
+    fun navigateToSellerLogin() {
+        _currentScreen.value = Screen.SellerLogin
+    }
+    
+    fun navigateToSellerRegistration() {
+        _currentScreen.value = Screen.SellerRegistration
+    }
+    
     fun navigateToSellerAffiliation() {
         _currentScreen.value = Screen.SellerAffiliation
     }
@@ -60,6 +94,47 @@ class NavigationManager {
         _currentScreen.value = Screen.ProfileSelection
     }
     
+    fun navigateToAdminDashboard() {
+        _currentScreen.value = Screen.AdminDashboard
+    }
+    
+    fun navigateToSellerDashboard() {
+        _currentScreen.value = Screen.SellerDashboard
+    }
+
+    
+    fun navigateToQRDisplay(qrCode: org.sysarp.project.data.QRCodeData) {
+        navigateTo(Screen.QRDisplay(qrCode))
+    }
+    
+    fun navigateToSellerSpecificPayments(sellerId: Int, sellerName: String) {
+        navigateTo(Screen.SellerSpecificPayments(sellerId, sellerName))
+    }
+    
+    fun navigateToLogin() {
+        _currentScreen.value = Screen.Login
+    }
+    
+    fun navigateToForgotPassword() {
+        _currentScreen.value = Screen.ForgotPassword
+    }
+    
+    fun navigateToDeactivationRequest() {
+        navigateTo(Screen.DeactivationRequest)
+    }
+    
+    fun navigateToBillingDashboard() {
+        navigateTo(Screen.BillingDashboard)
+    }
+    
+    fun navigateToSubscriptions() {
+        navigateTo(Screen.Subscriptions)
+    }
+    
+    fun navigateToPaymentDialog(paymentCode: org.sysarp.project.data.PaymentCode) {
+        navigateTo(Screen.PaymentDialog(paymentCode))
+    }
+
 }
 
 @Composable

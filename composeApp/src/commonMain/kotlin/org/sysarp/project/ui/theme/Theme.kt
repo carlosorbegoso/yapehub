@@ -1,11 +1,11 @@
 package org.sysarp.project.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 
 // Paleta de colores moderna y vibrante para YapeHub
 val YapePrimary = Color(0xFF1976D2) // Azul vibrante y moderno

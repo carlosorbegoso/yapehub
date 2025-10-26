@@ -1,0 +1,135 @@
+package org.sysarp.project.ui.admin.screens.payments.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import org.sysarp.project.data.AdminPayment
+import org.sysarp.project.ui.admin.screens.payments.AdminPaymentsState
+
+/**
+ * Componente principal de gestión de pagos administrativos mejorado con filtros dinámicos
+ * Incluye diálogo de confirmación, filtros avanzados y mejor UX
+ */
+@Composable
+fun AdminPaymentsContent(
+    state: AdminPaymentsState,
+    onLoadMore: () -> Unit = {},
+    onPaymentAction: (Int, String) -> Unit = { _: Int, _: String -> } // paymentId, action
+) {
+    // Estado para el diálogo de confirmación
+    var selectedPayment by remember { mutableStateOf<AdminPayment?>(null) }
+    var selectedAction by remember { mutableStateOf<String?>(null) }
+    var isDialogVisible by remember { mutableStateOf(false) }
+    var isProcessingAction by remember { mutableStateOf(false) }
+
+    // Debug: Mostrar estado actual
+    // LaunchedEffect para monitorear cambios de estado si es necesario
+    
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Contenido principal
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Resumen de pagos interactivo
+            if (state.paymentSummary != null) {
+                item {
+                    PaymentSummaryCard(
+                        summary = state.paymentSummary!!
+                    )
+                }
+            }
+            
+            // Estados de carga, error o vacío
+            when {
+                state.isLoading -> {
+                    item {
+                        AdminPaymentsLoadingCard()
+                    }
+                }
+                state.errorMessage.isNotEmpty() -> {
+                    item {
+                        AdminPaymentsErrorCard(errorMessage = state.errorMessage)
+                    }
+                }
+                state.filteredPayments.isEmpty() -> {
+                    item {
+                        AdminPaymentsEmptyState(
+                            message = state.getEmptyStateMessage()
+                        )
+                    }
+                }
+                else -> {
+                    // Lista de pagos con keys estables para mejor performance
+                    items(
+                        items = state.filteredPayments,
+                        key = { payment -> payment.paymentId }
+                    ) { payment ->
+                        AdminPaymentCard(
+                            payment = payment,
+                            onAction = { action ->
+                                selectedPayment = payment
+                                selectedAction = action
+                                isDialogVisible = true
+                            }
+                        )
+                    }
+                    
+                    // Botón de cargar más
+                    if (state.hasMorePayments) {
+                        item {
+                            AdminPaymentsLoadMoreButton(
+                                isLoadingMore = state.isLoadingMore,
+                                onLoadMore = onLoadMore
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Diálogo de acción para administradores
+    AdminPaymentActionDialog(
+        payment = selectedPayment,
+        action = selectedAction,
+        isVisible = isDialogVisible,
+        isLoading = isProcessingAction,
+        onConfirm = {
+            isProcessingAction = true
+            selectedPayment?.let { payment ->
+                selectedAction?.let { action ->
+                    onPaymentAction(payment.paymentId, action)
+                    // Simular procesamiento (en una implementación real, esto sería una llamada a la API)
+                    kotlinx.coroutines.GlobalScope.launch {
+                        kotlinx.coroutines.delay(1000) // Simular delay de API
+                        isProcessingAction = false
+                        isDialogVisible = false
+                        selectedPayment = null
+                        selectedAction = null
+                    }
+                }
+            }
+        },
+        onDismiss = {
+            isDialogVisible = false
+            selectedPayment = null
+            selectedAction = null
+            isProcessingAction = false
+        }
+    )
+}

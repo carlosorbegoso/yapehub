@@ -1,19 +1,19 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.sqlDelight)
     alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
     
@@ -28,17 +28,47 @@ kotlin {
     }
     
     sourceSets {
+        all { languageSettings{
+            optIn("kotlin.time.ExperimentalTime")
+            optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+            optIn("kotlin.ExperimentalStdlibApi")
+        } }
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
-            implementation(libs.sqlDelight.driver.android)
             
             // Core Libraries
             implementation(libs.timber)
             implementation(libs.accompanist.permissions)
+            implementation(libs.androidx.security.crypto)
+            
+            // AndroidX Startup para resolver NoClassDefFoundError
+            implementation(libs.androidx.startup.runtime)
+            // Ktor Android
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.websockets)
+            
+            // CameraX for QR scanning
+            implementation(libs.camerax.core)
+            implementation(libs.camerax.camera2)
+            implementation(libs.camerax.lifecycle)
+            implementation(libs.camerax.view)
+            implementation(libs.camerax.mlkit.vision)
+            
+            // ML Kit for QR code detection
+            implementation(libs.mlkit.barcode.scanning)
+
+            // Koin for Android
+            implementation(libs.koin.android)
+            
+            // AndroidX Startup - explicitly add to resolve version conflicts
+            implementation(libs.androidx.startup.runtime)
         }
         
         commonMain.dependencies {
+            // Kotlinx IO for image processing
+            implementation(libs.kotlinx.io.core)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
@@ -50,18 +80,32 @@ kotlin {
             
             // Material Icons - Usando la versión latest por defecto
             implementation(compose.materialIconsExtended)
-            
-            
-            // Database
-            implementation(libs.sqlDelight.runtime)
+
+            // Lottie for animations
+            implementation(libs.lottie.compose)
+
             
             // Kotlinx
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
+            
+            // Ktor Client
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.json)
+            implementation(libs.ktor.client.serialization)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.client.auth)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.websockets)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
+            // Koin
+            implementation(libs.koin.core)
+            implementation(libs.koin.androidx.compose)
         }
         iosMain.dependencies {
-            implementation(libs.sqlDelight.driver.ios)
+            implementation(libs.ktor.client.ios)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -69,57 +113,59 @@ kotlin {
     }
 }
 
-android {
-    namespace = "org.sysarp.project"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    defaultConfig {
-        applicationId = "com.yapehub.app"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 2
-        versionName = "1.1.0"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    buildTypes {
-        getByName("debug") {
-            isDebuggable = true
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
-        }
-        getByName("release") {
-            isMinifyEnabled = false
-            isDebuggable = false
-        }
-    }
-    
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-            isUniversalApk = true
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-}
-
 dependencies {
     debugImplementation(compose.uiTooling)
 }
 
-sqldelight {
-    databases {
-        create("YapeDatabase") {
-            packageName.set("org.sysarp.project.database")
+android {
+    compileSdk = 36
+    namespace = "com.yapechamo.composeapp"
+
+    // Load keystore.properties from project root if present
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val keystoreProperties = Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    }
+
+    defaultConfig {
+        applicationId = "com.yapechamo.composeapp"
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                val storeFilePath = keystoreProperties.getProperty("storeFile")
+                if (storeFilePath != null) {
+                    storeFile = rootProject.file(storeFilePath)
+                }
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("debug") {
+            isDebuggable = true
+            isMinifyEnabled = false
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+        
+        getByName("release") {
+            isMinifyEnabled = false // Deshabilitado temporalmente para el primer release
+            isDebuggable = false
+            // proguardFiles(
+            //     getDefaultProguardFile("proguard-android-optimize.txt"),
+            //     "proguard-rules.pro"
+            // )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
-

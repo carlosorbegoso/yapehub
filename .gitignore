@@ -1,18 +1,66 @@
-*.iml
-.kotlin
-.gradle
-**/build/
-xcuserdata
-!src/**/build/
+# Archivos de configuración sensibles
+keystore.properties
+keystores/
+*.jks
+*.keystore
+*.p12
+*.pem
 local.properties
-.idea
+
+# Archivos de build
+build/
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Archivos de Android Studio / IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+
+# Archivos de configuración específicos del desarrollador
+gradle.properties
+gradle.properties.local
+signing.properties
+
+# Archivos de iOS
+iosApp/build/
+iosApp/DerivedData/
+iosApp/Pods/
+iosApp/Podfile.lock
+
+# Archivos temporales
+*.tmp
+*.temp
+*.log
+.kotlin/
+
+# Archivos de sistema
 .DS_Store
-captures
-.externalNativeBuild
-.cxx
-*.xcodeproj/*
-!*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata/
-!*.xcodeproj/project.xcworkspace/
-!*.xcworkspace/contents.xcworkspacedata
-**/xcshareddata/WorkspaceSettings.xcsettings
+Thumbs.db
+*.orig
+
+# Archivos de backup
+*.bak
+*.backup
+
+# Archivos de firma y distribución
+*.apk
+*.aab
+*.ipa
+
+# Archivos de testing y debug
+captures/
+output.json
+lint-results*.xml
+
+# Archivos de configuración de CI/CD
+.env
+.env.local
+.env.production
+secrets.properties

@@ -1,95 +1,112 @@
 package org.sysarp.project
 
-import android.content.Intent
 import android.os.Bundle
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import org.sysarp.project.service.AndroidNotificationCaptureService
-import org.sysarp.project.service.TimberLogger
-import org.sysarp.project.service.PermissionChecker
-import org.sysarp.project.ui.theme.YapeHubTheme
-import org.sysarp.project.ContextProvider
-import org.sysarp.project.AppLifecycleManager
-import org.sysarp.project.RepositorySingleton
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import org.sysarp.project.service.ImagePickerService
+import org.sysarp.project.ui.theme.YapeHubTheme
+import timber.log.Timber
 
 class MainActivity : ComponentActivity() {
+    
+    private var isInitializationComplete = false
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Inicializar Timber Logger
-        TimberLogger.initialize()
-        
-        // Establecer el contexto global
+
         ContextProvider.setContext(this)
+
+      ImagePickerService().setContext(this)
         
-        // Reinicializar el repositorio ahora que tenemos contexto
-        RepositorySingleton.reinitializeRepository()
-        
-        // Inicializar el manager de lifecycle
         AppLifecycleManager.initialize(application)
         
-        // Cargar Compose directamente (sin splash nativo)
+        lifecycle.addObserver(AppLifecycleManager)
         setContent {
             YapeHubTheme {
                 App()
             }
         }
-        
-        // Solicitar permisos después de cargar la app
         lifecycleScope.launch {
-            android.util.Log.d("MainActivity", "Iniciando solicitud automática de permisos...")
+            initializeAppAsync()
+        }
+    }
+    
+
+    private suspend fun initializeAppAsync() {
+        try {
+            initializeDeviceFingerprint()
+            initializeCriticalServices()
+            requestPermissionsAsync()
+            isInitializationComplete = true
+            
+        } catch (e: Exception) {
+            isInitializationComplete = true
+        }
+    }
+    
+    /**
+     * Inicializa el device fingerprint de forma asíncrona
+     */
+    private suspend fun initializeDeviceFingerprint() {
+        try {
+            val fingerprint = org.sysarp.project.utils.AndroidDeviceUtils.generateDeviceFingerprint(this@MainActivity)
+            //Todo: Usar el fingerprint si es necesario
+        } catch (e: Exception) {
+            // Error handling removed for production
+        }
+    }
+    
+    /**
+     * Inicializa servicios críticos de forma asíncrona
+     */
+    private fun initializeCriticalServices() {
+        try {
+            // Use the service manager for safer service lifecycle management
+            org.sysarp.project.service.NotificationServiceManager.startNotificationService(this@MainActivity)
+        } catch (e: Exception) {
+            Timber.tag("MainActivity").e(e, "Error starting notification service: ${e.message}")
+        }
+    }
+
+    private suspend fun requestPermissionsAsync() {
+        try {
             kotlinx.coroutines.delay(500)
-            requestAllPermissions(this@MainActivity)
+            
+            val hasNotificationPermission = org.sysarp.project.service.AndroidNotificationCaptureService.isNotificationServiceEnabled(this@MainActivity)
+            
+            if (!hasNotificationPermission) {
+                requestNotificationPermission(this@MainActivity)
+                
+                kotlinx.coroutines.delay(2000)
+                !org.sysarp.project.service.AndroidNotificationCaptureService.isNotificationServiceEnabled(this@MainActivity)
+            }
+            
+        } catch (e: Exception) {
+            // Error handling removed for production
         }
     }
     
     override fun onResume() {
         super.onResume()
-        android.util.Log.d("MainActivity", "App resumed - triggering permission check")
         
-        // Verificar permisos cuando la app regresa del foreground
-        lifecycleScope.launch {
-            kotlinx.coroutines.delay(200) // Reducido para respuesta más rápida
-            requestAllPermissions(this@MainActivity)
+        if (isInitializationComplete) {
+            lifecycleScope.launch {
+                kotlinx.coroutines.delay(200)
+                requestNotificationPermission(this@MainActivity)
+            }
         }
     }
     
     companion object {
-        fun requestAllPermissions(context: android.content.Context) {
-            android.util.Log.d("MainActivity", "=== VERIFICANDO PERMISOS ===")
-            
-            val hasNotificationPermission = PermissionChecker.isNotificationServiceEnabled(context)
-            val hasAccessibilityPermission = PermissionChecker.isAccessibilityServiceEnabled(context)
-            
-            android.util.Log.d("MainActivity", "Estado actual - Notificaciones: $hasNotificationPermission, Accesibilidad: $hasAccessibilityPermission")
-            
-            // Solo abrir configuración si faltan permisos
+        fun requestNotificationPermission(context: android.content.Context) {
+            val hasNotificationPermission = org.sysarp.project.service.AndroidNotificationCaptureService.isNotificationServiceEnabled(context)
+
             if (!hasNotificationPermission) {
-                android.util.Log.d("MainActivity", "❌ Falta permiso de notificaciones - Abriendo configuración...")
-                PermissionChecker.requestNotificationPermission(context)
-            } else {
-                android.util.Log.d("MainActivity", "✅ Permiso de notificaciones ya habilitado")
-            }
-            
-            if (!hasAccessibilityPermission) {
-                android.util.Log.d("MainActivity", "❌ Falta permiso de accesibilidad - Abriendo configuración...")
-                // Esperar un poco para no abrir ambas configuraciones al mismo tiempo
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    PermissionChecker.requestAccessibilityPermission(context)
-                }, 1500)
-            } else {
-                android.util.Log.d("MainActivity", "✅ Permiso de accesibilidad ya habilitado")
-            }
-            
-            if (hasNotificationPermission && hasAccessibilityPermission) {
-                android.util.Log.d("MainActivity", "🎉 Todos los permisos están habilitados - No se necesita configuración")
+                org.sysarp.project.service.AndroidNotificationCaptureService.requestNotificationPermission(context)
             }
         }
     }
