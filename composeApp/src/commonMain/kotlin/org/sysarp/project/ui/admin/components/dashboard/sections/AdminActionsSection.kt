@@ -146,7 +146,7 @@ private fun AdminActionCard(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = Color(0xFF8B5CF6).copy(alpha = 0.1f) // Púrpura suave y moderno
         )
     ) {
         Box {
@@ -161,7 +161,7 @@ private fun AdminActionCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = Color(0xFF6366F1), // Índigo moderno
                         modifier = Modifier.size(24.dp)
                     )
                     
@@ -201,7 +201,7 @@ private fun AdminActionCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = Color(0xFF8B5CF6), // Púrpura vibrante
                         modifier = Modifier.size(32.dp)
                     )
                     

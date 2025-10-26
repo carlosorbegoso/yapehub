@@ -68,7 +68,7 @@ fun AdminPerformanceSection(
                 .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                containerColor = Color(0xFFF0F9FF) // Azul hielo muy suave y elegante
             )
         ) {
             Column(
@@ -84,7 +84,7 @@ fun AdminPerformanceSection(
                         title = "Tiempo Promedio",
                         value = "${String.format("%.1f", enhancedData.performanceMetrics.averageConfirmationTime)} min",
                         icon = Icons.Default.Schedule,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        color = Color(0xFF3B82F6), // Azul brillante
                         modifier = Modifier.weight(1f)
                     )
                     
@@ -92,7 +92,7 @@ fun AdminPerformanceSection(
                         title = "Tasa de Reclamo",
                         value = "${String.format("%.1f", enhancedData.performanceMetrics.claimRate)}%",
                         icon = Icons.Default.TrendingUp,
-                        color = Color(0xFF4CAF50),
+                        color = Color(0xFF10B981), // Verde esmeralda
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -111,7 +111,7 @@ fun AdminPerformanceSection(
                         title = "Tasa de Rechazo",
                         value = "${String.format("%.1f", enhancedData.performanceMetrics.rejectionRate)}%",
                         icon = Icons.Default.Cancel,
-                        color = if (enhancedData.performanceMetrics.rejectionRate > 10) Color(0xFFF44336) else Color(0xFFFF9800),
+                        color = if (enhancedData.performanceMetrics.rejectionRate > 10) Color(0xFFEF4444) else Color(0xFFF59E0B), // Rojo y amarillo modernos
                         modifier = Modifier.weight(1f)
                     )
                     
@@ -119,7 +119,7 @@ fun AdminPerformanceSection(
                         title = "Pagos Pendientes",
                         value = "${enhancedData.performanceMetrics.pendingPayments}",
                         icon = Icons.Default.Pending,
-                        color = if (enhancedData.performanceMetrics.pendingPayments > 0) Color(0xFFFF9800) else Color(0xFF4CAF50),
+                        color = if (enhancedData.performanceMetrics.pendingPayments > 0) Color(0xFFF59E0B) else Color(0xFF10B981), // Amarillo y verde modernos
                         modifier = Modifier.weight(1f)
                     )
                 }

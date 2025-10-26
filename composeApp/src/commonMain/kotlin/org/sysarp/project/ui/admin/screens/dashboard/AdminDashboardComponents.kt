@@ -14,14 +14,17 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -76,37 +79,37 @@ fun QuickStatsSection(
                         title = "Ventas Confirmadas",
                         value = org.sysarp.project.utils.formatCurrencyNoDecimals(quickSummaryData.confirmedSales),
                         icon = Icons.Default.CheckCircle,
-                        color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                        color = androidx.compose.ui.graphics.Color(0xFF00C853) // Verde vibrante
                     )
                     1 -> StatCard(
                         title = "Ventas Totales",
                         value = org.sysarp.project.utils.formatCurrencyNoDecimals(quickSummaryData.allSales),
-                        icon = Icons.Default.TrendingUp,
-                        color = MaterialTheme.colorScheme.primary
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        color = androidx.compose.ui.graphics.Color(0xFF2196F3) // Azul moderno
                     )
                     2 -> StatCard(
                         title = "Transacciones",
                         value = quickSummaryData.totalTransactions.toString(),
                         icon = Icons.Default.Receipt,
-                        color = MaterialTheme.colorScheme.secondary
+                        color = androidx.compose.ui.graphics.Color(0xFF9C27B0) // Púrpura elegante
                     )
                     3 -> StatCard(
                         title = "Promedio",
                         value = org.sysarp.project.utils.formatCurrencyNoDecimals(quickSummaryData.averageTransactionValue),
                         icon = Icons.Default.Analytics,
-                        color = MaterialTheme.colorScheme.tertiary
+                        color = androidx.compose.ui.graphics.Color(0xFFFF5722) // Naranja vibrante
                     )
                     4 -> StatCard(
                         title = "Confirmadas",
                         value = "${quickSummaryData.confirmedTransactions} (${if (quickSummaryData.totalTransactions > 0) String.format("%.0f", (quickSummaryData.confirmedTransactions.toFloat() / quickSummaryData.totalTransactions.toFloat()) * 100) else "0"}%)",
                         icon = Icons.Default.CheckCircle,
-                        color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                        color = androidx.compose.ui.graphics.Color(0xFF00BCD4) // Cian moderno
                     )
                     5 -> StatCard(
                         title = "Pendientes",
                         value = "${quickSummaryData.pendingTransactions}",
                         icon = Icons.Default.Schedule,
-                        color = androidx.compose.ui.graphics.Color(0xFFFF9800)
+                        color = androidx.compose.ui.graphics.Color(0xFFFFC107) // Amarillo dorado
                     )
                 }
             }

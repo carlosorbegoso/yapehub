@@ -66,7 +66,7 @@ fun AdminTopSellersSection(
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
+            containerColor = Color(0xFFFEF3C7) // Amarillo dorado muy suave y premium
         )
     ) {
         Column(
@@ -108,10 +108,10 @@ private fun TopSellerItem(
                 shape = RoundedCornerShape(8.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = when (seller.rank) {
-                        1 -> Color(0xFFFFD700) // Oro
-                        2 -> Color(0xFFC0C0C0) // Plata
-                        3 -> Color(0xFFCD7F32) // Bronce
-                        else -> MaterialTheme.colorScheme.primary
+                        1 -> Color(0xFFFFD700) // Oro brillante
+                        2 -> Color(0xFFE8E8E8) // Plata moderna
+                        3 -> Color(0xFFCD7F32) // Bronce elegante
+                        else -> Color(0xFF2196F3) // Azul moderno
                     }
                 ),
                 modifier = Modifier.size(32.dp)

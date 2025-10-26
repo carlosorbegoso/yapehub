@@ -85,7 +85,7 @@ fun AdminStatsSection(
                     title = "Ventas Confirmadas",
                     value = formatCurrencyNoDecimals(enhancedData.overview.confirmedSales),
                     icon = Icons.Filled.CheckCircle,
-                    color = Color(0xFF4CAF50), // Verde para confirmado
+                    color = Color(0xFF00C853), // Verde vibrante y moderno
                     modifier = Modifier.weight(1f)
                 )
                 
@@ -93,7 +93,7 @@ fun AdminStatsSection(
                     title = "Ventas Totales",
                     value = formatCurrencyNoDecimals(enhancedData.overview.allSales),
                     icon = Icons.Filled.TrendingUp,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = Color(0xFF2196F3), // Azul moderno y profesional
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -107,7 +107,7 @@ fun AdminStatsSection(
                     title = "Confirmadas",
                     value = "${enhancedData.overview.confirmedTransactions}",
                     icon = Icons.Filled.CheckCircle,
-                    color = Color(0xFF4CAF50),
+                    color = Color(0xFF00BCD4), // Cian moderno
                     modifier = Modifier.weight(1f)
                 )
                 
@@ -116,7 +116,7 @@ fun AdminStatsSection(
                         title = "Pendientes",
                         value = "${enhancedData.overview.pendingTransactions}",
                         icon = Icons.Filled.Schedule,
-                        color = Color(0xFFFF9800), // Naranja para pendiente
+                        color = Color(0xFFFFC107), // Amarillo dorado
                         modifier = Modifier.weight(1f)
                     )
                 } else {
@@ -124,7 +124,7 @@ fun AdminStatsSection(
                         title = "Promedio",
                         value = formatCurrencyNoDecimals(enhancedData.overview.averageTransactionValue),
                         icon = Icons.Filled.Analytics,
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = Color(0xFF9C27B0), // Púrpura elegante
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -133,7 +133,7 @@ fun AdminStatsSection(
                     title = "Rechazadas",
                     value = "${enhancedData.overview.rejectedTransactions}",
                     icon = Icons.Filled.Cancel,
-                    color = Color(0xFFF44336), // Rojo para rechazado
+                    color = Color(0xFFE91E63), // Rosa vibrante (menos agresivo que rojo)
                     modifier = Modifier.weight(1f)
                 )
             }

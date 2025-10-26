@@ -34,7 +34,7 @@ fun AdminProfileSection(
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = Color(0xFFF8FAFC) // Gris azulado muy suave y premium
         )
     ) {
         Row(
@@ -51,8 +51,8 @@ fun AdminProfileSection(
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                Color(0xFF2196F3).copy(alpha = 0.3f), // Azul moderno
+                                Color(0xFF64B5F6).copy(alpha = 0.1f)  // Azul claro
                             )
                         )
                     ),
@@ -61,7 +61,7 @@ fun AdminProfileSection(
                 Icon(
                     imageVector = Icons.Default.AdminPanelSettings,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = Color(0xFF1976D2), // Azul profundo
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -76,13 +76,13 @@ fun AdminProfileSection(
                     text = userProfile?.businessName ?: "Mi Negocio",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = Color(0xFF1A237E) // Azul muy profundo para texto
                 )
                 
                 Text(
                     text = userProfile?.name ?: "Administrador",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    color = Color(0xFF3F51B5).copy(alpha = 0.8f) // Azul índigo
                 )
                 
                 Spacer(modifier = Modifier.height(4.dp))
