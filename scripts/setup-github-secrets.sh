@@ -66,4 +66,4 @@ echo "  Ejemplo: git commit -m 'Nueva versión [deploy]'"
 echo ""
 
 print_status "¡Configuración lista!"
-print_info "Revisa .github/SETUP_SECRETS.md para más detalles"
+print_info "Revisa docs/GITHUB_SECRETS.md para más detalles"

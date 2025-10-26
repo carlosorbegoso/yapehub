@@ -1,5 +1,8 @@
 name: Mobile app CI (example)
 
+permissions:
+  contents: write
+
 # Example workflow for a mobile application that reuses the tag-on-merge template.
 # Instructions:
 # 1. Copy this file to your mobile app repository under .github/workflows/ci-cd.yml
