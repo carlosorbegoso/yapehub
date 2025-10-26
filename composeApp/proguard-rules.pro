@@ -1,11 +1,27 @@
-# Reglas ProGuard para YapeHub
+# Add project specific ProGuard rules here.
+# You can control the set of applied configuration files using the
+# proguardFiles setting in build.gradle.
 
-# Mantener clases de datos serializables
--keep class org.sysarp.project.data.** { *; }
+# If your project uses WebView with JS, uncomment the following
+# and specify the fully qualified class name to the JavaScript interface
+# class:
+#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
+#   public *;
+#}
 
-# Mantener clases de Kotlinx Serialization
+# Uncomment this to preserve the line number information for
+# debugging stack traces.
+#-keepattributes SourceFile,LineNumberTable
+
+# If you keep the line number information, uncomment this to
+# hide the original source file name.
+#-renamesourcefileattribute SourceFile
+
+# Kotlin serialization
 -keepattributes *Annotation*, InnerClasses
--dontnote kotlinx.serialization.AnnotationsKt
+-dontnote kotlinx.serialization.AnnotationsKt # core serialization annotations
+
+# kotlinx-serialization-json specific. Add this if you have problems with serialization.
 -keepclassmembers class kotlinx.serialization.json.** {
     *** Companion;
 }
@@ -13,24 +29,31 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-# Mantener clases de Compose
--keep class androidx.compose.** { *; }
--keep class org.jetbrains.compose.** { *; }
-
-# Mantener clases de Koin
--keep class org.koin.** { *; }
-
-# Mantener clases de Ktor
+# Ktor
 -keep class io.ktor.** { *; }
+-keep class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.atomicfu.**
+-dontwarn io.netty.**
+-dontwarn com.typesafe.**
+-dontwarn org.slf4j.**
+-dontwarn java.lang.management.**
+-keep class java.lang.management.** { *; }
 
-# Mantener ViewModels
--keep class org.sysarp.project.viewmodel.** { *; }
+# Koin
+-keep class org.koin.** { *; }
+-keep class * extends org.koin.core.module.Module
+-keep class * extends org.koin.core.component.KoinComponent
 
-# Mantener servicios
+# Keep data classes used for serialization
+-keep @kotlinx.serialization.Serializable class ** {
+    *;
+}
+
+# Keep your project's data classes
+-keep class org.sysarp.project.data.** { *; }
+-keep class org.sysarp.project.model.** { *; }
 -keep class org.sysarp.project.service.** { *; }
 
-# Reglas generales
--keepattributes Signature
--keepattributes *Annotation*
--keepattributes EnclosingMethod
--keepattributes InnerClasses
+# Compose
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**

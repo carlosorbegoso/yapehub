@@ -19,10 +19,17 @@ if [ ! -f "$KEYSTORE_FILE" ]; then
 fi
 
 echo "🧹 Limpiando proyecto..."
-./gradlew clean
+# Limpiar cache si hay problemas conocidos
+if [ -f ".gradle_cache_corrupted" ]; then
+    echo "🔧 Detectado cache corrupto, limpiando..."
+    rm -rf ~/.gradle/caches/*/kotlin-dsl/accessors/ 2>/dev/null || true
+    rm -rf .gradle/configuration-cache/ 2>/dev/null || true
+fi
+
+./gradlew clean --no-daemon
 
 echo "🔨 Compilando APK de release..."
-./gradlew :composeApp:assembleRelease
+./gradlew :composeApp:assembleRelease --no-daemon
 
 if [ $? -eq 0 ]; then
     echo "✅ APK generada exitosamente!"

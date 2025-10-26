@@ -151,9 +151,20 @@ android {
     }
 
     buildTypes {
-        getByName("release") {
+        getByName("debug") {
+            isDebuggable = true
             isMinifyEnabled = false
-            // Use the release signing config if available (otherwise build will still succeed for debug)
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+        
+        getByName("release") {
+            isMinifyEnabled = false // Deshabilitado temporalmente para el primer release
+            isDebuggable = false
+            // proguardFiles(
+            //     getDefaultProguardFile("proguard-android-optimize.txt"),
+            //     "proguard-rules.pro"
+            // )
             signingConfig = signingConfigs.getByName("release")
         }
     }
