@@ -1,8 +1,11 @@
 # Archivos de configuración sensibles
 keystore.properties
-keystore/
+keystores/
 *.jks
 *.keystore
+*.p12
+*.pem
+local.properties
 
 # Archivos de build
 build/
@@ -11,12 +14,19 @@ gradle-app.setting
 !gradle-wrapper.jar
 !gradle-wrapper.properties
 
-# Archivos de Android Studio
+# Archivos de Android Studio / IntelliJ
 .idea/
 *.iml
 *.iws
 *.ipr
-local.properties
+.vscode/
+*.swp
+*.swo
+
+# Archivos de configuración específicos del desarrollador
+gradle.properties
+gradle.properties.local
+signing.properties
 
 # Archivos de iOS
 iosApp/build/
@@ -28,15 +38,29 @@ iosApp/Podfile.lock
 *.tmp
 *.temp
 *.log
+.kotlin/
 
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+*.orig
 
 # Archivos de backup
 *.bak
 *.backup
 
-# Archivos de firma
+# Archivos de firma y distribución
 *.apk
 *.aab
+*.ipa
+
+# Archivos de testing y debug
+captures/
+output.json
+lint-results*.xml
+
+# Archivos de configuración de CI/CD
+.env
+.env.local
+.env.production
+secrets.properties

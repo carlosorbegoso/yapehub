@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -118,11 +120,41 @@ dependencies {
 android {
     compileSdk = 36
     namespace = "com.yapechamo.composeapp"
+
+    // Load keystore.properties from project root if present
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val keystoreProperties = Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    }
+
     defaultConfig {
+        applicationId = "com.yapechamo.composeapp"
         minSdk = 24
         targetSdk = 36
-        // Required for App Bundle / bundletool
         versionCode = 1
         versionName = "1.0.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                val storeFilePath = keystoreProperties.getProperty("storeFile")
+                if (storeFilePath != null) {
+                    storeFile = rootProject.file(storeFilePath)
+                }
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            // Use the release signing config if available (otherwise build will still succeed for debug)
+            signingConfig = signingConfigs.getByName("release")
+        }
     }
 }
