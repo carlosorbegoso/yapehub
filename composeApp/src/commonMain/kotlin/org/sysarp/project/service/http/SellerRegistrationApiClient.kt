@@ -17,9 +17,7 @@ import org.sysarp.project.utils.getCurrentTimestampMs
  */
 class SellerRegistrationApiClient : BaseApiClient() {
     
-    /**
-     * Registro de vendedor con código de afiliación
-     */
+
     suspend fun registerSeller(
         affiliationCode: String,
         sellerName: String,

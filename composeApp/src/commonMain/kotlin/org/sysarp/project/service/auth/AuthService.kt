@@ -290,9 +290,7 @@ class AuthService {
         _authState.value = state
     }
     
-    /**
-     * Registro de administrador
-     */
+
     suspend fun registerAdmin(
         businessName: String,
         businessType: String,

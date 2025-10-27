@@ -81,6 +81,7 @@ fun AdminRegistrationScreen(
 ) {
     var businessName by remember { mutableStateOf("") }
     var businessType by remember { mutableStateOf("") }
+    var documentType by remember { mutableStateOf("DNI") } // DNI o RUC
     var ruc by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -91,10 +92,12 @@ fun AdminRegistrationScreen(
     var errorMessage by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var showBusinessTypeDropdown by remember { mutableStateOf(false) }
+    var showDocumentTypeDropdown by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
     
     val businessTypes = listOf("RESTAURANT", "RETAIL", "SERVICES", "OTHER")
+    val documentTypes = listOf("DNI", "RUC")
     
     // Estado de loading global
     val loadingState = rememberLoadingState()
@@ -246,8 +249,9 @@ fun AdminRegistrationScreen(
                     // Nombre del negocio
                     OutlinedTextField(
                         value = businessName,
-                        onValueChange = { 
-                            businessName = SecurityUtils.sanitizeInput(it)
+                        onValueChange = { newValue ->
+                            // Permitir espacios en el nombre del negocio - solo filtrar caracteres peligrosos
+                            businessName = newValue.replace(Regex("['\"\\\\;<>]"), "")
                             if (errorMessage.isNotEmpty()) errorMessage = ""
                         },
                         label = { Text("Nombre del negocio") },
@@ -260,8 +264,8 @@ fun AdminRegistrationScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isError = businessName.isNotBlank() && businessName.length < 2,
-                        supportingText = if (businessName.isNotBlank() && businessName.length < 2) {
+                        isError = businessName.isNotBlank() && businessName.trim().length < 2,
+                        supportingText = if (businessName.isNotBlank() && businessName.trim().length < 2) {
                             { Text("El nombre debe tener al menos 2 caracteres", color = MaterialTheme.colorScheme.error) }
                         } else null,
                         shape = RoundedCornerShape(12.dp)
@@ -332,28 +336,110 @@ fun AdminRegistrationScreen(
                         }
                     }
                     
-                    // RUC/DNI
+                    // Selector de tipo de documento
+                    ExposedDropdownMenuBox(
+                        expanded = showDocumentTypeDropdown,
+                        onExpandedChange = { 
+                            showDocumentTypeDropdown = !showDocumentTypeDropdown
+                            if (errorMessage.isNotEmpty()) errorMessage = ""
+                        }
+                    ) {
+                        OutlinedTextField(
+                            value = documentType,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Tipo de documento") },
+                            placeholder = { Text("Selecciona el tipo") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showDocumentTypeDropdown) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Business,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showDocumentTypeDropdown,
+                            onDismissRequest = { showDocumentTypeDropdown = false },
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(4.dp)
+                        ) {
+                            documentTypes.forEach { type ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Text(
+                                            text = type,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontSize = 16.sp
+                                        ) 
+                                    },
+                                    onClick = {
+                                        documentType = type
+                                        showDocumentTypeDropdown = false
+                                        // Limpiar el campo cuando cambie el tipo
+                                        ruc = ""
+                                        if (errorMessage.isNotEmpty()) errorMessage = ""
+                                    },
+                                    colors = androidx.compose.material3.MenuDefaults.itemColors(
+                                        textColor = MaterialTheme.colorScheme.onSurface
+                                    ),
+                                    modifier = Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.surface,
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .padding(horizontal = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Campo de número de documento
                     OutlinedTextField(
                         value = ruc,
-                        onValueChange = { 
-                            val cleanValue = it.replace(Regex("[^0-9]"), "")
-                            ruc = cleanValue
+                        onValueChange = { newValue ->
+                            val cleanValue = newValue.replace(Regex("[^0-9]"), "")
+                            val maxLength = if (documentType == "DNI") 8 else 11
+                            if (cleanValue.length <= maxLength) {
+                                ruc = cleanValue
+                            }
                             if (errorMessage.isNotEmpty()) errorMessage = ""
                         },
-                        label = { Text("RUC/DNI") },
-                        placeholder = { Text("Ej: 12345678901") },
+                        label = { Text("Número de $documentType") },
+                        placeholder = { 
+                            Text(
+                                if (documentType == "DNI") "Ej: 12345678" else "Ej: 12345678901"
+                            ) 
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Filled.Business,
+                                imageVector = Icons.Filled.Person,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isError = ruc.isNotBlank() && !SecurityUtils.isValidRucOrDni(ruc),
-                        supportingText = if (ruc.isNotBlank() && !SecurityUtils.isValidRucOrDni(ruc)) {
-                            { Text("RUC/DNI debe tener entre 8 y 11 dígitos", color = MaterialTheme.colorScheme.error) }
+                        isError = ruc.isNotBlank() && !SecurityUtils.isValidDocumentNumber(ruc, documentType),
+                        supportingText = if (ruc.isNotBlank() && !SecurityUtils.isValidDocumentNumber(ruc, documentType)) {
+                            { 
+                                Text(
+                                    text = if (documentType == "DNI") 
+                                        "El DNI debe tener exactamente 8 dígitos" 
+                                    else 
+                                        "El RUC debe tener exactamente 11 dígitos",
+                                    color = MaterialTheme.colorScheme.error
+                                ) 
+                            }
                         } else null,
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -420,8 +506,12 @@ fun AdminRegistrationScreen(
                     // Teléfono
                     OutlinedTextField(
                         value = phone,
-                        onValueChange = { 
-                            phone = SecurityUtils.cleanPhoneNumber(it)
+                        onValueChange = { newValue ->
+                            // Limitar a solo 9 dígitos
+                            val cleanValue = newValue.replace(Regex("[^0-9]"), "")
+                            if (cleanValue.length <= 9) {
+                                phone = cleanValue
+                            }
                             if (errorMessage.isNotEmpty()) errorMessage = ""
                         },
                         label = { Text("Teléfono") },
@@ -435,9 +525,9 @@ fun AdminRegistrationScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isError = phone.isNotBlank() && !SecurityUtils.isValidPhone(phone),
-                        supportingText = if (phone.isNotBlank() && !SecurityUtils.isValidPhone(phone)) {
-                            { Text("Teléfono debe tener entre 9 y 15 dígitos", color = MaterialTheme.colorScheme.error) }
+                        isError = phone.isNotBlank() && phone.length != 9,
+                        supportingText = if (phone.isNotBlank() && phone.length != 9) {
+                            { Text("El teléfono debe tener exactamente 9 dígitos", color = MaterialTheme.colorScheme.error) }
                         } else null,
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -445,8 +535,9 @@ fun AdminRegistrationScreen(
                     // Dirección
                     OutlinedTextField(
                         value = address,
-                        onValueChange = { 
-                            address = SecurityUtils.sanitizeInput(it)
+                        onValueChange = { newValue ->
+                            // Permitir espacios en la dirección - solo filtrar caracteres peligrosos
+                            address = newValue.replace(Regex("['\"\\\\;<>]"), "")
                             if (errorMessage.isNotEmpty()) errorMessage = ""
                         },
                         label = { Text("Dirección") },
@@ -459,8 +550,8 @@ fun AdminRegistrationScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isError = address.isNotBlank() && address.length < 5,
-                        supportingText = if (address.isNotBlank() && address.length < 5) {
+                        isError = address.isNotBlank() && address.trim().length < 5,
+                        supportingText = if (address.isNotBlank() && address.trim().length < 5) {
                             { Text("La dirección debe tener al menos 5 caracteres", color = MaterialTheme.colorScheme.error) }
                         } else null,
                         shape = RoundedCornerShape(12.dp)
@@ -469,8 +560,9 @@ fun AdminRegistrationScreen(
                     // Nombre de contacto
                     OutlinedTextField(
                         value = contactName,
-                        onValueChange = { 
-                            contactName = SecurityUtils.sanitizeInput(it)
+                        onValueChange = { newValue ->
+                            // Permitir espacios en el nombre de contacto - solo filtrar caracteres peligrosos
+                            contactName = newValue.replace(Regex("['\"\\\\;<>]"), "")
                             if (errorMessage.isNotEmpty()) errorMessage = ""
                         },
                         label = { Text("Nombre de contacto") },
@@ -483,8 +575,8 @@ fun AdminRegistrationScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isError = contactName.isNotBlank() && contactName.length < 2,
-                        supportingText = if (contactName.isNotBlank() && contactName.length < 2) {
+                        isError = contactName.isNotBlank() && contactName.trim().length < 2,
+                        supportingText = if (contactName.isNotBlank() && contactName.trim().length < 2) {
                             { Text("El nombre debe tener al menos 2 caracteres", color = MaterialTheme.colorScheme.error) }
                         } else null,
                         shape = RoundedCornerShape(12.dp)
@@ -525,7 +617,7 @@ fun AdminRegistrationScreen(
                     // Botón de registro
                     Button(
                         onClick = {
-                            if (validateForm(businessName, businessType, ruc, email, password, phone, address, contactName)) {
+                            if (validateForm(businessName, businessType, documentType, ruc, email, password, phone, address, contactName)) {
                                 errorMessage = ""
                                 
                                 coroutineScope.launchWithLoading(
@@ -580,10 +672,14 @@ fun AdminRegistrationScreen(
                                 errorMessage = when {
                                     !SecurityUtils.isValidName(businessName) -> "El nombre del negocio es obligatorio y debe tener al menos 2 caracteres"
                                     businessType.isBlank() -> "Debes seleccionar un tipo de negocio"
-                                    !SecurityUtils.isValidRucOrDni(ruc) -> "El RUC/DNI es obligatorio y debe tener entre 8 y 11 dígitos"
+                                    !SecurityUtils.isValidDocumentNumber(ruc, documentType) -> 
+                                        if (documentType == "DNI") 
+                                            "El DNI es obligatorio y debe tener exactamente 8 dígitos" 
+                                        else 
+                                            "El RUC es obligatorio y debe tener exactamente 11 dígitos"
                                     !SecurityUtils.isValidEmail(email) -> "El email es obligatorio y debe tener un formato válido"
                                     !SecurityUtils.isValidPassword(password) -> "La contraseña es obligatoria y debe tener al menos 8 caracteres sin caracteres especiales"
-                                    !SecurityUtils.isValidPhone(phone) -> "El teléfono es obligatorio y debe tener entre 9 y 15 dígitos"
+                                    !SecurityUtils.isValidPhone(phone) -> "El teléfono es obligatorio y debe tener exactamente 9 dígitos"
                                     !SecurityUtils.isValidAddress(address) -> "La dirección es obligatoria y debe tener al menos 5 caracteres"
                                     !SecurityUtils.isValidName(contactName) -> "El nombre de contacto es obligatorio y debe tener al menos 2 caracteres"
                                     else -> "Por favor completa todos los campos obligatorios correctamente"
@@ -667,6 +763,7 @@ fun AdminRegistrationScreen(
 private fun validateForm(
     businessName: String,
     businessType: String,
+    documentType: String,
     ruc: String,
     email: String,
     password: String,
@@ -676,7 +773,7 @@ private fun validateForm(
 ): Boolean {
     return SecurityUtils.isValidName(businessName) && 
            businessType.isNotBlank() &&
-           SecurityUtils.isValidRucOrDni(ruc) &&
+           SecurityUtils.isValidDocumentNumber(ruc, documentType) &&
            SecurityUtils.isValidEmail(email) &&
            SecurityUtils.isValidPassword(password) &&
            SecurityUtils.isValidPhone(phone) &&

@@ -29,6 +29,24 @@ object SecurityUtils {
     }
     
     /**
+     * Valida si un número de documento es válido según su tipo
+     * @param documentNumber Número de documento a validar
+     * @param documentType Tipo de documento (DNI o RUC)
+     * @return true si es válido
+     */
+    fun isValidDocumentNumber(documentNumber: String, documentType: String): Boolean {
+        if (documentNumber.isBlank()) return false
+        
+        val cleanNumber = documentNumber.replace(Regex("[^0-9]"), "")
+        
+        return when (documentType) {
+            "DNI" -> cleanNumber.length == 8 && cleanNumber.all { it.isDigit() }
+            "RUC" -> cleanNumber.length == 11 && cleanNumber.all { it.isDigit() }
+            else -> false
+        }
+    }
+    
+    /**
      * Valida si un email es válido
      * @param email Email a validar
      * @return true si es válido
@@ -57,16 +75,15 @@ object SecurityUtils {
     }
     
     /**
-     * Valida si un teléfono es válido
+     * Valida si un teléfono es válido (exactamente 9 dígitos)
      * @param phone Teléfono a validar
      * @return true si es válido
      */
     fun isValidPhone(phone: String): Boolean {
         if (phone.isBlank()) return false
         
-        val cleanPhone = phone.replace(Regex("[^0-9+]"), "")
-        val digitsOnly = cleanPhone.replace("+", "")
-        return digitsOnly.length in 9..15 && digitsOnly.all { it.isDigit() }
+        val cleanPhone = phone.replace(Regex("[^0-9]"), "")
+        return cleanPhone.length == 9 && cleanPhone.all { it.isDigit() }
     }
     
     /**
@@ -77,10 +94,11 @@ object SecurityUtils {
     fun isValidName(name: String): Boolean {
         if (name.isBlank()) return false
         
-        if (name.length < 2) return false
+        val trimmedName = name.trim()
+        if (trimmedName.length < 2) return false
         
         val dangerousChars = Regex("['\"\\\\;<>]")
-        if (dangerousChars.containsMatchIn(name)) return false
+        if (dangerousChars.containsMatchIn(trimmedName)) return false
         
         return true
     }
@@ -93,12 +111,13 @@ object SecurityUtils {
     fun isValidAddress(address: String): Boolean {
         if (address.isBlank()) return false
         
+        val trimmedAddress = address.trim()
         // Validar longitud mínima
-        if (address.length < 5) return false
+        if (trimmedAddress.length < 5) return false
         
         // Validar que no contenga caracteres peligrosos
         val dangerousChars = Regex("['\"\\\\;<>]")
-        if (dangerousChars.containsMatchIn(address)) return false
+        if (dangerousChars.containsMatchIn(trimmedAddress)) return false
         
         return true
     }
@@ -119,5 +138,29 @@ object SecurityUtils {
      */
     fun normalizeEmail(email: String): String {
         return email.lowercase().trim()
+    }
+    
+    /**
+     * Sanitiza entrada de nombres permitiendo espacios
+     * @param input Texto a sanitizar
+     * @return Texto sanitizado
+     */
+    fun sanitizeNameInput(input: String): String {
+        return input
+            .replace(Regex("['\"\\\\;<>]"), "") // Remover caracteres peligrosos
+            .replace(Regex("\\s+"), " ") // Normalizar espacios múltiples a uno solo
+            .trim()
+    }
+    
+    /**
+     * Sanitiza entrada de direcciones permitiendo espacios y caracteres especiales de direcciones
+     * @param input Texto a sanitizar
+     * @return Texto sanitizado
+     */
+    fun sanitizeAddressInput(input: String): String {
+        return input
+            .replace(Regex("['\"\\\\;<>]"), "") // Remover solo caracteres realmente peligrosos
+            .replace(Regex("\\s+"), " ") // Normalizar espacios múltiples a uno solo
+            .trim()
     }
 }
